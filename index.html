@@ -283,6 +283,24 @@ html.busy .prog{opacity:1}
   border-color:color-mix(in srgb,var(--up) 35%,transparent)}
 .lesson .ltitle{font-weight:800;font-size:14.5px;color:var(--tx);line-height:1.6;
   flex:1;min-width:0;overflow-wrap:anywhere}
+.lesson.picked{border-color:var(--gold)}
+.lpick{width:20px;height:20px;accent-color:var(--gold);flex:none}
+.lbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.catrow{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+.catchip{padding:5px 12px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;
+  background:var(--inset);color:var(--tx2);border:1px solid var(--line2)}
+.catchip.on{background:color-mix(in srgb,var(--gold) 16%,transparent);color:var(--gold);
+  border-color:color-mix(in srgb,var(--gold) 40%,transparent)}
+.scanprog{font-size:12.5px;color:var(--tx2);padding:10px 0;line-height:1.9}
+.scanlist{max-height:46vh;overflow:auto;margin:8px 0;border:1px solid var(--line);
+  border-radius:var(--r2);background:var(--inset)}
+.scanrow{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;cursor:pointer;
+  border-bottom:1px solid var(--line)}
+.scanrow:last-child{border-bottom:0}
+.scanrow input{width:19px;height:19px;accent-color:var(--gold);flex:none;margin-top:1px}
+.scantxt{min-width:0;flex:1}
+.scanttl{font-size:13px;font-weight:700;color:var(--tx);line-height:1.6;overflow-wrap:anywhere}
+.scanmeta{font-size:11px;color:var(--tx3);margin-top:2px}
 .showmore{display:block;width:100%;margin:12px 0 4px;padding:12px;border-radius:var(--r2);
   background:var(--card);border:1px solid var(--line2);color:var(--tx2);
   font-size:13px;font-weight:800;cursor:pointer}
@@ -1602,7 +1620,8 @@ async function loadChannel(before){
 /* ==================== آموزش ==================== */
 /* پست‌های آموزشی کپی کامل ذخیره می‌شوند، نه ارجاع به POSTS: کشِ کانال ۸۰۰ تایی است و
    می‌چرخد، پس یک آموزش قدیمی وگرنه روزی از دست می‌رفت. */
-let lessonQ='';
+let lessonQ='', catFilter=null, pickMode=false;
+const picked=new Set();
 const isLesson=id=>!!DB.lessons[id];
 const lessonTitle=t=>{
   const first=String(t||'').split('\n').map(x=>x.trim()).find(Boolean)||'بدون عنوان';
@@ -1610,19 +1629,28 @@ const lessonTitle=t=>{
 };
 function addLesson(p){
   DB.lessons[p.id]={id:p.id,title:lessonTitle(p.text),text:p.text||'',img:p.img||null,
-    date:p.date?+p.date:null,link:p.link||null,at:Date.now()};
+    date:p.date?+p.date:null,link:p.link||null,at:Date.now(),cat:''};
   save();renderAll();toast('به آموزش‌ها اضافه شد','ok');
 }
 function removeLesson(id){
   delete DB.lessons[id];
   save();renderAll();toast('از آموزش‌ها برداشته شد','info');
 }
-function sheetRenameLesson(id){
+/* دسته‌ها جای ثابت ندارند: هر رشته‌ای که روی یک آموزش نوشته شود خودش یک دسته می‌شود.
+   این‌طور نه مدیریت دسته لازم است نه دسته‌ی خالی می‌ماند. */
+const lessonCats=()=>[...new Set(Object.values(DB.lessons).map(L=>(L.cat||'').trim()).filter(Boolean))].sort();
+const CAT_SUGGEST=['تحلیل تکنیکال','مدیریت سرمایه','روانشناسی','پرایس اکشن','اندیکاتور','مفاهیم پایه'];
+function sheetEditLesson(id){
   const L=DB.lessons[id];if(!L)return;
+  const opts=[...new Set(lessonCats().concat(CAT_SUGGEST))];
   openSheet(
-   '<h3>عنوان آموزش</h3>'+
-   '<div class="sub">عنوان فقط برای پیدا کردن خودت است؛ متن پست دست نمی‌خورد.</div>'+
+   '<h3>ویرایش آموزش</h3>'+
+   '<div class="sub">عنوان و دسته فقط برای پیدا کردن خودت است؛ متن پست دست نمی‌خورد.</div>'+
    '<div class="fld"><label>عنوان</label><input id="f_t" value="'+esc(L.title||'')+'"></div>'+
+   '<div class="fld" style="margin-top:10px"><label>دسته</label>'+
+     '<input id="f_c" list="catlist" placeholder="مثلاً تحلیل تکنیکال" value="'+esc(L.cat||'')+'">'+
+     '<datalist id="catlist">'+opts.map(c=>'<option value="'+esc(c)+'"></option>').join('')+'</datalist></div>'+
+   '<div class="hint">دسته را خالی بگذاری، در «بدون دسته» می‌ماند.</div>'+
    '<div class="srow"><button class="btn pri" id="ok">ذخیره</button>'+
    '<button class="btn" id="cx">انصراف</button></div>',
    ()=>{
@@ -1630,26 +1658,182 @@ function sheetRenameLesson(id){
      $('#ok').onclick=()=>{
        const t=($('#f_t').value||'').trim();
        DB.lessons[id].title=t||lessonTitle(L.text);
+       DB.lessons[id].cat=($('#f_c').value||'').trim();
        save();closeSheet();renderAll();toast('ذخیره شد','ok');
      };
    });
 }
+/* ---- اسکن کانال برای پیدا کردن آموزش‌ها ---- */
+/* ۱۵۰ پست را دستی علامت زدن شدنی نیست. کانال را عقب‌عقب می‌خوانیم، کاندیداها را
+   امتیاز می‌دهیم و فهرستِ تیک‌خور نشان می‌دهیم — تصمیم آخر با کاربر است، نه خودکار. */
+const LESSON_HINTS=[
+  /نکته/,/چیست/,/چطور/,/چگونه/,/یاد\s*بگیر/,/مفهوم/,/استراتژی/,/اندیکاتور/,
+  /فیبوناچی/,/پرایس\s*اکشن/,/کندل\s*استیک/,/حمایت\s*و\s*مقاومت/,/مدیریت\s*سرمایه/,
+  /روان\s*شناسی|روانشناسی/,/واگرایی/,/تایم\s*فریم/,/الگو/,/درس/,/تحلیل\s*تکنیکال/,
+  /ریسک\s*فری/,/حجم\s*معامله/,/اهرم\s*چیست/,/مارجین/,/ترند\s*لاین/,/مووینگ/
+];
+function lessonScore(p){
+  if(sigOf(p).isSignal)return 0;
+  const t=faNorm(p.text||'');
+  if(t.length<80)return 0;
+  let sc=0;
+  if(/#\s*(اموزش|آموزشی?|نکته|درس)/.test(t))sc+=3;
+  else if(/اموزش|آموزش/.test(t))sc+=2;
+  let hits=0;for(const re of LESSON_HINTS)if(re.test(t))hits++;
+  sc+=Math.min(hits,3);
+  if(t.length>400)sc++;
+  return sc;
+}
+async function scanLessons(maxPages,onStep){
+  const found=new Map();
+  let before=null;
+  for(let i=0;i<maxPages;i++){
+    let res;
+    try{res=await loadChannel(before);}catch(e){onStep(i+1,found.size,'خطا در صفحه‌ی '+faN(i+1));break;}
+    for(const p of res.posts){
+      const sc=lessonScore(p);
+      if(sc>0&&!isLesson(p.id))found.set(p.id,{p,sc});
+    }
+    onStep(i+1,found.size,null);
+    if(!res.before)break;                 // به اولین پست کانال رسیدیم
+    before=res.before;
+  }
+  return [...found.values()].sort((a,b)=>b.sc-a.sc||b.p.num-a.p.num);
+}
+function sheetScan(){
+  openSheet(
+   '<h3>آوردن آموزش‌ها از کانال</h3>'+
+   '<div class="sub">کانال از تازه به قدیم خوانده می‌شود و پست‌هایی که آموزشی به نظر می‌رسند '+
+   'فهرست می‌شوند. هیچ‌چیز خودکار اضافه نمی‌شود — خودت تیک می‌زنی.</div>'+
+   '<div class="grid"><div class="fld"><label>تا چند صفحه عقب برود</label>'+
+   '<select id="f_pg"><option value="10">۱۰ صفحه (سریع)</option>'+
+   '<option value="25">۲۵ صفحه</option><option value="50" selected>۵۰ صفحه</option>'+
+   '<option value="120">تا آخر کانال (کند)</option></select></div></div>'+
+   '<div class="hint">هر صفحه حدود ۲۰ پست است و یک درخواست به کانال می‌زند. اگر واسط شخصی '+
+   'داری سریع است؛ بدون آن ممکن است خیلی طول بکشد.</div>'+
+   '<div class="srow"><button class="btn pri" id="ok">شروع اسکن</button>'+
+   '<button class="btn" id="cx">انصراف</button></div>'+
+   '<div id="scanBox"></div>',
+   ()=>{
+     $('#cx').onclick=closeSheet;
+     $('#ok').onclick=async e=>{
+       const pages=parseInt($('#f_pg').value,10)||50;
+       const btn=e.currentTarget; btnBusy(btn,true,'در حال خواندن…');
+       const box=$('#scanBox');
+       box.innerHTML='<div class="scanprog" id="sp">در حال خواندن صفحه‌ی ۱…</div>';
+       const rows=await scanLessons(pages,(pg,n,err)=>{
+         $('#sp').textContent=err||('صفحه‌ی '+faN(pg)+' خوانده شد · '+faN(n)+' کاندیدا');
+       });
+       btnBusy(btn,false);
+       renderScanResults(rows);
+     };
+   });
+}
+function renderScanResults(rows){
+  const box=$('#scanBox');
+  if(!rows.length){
+    box.innerHTML='<div class="hint">کاندیدای تازه‌ای پیدا نشد. '+
+      'یا همه‌شان از قبل در آموزش‌ها هستند، یا پست‌های کانال به آموزش شبیه نبودند.</div>';
+    return;
+  }
+  box.innerHTML='<div class="sechd">'+faN(rows.length)+' کاندیدا</div>'+
+    '<div class="srow"><button class="btn sm" id="selAll">انتخاب همه</button>'+
+    '<button class="btn sm" id="selNone">هیچ‌کدام</button>'+
+    '<span class="markhint" id="selCount"></span></div>'+
+    '<div class="scanlist" id="sl"></div>'+
+    '<div class="srow"><button class="btn pri" id="addSel">افزودن انتخاب‌شده‌ها</button></div>';
+  const list=$('#sl');
+  for(const {p,sc} of rows){
+    const row=el('label','scanrow');
+    const cb=el('input');cb.type='checkbox';cb.checked=sc>=3;cb.dataset.id=p.id;
+    row.appendChild(cb);
+    const txt=el('div','scantxt');
+    txt.appendChild(el('div','scanttl',esc(lessonTitle(p.text))));
+    txt.appendChild(el('div','scanmeta',(p.date?relTime(p.date):'—')+' · امتیاز '+faN(sc)));
+    row.appendChild(txt);
+    list.appendChild(row);
+    cb.__post=p;
+  }
+  const count=()=>{$('#selCount').textContent=faN($$('#sl input:checked').length)+' انتخاب شده';};
+  list.addEventListener('change',count);
+  $('#selAll').onclick=()=>{$$('#sl input').forEach(c=>c.checked=true);count();};
+  $('#selNone').onclick=()=>{$$('#sl input').forEach(c=>c.checked=false);count();};
+  count();
+  $('#addSel').onclick=()=>{
+    const picked=$$('#sl input:checked');
+    if(!picked.length)return toast('چیزی انتخاب نشده','err');
+    for(const c of picked)addLessonQuiet(c.__post);
+    save();renderAll();closeSheet();
+    toast(faN(picked.length)+' آموزش اضافه شد','ok');
+  };
+}
+/* مثل addLesson ولی بدون ذخیره و رندر در هر مورد — برای افزودن دسته‌جمعی */
+function addLessonQuiet(p){
+  DB.lessons[p.id]={id:p.id,title:lessonTitle(p.text),text:p.text||'',img:p.img||null,
+    date:p.date?+p.date:null,link:p.link||null,at:Date.now(),cat:''};
+}
+
 function renderLessons(){
   const box=$('#lessonList');
   const all=Object.values(DB.lessons).sort((a,b)=>(b.at||0)-(a.at||0));
   const q=lessonQ.trim().toLowerCase();
-  const list=q?all.filter(L=>((L.title||'')+' '+(L.text||'')).toLowerCase().includes(q)):all;
+  let list=q?all.filter(L=>((L.title||'')+' '+(L.text||'')).toLowerCase().includes(q)):all;
+  if(catFilter!=null)list=list.filter(L=>(L.cat||'')===catFilter);
   box.innerHTML='';
+
+  // نوار بالا: اسکن، و وقتی آموزشی هست، حالت انتخاب
+  const bar=el('div','lbar');
+  const scan=el('button','mark','آوردن از کانال');scan.onclick=sheetScan;
+  bar.appendChild(scan);
+  if(all.length){
+    const sel=el('button','mark ghost'+(pickMode?' on':''),pickMode?'پایان انتخاب':'انتخاب چندتایی');
+    sel.onclick=()=>{pickMode=!pickMode;picked.clear();renderLessons();};
+    bar.appendChild(sel);
+    if(pickMode){
+      const del=el('button','mark ghost','حذف '+faN(picked.size));
+      del.onclick=()=>{
+        if(!picked.size)return toast('چیزی انتخاب نشده','err');
+        if(!confirm(faN(picked.size)+' آموزش حذف شود؟'))return;
+        for(const id of picked)delete DB.lessons[id];
+        picked.clear();pickMode=false;save();renderAll();toast('حذف شد','info');
+      };
+      bar.appendChild(del);
+    }
+  }
+  box.appendChild(bar);
+
+  // چیپ دسته‌ها
+  const cats=lessonCats();
+  const noCat=all.some(L=>!(L.cat||'').trim());
+  if(cats.length||noCat){
+    const row=el('div','catrow');
+    const chip=(label,val)=>{
+      const c=el('button','catchip'+(catFilter===val?' on':''),esc(label));
+      c.onclick=()=>{catFilter=(catFilter===val?null:val);renderLessons();};
+      row.appendChild(c);
+    };
+    chip('همه',null);
+    for(const c of cats)chip(c,c);
+    if(noCat)chip('بدون دسته','');
+    box.appendChild(row);
+  }
+
   if(!list.length){
     box.appendChild(el('div','empty',STAR+(all.length
-      ?'با این جستجو چیزی نیست.'
-      :'هنوز آموزشی ذخیره نکرده‌ای.<br>در تب سیگنال‌ها روی هر پستی که آموزشی است،<br>دکمه‌ی «افزودن به آموزش» را بزن.')));
+      ?'با این فیلتر چیزی نیست.'
+      :'هنوز آموزشی ذخیره نکرده‌ای.<br>«آوردن از کانال» را بزن تا کانال را اسکن کنم،<br>یا در تب سیگنال‌ها روی هر پست دکمه‌ی «افزودن به آموزش».')));
     return;
   }
   for(const L of list){
-    const c=el('div','card lesson');
+    const c=el('div','card lesson'+(pickMode&&picked.has(L.id)?' picked':''));
     const head=el('div','chead');
+    if(pickMode){
+      const cb=el('input');cb.type='checkbox';cb.className='lpick';cb.checked=picked.has(L.id);
+      cb.onchange=()=>{cb.checked?picked.add(L.id):picked.delete(L.id);renderLessons();};
+      head.appendChild(cb);
+    }
     head.appendChild(el('span','ltitle',esc(L.title||'بدون عنوان')));
+    if((L.cat||'').trim())head.appendChild(el('span','pill mut',esc(L.cat)));
     head.appendChild(el('div','when',L.link
       ?'<a href="'+esc(L.link)+'" target="_blank" rel="noopener">'+relTime(L.date?new Date(L.date):null)+'</a>'
       :relTime(L.date?new Date(L.date):null)));
@@ -1670,7 +1854,7 @@ function renderLessons(){
     }
     c.appendChild(body);
     const row=el('div','markrow');
-    const rn=el('button','mark ghost','تغییر عنوان');rn.onclick=()=>sheetRenameLesson(L.id);
+    const rn=el('button','mark ghost','ویرایش');rn.onclick=()=>sheetEditLesson(L.id);
     const rm=el('button','mark ghost','حذف');
     rm.onclick=()=>{if(confirm('«'+(L.title||'')+'» از آموزش‌ها حذف شود؟'))removeLesson(L.id);};
     row.appendChild(rn);row.appendChild(rm);
