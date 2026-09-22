@@ -39,6 +39,32 @@
     --pat:.07; --glass:rgba(242,243,246,.82);
   }
 }
+#lockv{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);padding:24px}
+.lockbox{width:100%;max-width:320px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.lockmark{width:56px;height:56px;border-radius:16px;background:var(--card2);
+  border:1px solid var(--line2);position:relative}
+.lockmark::before{content:'';position:absolute;inset:0;margin:auto;width:16px;height:14px;
+  border-radius:3px;background:var(--gold);transform:translateY(5px)}
+.lockmark::after{content:'';position:absolute;inset:0;margin:auto;width:18px;height:18px;
+  border:3px solid var(--gold);border-bottom:0;border-radius:9px 9px 0 0;transform:translateY(-7px)}
+.lockbox h3{margin:0;font-size:16px;font-weight:800;color:var(--tx)}
+.lockdots{display:flex;gap:11px;direction:ltr;min-height:14px}
+.lockdots i{width:12px;height:12px;border-radius:50%;background:var(--line2);
+  transition:background .15s,transform .15s}
+.lockdots i.on{background:var(--gold);transform:scale(1.12)}
+.lockmsg{min-height:18px;font-size:12.5px;color:var(--dn);text-align:center}
+.lockbox.shake{animation:lshake .38s}
+@keyframes lshake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}
+  40%{transform:translateX(9px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;margin-top:4px}
+.pad button{height:62px;border-radius:16px;background:var(--card);border:1px solid var(--line2);
+  color:var(--tx);font-size:22px;font-weight:700;cursor:pointer;font-variant-numeric:tabular-nums}
+.pad button:active{background:var(--card2);transform:scale(.96)}
+.pad button.wide{font-size:13px;font-weight:800;color:var(--tx2)}
+.lockforgot{margin-top:6px;background:none;border:0;color:var(--tx3);
+  font-size:12px;text-decoration:underline;cursor:pointer}
+@media (prefers-reduced-motion:reduce){.lockbox.shake{animation:none}}
 #boot{position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:20px;background:var(--bg);
   transition:opacity .32s var(--ease)}
@@ -535,6 +561,17 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 <div id="boot" aria-hidden="true"><div class="bootmark"></div><div class="bootbar"><i></i></div></div>
 <div class="bgfx" aria-hidden="true"></div>
 
+<div id="lockv" class="hide" role="dialog" aria-label="قفل برنامه">
+  <div class="lockbox">
+    <div class="lockmark"></div>
+    <h3 id="lockTitle">رمز را وارد کن</h3>
+    <div class="lockdots" id="lockDots"></div>
+    <div class="lockmsg" id="lockMsg"></div>
+    <div class="pad" id="lockPad"></div>
+    <button class="lockforgot" id="lockForgot">رمز را فراموش کرده‌ام</button>
+  </div>
+</div>
+
 <header id="hdr">
   <div class="wrap">
     <div class="hrow">
@@ -664,6 +701,24 @@ input[type=range]{width:100%;accent-color:var(--gold)}
       <div class="hint" id="wNote">
         اگر <b dir="ltr">workers.dev</b> روی شبکه‌ات باز نشد، در همان ورکر
         <b dir="ltr">Settings → Domains &amp; Routes</b> یک دامنه‌ی خودت را وصل کن و آدرس آن را بگذار.
+      </div>
+    </div>
+    <div class="sechd">قفل ورود</div>
+    <div class="wsetup">
+      <div class="wtitle">وضعیت: <span id="lockState">خاموش</span></div>
+      <div class="srow">
+        <button class="btn" id="btnLockSet">گذاشتن رمز</button>
+        <button class="btn hide" id="btnLockOff">برداشتن قفل</button>
+      </div>
+      <div class="hint">
+        رمز ۴ تا ۸ رقمی. هر بار که برنامه را باز کنی — و اگر بیش از دو دقیقه ازش بیرون بروی —
+        پرسیده می‌شود.<br>
+        <b>صریح بگویم:</b> این برنامه تماماً داخل مرورگر اجرا می‌شود، پس این رمز
+        <b>پرده است نه قفل</b>. جلوی کسی که گوشی‌ات را برمی‌دارد را می‌گیرد، ولی کسی که
+        سورس صفحه را باز کند دورش می‌زند. اگر قفل واقعی می‌خواهی، همان حساب Cloudflare که
+        داری این کار را رایگان می‌کند.<br>
+        راه بازیابی ندارد: اگر فراموشش کنی، تنها راه پاک کردن همه‌ی داده‌هاست.
+        پس اول از «پشتیبان JSON» پایین خروجی بگیر.
       </div>
     </div>
     <div class="sechd">اندازه و ریسک</div>
@@ -1507,6 +1562,125 @@ async function loadChannel(before){
             :'«تست اتصال» را بزن تا معلوم شود کدام مسیر از این شبکه باز است.')});
     throw e;
   }finally{renderHealth();}
+}
+
+/* ==================== قفل ورود ==================== */
+/* صریح باشیم: این صفحه تماماً در مرورگر اجرا می‌شود، پس این یک «پرده» است نه قفل.
+   جلوی کسی که گوشی را برمی‌دارد را می‌گیرد؛ جلوی کسی که سورس را باز کند نه.
+   با این حال رمز را خام ذخیره نمی‌کنیم: نمک تصادفی + SHA-256، تا اگر کسی سرسری به
+   حافظه‌ی مرورگر نگاه کرد رمز را نخواند. */
+const LOCKKEY='signaldesk.lock.v1';
+let lockBuf='', lockAwaiting=null, lastHidden=0;
+const LOCK_GRACE=120000;                 // تا دو دقیقه بعد از بیرون رفتن، دوباره رمز نمی‌خواهد
+
+const lockCfg=()=>lsGet(LOCKKEY)||null;
+const hasLock=()=>{const c=lockCfg();return !!(c&&c.hash&&c.salt);};
+async function pinHash(pin,salt){
+  const data=new TextEncoder().encode(salt+':'+pin);
+  const buf=await crypto.subtle.digest('SHA-256',data);
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+const newSalt=()=>[...crypto.getRandomValues(new Uint8Array(16))]
+  .map(b=>b.toString(16).padStart(2,'0')).join('');
+
+function paintDots(){
+  const d=$('#lockDots');
+  d.innerHTML=Array.from({length:Math.max(4,lockBuf.length)},
+    (_,i)=>'<i class="'+(i<lockBuf.length?'on':'')+'"></i>').join('');
+}
+function buildPad(){
+  const pad=$('#lockPad');
+  pad.innerHTML='';
+  const add=(label,cls,fn)=>{const b=el('button',cls||null,label);b.onclick=fn;pad.appendChild(b);};
+  for(const n of [1,2,3,4,5,6,7,8,9])add(faN(n),null,()=>lockPush(String(n)));
+  add('پاک','wide',()=>{lockBuf='';paintDots();$('#lockMsg').textContent='';});
+  add(faN(0),null,()=>lockPush('0'));
+  add('تأیید','wide',lockSubmit);
+}
+function lockPush(d){
+  if(lockBuf.length>=8)return;
+  lockBuf+=d;paintDots();$('#lockMsg').textContent='';
+  if(lockBuf.length>=4&&lockAwaiting&&lockAwaiting.auto)lockSubmit();
+}
+function lockFail(msg){
+  lockBuf='';paintDots();
+  $('#lockMsg').textContent=msg;
+  const box=document.querySelector('.lockbox');
+  box.classList.remove('shake');void box.offsetWidth;box.classList.add('shake');
+}
+async function lockSubmit(){
+  if(lockBuf.length<4)return lockFail('رمز دست‌کم ۴ رقم است');
+  const job=lockAwaiting; if(!job)return;
+  const pin=lockBuf;
+  if(job.mode==='verify'){
+    const c=lockCfg();
+    if(await pinHash(pin,c.salt)!==c.hash)return lockFail('رمز درست نیست');
+    lockBuf='';paintDots();job.done();
+  }else if(job.mode==='set'){
+    if(!job.first){                       // بار اول: فقط نگه می‌داریم و دوباره می‌پرسیم
+      job.first=pin;lockBuf='';paintDots();
+      $('#lockTitle').textContent='یک بار دیگر بزن';
+      $('#lockMsg').textContent='';
+      return;
+    }
+    if(job.first!==pin){
+      job.first=null;
+      $('#lockTitle').textContent='رمز تازه را بزن';
+      return lockFail('یکی نبودند؛ از اول');
+    }
+    const salt=newSalt();
+    lsSet(LOCKKEY,{salt,hash:await pinHash(pin,salt),at:Date.now()});
+    lockBuf='';paintDots();job.done();
+  }
+}
+function openLock(opts){
+  lockAwaiting=Object.assign({auto:false},opts);
+  lockBuf='';
+  $('#lockTitle').textContent=opts.title;
+  $('#lockMsg').textContent='';
+  $('#lockForgot').classList.toggle('hide',!opts.forgot);
+  paintDots();buildPad();
+  $('#lockv').classList.remove('hide');
+}
+function closeLock(){
+  $('#lockv').classList.add('hide');
+  lockAwaiting=null;lockBuf='';
+}
+/* در شروع، و هر بار که بعد از مدتی برمی‌گردی */
+function lockGate(){
+  if(!hasLock())return;
+  openLock({mode:'verify',title:'رمز را وارد کن',auto:false,forgot:true,done:closeLock});
+}
+function wireLock(){
+  $('#lockForgot').onclick=()=>{
+    if(!confirm('راه دیگری برای باز کردن نیست.\n\nقفل فقط با پاک کردن همه‌ی داده‌های برنامه '+
+      '(پوزیشن‌ها، تصمیم‌ها، تنظیمات) برداشته می‌شود.\n\nادامه می‌دهی؟'))return;
+    if(!confirm('مطمئنی؟ اگر فایل پشتیبان JSON نداری، سوابق معاملاتت برنمی‌گردد.'))return;
+    try{for(const k of Object.keys(localStorage))
+      if(k.indexOf('signaldesk.')===0)localStorage.removeItem(k);}catch(e){}
+    location.reload();
+  };
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden){lastHidden=Date.now();return;}
+    if(hasLock()&&lastHidden&&Date.now()-lastHidden>LOCK_GRACE&&$('#lockv').classList.contains('hide'))
+      lockGate();
+  });
+  const paint=()=>{
+    const on=hasLock();
+    $('#lockState').textContent=on?'روشن':'خاموش';
+    $('#btnLockSet').textContent=on?'تغییر رمز':'گذاشتن رمز';
+    $('#btnLockOff').classList.toggle('hide',!on);
+  };
+  $('#btnLockSet').onclick=()=>{
+    const start=()=>openLock({mode:'set',first:null,title:'رمز تازه را بزن',forgot:false,
+      done:()=>{closeLock();paint();toast('رمز فعال شد','ok');}});
+    if(hasLock())openLock({mode:'verify',title:'اول رمز فعلی',forgot:false,done:start});
+    else start();
+  };
+  $('#btnLockOff').onclick=()=>openLock({mode:'verify',title:'رمز فعلی را بزن',forgot:false,
+    done:()=>{try{localStorage.removeItem(LOCKKEY);}catch(e){}
+      closeLock();paint();toast('قفل برداشته شد','info');}});
+  paint();
 }
 
 /* ==================== راه‌اندازی واسط ==================== */
@@ -3155,7 +3329,8 @@ function dl(name,text,type){
 function wireIO(){
   $('#btnExport').onclick=()=>{
     dl('signal-desk-'+jKey(new Date())+'.json',
-      JSON.stringify({v:2,exportedAt:Date.now(),positions:DB.positions,decisions:DB.decisions,settings:S},null,2));
+      JSON.stringify({v:3,exportedAt:Date.now(),positions:DB.positions,decisions:DB.decisions,
+        settings:S,overrides:DB.overrides},null,2));
     toast('پشتیبان گرفته شد','ok');
   };
   $('#btnCsv').onclick=()=>{
@@ -3184,6 +3359,9 @@ function wireIO(){
         if(!confirm('داده فعلی با فایل پشتیبان جایگزین شود؟\nپوزیشن‌های فایل: '+d.positions.length))return;
         DB.positions=d.positions.map(ensureBase);
         DB.decisions=d.decisions||{};
+        // پشتیبان‌های نسخه‌ی ۲ این را ندارند؛ نبودش یعنی خالی، نه خطا
+        DB.overrides=d.overrides&&typeof d.overrides==='object'?d.overrides:{};
+        OVERRIDE=DB.overrides; PCACHE.clear();
         if(d.settings)Object.assign(S,d.settings);
         applySettingsToForm();readSettings();
         save();renderAll();toast('بازیابی شد','ok');
@@ -3442,6 +3620,8 @@ showStoreWarn();
 loadPxCache();
 loadPostCache();
 BOOTED=true;
+wireLock();
+lockGate();                       // اگر رمز گذاشته شده، قبل از دیده شدن محتوا می‌پرسد
 showOriginWarn();
 renderAll();
 {const bt=document.getElementById('boot');
