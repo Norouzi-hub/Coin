@@ -45,6 +45,40 @@
     --pat:.07; --glass:rgba(242,243,246,.82);
   }
 }
+#lb{position:fixed;inset:0;z-index:130;background:#07080A;display:flex;
+  align-items:center;justify-content:center}
+.lbbar{position:absolute;top:0;inset-inline:0;display:flex;align-items:center;gap:12px;
+  padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 10px;z-index:2;
+  background:linear-gradient(to bottom,rgba(0,0,0,.65),transparent)}
+.lbx{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.16);cursor:pointer;position:relative;flex:none}
+.lbx::before,.lbx::after{content:'';position:absolute;inset:0;margin:auto;width:17px;height:2px;
+  border-radius:2px;background:#fff}
+.lbx::before{transform:rotate(45deg)}.lbx::after{transform:rotate(-45deg)}
+.lbnum{color:rgba(255,255,255,.72);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.lbwrap{width:100%;height:100%;overflow:auto;display:flex;align-items:center;justify-content:center;
+  -webkit-overflow-scrolling:touch}
+#lbImg{display:block;max-width:100%;max-height:100%;object-fit:contain;margin:auto}
+#lb.zoom .lbwrap{align-items:flex-start;justify-content:flex-start}
+#lb.zoom #lbImg{max-width:none;max-height:none;width:220%;height:auto}
+.lbnav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:70px;z-index:2;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);cursor:pointer}
+.lbnav.prev{inset-inline-start:0;border-radius:0 14px 14px 0}
+.lbnav.next{inset-inline-end:0;border-radius:14px 0 0 14px}
+/* مرز فیزیکی، نه منطقی: border-inline-start در RTL به راست می‌افتد و بعد از چرخش
+   جهت فلش برعکس درمی‌آید. صفحه همیشه RTL است، پس «قبلی» در سمت راست به راست
+   اشاره می‌کند و «بعدی» در سمت چپ به چپ. */
+.lbnav::before{content:'';position:absolute;inset:0;margin:auto;width:12px;height:12px;
+  border-top:2.5px solid #fff;border-left:2.5px solid #fff}
+.lbnav.prev::before{transform:translateX(-3px) rotate(135deg)}
+.lbnav.next::before{transform:translateX(3px) rotate(-45deg)}
+.lbnav[disabled]{opacity:.22;pointer-events:none}
+.lbhint{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);inset-inline:0;
+  text-align:center;color:rgba(255,255,255,.5);font-size:12px;pointer-events:none;
+  transition:opacity .4s}
+#lb.zoom .lbhint,#lb.seen .lbhint{opacity:0}
+/* تصویر روی کارت دیگر لینک نیست، ولی باید معلوم باشد که قابل زدن است */
+.shot{cursor:zoom-in}
 #lockv{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;
   background:var(--bg);padding:24px}
 .lockbox{width:100%;max-width:320px;display:flex;flex-direction:column;align-items:center;gap:14px}
@@ -588,6 +622,17 @@ input[type=range]{width:100%;accent-color:var(--gold)}
      به محض آماده شدن برنامه محو می‌شود؛ هیچ اسکریپتی لازم ندارد تا خودش دیده شود. -->
 <div id="boot" aria-hidden="true"><div class="bootmark"></div><div class="bootbar"><i></i></div></div>
 <div class="bgfx" aria-hidden="true"></div>
+
+<div id="lb" class="hide" role="dialog" aria-label="نمایش تصویر">
+  <div class="lbbar">
+    <button class="lbx" id="lbClose" aria-label="بستن"></button>
+    <span class="lbnum" id="lbNum"></span>
+  </div>
+  <button class="lbnav prev" id="lbPrev" aria-label="قبلی"></button>
+  <button class="lbnav next" id="lbNext" aria-label="بعدی"></button>
+  <div class="lbwrap" id="lbWrap"><img id="lbImg" alt=""></div>
+  <div class="lbhint" id="lbHint">دوبار بزن برای بزرگ‌نمایی</div>
+</div>
 
 <div id="lockv" class="hide" role="dialog" aria-label="قفل برنامه">
   <div class="lockbox">
@@ -1617,6 +1662,83 @@ async function loadChannel(before){
   }finally{renderHealth();}
 }
 
+/* ==================== گالری تصویر ==================== */
+/* تصویرها قبلاً به t.me لینک بودند و زدنشان کاربر را از برنامه بیرون می‌برد.
+   حالا همین‌جا باز می‌شوند و بین همه‌ی تصویرهای همان نما می‌شود جابه‌جا شد. */
+let lbList=[], lbAt=0, lbPop=false;
+function lbCollect(){
+  // ترتیب همان ترتیب صفحه است، پس «بعدی» یعنی تصویر پایین‌تر
+  return $$('.shot img').filter(im=>im.src&&im.closest('.view:not(.hide)'));
+}
+function openLightbox(img){
+  lbList=lbCollect();
+  lbAt=Math.max(0,lbList.indexOf(img));
+  if(!lbList.length)return;
+  const lb=$('#lb');
+  lb.classList.remove('hide','zoom');
+  lbShow();
+  // دکمه‌ی برگشت اندروید باید گالری را ببندد، نه از برنامه بیرون برود
+  try{history.pushState({lb:1},'');lbPop=true;}catch(e){lbPop=false;}
+}
+function lbShow(){
+  const im=lbList[lbAt];if(!im)return;
+  $('#lbImg').src=im.currentSrc||im.src;
+  $('#lbNum').textContent=lbList.length>1?faN(lbAt+1)+' از '+faN(lbList.length):'';
+  $('#lbPrev').disabled=lbAt<=0;
+  $('#lbNext').disabled=lbAt>=lbList.length-1;
+  $('#lb').classList.remove('zoom');
+  $('#lbWrap').scrollTop=0;$('#lbWrap').scrollLeft=0;
+}
+function lbGo(d){
+  const n=lbAt+d;
+  if(n<0||n>=lbList.length)return;
+  lbAt=n;lbShow();
+}
+function closeLightbox(fromPop){
+  const lb=$('#lb');
+  if(lb.classList.contains('hide'))return;
+  lb.classList.add('hide');lb.classList.remove('zoom');
+  $('#lbImg').removeAttribute('src');
+  if(!fromPop&&lbPop){lbPop=false;try{history.back();}catch(e){}}
+  else lbPop=false;
+}
+function wireLightbox(){
+  $('#lbClose').onclick=()=>closeLightbox();
+  $('#lbPrev').onclick=()=>lbGo(-1);
+  $('#lbNext').onclick=()=>lbGo(1);
+  // زدن روی پس‌زمینه می‌بندد، ولی نه وقتی بزرگ‌نمایی روشن است (آنجا در حال جابه‌جا کردنی)
+  $('#lbWrap').onclick=e=>{if(e.target===$('#lbWrap')&&!$('#lb').classList.contains('zoom'))closeLightbox();};
+  let lastTap=0;
+  $('#lbImg').onclick=()=>{
+    const now=Date.now();
+    if(now-lastTap<320){$('#lb').classList.toggle('zoom');$('#lb').classList.add('seen');}
+    lastTap=now;
+  };
+  // کشیدن افقی برای عکس بعدی/قبلی
+  let x0=null,y0=null;
+  $('#lb').addEventListener('touchstart',e=>{
+    if(e.touches.length!==1||$('#lb').classList.contains('zoom'))return;
+    x0=e.touches[0].clientX;y0=e.touches[0].clientY;},{passive:true});
+  $('#lb').addEventListener('touchend',e=>{
+    if(x0==null)return;
+    const t=e.changedTouches[0], dx=t.clientX-x0, dy=t.clientY-y0;
+    x0=null;
+    if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy))return;
+    const rtl=getComputedStyle(document.documentElement).direction==='rtl';
+    lbGo(rtl?(dx>0?1:-1):(dx>0?-1:1));
+    $('#lb').classList.add('seen');
+  },{passive:true});
+  document.addEventListener('keydown',e=>{
+    if($('#lb').classList.contains('hide'))return;
+    if(e.key==='Escape')closeLightbox();
+    else if(e.key==='ArrowRight')lbGo(1);
+    else if(e.key==='ArrowLeft')lbGo(-1);
+  });
+  window.addEventListener('popstate',()=>{
+    if(!$('#lb').classList.contains('hide'))closeLightbox(true);
+  });
+}
+
 /* ==================== آموزش ==================== */
 /* پست‌های آموزشی کپی کامل ذخیره می‌شوند، نه ارجاع به POSTS: کشِ کانال ۸۰۰ تایی است و
    می‌چرخد، پس یک آموزش قدیمی وگرنه روزی از دست می‌رفت. */
@@ -1839,8 +1961,10 @@ function renderLessons(){
       :relTime(L.date?new Date(L.date):null)));
     c.appendChild(head);
     if(L.img){
-      const a=el('a','shot');a.href=L.link||'#';a.target='_blank';a.rel='noopener';
+      const a=el('div','shot');a.setAttribute('role','button');a.tabIndex=0;
       const im=el('img');im.loading='lazy';im.decoding='async';im.alt='تصویر آموزش';
+      a.onclick=()=>openLightbox(im);
+      a.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openLightbox(im);}};
       im.onload=()=>a.classList.add('loaded');im.onerror=()=>a.remove();im.src=L.img;
       a.appendChild(im);c.appendChild(a);
     }
@@ -2341,8 +2465,10 @@ function buildCard(p){
   card.appendChild(head);
 
   if(p.img){
-    const a=el('a','shot');a.href=p.link;a.target='_blank';a.rel='noopener';
+    const a=el('div','shot');a.setAttribute('role','button');a.tabIndex=0;
     const im=el('img');im.loading='lazy';im.decoding='async';im.alt='تصویر سیگنال';
+    a.onclick=()=>openLightbox(im);
+    a.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openLightbox(im);}};
     im.onload=()=>a.classList.add('loaded');
     im.onerror=()=>a.remove();
     im.src=p.img;
@@ -3834,6 +3960,7 @@ function wire(){
   $('#btnRef').innerHTML=ic('refresh')+'<span>بروزرسانی</span>';
   $('#qIc').innerHTML=ic('search');
   $('#lqIc').innerHTML=ic('search');
+  wireLightbox();
   $('#btnMore').innerHTML=ic('down')+'<span>پست‌های قدیمی‌تر</span>';
   $$('.tab').forEach(t=>{
     t.insertAdjacentHTML('afterbegin',ic(t.dataset.ic));
