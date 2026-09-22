@@ -790,12 +790,16 @@ const H={
 };
 let REACHED_END=false;
 
+/* شماره‌ی پست همیشه آخرین جزء data-post است: «کانال/۲۰۴» یا «c/۱۸۹۳۰۵۱/۲۰۴» */
+const postNum=id=>parseInt(String(id||'').split('/').pop()||'0',10)||0;
 function loadPostCache(){
   const c=lsGet(CKEY(S.channel));
   POSTS=[];REACHED_END=false;H.cache={n:0,kb:0,at:null,fromCache:false};
   if(!c||!Array.isArray(c.posts))return false;
-  POSTS=c.posts.map(p=>Object.assign({},p,{date:p.date?new Date(p.date):null}));
-  POSTS.sort((a,b)=>b.num-a.num);
+  // کش‌هایی که نسخه‌ی قبلی ساخته، شماره‌ی غلط دارند (شناسه‌ی کانال به‌جای شماره‌ی پست)
+  // و آن پست‌ها بالای همه می‌نشستند؛ پس شماره را همیشه از روی شناسه دوباره حساب می‌کنیم.
+  POSTS=c.posts.map(p=>Object.assign({},p,{date:p.date?new Date(p.date):null,num:postNum(p.id)||p.num||0}));
+  POSTS.sort(byNewest);
   REACHED_END=!!c.end;
   H.cache={n:POSTS.length,kb:cacheKB(),at:c.at||null,fromCache:POSTS.length>0};
   return POSTS.length>0;
@@ -1340,7 +1344,7 @@ function parseChannelHTML(html){
   const doc=new DOMParser().parseFromString(html,'text/html');
   const out=[];
   for(const n of doc.querySelectorAll('.tgme_widget_message[data-post]')){
-    const id=n.getAttribute('data-post')||'', num=parseInt(id.split('/')[1]||'0',10);
+    const id=n.getAttribute('data-post')||'', num=postNum(id);
     const b=n.querySelector('.tgme_widget_message_bubble')||n;
     let text='';
     for(const d of b.querySelectorAll('.tgme_widget_message_text')){
@@ -1362,6 +1366,10 @@ function parseChannelHTML(html){
   const more=doc.querySelector('.tme_messages_more[data-before]');
   return {posts:out,before:more?more.getAttribute('data-before'):null,empty:!out.length};
 }
+/* اگر شماره‌ها مساوی باشند مرتب‌سازی بی‌اثر می‌شود و ترتیب خامِ صفحه می‌ماند؛
+   تاریخ به عنوان تصمیم‌گیر دوم این حالت را هم می‌پوشاند. */
+const postAt=p=>p&&p.date?(+p.date||0):0;
+const byNewest=(a,b)=>(b.num-a.num)||(postAt(b)-postAt(a));
 function tgUrl(before){
   let u='https://t.me/s/'+encodeURIComponent(S.channel);
   if(before)u+='?before='+before;
@@ -3005,7 +3013,7 @@ async function refresh(append,silent){
         POSTS=POSTS.concat(incoming);
         if(!res.before&&!POSTS.length)REACHED_END=true;
       }
-      POSTS.sort((a,b)=>b.num-a.num);
+      POSTS.sort(byNewest);
       if(POSTS.length>CACHE_MAX)POSTS=POSTS.slice(0,CACHE_MAX);
       beforeId=res.before;
       savePostCache();
