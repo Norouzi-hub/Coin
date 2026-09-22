@@ -335,6 +335,13 @@ html.busy .prog{opacity:1}
 .scantxt{min-width:0;flex:1}
 .scanttl{font-size:13px;font-weight:700;color:var(--tx);line-height:1.6;overflow-wrap:anywhere}
 .scanmeta{font-size:11px;color:var(--tx3);margin-top:2px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.cmpbox{background:var(--inset);border:1px solid var(--line2);border-radius:var(--r2);
+  padding:12px;text-align:center}
+.cmpbox b{display:block;font-size:13px;color:var(--tx);margin-bottom:6px}
+.cmpbox span{font-size:11.5px;color:var(--tx2);line-height:1.9}
+.sync-good{color:var(--up)!important}
+.sync-bad{color:var(--dn)!important}
 .showmore{display:block;width:100%;margin:12px 0 4px;padding:12px;border-radius:var(--r2);
   background:var(--card);border:1px solid var(--line2);color:var(--tx2);
   font-size:13px;font-weight:800;cursor:pointer}
@@ -600,12 +607,15 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 @keyframes vin{from{opacity:0;transform:translateY(8px)}}
 .hide{display:none!important}
 
-.toast{position:fixed;bottom:calc(20px + var(--navh) + env(safe-area-inset-bottom,0px));inset-inline-start:50%;
+.toast{position:fixed;bottom:calc(20px + var(--navh) + env(safe-area-inset-bottom,0px));
+  /* وسط‌چین با inset منطقی + margin خودکار. با inset-inline-start:50% و translateX(-50%)
+     در RTL آن ویژگی به right می‌افتد و پیام به‌جای وسط، به کنار هل می‌خورد و بریده می‌شود. */
+  inset-inline:0;margin-inline:auto;width:max-content;
   display:flex;align-items:center;gap:8px;max-width:calc(100vw - 32px);
   background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:99px;font-size:13px;
   font-weight:700;z-index:200;opacity:0;transition:.3s var(--ease);pointer-events:none;
-  box-shadow:0 14px 36px -10px rgba(0,0,0,.55);transform:translate(-50%,20px)}
-.toast.on{opacity:1;transform:translate(-50%,0)}
+  box-shadow:0 14px 36px -10px rgba(0,0,0,.55);transform:translateY(20px)}
+.toast.on{opacity:1;transform:translateY(0)}
 .toast .ti{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--gold);color:var(--onGold)}
 .toast .ti .ic{width:13px;height:13px;stroke-width:2.6}
 .toast.ok .ti{background:var(--up);color:#062b26}
@@ -785,6 +795,25 @@ input[type=range]{width:100%;accent-color:var(--gold)}
         <b dir="ltr">Settings → Domains &amp; Routes</b> یک دامنه‌ی خودت را وصل کن و آدرس آن را بگذار.
       </div>
     </div>
+    <div class="sechd">همگام‌سازی بین دستگاه‌ها</div>
+    <div class="wsetup">
+      <div class="wtitle">وضعیت: <span id="syncState">خاموش</span></div>
+      <div class="fld"><label>آدرس ورکر</label>
+        <input id="sSyncUrl" dir="ltr" spellcheck="false" placeholder="https://your-worker.workers.dev"></div>
+      <div class="fld" style="margin-top:10px"><label>رمز همگام‌سازی</label>
+        <input id="sSyncTok" dir="ltr" spellcheck="false" placeholder="همان SYNC_TOKEN ورکر"></div>
+      <div class="srow">
+        <button class="btn" id="btnSyncPull">دریافت از سرور</button>
+        <button class="btn" id="btnSyncPush">ارسال به سرور</button>
+        <button class="btn" id="btnSyncOff">خاموش</button>
+      </div>
+      <div class="hint" id="syncNote">
+        داده روی ورکر خودت می‌ماند، نه جای دیگر. آدرس را بدون <code dir="ltr">?url=</code> بنویس —
+        فقط ریشه‌ی ورکر.<br>
+        در ورکر دو چیز لازم است: یک <b dir="ltr">KV namespace</b> با نام
+        <b dir="ltr">STORE</b>، و یک Secret به نام <b dir="ltr">SYNC_TOKEN</b> که همان رمز بالاست.
+      </div>
+    </div>
     <div class="sechd">قفل ورود</div>
     <div class="wsetup">
       <div class="wtitle">وضعیت: <span id="lockState">خاموش</span></div>
@@ -961,6 +990,7 @@ const DB={positions:[],decisions:{},settings:{},overrides:{},lessons:{}};
 function save(){
   try{ localStorage.setItem(KEY,JSON.stringify({positions:DB.positions,decisions:DB.decisions,settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons})); }
   catch(e){ storeOK=false; showStoreWarn(); }
+  if(typeof syncSoon==='function')syncSoon();
 }
 function load(){
   try{
@@ -1662,6 +1692,141 @@ async function loadChannel(before){
   }finally{renderHealth();}
 }
 
+/* ==================== همگام‌سازی بین دستگاه‌ها ==================== */
+/* داده روی ورکر خودت نگه داشته می‌شود، نه جای دیگر. هر نوشتن یک شماره‌ی نسخه جلو می‌برد؛
+   اگر دستگاه دیگری وسط کار نوشته باشد سرور ۴۰۹ می‌دهد و ما به‌جای بازنویسی، از کاربر
+   می‌پرسیم — چون سوابق معامله چیزی نیست که بی‌صدا رویش بنویسیم. */
+const SYNCKEY='signaldesk.sync.v1';
+let syncCfg=lsGet(SYNCKEY)||{url:'',token:'',rev:0,at:0};
+let syncTimer=null, syncing=false;
+const syncOn=()=>!!(syncCfg.url&&syncCfg.token);
+const dbBlob=()=>({positions:DB.positions,decisions:DB.decisions,
+  settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons});
+function applyBlob(d){
+  DB.positions=Array.isArray(d.positions)?d.positions.map(ensureBase):[];
+  DB.decisions=d.decisions&&typeof d.decisions==='object'?d.decisions:{};
+  DB.overrides=d.overrides&&typeof d.overrides==='object'?d.overrides:{};
+  DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
+  if(d.settings&&typeof d.settings==='object'){DB.settings=d.settings;Object.assign(S,d.settings);}
+  OVERRIDE=DB.overrides;PCACHE.clear();
+  save();applySettingsToForm();renderAll();
+}
+const blobCount=d=>d?(faN((d.positions||[]).length)+' پوزیشن · '+
+  faN(Object.keys(d.lessons||{}).length)+' آموزش · '+
+  faN(Object.keys(d.decisions||{}).length)+' تصمیم'):'خالی';
+function syncSave(){lsSet(SYNCKEY,syncCfg);}
+function syncNote(msg,kind){
+  const n=$('#syncNote');if(!n)return;
+  n.innerHTML=msg;
+  n.className='hint'+(kind?' sync-'+kind:'');
+}
+async function syncReq(method,body){
+  const base=String(syncCfg.url||'').replace(/\/+$/,'');
+  const r=await fetch(base+'/db',{method,cache:'no-store',
+    headers:Object.assign({'Authorization':'Bearer '+syncCfg.token},
+      body?{'Content-Type':'application/json'}:{}),
+    body:body?JSON.stringify(body):undefined});
+  let j=null;try{j=await r.json();}catch(e){}
+  return {ok:r.ok,status:r.status,j};
+}
+async function syncPull(silent){
+  if(!syncOn())return false;
+  const res=await syncReq('GET');
+  if(!res.ok){
+    syncNote('دریافت نشد: '+((res.j&&res.j.message)||('HTTP '+res.status)),'bad');
+    return false;
+  }
+  const {rev,at,data}=res.j||{};
+  if(!data){syncNote('سرور هنوز داده‌ای ندارد. «ارسال الان» را بزن.','');syncCfg.rev=rev||0;syncSave();return false;}
+  applyBlob(data);
+  syncCfg.rev=rev||0;syncCfg.at=at||0;syncSave();
+  if(!silent)syncNote('دریافت شد · '+blobCount(data),'good');
+  return true;
+}
+async function syncPush(silent){
+  if(!syncOn())return false;
+  if(syncing)return false;
+  syncing=true;
+  try{
+    let res=await syncReq('PUT',{rev:syncCfg.rev,data:dbBlob()});
+    if(res.status===409){
+      const server=(res.j&&res.j.server)||null;
+      syncing=false;
+      sheetSyncConflict(server);
+      return false;
+    }
+    if(!res.ok){
+      syncNote('ارسال نشد: '+((res.j&&res.j.message)||('HTTP '+res.status)),'bad');
+      return false;
+    }
+    syncCfg.rev=res.j.rev;syncCfg.at=res.j.at;syncSave();
+    if(!silent)syncNote('ارسال شد · نسخه '+faN(syncCfg.rev),'good');
+    return true;
+  }finally{syncing=false;}
+}
+/* بعد از هر تغییر، با کمی تأخیر می‌فرستد تا ده تا ویرایش پشت سر هم ده تا درخواست نشود */
+function syncSoon(){
+  if(!syncOn())return;
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(()=>syncPush(true),2500);
+}
+function sheetSyncConflict(server){
+  const mine=dbBlob();
+  openSheet(
+   '<h3>داده‌ها یکی نیستند</h3>'+
+   '<div class="sub">از وقتی این دستگاه آخرین بار همگام شده، دستگاه دیگری هم چیزی نوشته. '+
+   'خودت انتخاب کن کدام بماند — چیزی بی‌صدا بازنویسی نمی‌شود.</div>'+
+   '<div class="cmp"><div class="cmpbox"><b>این دستگاه</b><span>'+blobCount(mine)+'</span></div>'+
+   '<div class="cmpbox"><b>سرور</b><span>'+blobCount(server&&server.data)+'</span></div></div>'+
+   '<div class="hint">اگر مطمئن نیستی، اول «پشتیبان JSON» بگیر بعد انتخاب کن.</div>'+
+   '<div class="srow"><button class="btn pri" id="takeSrv">داده‌ی سرور را بگیر</button>'+
+   '<button class="btn" id="takeMine">مال این دستگاه بماند</button></div>'+
+   '<div class="srow"><button class="btn" id="cx">فعلاً هیچ‌کدام</button></div>',
+   ()=>{
+     $('#cx').onclick=closeSheet;
+     $('#takeSrv').onclick=()=>{
+       if(server&&server.data)applyBlob(server.data);
+       syncCfg.rev=(server&&server.rev)||0;syncSave();
+       closeSheet();syncNote('داده‌ی سرور گرفته شد','good');toast('از سرور گرفته شد','ok');
+     };
+     $('#takeMine').onclick=async()=>{
+       syncCfg.rev=(server&&server.rev)||0;syncSave();
+       closeSheet();
+       const ok=await syncPush();
+       toast(ok?'داده‌ی این دستگاه روی سرور رفت':'ارسال نشد',ok?'ok':'err');
+     };
+   });
+}
+function wireSync(){
+  const paint=()=>{
+    $('#sSyncUrl').value=syncCfg.url||'';
+    $('#sSyncTok').value=syncCfg.token||'';
+    $('#syncState').textContent=syncOn()
+      ?('روشن · نسخه '+faN(syncCfg.rev||0)+(syncCfg.at?' · '+ageTxt(syncCfg.at):''))
+      :'خاموش';
+  };
+  const readFields=()=>{
+    syncCfg.url=($('#sSyncUrl').value||'').trim().replace(/\/+$/,'');
+    syncCfg.token=($('#sSyncTok').value||'').trim();
+    syncSave();paint();
+  };
+  $('#sSyncUrl').onchange=readFields;
+  $('#sSyncTok').onchange=readFields;
+  $('#btnSyncPull').onclick=async e=>{
+    readFields();if(!syncOn())return toast('آدرس و رمز را بنویس','err');
+    btnBusy(e.currentTarget,true);await syncPull();btnBusy(e.currentTarget,false);paint();
+  };
+  $('#btnSyncPush').onclick=async e=>{
+    readFields();if(!syncOn())return toast('آدرس و رمز را بنویس','err');
+    btnBusy(e.currentTarget,true);await syncPush();btnBusy(e.currentTarget,false);paint();
+  };
+  $('#btnSyncOff').onclick=()=>{
+    syncCfg={url:'',token:'',rev:0,at:0};syncSave();paint();
+    syncNote('همگام‌سازی خاموش شد. داده‌ی روی این دستگاه دست‌نخورده است.','');
+  };
+  paint();
+}
+
 /* ==================== گالری تصویر ==================== */
 /* تصویرها قبلاً به t.me لینک بودند و زدنشان کاربر را از برنامه بیرون می‌برد.
    حالا همین‌جا باز می‌شوند و بین همه‌ی تصویرهای همان نما می‌شود جابه‌جا شد. */
@@ -2085,6 +2250,7 @@ function wireLock(){
   };
   document.addEventListener('visibilitychange',()=>{
     if(document.hidden){lastHidden=Date.now();return;}
+    if(syncOn()&&lastHidden&&Date.now()-lastHidden>30000)syncPull(true).catch(()=>{});
     if(hasLock()&&lastHidden&&Date.now()-lastHidden>LOCK_GRACE&&$('#lockv').classList.contains('hide'))
       lockGate();
   });
@@ -4062,6 +4228,9 @@ showStoreWarn();
 loadPxCache();
 loadPostCache();
 BOOTED=true;
+wireSync();
+// اول از سرور می‌گیریم تا این دستگاه با آخرین وضعیت شروع کند، نه با نسخه‌ی کهنه‌ی خودش
+if(syncOn())syncPull(true).catch(()=>{});
 wireLock();
 lockGate();                       // اگر رمز گذاشته شده، قبل از دیده شدن محتوا می‌پرسد
 showOriginWarn();
