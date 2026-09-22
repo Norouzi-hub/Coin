@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="fa" dir="rtl" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="dark light">
+<meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0D0E12">
 <title>میز سیگنال</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -15,6 +15,9 @@
 <meta name="apple-mobile-web-app-title" content="میز سیگنال">
 <style>
 :root{
+  /* meta تنها کافی نیست: این است که منوهای select، اسکرول‌بار و فیلدهای خود مرورگر را
+     هم تیره می‌کند، وگرنه روی سیستمِ روشن سفید می‌مانند وسط رابط تیره. */
+  color-scheme:dark;
   /* زغالی با یک رنگ تأکیدی آمبر — همان آمبرِ آیکون. هر رنگ متنی روی --card
      دستِ‌کم نسبت کنتراست ۴٫۵ دارد (--tx3 که فقط برای نکته‌های کم‌اهمیت است، ۳). */
   --bg:#0D0E12; --bg2:#121317; --card:#16181D; --card2:#1C1E25; --inset:#101115;
@@ -28,6 +31,9 @@
   --ease:cubic-bezier(.2,.8,.2,1); --spring:cubic-bezier(.3,1.35,.5,1);
   --navh:0px;
 }
+/* روی <html> همیشه data-theme="dark" است، پس این بلوک اجرا نمی‌شود؛ نگهش می‌داریم چون
+   پالت روشنش از نظر کنتراست سنجیده شده و اگر روزی حالت روشن خواستی فقط کافی است
+   آن ویژگی از <html> برداشته شود. */
 @media (prefers-color-scheme:light){
   :root:not([data-theme="dark"]){
     --bg:#F2F3F6; --bg2:#FFFFFF; --card:#FFFFFF; --card2:#F7F8FA; --inset:#F2F3F6;
