@@ -4,8 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
-<meta name="theme-color" content="#0A1128">
+<meta name="theme-color" content="#0D0E12">
 <title>میز سیگنال</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="میز سیگنال">
 <style>
 :root{
   --bg:#0A1128; --bg2:#0E1734; --card:#101B3B; --card2:#15224A; --inset:#0B1431;
@@ -219,6 +226,12 @@ html.busy .prog{opacity:1}
 .mark.ghost{background:var(--inset);color:var(--tx3);border-color:var(--line2)}
 .mark:active{transform:scale(.97)}
 .markhint{font-size:11px;color:var(--tx3)}
+.wsetup{margin-top:10px;padding:12px 14px;border-radius:var(--r2);
+  background:var(--inset);border:1px solid var(--line)}
+.wtitle{font-weight:800;font-size:13px;margin-bottom:8px;color:var(--tx)}
+.wsteps{margin:0 18px 10px 0;padding:0;font-size:12.5px;line-height:2;color:var(--tx2)}
+.wsteps li{margin-bottom:2px}
+.wsteps b{color:var(--tx);font-weight:700}
 .pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;padding:3px 10px;border-radius:99px;
   border:1px solid transparent;white-space:nowrap}
 .pill.long{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 35%,transparent)}
@@ -603,9 +616,26 @@ input[type=range]{width:100%;accent-color:var(--gold)}
         placeholder="https://example.ir/tg.php?url={url}"></textarea></div>
     <div class="hint">
       واسط‌های عمومی مجانی‌اند ولی زود شلوغ یا فیلتر می‌شوند، و از شبکه‌ای به شبکه‌ی دیگر فرق می‌کنند.
-      هر آدرسی که خودت داری اینجا بگذار (تا ۶ خط) — همه با هم امتحان می‌شوند و اولین جواب برنده است.
-      اگر فایل <b>tg.php</b> را روی هاست خودت بگذاری، همیشگی‌ترین راه است.
-      جای آدرس مقصد را با <b>{url}</b> مشخص کن؛ اگر نگذاری، آخر آدرس اضافه می‌شود.
+      واسط خودت این وابستگی را برمی‌دارد. جای آدرس مقصد را با <b>{url}</b> مشخص کن؛
+      اگر نگذاری، آخر آدرس اضافه می‌شود. تا ۶ خط قبول است و همه با هم امتحان می‌شوند.
+    </div>
+    <div class="wsetup">
+      <div class="wtitle">ساخت واسط روی Cloudflare — رایگان، حدود ۵ دقیقه</div>
+      <ol class="wsteps">
+        <li>دکمه‌ی پایین را بزن تا کد ورکر کپی شود.</li>
+        <li>در <b dir="ltr">dash.cloudflare.com</b> وارد شو (ثبت‌نام رایگان است).</li>
+        <li><b dir="ltr">Workers &amp; Pages</b> → <b dir="ltr">Create</b> → <b dir="ltr">Start with Hello World!</b> → <b dir="ltr">Deploy</b></li>
+        <li><b dir="ltr">Edit code</b> را بزن، همه‌ی کد پیش‌فرض را پاک کن، کد کپی‌شده را بچسبان، دوباره <b dir="ltr">Deploy</b>.</li>
+        <li>آدرسی که می‌دهد را بردار و اینجا در کادر بالا بنویس، با <b dir="ltr">/?url={url}</b> آخرش.</li>
+      </ol>
+      <div class="srow">
+        <button class="btn" id="btnWCopy">کپی کد ورکر</button>
+        <button class="btn" id="btnWTest">تست همین واسط</button>
+      </div>
+      <div class="hint" id="wNote">
+        اگر <b dir="ltr">workers.dev</b> روی شبکه‌ات باز نشد، در همان ورکر
+        <b dir="ltr">Settings → Domains &amp; Routes</b> یک دامنه‌ی خودت را وصل کن و آدرس آن را بگذار.
+      </div>
     </div>
     <div class="sechd">اندازه و ریسک</div>
     <div class="grid">
@@ -922,6 +952,10 @@ function readSettings(){
   S.proxy=good.join('\n');
   if(lines.length&&!good.length)toast('آدرس واسط باید با https:// شروع شود','err');
   else if(good.length<lines.length)toast(faN(lines.length-good.length)+' خط بی‌اعتبار نادیده گرفته شد','info');
+  // رایج‌ترین اشتباه: آدرس ورکر را بدون {url} می‌چسبانند و بعد آدرس مقصد ته آن می‌چسبد
+  // و ورکر پارامتری برای خواندن ندارد. بی‌صدا رد نمی‌کنیم، می‌گوییم کجا اشکال دارد.
+  else if(good.some(x=>!x.includes('{url}')&&!/[?&][a-z]+=$/i.test(x)))
+    toast('آدرس واسط احتمالاً ناقص است — آخرش /?url={url} لازم دارد','info');
   S.channel=($('#sChannel').value||'ccoineres').trim().replace(/^@/,'')
     .replace(/^.*t\.me\//,'').replace(/^s\//,'').replace(/[/?#].*$/,'')||'ccoineres';
   S.acct=Math.max(1,parseFloat($('#sAcct').value)||100);
@@ -1444,6 +1478,61 @@ async function loadChannel(before){
             :'«تست اتصال» را بزن تا معلوم شود کدام مسیر از این شبکه باز است.')});
     throw e;
   }finally{renderHealth();}
+}
+
+/* ==================== راه‌اندازی واسط ==================== */
+/* کد ورکر کنار همین صفحه منتشر شده، پس از خودِ سایت می‌خوانیمش. این‌طور یک نسخه بیشتر
+   وجود ندارد و با تغییر proxy/worker.js، دکمه هم همان تغییر را می‌دهد. */
+const WORKER_SRC='proxy/worker.js';
+async function copyWorker(btn){
+  btnBusy(btn,true);
+  try{
+    const r=await fetch(WORKER_SRC,{cache:'no-store'});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const code=await r.text();
+    if(code.length<200)throw new Error('کد ناقص آمد');
+    try{
+      await navigator.clipboard.writeText(code);
+      toast('کد ورکر کپی شد — حالا در Cloudflare بچسبانش','ok');
+    }catch(e){
+      // بعضی مرورگرها کلیپ‌بورد را نمی‌دهند؛ فایل را باز می‌کنیم تا دستی کپی شود
+      window.open(WORKER_SRC,'_blank','noopener');
+      toast('کپی خودکار نشد؛ کد باز شد، دستی کپی‌اش کن','info');
+    }
+  }catch(e){
+    toast('کد ورکر خوانده نشد؛ از مخزن بردارش','err');
+    logIt('warn','کد ورکر از '+WORKER_SRC+' نیامد: '+(e&&e.message||e));
+  }finally{btnBusy(btn,false);}
+}
+/* واسط را جدا از بقیه‌ی مسیرها امتحان می‌کند تا بشود فهمید خودش سالم است یا نه */
+async function testWorker(btn){
+  const list=proxyList();
+  if(!list.length){toast('اول آدرس واسط را در کادر بالا بنویس','err');return;}
+  btnBusy(btn,true);
+  const note=$('#wNote');
+  try{
+    let anyOk=false;
+    for(const r of customRoutes()){
+      const res=await tryRoute(r,tgUrl(null),{validate:looksLikeTg,timeout:12000});
+      logIt(res.ok?'ok':'warn','تست واسط · '+r.name+' — '+(res.ok?'کانال آمد':res.msg),
+        {route:r.name,ms:res.ms,status:res.status,why:res.why});
+      if(res.ok){
+        anyOk=true;
+        setGoodRoute('tg',r.id);DEADROUTE.delete(r.id);
+        note.innerHTML='<b style="color:var(--up)">واسط جواب داد</b> — کانال در '+
+          faN(res.ms)+' میلی‌ثانیه آمد. از این به بعد اول از همین می‌رود.';
+        toast('واسط سالم است','ok');
+        break;
+      }
+      note.innerHTML='<b style="color:var(--dn)">واسط جواب نداد</b> — '+esc(res.msg||'')+
+        (res.why==='http'&&res.status===403
+          ?'<br>۴۰۳ یعنی ورکر بالا آمده ولی t.me را در فهرست مجازش ندارد.'
+          :res.why==='blocked'
+            ?'<br>یعنی آدرس اصلاً باز نشد: یا غلط نوشته شده یا روی این شبکه بسته است.'
+            :'');
+    }
+    if(anyOk)refresh(false);
+  }finally{btnBusy(btn,false);}
 }
 
 /* ==================== تست اتصال ==================== */
@@ -3239,6 +3328,8 @@ function wire(){
     renderReport();
   });
   // تنظیمات
+  $('#btnWCopy').onclick=e=>copyWorker(e.currentTarget);
+  $('#btnWTest').onclick=e=>testWorker(e.currentTarget);
   $('#btnSet').onclick=()=>openPanel('setVeil');
   $('#setX').onclick=()=>closePanel('setVeil');
   $('#setDone').onclick=()=>closePanel('setVeil');

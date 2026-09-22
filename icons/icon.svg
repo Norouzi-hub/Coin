@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1E2028"/><stop offset="1" stop-color="#0D0E12"/>
+    </linearGradient>
+    <!-- userSpaceOnUse لازم است: کادرِ یک خط عمودی عرض صفر دارد و با واحد پیش‌فرض
+         (objectBoundingBox) اصلاً رندر نمی‌شود. این‌طور نور هم روی هر سه کندل یکدست می‌افتد. -->
+    <linearGradient id="acc" gradientUnits="userSpaceOnUse" x1="0" y1="420" x2="0" y2="105">
+      <stop offset="0" stop-color="#B8842F"/><stop offset="1" stop-color="#F0C67C"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bgg)"/>
+  <rect x="3" y="3" width="506" height="506" rx="109" fill="none"
+        stroke="#FFFFFF" stroke-opacity=".09" stroke-width="6"/>
+
+  <!-- سه کندل صعودی. ویک‌ها عمداً بلند و باریک‌اند تا در ۴۸ پیکسل هم «کندل» خوانده شوند -->
+  <g fill="url(#acc)" stroke="url(#acc)" stroke-linecap="round">
+    <g transform="translate(140,0)">
+      <line x1="0" y1="252" x2="0" y2="418" stroke-width="14"/>
+      <rect x="-34" y="300" width="68" height="76" rx="18"/>
+    </g>
+    <g transform="translate(256,0)">
+      <line x1="0" y1="186" x2="0" y2="382" stroke-width="14"/>
+      <rect x="-34" y="238" width="68" height="102" rx="18"/>
+    </g>
+    <g transform="translate(372,0)">
+      <line x1="0" y1="112" x2="0" y2="346" stroke-width="14"/>
+      <rect x="-34" y="162" width="68" height="140" rx="18"/>
+    </g>
+  </g>
+</svg>
