@@ -983,6 +983,13 @@ function logText(){
     'مرورگر: '+navigator.userAgent,
     'آنلاین بودن مرورگر: '+(navigator.onLine?'بله':'نه'),
     'پروکسی شخصی: '+(S.proxy?S.proxy:'تنظیم نشده'),
+    // رشته‌ی خام کافی نیست: باید معلوم باشد که تبدیل به مسیر شده و آخرین بار چه شد،
+    // وگرنه واسطی که غلط نوشته شده از واسطی که هست ولی جواب نمی‌دهد قابل تشخیص نیست
+    'واسط‌های فعال: '+(()=>{
+      const c=customRoutes();
+      if(!c.length)return S.proxy?'هیچ‌کدام معتبر نبود — آدرس باید با https:// شروع شود':'—';
+      return c.map(r=>r.name+' → '+(CUSTOMSEEN[r.id]||'هنوز امتحان نشده')).join(' · ');
+    })(),
     'مسیر موفق اخیر — تلگرام: '+(H.tg.route||'—')+' / قیمت: '+(H.px.route||'—'),
     'مسیر یادگرفته‌شده — تلگرام: '+(GOOD.tg||'—')+' / قیمت: '+(GOOD.px||'—'),
     'پست ذخیره‌شده: '+H.cache.n+' · پوزیشن: '+DB.positions.length,
@@ -1327,6 +1334,8 @@ function setGoodRoute(kind,id){
 }
 /* مسیرهایی که در همین نشست قطعی معلوم شد جواب نمی‌دهند؛ دوباره وقت‌شان را تلف نمی‌کنیم */
 const DEADROUTE=new Set();
+/* آخرین نتیجه‌ی هر واسط شخصی، فقط برای اینکه در گزارش دیده شود */
+const CUSTOMSEEN={};
 
 async function tfetch(url,ms,ctrl){
   const c=ctrl||new AbortController(), t=setTimeout(()=>{c.__timedOut=true;c.abort();},ms);
@@ -1336,20 +1345,21 @@ async function tfetch(url,ms,ctrl){
 /* یک مسیر را امتحان می‌کند و دقیقاً می‌گوید چه شد */
 async function tryRoute(route,url,opt,onCtrl){
   const t0=performance.now();
+  const seen=r=>{if(route.custom)CUSTOMSEEN[route.id]=r;return r;};
   let target;
-  try{target=route.build(url);}catch(e){return {ok:false,why:'badproxy',msg:'آدرس پروکسی درست نیست'};}
+  try{target=route.build(url);}catch(e){seen('آدرس پروکسی درست نیست');return {ok:false,why:'badproxy',msg:'آدرس پروکسی درست نیست'};}
   const ctrl=new AbortController();
   if(onCtrl)onCtrl(ctrl);
   try{
     const r=await tfetch(target,opt.timeout||8000,ctrl);
     const ms=Math.round(performance.now()-t0);
-    if(!r.ok)return {ok:false,ms,status:r.status,why:'http',
-      msg:r.status===429?'پروکسی گفت درخواست زیاد بوده (429)':'پاسخ HTTP '+r.status};
+    if(!r.ok){seen('HTTP '+r.status);return {ok:false,ms,status:r.status,why:'http',
+      msg:r.status===429?'پروکسی گفت درخواست زیاد بوده (429)':'پاسخ HTTP '+r.status};}
     let body=await r.text();
-    if(!body||body.length<40)return {ok:false,ms,why:'empty',msg:'پاسخ خالی برگشت'};
+    if(!body||body.length<40){seen('پاسخ خالی');return {ok:false,ms,why:'empty',msg:'پاسخ خالی برگشت'};}
     if(route.unwrap){
       const inner=route.unwrap(body);
-      if(inner==null)return {ok:false,ms,why:'unwrap',msg:'پوسته‌ی پاسخ پروکسی باز نشد'};
+      if(inner==null){seen('پوسته باز نشد');return {ok:false,ms,why:'unwrap',msg:'پوسته‌ی پاسخ پروکسی باز نشد'};}
       body=inner;
     }
     let data=body;
@@ -1358,15 +1368,18 @@ async function tryRoute(route,url,opt,onCtrl){
       catch(e){return {ok:false,ms,why:'badjson',msg:'پاسخ JSON نبود (احتمالاً صفحه‌ی خطای پروکسی)'};}
     }
     // مهم‌ترین قسمت: اگر محتوا آن چیزی نیست که می‌خواستیم، این مسیر ناموفق است و مسیر بعدی امتحان می‌شود
-    if(opt.validate&&!opt.validate(data,body))
-      return {ok:false,ms,why:'content',msg:'پاسخ آمد ولی محتوایش آن چیزی نبود که انتظار داشتیم (صفحه‌ی خطا یا محدودیت پروکسی)'};
+    if(opt.validate&&!opt.validate(data,body)){
+      seen('جواب داد ولی محتوا درست نبود');
+      return {ok:false,ms,why:'content',msg:'پاسخ آمد ولی محتوایش آن چیزی نبود که انتظار داشتیم (صفحه‌ی خطا یا محدودیت پروکسی)'};}
+    seen('سالم — '+ms+'ms');
     return {ok:true,ms,data};
   }catch(e){
     const ms=Math.round(performance.now()-t0);
     if(e.name==='AbortError'){
-      if(ctrl.__timedOut)return {ok:false,ms,why:'timeout',msg:'تا '+Math.round((opt.timeout||8000)/1000)+' ثانیه جوابی نداد'};
+      if(ctrl.__timedOut){seen('تایم‌اوت');return {ok:false,ms,why:'timeout',msg:'تا '+Math.round((opt.timeout||8000)/1000)+' ثانیه جوابی نداد'};}
       return {ok:false,ms,why:'cancelled',msg:'لغو شد چون مسیر دیگری زودتر جواب داد'};
     }
+    seen('اتصال برقرار نشد — آدرس غلط است یا ورکر وجود ندارد');
     return {ok:false,ms,why:'blocked',
       msg:route.id==='direct'
         ? 'مرورگر اجازه نداد (CORS) یا مسیر بسته است'
