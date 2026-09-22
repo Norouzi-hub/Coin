@@ -273,6 +273,10 @@ html.busy .prog{opacity:1}
 .mark.ghost{background:var(--inset);color:var(--tx3);border-color:var(--line2)}
 .mark:active{transform:scale(.97)}
 .markhint{font-size:11px;color:var(--tx3)}
+.mark.on{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up);
+  border-color:color-mix(in srgb,var(--up) 35%,transparent)}
+.lesson .ltitle{font-weight:800;font-size:14.5px;color:var(--tx);line-height:1.6;
+  flex:1;min-width:0;overflow-wrap:anywhere}
 .showmore{display:block;width:100%;margin:12px 0 4px;padding:12px;border-radius:var(--r2);
   background:var(--card);border:1px solid var(--line2);color:var(--tx2);
   font-size:13px;font-weight:800;cursor:pointer}
@@ -595,6 +599,7 @@ input[type=range]{width:100%;accent-color:var(--gold)}
       <button class="tab" data-v="signals" role="tab" aria-selected="true" data-ic="trend"><span>سیگنال‌ها</span><span class="cnt g z" id="cSig">0</span></button>
       <button class="tab" data-v="positions" role="tab" aria-selected="false" data-ic="wallet"><span>پوزیشن‌ها</span><span class="cnt z" id="cPos">0</span></button>
       <button class="tab" data-v="report" role="tab" aria-selected="false" data-ic="bars"><span>کارنامه</span></button>
+      <button class="tab" data-v="lessons" role="tab" aria-selected="false" data-ic="book"><span>آموزش</span><span class="cnt z" id="cLes">0</span></button>
       <button class="tab" data-v="calendar" role="tab" aria-selected="false" data-ic="cal"><span>تقویم</span></button>
     </nav>
   </div>
@@ -653,6 +658,14 @@ input[type=range]{width:100%;accent-color:var(--gold)}
   </section>
 
   <!-- تقویم -->
+  <!-- آموزش -->
+  <section id="vLessons" class="view hide">
+    <div class="tools">
+      <label class="search"><span id="lqIc"></span><input id="lq" placeholder="جستجو در آموزش‌ها…" autocomplete="off"></label>
+    </div>
+    <div id="lessonList"></div>
+  </section>
+
   <section id="vCalendar" class="view hide"><div id="calBody"></div></section>
 
   <div class="disc" id="disc">
@@ -782,6 +795,8 @@ const ICO={
   alert:'<path d="M12 8v5M12 16.4v.2"/><circle cx="12" cy="12" r="9"/>',
   info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.6v.2"/>',
   down:'<path d="M12 5v14M6 13l6 6 6-6"/>',
+  // کلاه فارغ‌التحصیلی: در ۲۰ پیکسل از کتاب خواناتر است (کتاب مثل دو میله دیده می‌شد)
+  book:'<path d="M2 9.5 12 5l10 4.5-10 4.5z"/><path d="M6.5 11.8V16c0 1.6 2.6 2.9 5.5 2.9s5.5-1.3 5.5-2.9v-4.2"/>',
   coin:'<circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.3c-.5-.8-1.4-1.3-2.5-1.3-1.5 0-2.6.8-2.6 2s1.1 1.7 2.6 2 2.6.8 2.6 2-1.1 2-2.6 2c-1.1 0-2-.5-2.5-1.3M12 6.5V8M12 16v1.5"/>',
   db:'<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>',
   wifi:'<path d="M2.5 9a14 14 0 0 1 19 0M5.8 12.5a9.5 9.5 0 0 1 12.4 0M9 16a5 5 0 0 1 6 0"/><path d="M12 19.4v.2"/>',
@@ -873,9 +888,9 @@ function jShort(d){const p=jParts(d);return faN(p.jd)+' '+J_M[p.jm-1];}
 /* ==================== ذخیره‌سازی ==================== */
 const KEY='signaldesk.v1';
 let storeOK=true;
-const DB={positions:[],decisions:{},settings:{},overrides:{}};
+const DB={positions:[],decisions:{},settings:{},overrides:{},lessons:{}};
 function save(){
-  try{ localStorage.setItem(KEY,JSON.stringify({positions:DB.positions,decisions:DB.decisions,settings:DB.settings,overrides:DB.overrides})); }
+  try{ localStorage.setItem(KEY,JSON.stringify({positions:DB.positions,decisions:DB.decisions,settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons})); }
   catch(e){ storeOK=false; showStoreWarn(); }
 }
 function load(){
@@ -888,6 +903,7 @@ function load(){
       DB.settings=d.settings&&typeof d.settings==='object'?d.settings:{};
       // تا پیش از این، اصلاح‌های دستی فقط در حافظه بودند و با هر بار باز کردن صفحه می‌پریدند
       DB.overrides=d.overrides&&typeof d.overrides==='object'?d.overrides:{};
+      DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
     }
   }catch(e){ storeOK=false; }
 }
@@ -1577,6 +1593,86 @@ async function loadChannel(before){
   }finally{renderHealth();}
 }
 
+/* ==================== آموزش ==================== */
+/* پست‌های آموزشی کپی کامل ذخیره می‌شوند، نه ارجاع به POSTS: کشِ کانال ۸۰۰ تایی است و
+   می‌چرخد، پس یک آموزش قدیمی وگرنه روزی از دست می‌رفت. */
+let lessonQ='';
+const isLesson=id=>!!DB.lessons[id];
+const lessonTitle=t=>{
+  const first=String(t||'').split('\n').map(x=>x.trim()).find(Boolean)||'بدون عنوان';
+  return first.replace(/\s+/g,' ').slice(0,60);
+};
+function addLesson(p){
+  DB.lessons[p.id]={id:p.id,title:lessonTitle(p.text),text:p.text||'',img:p.img||null,
+    date:p.date?+p.date:null,link:p.link||null,at:Date.now()};
+  save();renderAll();toast('به آموزش‌ها اضافه شد','ok');
+}
+function removeLesson(id){
+  delete DB.lessons[id];
+  save();renderAll();toast('از آموزش‌ها برداشته شد','info');
+}
+function sheetRenameLesson(id){
+  const L=DB.lessons[id];if(!L)return;
+  openSheet(
+   '<h3>عنوان آموزش</h3>'+
+   '<div class="sub">عنوان فقط برای پیدا کردن خودت است؛ متن پست دست نمی‌خورد.</div>'+
+   '<div class="fld"><label>عنوان</label><input id="f_t" value="'+esc(L.title||'')+'"></div>'+
+   '<div class="srow"><button class="btn pri" id="ok">ذخیره</button>'+
+   '<button class="btn" id="cx">انصراف</button></div>',
+   ()=>{
+     $('#cx').onclick=closeSheet;
+     $('#ok').onclick=()=>{
+       const t=($('#f_t').value||'').trim();
+       DB.lessons[id].title=t||lessonTitle(L.text);
+       save();closeSheet();renderAll();toast('ذخیره شد','ok');
+     };
+   });
+}
+function renderLessons(){
+  const box=$('#lessonList');
+  const all=Object.values(DB.lessons).sort((a,b)=>(b.at||0)-(a.at||0));
+  const q=lessonQ.trim().toLowerCase();
+  const list=q?all.filter(L=>((L.title||'')+' '+(L.text||'')).toLowerCase().includes(q)):all;
+  box.innerHTML='';
+  if(!list.length){
+    box.appendChild(el('div','empty',STAR+(all.length
+      ?'با این جستجو چیزی نیست.'
+      :'هنوز آموزشی ذخیره نکرده‌ای.<br>در تب سیگنال‌ها روی هر پستی که آموزشی است،<br>دکمه‌ی «افزودن به آموزش» را بزن.')));
+    return;
+  }
+  for(const L of list){
+    const c=el('div','card lesson');
+    const head=el('div','chead');
+    head.appendChild(el('span','ltitle',esc(L.title||'بدون عنوان')));
+    head.appendChild(el('div','when',L.link
+      ?'<a href="'+esc(L.link)+'" target="_blank" rel="noopener">'+relTime(L.date?new Date(L.date):null)+'</a>'
+      :relTime(L.date?new Date(L.date):null)));
+    c.appendChild(head);
+    if(L.img){
+      const a=el('a','shot');a.href=L.link||'#';a.target='_blank';a.rel='noopener';
+      const im=el('img');im.loading='lazy';im.decoding='async';im.alt='تصویر آموزش';
+      im.onload=()=>a.classList.add('loaded');im.onerror=()=>a.remove();im.src=L.img;
+      a.appendChild(im);c.appendChild(a);
+    }
+    const body=el('div','body');
+    const long=(L.text||'').length>320, col=long&&COLLAPSED['L'+L.id]!==false;
+    body.appendChild(el('div','txt'+(col?' clamp':''),linkify(esc(L.text||'(بدون متن)'))));
+    if(long){
+      const b=el('button','more',col?'ادامه متن':'بستن متن');
+      b.onclick=()=>{COLLAPSED['L'+L.id]=!col;renderLessons();};
+      body.appendChild(b);
+    }
+    c.appendChild(body);
+    const row=el('div','markrow');
+    const rn=el('button','mark ghost','تغییر عنوان');rn.onclick=()=>sheetRenameLesson(L.id);
+    const rm=el('button','mark ghost','حذف');
+    rm.onclick=()=>{if(confirm('«'+(L.title||'')+'» از آموزش‌ها حذف شود؟'))removeLesson(L.id);};
+    row.appendChild(rn);row.appendChild(rm);
+    c.appendChild(row);
+    box.appendChild(c);
+  }
+}
+
 /* ==================== قفل ورود ==================== */
 /* صریح باشیم: این صفحه تماماً در مرورگر اجرا می‌شود، پس این یک «پرده» است نه قفل.
    جلوی کسی که گوشی را برمی‌دارد را می‌گیرد؛ جلوی کسی که سورس را باز کند نه.
@@ -2224,7 +2320,13 @@ function buildMark(p,sig,ov,isSig,dec){
   const row=el('div','markrow');
   const manual=ov.sig!=null;
   if(isSig){
-    if(dec)return row;                       // تصمیم گرفته‌شده را دیگر دست نمی‌زنیم
+    if(dec){                                 // تصمیم گرفته‌شده را دیگر سیگنال/غیرسیگنال نمی‌کنیم،
+      const s2=isLesson(p.id);               // ولی افزودن به آموزش هنوز معنی دارد
+      const lb2=el('button','mark ghost'+(s2?' on':''),s2?'در آموزش‌هاست':'افزودن به آموزش');
+      lb2.onclick=()=>{s2?removeLesson(p.id):addLesson(p);};
+      row.appendChild(lb2);
+      return row;
+    }
     const b=el('button','mark ghost','سیگنال نیست');
     b.onclick=()=>{setOv(p,'sig',false,true);toast('از سیگنال‌ها برداشته شد','info');};
     row.appendChild(b);
@@ -2239,6 +2341,10 @@ function buildMark(p,sig,ov,isSig,dec){
       row.appendChild(u);
     }
   }
+  const saved=isLesson(p.id);
+  const lb=el('button','mark ghost'+(saved?' on':''),saved?'در آموزش‌هاست':'افزودن به آموزش');
+  lb.onclick=()=>{saved?removeLesson(p.id):addLesson(p);};
+  row.appendChild(lb);
   return row;
 }
 function sheetMarkSignal(p,sig){
@@ -3342,8 +3448,8 @@ function dl(name,text,type){
 function wireIO(){
   $('#btnExport').onclick=()=>{
     dl('signal-desk-'+jKey(new Date())+'.json',
-      JSON.stringify({v:3,exportedAt:Date.now(),positions:DB.positions,decisions:DB.decisions,
-        settings:S,overrides:DB.overrides},null,2));
+      JSON.stringify({v:4,exportedAt:Date.now(),positions:DB.positions,decisions:DB.decisions,
+        settings:S,overrides:DB.overrides,lessons:DB.lessons},null,2));
     toast('پشتیبان گرفته شد','ok');
   };
   $('#btnCsv').onclick=()=>{
@@ -3374,6 +3480,7 @@ function wireIO(){
         DB.decisions=d.decisions||{};
         // پشتیبان‌های نسخه‌ی ۲ این را ندارند؛ نبودش یعنی خالی، نه خطا
         DB.overrides=d.overrides&&typeof d.overrides==='object'?d.overrides:{};
+        DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
         OVERRIDE=DB.overrides; PCACHE.clear();
         if(d.settings)Object.assign(S,d.settings);
         applySettingsToForm();readSettings();
@@ -3391,7 +3498,7 @@ function go(v,noScroll){
   if(view===v&&noScroll)return;
   view=v;
   $$('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.v===v?'true':'false'));
-  for(const [id,name] of [['vSignals','signals'],['vPositions','positions'],['vReport','report'],['vCalendar','calendar']]){
+  for(const [id,name] of [['vSignals','signals'],['vPositions','positions'],['vReport','report'],['vLessons','lessons'],['vCalendar','calendar']]){
     const n=$('#'+id), on=name===v;
     n.classList.toggle('hide',!on);
     if(on){n.classList.remove('enter');void n.offsetWidth;n.classList.add('enter');}
@@ -3415,7 +3522,10 @@ function renderAll(){
   const cp=$('#cPos');cp.textContent=faN(open);cp.classList.toggle('z',!open);
   const und=POSTS.filter(p=>sigOf(p).isSignal&&!decisionOf(p.id)).length;
   const cs=$('#cSig');cs.textContent=faN(und);cs.classList.toggle('z',!und);
+  const nl=Object.keys(DB.lessons).length;
+  const cl=$('#cLes');cl.textContent=faN(nl);cl.classList.toggle('z',!nl);
   if(view==='signals')renderSignals();
+  else if(view==='lessons')renderLessons();
   else if(view==='positions')renderPositions();
   else if(view==='report')renderReport();
   else if(view==='calendar')renderCalendar();
@@ -3533,6 +3643,7 @@ function wire(){
   $('#btnSet').innerHTML=ic('sliders');
   $('#btnRef').innerHTML=ic('refresh')+'<span>بروزرسانی</span>';
   $('#qIc').innerHTML=ic('search');
+  $('#lqIc').innerHTML=ic('search');
   $('#btnMore').innerHTML=ic('down')+'<span>پست‌های قدیمی‌تر</span>';
   $$('.tab').forEach(t=>{
     t.insertAdjacentHTML('afterbegin',ic(t.dataset.ic));
@@ -3548,6 +3659,7 @@ function wire(){
     renderMore();
   };
   $('#q').oninput=e=>{query=e.target.value;shownMax=PAGE;renderSignals();};
+  $('#lq').oninput=e=>{lessonQ=e.target.value;renderLessons();};
   const sf=(btn,val)=>{$('#'+btn).onclick=()=>{sigFilter=val;shownMax=PAGE;
     ['fSig','fNew','fAll'].forEach(x=>$('#'+x).setAttribute('aria-pressed',x===btn?'true':'false'));renderSignals();};};
   sf('fSig','sig');sf('fNew','new');sf('fAll','all');
