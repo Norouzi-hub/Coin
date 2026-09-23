@@ -287,11 +287,25 @@ html.busy .prog{opacity:1}
   border-color:color-mix(in srgb,var(--gold) 38%,transparent)}
 .fb:active{transform:scale(.97)}
 /* آرشیو «جای دیگر» است نه فیلتر، پس از گروه جدا می‌ایستد */
-.farch{flex:none;width:76px;background:var(--inset);border:1px solid var(--line);border-radius:14px}
-.farch span{display:flex;align-items:center;gap:4px}
-.farch .ic{width:14px;height:14px;flex:none}
-.farch.on{background:color-mix(in srgb,var(--gold) 15%,transparent);
+.fside{display:flex;gap:4px;flex:none}
+.fbucket{width:70px;background:var(--inset);border:1px solid var(--line);border-radius:14px;
+  padding:8px 2px}
+.fbucket span{display:flex;align-items:center;gap:3px;font-size:11.5px}
+.fbucket .ic{width:13px;height:13px;flex:none;stroke-width:2.2}
+.fbucket.on{background:color-mix(in srgb,var(--gold) 15%,transparent);
   border-color:color-mix(in srgb,var(--gold) 38%,transparent)}
+/* کلید اسپات/فیوچرز: دو حالتِ هم‌وزن، نه یک تیک گوشه‌ی فرم */
+.mkt{display:flex;gap:4px;align-items:center;background:var(--inset);border:1px solid var(--line);
+  border-radius:12px;padding:3px;margin:10px 0;width:max-content;max-width:100%}
+.mktb{display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:9px;
+  background:none;border:1px solid transparent;color:var(--tx2);font-size:12.5px;font-weight:800;
+  cursor:pointer;transition:background .2s var(--ease),color .2s var(--ease)}
+.mktb .ic{width:15px;height:15px;flex:none}
+.mktb.on{background:color-mix(in srgb,var(--gold) 15%,transparent);color:var(--gold);
+  border-color:color-mix(in srgb,var(--gold) 38%,transparent)}
+.mktb:active{transform:scale(.97)}
+.mkt.guess{border-style:dashed;border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
+.mkthint{font-size:10.5px;font-weight:800;color:var(--warn);padding-inline:7px}
 .tidy{display:block;width:100%;margin:0 0 12px;padding:9px;border-radius:var(--r2);
   background:none;border:1px dashed var(--line2);color:var(--tx3);font-size:12.5px;
   font-weight:700;cursor:pointer}
@@ -336,12 +350,53 @@ html.busy .prog{opacity:1}
   border:1px solid color-mix(in srgb,var(--acc) 40%,transparent);font-size:12px;font-weight:800;
   direction:ltr;cursor:pointer}
 .coinchip i{font-style:normal;font-size:15px;line-height:1;opacity:.85}
+/* پیش‌نمایش کارت اشتراک‌گذاری: همان تصویری که فرستاده می‌شود، نه شبیهش */
+.panelhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.panelhead b{font-size:15px}
+.shprev{margin:12px 0;border-radius:16px;overflow:hidden;border:1px solid var(--line2);
+  background:var(--inset);display:flex;justify-content:center}
+.shprev img{display:block;width:100%;max-width:300px;height:auto}
+.shopts{display:flex;flex-direction:column;gap:2px}
+.shopt{display:flex;align-items:center;gap:9px;padding:9px 2px;cursor:pointer;font-size:13px;
+  color:var(--tx2);font-weight:700}
+.shopt input{width:19px;height:19px;accent-color:var(--gold);flex:none}
 .markrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:0 14px 12px}
 .mark{padding:6px 12px;border-radius:99px;font-size:12px;font-weight:800;cursor:pointer;
   background:color-mix(in srgb,var(--gold) 16%,transparent);color:var(--gold);
   border:1px solid color-mix(in srgb,var(--gold) 38%,transparent)}
 .mark.ghost{background:var(--inset);color:var(--tx3);border-color:var(--line2)}
+.mark.on{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up);
+  border-color:color-mix(in srgb,var(--up) 35%,transparent)}
 .mark:active{transform:scale(.97)}
+
+/* نوار پایین هر پست: سه کلید هم‌اندازه‌ی «کجا برود» و یک کلید جدای «سیگنال یا نه» */
+.prow{padding:0 14px 12px;display:flex;flex-direction:column;gap:8px}
+.ftray{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.fchip{display:flex;align-items:center;justify-content:center;gap:6px;min-height:40px;
+  padding:8px 6px;border-radius:12px;background:var(--inset);border:1px solid var(--line2);
+  color:var(--tx2);font-size:12px;font-weight:800;cursor:pointer;min-width:0;
+  transition:background .2s var(--ease),color .2s var(--ease),border-color .2s var(--ease)}
+.fchip .ic{width:15px;height:15px;flex:none}
+.fchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fchip.on{background:color-mix(in srgb,var(--gold) 15%,transparent);color:var(--gold);
+  border-color:color-mix(in srgb,var(--gold) 40%,transparent)}
+/* نتیجه‌ای که خودش تشخیص داده شده: روشن است ولی خط‌چین، یعنی «حدس من، نه انتخاب تو» */
+.fchip.on.auto{border-style:dashed}
+.fchip:active{transform:scale(.97)}
+.psig{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+/* «افزودن به سیگنال‌ها» روی پستی که سیگنال نیست، تنها کارِ آن پست است */
+.padd{display:flex;align-items:center;justify-content:center;gap:7px;flex:1;min-width:0;
+  min-height:40px;padding:9px;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;
+  background:color-mix(in srgb,var(--gold) 16%,transparent);color:var(--gold);
+  border:1px solid color-mix(in srgb,var(--gold) 40%,transparent)}
+.padd .ic{width:16px;height:16px}
+.padd:active{transform:scale(.98)}
+/* «سیگنال نیست» یک نقضِ کم‌بسامد است: دکمه‌ی پررنگ نمی‌خواهد، ولی باید پیدا باشد */
+.plink{display:inline-flex;align-items:center;gap:5px;background:none;border:0;padding:4px 2px;
+  color:var(--tx3);font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;
+  text-underline-offset:3px;text-decoration-color:var(--line2)}
+.plink .ic{width:13px;height:13px}
+.plink:hover{color:var(--tx2)}
 .markhint{font-size:11px;color:var(--tx3)}
 .featrow{display:flex;gap:10px;align-items:flex-start;padding:10px 0;cursor:pointer;
   border-bottom:1px solid var(--line)}
@@ -361,7 +416,7 @@ html.busy .prog{opacity:1}
 .sumcell span.w{color:var(--warn)}.sumcell span.m{color:var(--tx3)}
 /* حالت فشرده: متن و پلن پنهان، فقط سرِ کارت می‌ماند */
 .card.tight{cursor:pointer}
-.card.tight .body,.card.tight .plan,.card.tight .acts,.card.tight .markrow,.card.tight .shot{display:none}
+.card.tight .body,.card.tight .plan,.card.tight .acts,.card.tight .prow,.card.tight .shot{display:none}
 .card.tight .chead{padding-bottom:12px}
 .autolev{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:13px;
   color:var(--tx2);cursor:pointer}
@@ -438,8 +493,6 @@ html.busy .prog{opacity:1}
 .pxnote .bad{color:var(--dn)}
 #entLad{margin:6px 0 4px}
 #entLad .ladder{margin-inline:6px}
-.mark.on{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up);
-  border-color:color-mix(in srgb,var(--up) 35%,transparent)}
 .lesson .ltitle{font-weight:800;font-size:14.5px;color:var(--tx);line-height:1.6;
   flex:1;min-width:0;overflow-wrap:anywhere}
 .lesson.picked{border-color:var(--gold)}
@@ -544,7 +597,16 @@ table.tp .num{direction:ltr;text-align:start}
   background:color-mix(in srgb,currentColor 18%,transparent)}
 
 .acts{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line);flex-wrap:wrap;background:var(--card)}
-.acts .btn{flex:1 1 auto;min-width:96px;text-align:center;white-space:normal}
+.acts .btn{flex:1 1 auto;min-width:96px;min-height:40px;text-align:center;white-space:normal}
+/* دکمه‌ی اصلی باید از دو قدمی پیدا باشد، نه اینکه هم‌وزنِ «نگرفتم» بنشیند */
+.acts .btn.ok{flex:2 1 150px;background:linear-gradient(180deg,var(--gold),var(--gold2));
+  border-color:transparent;color:var(--onGold);font-weight:800;
+  box-shadow:0 8px 20px -12px color-mix(in srgb,var(--gold) 80%,transparent),
+             inset 0 1px 0 rgba(255,255,255,.3)}
+.acts .btn.ok:hover{border-color:transparent}
+/* میان‌برها (ورود سریع، منتظرِ قیمت) کوچک می‌مانند و عرض را نمی‌بلعند */
+.acts .btn.side{flex:0 0 auto;min-width:0;min-height:0;color:var(--tx2)}
+.acts .btn.side .ic{width:13px;height:13px}
 .acts.mini .btn{flex:none;min-width:0}
 .acts .btn.icon{flex:none;min-width:0;width:40px;padding:0}
 
@@ -1054,7 +1116,11 @@ const ICO={
   scissors:'<circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M8 7.5 20 18M8 16.5 20 6"/>',
   shield:'<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12h7"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
-  door:'<path d="M14 3H6v18h8"/><path d="M11 12h9M17 8l4 4-4 4"/>'
+  door:'<path d="M14 3H6v18h8"/><path d="M11 12h9M17 8l4 4-4 4"/>',
+  bolt:'<path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/>',
+  flag:'<path d="M5 21V4M5 5h11l-1.6 3.5L16 12H5"/>',
+  share:'<circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="m8.3 10.8 7.4-4.3M8.3 13.2l7.4 4.3"/>',
+  undo:'<path d="M4 9h11a5 5 0 0 1 0 10h-6"/><path d="M8 5 4 9l4 4"/>'
 };
 const ic=(n,c)=>'<svg class="ic'+(c?' '+c:'')+'" viewBox="0 0 24 24" aria-hidden="true">'+(ICO[n]||'')+'</svg>';
 // شمسه هشت‌پر: هم نشان برنامه است، هم وقتی کاری در جریان است می‌چرخد
@@ -1139,9 +1205,9 @@ function jShort(d){const p=jParts(d);return faN(p.jd)+' '+J_M[p.jm-1];}
 /* ==================== ذخیره‌سازی ==================== */
 const KEY='signaldesk.v1';
 let storeOK=true;
-const DB={positions:[],decisions:{},settings:{},overrides:{},lessons:{},archived:{},pending:[],watch:[],spot:[]};
+const DB={positions:[],decisions:{},settings:{},overrides:{},lessons:{},archived:{},results:{},pending:[],watch:[],spot:[]};
 function save(){
-  try{ localStorage.setItem(KEY,JSON.stringify({positions:DB.positions,decisions:DB.decisions,settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,pending:DB.pending,watch:DB.watch,spot:DB.spot})); }
+  try{ localStorage.setItem(KEY,JSON.stringify({positions:DB.positions,decisions:DB.decisions,settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,results:DB.results,pending:DB.pending,watch:DB.watch,spot:DB.spot})); }
   catch(e){ storeOK=false; showStoreWarn(); }
   if(typeof syncSoon==='function')syncSoon();
 }
@@ -1157,6 +1223,7 @@ function load(){
       DB.overrides=d.overrides&&typeof d.overrides==='object'?d.overrides:{};
       DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
       DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
+      DB.results=d.results&&typeof d.results==='object'?d.results:{};
       DB.pending=Array.isArray(d.pending)?d.pending:[];
       DB.watch=Array.isArray(d.watch)?d.watch:[];
       DB.spot=Array.isArray(d.spot)?d.spot:[];
@@ -1446,6 +1513,19 @@ const RX={
   lev:new RegExp('(?:اهرم|لوریج|\\bleverage\\b|\\blev\\b)\\s*(?:رو|:|：|=|-)?\\s*(\\d{1,3})\\s*[xX]?','i'),
   levx:/\b(\d{1,3})\s*[xX]\b/
 };
+/* اسپات یا فیوچرز؟ کانال همیشه صریح نمی‌گوید، ولی نشانه‌ها روشن‌اند:
+   شورت، اهرم، «فیوچرز» و «پرپچوال» فقط در فیوچرز معنی دارند؛ «اسپات» و «هولد»
+   و «خرید پله‌ای بلندمدت» نشانه‌ی اسپات‌اند. وقتی هیچ‌کدام نبود حدس می‌زنیم و
+   همان‌جا می‌گوییم حدس است، تا با یک ضربه عوضش کنی. */
+const RX_SPOT=/اسپات|\bspot\b|هولد|\bhold\b|نگهداری\s*بلندمدت|سرمایه\s*گذاری\s*بلندمدت/i;
+const RX_FUT=/فیوچرز|فیوچر|پرپچوال|\bfutures?\b|\bperp(?:etual)?\b|\bmargin\b|اهرم|لوریج|\bleverage\b|\blev\b|مارجین/i;
+function detectMarket(t,dir,lev){
+  const sp=RX_SPOT.test(t), fu=RX_FUT.test(t)||dir==='short'||lev!=null;
+  if(sp&&!fu)return {market:'spot',guess:false};
+  if(fu&&!sp)return {market:'futures',guess:false};
+  if(sp&&fu)return {market:'futures',guess:true};     // هر دو گفته شده؛ محتاطانه فیوچرز
+  return {market:'futures',guess:true};               // هیچ‌کدام نگفته
+}
 function allNums(re,t){
   const g=new RegExp(re.source,'gi'),o=[];let m;
   while((m=g.exec(t))!==null){const v=cleanNum(m[1],m[2]);if(v!=null)o.push(v);if(m.index===g.lastIndex)g.lastIndex++;}
@@ -1465,6 +1545,8 @@ function parseSignal(raw,id){
   const r={ticker:detectTicker(t),direction:/\bshort\b|شورت|فروش|ریزش/i.test(t)?'short':'long',
     entry,trigger:trig,tier2:t2?cleanNum(t2[1],t2[2]):null,stop:sm?cleanNum(sm[1],sm[2]):null,
     targets:allNums(RX.tgt,t),leverage:lm?cleanNum(lm[1]):null,hasNum:/\d/.test(t)};
+  const mk=detectMarket(t,r.direction,r.leverage);
+  r.market=mk.market; r.marketGuess=mk.guess;
   r.isSignal=!!(r.ticker&&r.hasNum&&
     /حد\s*ضرر|استاپ|ورود|پله|تارگت|هدف|اهرم|فیوچرز|اسپات|لانگ|شورت|\bentry\b|\bsl\b|\btp\b|\blong\b|\bshort\b/i.test(t));
   if(id)PCACHE.set(id,{v:SYMVER,r});
@@ -1474,20 +1556,27 @@ function parseSignal(raw,id){
    که نماد و «سیگنال بودن» دستیِ کاربر رویش نشسته است. */
 function sigOf(p){
   const r=parseSignal(p.text,p.id), ov=OVERRIDE[p.id];
-  if(!ov||(ov.ticker==null&&ov.sig==null))return r;
+  if(!ov||(ov.ticker==null&&ov.sig==null&&ov.market==null))return r;
   const o=Object.assign({},r);
   if(ov.ticker)o.ticker=ov.ticker;
   if(ov.trigger!=null)o.trigger=ov.trigger;
   if(ov.sig!=null)o.isSignal=!!ov.sig;
+  if(ov.market){o.market=ov.market;o.marketGuess=false;}
   return o;
 }
 
 /* ==================== محاسبه پلن ==================== */
 const MMR=0.005;
 function computePlan(o){
-  const {direction='long',entry,stop,live,capital=10,riskPct=5,maxLeverage=10,
-    leverageOverride=null,mode='margin',rMultiples=[1.5,3,5],channelTargets=[]}=o;
-  const r={ok:false,flags:[],warnings:[],mode};
+  const {entry,stop,live,capital=10,riskPct=5,mode='margin',
+    rMultiples=[1.5,3,5],channelTargets=[],market='futures'}=o;
+  /* اسپات یعنی اهرم ۱ و لیکوئید ندارد؛ همان فرمول‌ها با سقف اهرم ۱ دقیقاً همین را می‌دهند،
+     پس ریاضیِ دوم نمی‌نویسیم — فقط ورودی‌ها را قفل می‌کنیم. */
+  const spot=market==='spot';
+  const direction=spot?'long':(o.direction||'long');
+  const maxLeverage=spot?1:(o.maxLeverage!=null?o.maxLeverage:10);
+  const leverageOverride=spot?1:(o.leverageOverride||null);
+  const r={ok:false,flags:[],warnings:[],mode,market,spot};
   if(!entry||entry<=0){r.flags.push('no-entry');return r;}
   r.entry=entry;r.direction=direction;
   const sign=direction==='long'?1:-1;
@@ -1521,7 +1610,7 @@ function computePlan(o){
   }else{r.liqPrice=null;r.liqDistPct=null;}
   r.suggestedMargin=Math.min(capital,riskAmt/(sd*lev));
   if(sd>.25)r.warnings.push('stop-far');
-  if(r.capped)r.warnings.push('lev-capped');
+  if(r.capped&&!spot)r.warnings.push('lev-capped');   // در اسپات «اهرم ۱» سقف نیست، ذاتِ کار است
   if(r.actualRiskPct>riskPct*1.5)r.warnings.push('over-risk');
   if(r.adverseGapPct!=null&&r.adverseGapPct>3)r.warnings.push('price-moved');
   if(live&&((direction==='long'&&live<=stop)||(direction==='short'&&live>=stop)))r.warnings.push('past-stop');
@@ -2023,6 +2112,7 @@ function addPending(p,sig,trigger,px){
   // بالای تریگر برای لانگ، زیرش برای شورت — جهت عبور را همین‌جا قفل می‌کنیم
   const side=dir==='long'?'up':'down';
   DB.pending.push({id:uid(),postId:p.id,ticker:sig.ticker||'—',dir,trigger,side,
+    market:I.market,
     entry:I.entry!=null?I.entry:trigger,stop:I.stop||null,targets:sig.targets||[],
     at:Date.now(),hit:null});
   save();renderAll();
@@ -2124,13 +2214,14 @@ let syncTimer=null, syncing=false;
 const syncOn=()=>!!(syncCfg.url&&syncCfg.token);
 const dbBlob=()=>({positions:DB.positions,decisions:DB.decisions,
   settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,
-  pending:DB.pending,watch:DB.watch,spot:DB.spot});
+  results:DB.results,pending:DB.pending,watch:DB.watch,spot:DB.spot});
 function applyBlob(d){
   DB.positions=Array.isArray(d.positions)?d.positions.map(ensureBase):[];
   DB.decisions=d.decisions&&typeof d.decisions==='object'?d.decisions:{};
   DB.overrides=d.overrides&&typeof d.overrides==='object'?d.overrides:{};
   DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
   DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
+  DB.results=d.results&&typeof d.results==='object'?d.results:{};
   DB.pending=Array.isArray(d.pending)?d.pending:[];
   DB.watch=Array.isArray(d.watch)?d.watch:[];
   DB.spot=Array.isArray(d.spot)?d.spot:[];
@@ -3173,14 +3264,43 @@ let OVERRIDE={},COLLAPSED={},sigFilter='sig',query='',beforeId=null,busy=false,c
 /* با ۸۰۰ پست در کش، ساختن همه‌ی کارت‌ها در هر رندر روی گوشی کند می‌شود.
    فقط یک پنجره می‌سازیم و با دکمه بزرگش می‌کنیم. هر تغییر فیلتر پنجره را صفر می‌کند. */
 const PAGE=30; let shownMax=PAGE;
-/* آرشیو فقط یک پرچم روی پست است: از فهرست فعال بیرون می‌رود ولی چیزی پاک نمی‌شود،
-   و در تب آرشیو همیشه قابل برگرداندن است. */
-let showArchived=false;
+/* آرشیو و نتایج فقط یک پرچم روی پست‌اند: از فهرست فعال بیرون می‌روند ولی چیزی پاک
+   نمی‌شود، و از سطل خودشان همیشه قابل برگرداندن‌اند.
+   bucket جای کدام‌شان را نشان می‌دهد: live | arch | res */
+let bucket='live';
 const isArch=id=>!!DB.archived[id];
 function setArch(id,on){
   if(on)DB.archived[id]=Date.now(); else delete DB.archived[id];
   save();renderAll();
 }
+/* پست نتیجه: کانال بعد از هر سیگنال می‌گوید تارگت خورد یا استاپ. اینها نه سیگنال‌اند
+   نه آشغال — کارنامه‌اند، پس جای خودشان را دارند. تشخیص خودکار است و با یک ضربه
+   قابل نقض؛ صفر یعنی «تو گفتی نتیجه نیست» و روی تشخیص خودکار می‌چربد. */
+const RX_RESULT=new RegExp(
+  'تارگت\\s*(?:اول|دوم|سوم|چهارم|[۱-۹\\d])?\\s*(?:هم\\s*)?(?:زده\\s*شد|زد|خورد|فعال\\s*شد)'+
+  '|به\\s*تارگت\\s*(?:اول|دوم|سوم)?\\s*رسید'+
+  '|سیو\\s*سود|سود\\s*(?:گرفته|زده|شناسایی)'+
+  '|(?:استاپ|حد\\s*ضرر)\\s*(?:خورد|فعال\\s*شد)'+
+  '|ریسک\\s*فری|بریک\\s*ایون|سر\\s*به\\s*سر'+
+  '|(?:پوزیشن|معامله|سیگنال)\\s*(?:را\\s*)?(?:بستیم|بسته\\s*شد)'+
+  '|نتیجه\\s*(?:ی|\\u200c)?\\s*(?:سیگنال|معامله)'+
+  '|\\bTP\\s*\\d?\\s*(?:hit|done|reached)\\b|\\bSL\\s*hit\\b|\\btarget\\s*(?:hit|reached)\\b','i');
+const autoRes=p=>RX_RESULT.test(faNorm(normDig(p.text||'')));
+function isRes(p){
+  const v=DB.results[p.id];
+  if(v===0)return false;                    // کاربر صریح گفته نتیجه نیست
+  if(v)return true;                         // کاربر صریح گفته نتیجه است
+  return autoRes(p);
+}
+const resAuto=p=>DB.results[p.id]==null&&autoRes(p);
+function setRes(p,on){
+  if(on===null)delete DB.results[p.id];
+  else if(on){DB.results[p.id]=Date.now();delete DB.archived[p.id];}
+  else DB.results[p.id]=0;
+  save();renderAll();
+}
+/* در کدام سطل است؟ آرشیو بر نتیجه می‌چربد تا یک پست هم‌زمان دو جا نباشد. */
+const bucketOf=p=>isArch(p.id)?'arch':(isRes(p)?'res':'live');
 const OPENCARD=new Set();   // کارت‌هایی که در حالت فشرده باز شده‌اند
 const NEWIDS=new Set();          // پستی که در همین نشست تازه رسیده — نشان «تازه» می‌گیرد
 const CARDS=new Map();           // برای بازسازی فقط یک کارت، بدون رندر دوباره‌ی کل فهرست
@@ -3200,7 +3320,11 @@ function buildCard(p){
     head.appendChild(tk);
     head.appendChild(el('span','pill '+dir,dir==='long'?'لانگ':'شورت'));
   }else head.appendChild(el('span','pill mut','بدون نماد'));
-  if(!isSig)head.appendChild(el('span','pill mut','یادداشت'));
+  if(isSig){
+    const I=planInputsOf(p,sig,OVERRIDE[p.id]||{},null);
+    if(I.spot)head.appendChild(el('span','pill gold','اسپات'));
+  }else head.appendChild(el('span','pill mut','یادداشت'));
+  if(bucketOf(p)==='res')head.appendChild(el('span','pill '+(resAuto(p)?'mut':'gold'),'نتیجه'));
   if(NEWIDS.has(p.id))head.appendChild(el('span','pill gold','تازه'));
   const px=sig.ticker?PRICES.get(sig.ticker):null;
   if(px!=null)head.appendChild(el('span','pill live '+(flashOf(sig.ticker)?'fl-'+flashOf(sig.ticker):''),'<i></i>'+fmtPrice(px)));
@@ -3283,7 +3407,7 @@ function buildReply(p){
     }
     const go=el('button','mark ghost','رفتن به پست اصلی');
     go.onclick=()=>{
-      if(isArch(src.id)!==showArchived){showArchived=isArch(src.id);}
+      { const bs=bucketOf(src); if(bs!==bucket)bucket=bs; }
       coinFilter=null;shownMax=Math.max(shownMax,POSTS.indexOf(src)+5);
       renderSignals();
       const c=CARDS.get(src.id);
@@ -3310,36 +3434,63 @@ function rebuildCard(p){
 }
 
 function planInputsOf(p,sig,ov,px){
-  const dir=ov.dir||sig.direction;
+  const market=ov.market||sig.market||'futures';
+  const spot=market==='spot';
+  const dir=spot?'long':(ov.dir||sig.direction);   // اسپات شورت ندارد
   const entry=ov.entry!=null?ov.entry:(sig.entry!=null?sig.entry:px);
   const entryAssumed=(ov.entry==null&&sig.entry==null&&px!=null);
   const stop=ov.stop!=null?ov.stop:sig.stop;
-  const lev=ov.lev!=null?ov.lev:sig.leverage;
-  return {dir,entry,entryAssumed,stop,lev,
-    levSrc:ov.lev!=null?' (دستی)':(sig.leverage!=null?' (کانال)':'')};
+  const lev=spot?1:(ov.lev!=null?ov.lev:sig.leverage);
+  return {market,spot,marketGuess:!ov.market&&!!sig.marketGuess,dir,entry,entryAssumed,stop,lev,
+    levSrc:spot?'':(ov.lev!=null?' (دستی)':(sig.leverage!=null?' (کانال)':''))};
+}
+const MKT_LABEL={futures:'فیوچرز',spot:'اسپات'};
+/* کلید دوحالته‌ی بازار. اسپات و فیوچرز دو ماشین‌حساب متفاوت‌اند، پس این کلید
+   فقط یک برچسب نیست: با زدنش همه‌ی اعداد پایین عوض می‌شوند. */
+function mktToggle(cur,guess,onPick){
+  const w=el('div','mkt'+(guess?' guess':''));
+  for(const k of ['futures','spot']){
+    const b=el('button','mktb'+(cur===k?' on':''),ic(k==='spot'?'wallet':'bolt')+'<span>'+MKT_LABEL[k]+'</span>');
+    b.setAttribute('aria-pressed',cur===k?'true':'false');
+    b.title=k==='spot'?'خرید نقدی: بدون اهرم، بدون لیکوئید':'با اهرم و مارجین، لیکوئید دارد';
+    b.onclick=()=>{if(cur!==k)onPick(k);};
+    w.appendChild(b);
+  }
+  if(guess)w.appendChild(el('span','mkthint','حدس'));
+  return w;
 }
 function buildPlan(p,sig,ov,px){
   const plan=el('div','plan');
   const I=planInputsOf(p,sig,ov,px);
+  plan.appendChild(mktToggle(I.market,I.marketGuess,k=>setOv(p,'market',k,true)));
   const inp=el('div','inputs');
   inp.appendChild(numField('ورود'+(I.entryAssumed?' (قیمت روز)':''),I.entry,v=>setOv(p,'entry',v)));
   inp.appendChild(numField('حد ضرر',I.stop,v=>setOv(p,'stop',v)));
-  inp.appendChild(numField('اهرم',I.lev,v=>setOv(p,'lev',v)));
-  const ds=el('div','fld','<label>جهت</label>');
-  const sel=el('select');sel.innerHTML='<option value="long">لانگ</option><option value="short">شورت</option>';
-  sel.value=I.dir;sel.onchange=()=>setOv(p,'dir',sel.value,true);
-  ds.appendChild(sel);inp.appendChild(ds);
+  if(!I.spot){
+    inp.appendChild(numField('اهرم',I.lev,v=>setOv(p,'lev',v)));
+    const ds=el('div','fld','<label>جهت</label>');
+    const sel=el('select');sel.innerHTML='<option value="long">لانگ</option><option value="short">شورت</option>';
+    sel.value=I.dir;sel.onchange=()=>setOv(p,'dir',sel.value,true);
+    ds.appendChild(sel);inp.appendChild(ds);
+  }
   plan.appendChild(inp);
 
   const r=computePlan({direction:I.dir,entry:I.entry,stop:I.stop,live:px,capital:S.cap,
     riskPct:S.risk,maxLeverage:S.maxLev,leverageOverride:I.lev,mode:S.mode,
-    rMultiples:S.rMul,channelTargets:sig.targets});
+    rMultiples:S.rMul,channelTargets:sig.targets,market:I.market});
 
   const kv=el('div','kv');
   const add=(l,v,c)=>{const k=el('div','k');k.appendChild(el('b',null,l));k.appendChild(el('span',c||null,v));kv.appendChild(k);};
   if(px!=null&&r.gapPct!=null&&!I.entryAssumed)
     add('فاصله تا سیگنال',fmtPct(r.gapPct),r.adverseGapPct>3?'d':(r.adverseGapPct>0?'w':'u'));
-  if(r.ok){
+  if(r.ok&&I.spot){
+    add('فاصله استاپ',r.stopDistPct.toFixed(2)+'٪',r.stopDistPct>25?'w':null);
+    add('مبلغ خرید',fmtUsd(r.margin));
+    add('مقدار '+(sig.ticker||'ارز'),(+r.qty.toPrecision(6))+'');
+    add('ضرر در استاپ',fmtUsd(-r.actualRisk)+' ('+r.actualRiskPct.toFixed(1)+'٪)',
+      r.actualRiskPct>S.risk*1.5?'d':'w');
+    if(Math.abs(r.suggestedMargin-r.margin)>0.05)add('مبلغ پیشنهادی',fmtUsd(r.suggestedMargin),'u');
+  }else if(r.ok){
     add('فاصله استاپ',r.stopDistPct.toFixed(2)+'٪',r.stopDistPct>25?'w':null);
     add('اهرم',r.leverage.toFixed(r.leverage<10?1:0)+'x'+I.levSrc);
     add('مارجین',fmtUsd(r.margin));
@@ -3372,6 +3523,8 @@ function buildPlan(p,sig,ov,px){
   const fl=el('div','flags'),seen=new Set();
   const F=(lv,tx)=>fl.appendChild(el('div','flag '+lv,'<i>'+(lv==='d'?'✕':lv==='w'?'!':lv==='u'?'✓':'i')+'</i><span>'+tx+'</span>'));
   if(I.entryAssumed)F('i','این پست قیمت ورود نداده؛ قیمت لحظه‌ای جای آن نشسته. اگر ورود خودت را داری بالا واردش کن.');
+  if(I.marketGuess)F('i','پست نگفته فیوچرز است یا اسپات؛ فیوچرز فرض شد. اگر اسپات می‌گیری کلید بالا را بزن — اهرم و لیکوئید حذف می‌شوند.');
+  if(I.spot)F('i','اسپات: اهرم ۱، لیکوئید ندارد. بدترین حالت همان مبلغی است که گذاشته‌ای، و آن هم فقط اگر قیمت صفر شود.');
   const TXT={'no-entry':['i','قیمت ورود پیدا نشد. برای محاسبه، ورود را دستی وارد کن.'],
     'no-stop':['w','این پست حد ضرر ندارد. بدون استاپ نمی‌شود حجم امن حساب کرد؛ خودت یکی بگذار.'],
     'bad-stop':['d','استاپ نسبت به جهت معامله اشتباه است.'],
@@ -3404,24 +3557,35 @@ function buildBrief(p,sig,ov,px){
   const kv=el('div','briefkv');
   const add=(l,v,c)=>{const d=el('div','bk');d.appendChild(el('b',null,l));
     d.appendChild(el('span',c||null,v));kv.appendChild(d);};
-  add('ورود',I.entry!=null?fmtPrice(I.entry):'—');
+  add(I.spot?'قیمت خرید':'ورود',I.entry!=null?fmtPrice(I.entry):'—');
   add('حد ضرر',I.stop!=null?fmtPrice(I.stop):'—');
   if(px!=null&&I.entry){
     const gap=((px-I.entry)/I.entry)*100*(I.dir==='long'?1:-1);
     add('فاصله تا ورود',fmtPct(gap),gap>3?'d':(gap>0?'w':'u'));
   }else add('قیمت الان','—','m');
   w.appendChild(kv);
+  /* کلیدی که قبل از هر عددی تکلیف را روشن می‌کند: اسپات یا فیوچرز */
+  w.appendChild(mktToggle(I.market,I.marketGuess,k=>setOv(p,'market',k,true)));
   const a=el('div','acts');
   const b1=el('button','btn ok',ic('check')+'<span>بررسی و ورود</span>');
   b1.onclick=()=>{PLANOPEN.add(p.id);rebuildCard(p);};
   const b2=el('button','btn no',ic('x')+'<span>وارد نشدم</span>');
   b2.onclick=()=>sheetSkip(p,sig,ov,px);
   a.appendChild(b1);a.appendChild(b2);
+  /* ورود سریع میان‌بُرِ همان دکمه‌ی اول است، نه کارِ سومی: کنارش و کوچک‌تر،
+     وگرنه دو دکمه‌ی طلاییِ هم‌وزن روبه‌روی هم می‌نشینند و انتخاب سخت می‌شود. */
+  if(F('quick')&&!decisionOf(p.id)){
+    const q=el('button','btn xs side',ic('bolt')+'<span>سریع '+faN(Math.round(S.cap))+'$</span>');
+    q.title='ورود با اعداد پیش‌فرض، در یک تأیید';
+    q.onclick=()=>quickEnter(p,sig,ov,px);
+    a.appendChild(q);
+  }
   // سیگنالی که تریگر دارد و هنوز نرسیده: به‌جای ورود زودهنگام، منتظرش می‌مانیم
   const trg=sig.trigger!=null?sig.trigger:(I.entry!=null?I.entry:null);
   const already=DB.pending.some(x=>x.postId===p.id);
   if(trg!=null&&!already){
-    const b3=el('button','btn xs','منتظر '+fmtPrice(trg));
+    const b3=el('button','btn xs side','منتظر '+fmtPrice(trg));
+    b3.title='تا رسیدن قیمت به این عدد صبر کن';
     b3.onclick=()=>addPending(p,sig,trg,px);
     a.appendChild(b3);
   }else if(already)a.appendChild(el('span','markhint','در فهرست منتظرها'));
@@ -3473,50 +3637,60 @@ function setOv(p,k,v,isStr){
   PCACHE.delete(id);
   rebuildCard(p);
 }
-/* تشخیص خودکار همیشه کار نمی‌کند: کانال ممکن است نماد را جور دیگری بنویسد یا اصلاً ننویسد.
-   این دکمه اجازه می‌دهد هر پستی را دستی سیگنال کنی و همان‌جا نماد و اعداد را درست کنی. */
+/* دکمه‌های زیر هر پست دو جنس متفاوت‌اند و قبلاً هر دو یک شکل بودند:
+     ۱) «این پست را کجا بگذارم؟»  آرشیو، نتایج، آموزش — سه جای مشخص، سه کلید هم‌اندازه
+        که وقتی پست آنجاست روشن می‌مانند. همیشه همان سه‌تا، همیشه همان ترتیب،
+        پس با عادت پیدا می‌شوند نه با خواندن.
+     ۲) «این پست سیگنال هست یا نه؟»  یک کلید جدا، چون معنی‌اش با آن سه فرق دارد.
+   تشخیص خودکار همیشه کار نمی‌کند، پس هر دو جنس قابل نقض دستی‌اند. */
+function fileChip(icon,label,on,hint,onClick,extra){
+  const b=el('button','fchip'+(on?' on':'')+(extra?' '+extra:''));
+  b.setAttribute('aria-pressed',on?'true':'false');
+  b.title=hint;
+  b.innerHTML=ic(icon)+'<span>'+label+'</span>';
+  b.onclick=onClick;
+  return b;
+}
 function buildMark(p,sig,ov,isSig,dec,px){
-  const row=el('div','markrow');
-  const manual=ov.sig!=null;
-  if(isSig){
-    if(dec){                                 // تصمیم گرفته‌شده را دیگر سیگنال/غیرسیگنال نمی‌کنیم،
-      const a2=isArch(p.id);                 // ولی آرشیو و آموزش هنوز معنی دارند
-      const ab2=el('button','mark ghost',a2?'برگرداندن':'آرشیو');
-      ab2.onclick=()=>{setArch(p.id,!a2);toast(a2?'برگشت به فعال':'به آرشیو رفت','info');};
-      row.appendChild(ab2);
-      const s2=isLesson(p.id);
-      const lb2=el('button','mark ghost'+(s2?' on':''),s2?'در آموزش‌هاست':'افزودن به آموزش');
-      lb2.onclick=()=>{s2?removeLesson(p.id):addLesson(p);};
-      row.appendChild(lb2);
-      return row;
+  const row=el('div','prow');
+
+  const tray=el('div','ftray');
+  const bk=bucketOf(p);
+  const ar=bk==='arch', rs=bk==='res', au=rs&&resAuto(p), ls=isLesson(p.id);
+  tray.appendChild(fileChip('box','آرشیو',ar,
+    ar?'برگرداندن از آرشیو':'کنار گذاشتن این پست',
+    ()=>{setArch(p.id,!ar);toast(ar?'برگشت به فعال':'به آرشیو رفت','info');}));
+  tray.appendChild(fileChip('flag','نتیجه',rs,
+    au?'خودش نتیجه تشخیص داده شد — بزن تا برگردد':(rs?'برگرداندن از نتایج':'فرستادن به نتایج'),
+    ()=>{setRes(p,!rs);toast(rs?'از نتایج برداشته شد':'به نتایج رفت','info');},
+    au?'auto':''));
+  tray.appendChild(fileChip('book','آموزش',ls,
+    ls?'برداشتن از آموزش‌ها':'نگه داشتن به‌عنوان آموزش',
+    ()=>{ls?removeLesson(p.id):addLesson(p);}));
+  row.appendChild(tray);
+
+  // کلید «سیگنال یا نه» — بعد از تصمیم دیگر معنی ندارد، پس نمی‌آید
+  if(!dec){
+    const sw=el('div','psig');
+    if(isSig){
+      const b=el('button','plink',ic('x')+'<span>سیگنال نیست</span>');
+      b.title='از فهرست سیگنال‌ها بردار';
+      b.onclick=()=>{setOv(p,'sig',false,true);toast('از سیگنال‌ها برداشته شد','info');};
+      sw.appendChild(b);
+      if(ov.sig!=null)sw.appendChild(el('span','markhint','دستی علامت خورده'));
+    }else{
+      const b=el('button','padd',ic('plus')+'<span>افزودن به سیگنال‌ها</span>');
+      b.title='نماد و اعداد را بده تا ماشین‌حساب رویش فعال شود';
+      b.onclick=()=>sheetMarkSignal(p,sig);
+      sw.appendChild(b);
+      if(ov.sig===false){
+        const u=el('button','plink',ic('undo')+'<span>برگردان به خودکار</span>');
+        u.onclick=()=>{setOv(p,'sig',null);toast('برگشت به حالت خودکار','info');};
+        sw.appendChild(u);
+      }
     }
-    const b=el('button','mark ghost','سیگنال نیست');
-    b.onclick=()=>{setOv(p,'sig',false,true);toast('از سیگنال‌ها برداشته شد','info');};
-    row.appendChild(b);
-    if(manual)row.appendChild(el('span','markhint','دستی علامت خورده'));
-  }else{
-    const b=el('button','mark','افزودن به سیگنال‌ها');
-    b.onclick=()=>sheetMarkSignal(p,sig);
-    row.appendChild(b);
-    if(ov.sig===false){
-      const u=el('button','mark ghost','برگردان');
-      u.onclick=()=>{setOv(p,'sig',null);toast('برگشت به حالت خودکار','info');};
-      row.appendChild(u);
-    }
+    row.appendChild(sw);
   }
-  if(F('quick')&&isSig&&!dec){
-    const q=el('button','mark','ورود سریع '+fmtUsd(S.cap));
-    q.onclick=()=>quickEnter(p,sig,ov,px);
-    row.appendChild(q);
-  }
-  const ar=isArch(p.id);
-  const ab=el('button','mark ghost',ar?'برگرداندن':'آرشیو');
-  ab.onclick=()=>{setArch(p.id,!ar);toast(ar?'برگشت به فعال':'به آرشیو رفت','info');};
-  row.appendChild(ab);
-  const saved=isLesson(p.id);
-  const lb=el('button','mark ghost'+(saved?' on':''),saved?'در آموزش‌هاست':'افزودن به آموزش');
-  lb.onclick=()=>{saved?removeLesson(p.id):addLesson(p);};
-  row.appendChild(lb);
   return row;
 }
 function sheetMarkSignal(p,sig){
@@ -3608,53 +3782,65 @@ function quickEnter(p,sig,ov,px){
     return sheetEnter(p,sig,ov,px);
   }
   const r=computePlan({direction:I.dir,entry,stop:I.stop,live:px,capital:S.cap,
-    riskPct:S.risk,maxLeverage:S.maxLev,leverageOverride:I.lev,mode:S.mode,rMultiples:S.rMul});
+    riskPct:S.risk,maxLeverage:S.maxLev,leverageOverride:I.lev,mode:S.mode,
+    rMultiples:S.rMul,market:I.market});
   if(!r.ok){toast('پلن کامل نشد','err');return sheetEnter(p,sig,ov,px);}
   if(r.warnings.includes('liq-before-stop')){
     toast('با این اعداد استاپ بعد از لیکوئید می‌افتد — فرم کامل باز شد','err');
     return sheetEnter(p,sig,ov,px);
   }
   const lev=+r.leverage.toFixed(2);
-  if(!confirm('ورود '+(sig.ticker||'')+' '+(I.dir==='long'?'لانگ':'شورت')+'\n\n'+
+  /* بیشتر پست‌های کانال نمی‌گویند فیوچرز است یا اسپات. جلوی ورود سریع را نمی‌گیریم،
+     ولی حدس را توی همان پنجره‌ی تأیید صریح می‌نویسیم تا کسی ندانسته فیوچرز نگیرد. */
+  if(!confirm((I.spot?'خرید اسپات ':'ورود ')+(sig.ticker||'')+
+    (I.spot?'':' '+(I.dir==='long'?'لانگ':'شورت'))+'\n\n'+
+    'بازار: '+MKT_LABEL[I.market]+(I.marketGuess?' (حدس — پست نگفته بود)':'')+'\n'+
     'ورود: '+fmtPrice(entry)+'\nحد ضرر: '+fmtPrice(I.stop)+'\n'+
-    'مارجین: '+fmtUsd(S.cap)+'\nاهرم: '+lev+'x\n'+
-    'حجم: '+fmtUsd(r.notional)+'\nضرر در استاپ: '+fmtUsd(-r.actualRisk)+
-    ' ('+r.actualRiskPct.toFixed(1)+'٪)\n'+
+    (I.spot?'مبلغ خرید: '+fmtUsd(S.cap)+'\nمقدار: '+(+r.qty.toPrecision(6))+'\n'
+           :'مارجین: '+fmtUsd(S.cap)+'\nاهرم: '+lev+'x\nحجم: '+fmtUsd(r.notional)+'\n')+
+    'ضرر در استاپ: '+fmtUsd(-r.actualRisk)+' ('+r.actualRiskPct.toFixed(1)+'٪)\n'+
     (r.liqPrice?'لیکوئید: '+fmtPrice(r.liqPrice)+'\n':'')+'\nثبت شود؟'))return;
-  const pos=ensureBase({id:uid(),sigId:p.id,ticker:sig.ticker||'—',dir:I.dir,entry,
+  const pos=ensureBase({id:uid(),sigId:p.id,ticker:sig.ticker||'—',kind:I.spot?'spot':'futures',
+    dir:I.dir,entry,
     stop:I.stop,stop0:I.stop,margin:S.cap,baseMargin:S.cap,lev,
     targets:sig.targets||[],openedAt:Date.now(),status:'open',
     exitPrice:null,closedAt:null,fees:null,note:'ورود سریع',partials:[],log:[],
     src:{link:p.link,text:(p.text||'').slice(0,400),img:p.img||null,at:p.date?p.date.getTime():null}});
-  logAdd(pos,'open','ورود سریع با '+fmtUsd(S.cap)+' مارجین و اهرم '+lev+'x روی '+fmtPrice(entry));
+  logAdd(pos,'open',I.spot?('خرید سریع اسپات '+fmtUsd(S.cap)+' روی '+fmtPrice(entry))
+                          :('ورود سریع با '+fmtUsd(S.cap)+' مارجین و اهرم '+lev+'x روی '+fmtPrice(entry)));
   DB.positions.push(pos);
-  DB.decisions[p.id]={action:'taken',at:Date.now(),posId:pos.id,snap:snapOf(p,sig,entry,I.stop)};
-  save();renderAll();toast('پوزیشن ثبت شد','ok');
+  DB.decisions[p.id]={action:'taken',at:Date.now(),posId:pos.id,market:I.spot?'spot':'futures',
+    snap:snapOf(p,sig,entry,I.stop)};
+  save();renderAll();toast(I.spot?'خرید اسپات ثبت شد':'پوزیشن ثبت شد','ok');
 }
+/* یک ورق برای هر دو بازار. اسپات همان فرم است با اهرم قفلِ ۱: نه لیکوئید دارد،
+   نه کشویی اهرم، و به‌جای «مارجین» می‌گوید «مبلغ خرید» و مقدار ارز را نشان می‌دهد. */
 function sheetEnter(p,sig,ov,px){
-  const I=planInputsOf(p,sig,ov,px);
-  const entry0=I.entry||px||'', stop0=I.stop||'';
+  let MK=(planInputsOf(p,sig,ov,px)).market;
+  const I0=planInputsOf(p,sig,ov,px);
+  const entry0=I0.entry||px||'', stop0=I0.stop||'';
   const maxMargin=Math.max(S.cap*4,Math.min(S.acct,1000));
+  const spot=()=>MK==='spot';
   openSheet(
    '<h3>ثبت ورود'+(sig.ticker?' · '+esc(sig.ticker):'')+'</h3>'+
-   '<div class="sub">دستگیره‌ی طلایی را بکش تا حد ضرر جابجا شود. مبلغ را بده، اهرم را خودش '+
-   'حساب می‌کند تا ضررِ خوردنِ استاپ همان ریسک هدفت باشد (الان '+faN(S.risk)+'٪ مارجین).</div>'+
+   '<div id="mktBox"></div>'+
+   '<div class="sub" id="entSub"></div>'+
    '<div id="entLad"></div>'+
    '<div class="grid">'+
      fldHtml('e','قیمت ورود واقعی',entry0)+fldHtml('s','حد ضرر',stop0)+
    '</div>'+
-   '<div class="sldrow"><label>مارجین ($)</label>'+
+   '<div class="sldrow"><label id="lbl_m">مارجین ($)</label>'+
      '<input type="range" id="r_m" min="1" max="'+maxMargin+'" step="1" value="'+S.cap+'">'+
      '<input type="number" id="f_m" step="any" inputmode="decimal" value="'+S.cap+'"></div>'+
-   '<div class="sldrow"><label>اهرم</label>'+
+   '<div class="sldrow" id="levRow"><label>اهرم</label>'+
      '<input type="range" id="r_l" min="1" max="'+S.maxLev+'" step="0.5" value="1">'+
      '<input type="number" id="f_l" step="any" inputmode="decimal"></div>'+
-   '<label class="autolev"><input type="checkbox" id="f_auto" checked>'+
+   '<label class="autolev" id="autoRow"><input type="checkbox" id="f_auto" checked>'+
      '<span>اهرم را خودت حساب کن</span></label>'+
    '<div class="grid" style="margin-top:10px">'+
-     '<div class="fld"><label>جهت</label><select id="f_d">'+
-       '<option value="long"'+(I.dir==='long'?' selected':'')+'>لانگ</option>'+
-       '<option value="short"'+(I.dir==='short'?' selected':'')+'>شورت</option></select></div>'+
+     '<div class="fld" id="dirRow"><label>جهت</label><select id="f_d">'+
+       '<option value="long"'+(I0.dir==='long'?' selected':'')+'>لانگ</option>'+
+       '<option value="short"'+(I0.dir==='short'?' selected':'')+'>شورت</option></select></div>'+
      '<div class="fld"><label>یادداشت</label><input id="f_n" placeholder="چرا وارد شدی؟"></div>'+
    '</div>'+
    '<div id="riskBox"></div>'+
@@ -3662,9 +3848,26 @@ function sheetEnter(p,sig,ov,px){
    '<div class="srow"><button class="btn pri" id="ok">ثبت پوزیشن</button>'+
    '<button class="btn" id="cx">انصراف</button></div>',
    sh=>{
-     const auto=()=>$('#f_auto').checked;
-     const grab=()=>({entry:num('f_e'),stop:num('f_s'),margin:num('f_m'),lev:num('f_l'),
-       dir:$('#f_d').value,note:($('#f_n').value||'').trim()});
+     const auto=()=>spot()?false:$('#f_auto').checked;
+     const grab=()=>({entry:num('f_e'),stop:num('f_s'),margin:num('f_m'),
+       lev:spot()?1:num('f_l'),dir:spot()?'long':$('#f_d').value,
+       note:($('#f_n').value||'').trim()});
+     /* عوض کردن بازار فرم را نمی‌سازد دوباره — فقط چیزهایی که به فیوچرز ربط دارند
+        را پنهان/نمایان می‌کند تا عددهایی که وارد کرده‌ای از بین نروند. */
+     const paintMkt=()=>{
+       const mb=$('#mktBox');mb.innerHTML='';
+       mb.appendChild(mktToggle(MK,false,k=>{MK=k;paintMkt();upd();}));
+       const sp=spot();
+       $('#levRow').classList.toggle('hide',sp);
+       $('#autoRow').classList.toggle('hide',sp);
+       $('#dirRow').classList.toggle('hide',sp);
+       $('#lbl_m').textContent=sp?'مبلغ خرید ($)':'مارجین ($)';
+       $('#ok').textContent=sp?'ثبت خرید اسپات':'ثبت پوزیشن';
+       $('#entSub').innerHTML=sp
+         ?'خرید نقدی: اهرم ندارد و لیکوئید نمی‌شوی. مبلغ را بده تا مقدار ارز و ضررِ خوردنِ استاپ را بگوید.'
+         :'دستگیره‌ی طلایی را بکش تا حد ضرر جابجا شود. مبلغ را بده، اهرم را خودش حساب می‌کند تا ضررِ خوردنِ استاپ همان ریسک هدفت باشد (الان '+faN(S.risk)+'٪ مارجین).';
+       if(sp){$('#f_l').value=1;$('#r_l').value=1;}
+     };
      /* اهرمی که ضررِ خوردن استاپ را دقیقاً به ریسک هدف می‌رساند. همان فرمول computePlan
         است تا عددِ کارت و عددِ این فرم هیچ‌وقت با هم فرق نکنند. */
      const levFor=v=>{
@@ -3703,6 +3906,7 @@ function sheetEnter(p,sig,ov,px){
        const rb=$('#riskBox'); rb.innerHTML='';
        const note=(txt,kind)=>rb.innerHTML+='<div class="rwarn '+kind+'">'+txt+'</div>';
        const pv=$('#prev'); pv.innerHTML='';
+       const sp=spot(), unit=sig.ticker||'ارز';
 
        if(!v.entry||!v.margin||!v.lev){
          pv.innerHTML='<div class="k"><b>پیش‌نمایش</b><span class="m">اعداد ناقص است</span></div>';
@@ -3711,28 +3915,43 @@ function sheetEnter(p,sig,ov,px){
        }
        const m=posMetrics({dir:v.dir,entry:v.entry,stop:v.stop,margin:v.margin,lev:v.lev,status:'open'},px);
        const add=(l,x,c)=>pv.innerHTML+='<div class="k"><b>'+l+'</b><span class="'+(c||'')+'">'+x+'</span></div>';
-       add('حجم',fmtUsd(m.notional));
-       add('مقدار',(+m.qty.toPrecision(6))+'');
-       add('لیکوئید',m.liqPrice==null?'ندارد':fmtPrice(m.liqPrice),m.liqPrice==null?'m':'d');
+       if(sp){
+         add('مقدار '+unit,(+m.qty.toPrecision(6))+'');
+         add('ارزش خرید',fmtUsd(m.notional));
+       }else{
+         add('حجم',fmtUsd(m.notional));
+         add('مقدار',(+m.qty.toPrecision(6))+'');
+         add('لیکوئید',m.liqPrice==null?'ندارد':fmtPrice(m.liqPrice),m.liqPrice==null?'m':'d');
+       }
 
        if(v.stop){
          const risk=m.qty*Math.abs(v.entry-v.stop), pct=(risk/v.margin)*100;
          add('ضرر در استاپ',fmtUsd(-risk)+' ('+pct.toFixed(1)+'٪)','d');
          const ld=1/v.lev-MMR, sd=Math.abs(v.entry-v.stop)/v.entry;
-         if(v.lev>1.05&&ld>0&&sd>=ld)
+         if(!sp&&v.lev>1.05&&ld>0&&sd>=ld)
            note('<b>استاپ بعد از لیکوئید می‌افتد.</b> با این اهرم قبل از رسیدن به حد ضرر، کل مارجین از بین می‌رود. اهرم را کم کن.','bad');
-         else if(v.lev>1.05&&ld>0&&sd>ld*.75)
+         else if(!sp&&v.lev>1.05&&ld>0&&sd>ld*.75)
            note('استاپ خیلی به لیکوئید نزدیک است — کمی نوسان کافی است تا پوزیشن بسته شود.','warn');
          if(pct>S.risk*2)
-           note('ریسک این ورود '+pct.toFixed(1)+'٪ مارجین است، بیش از دو برابرِ هدف '+faN(S.risk)+'٪.','bad');
+           note('ریسک این ورود '+pct.toFixed(1)+'٪ '+(sp?'مبلغ خرید':'مارجین')+' است، بیش از دو برابرِ هدف '+faN(S.risk)+'٪.','bad');
          else if(pct>S.risk*1.2)
-           note('ریسک این ورود '+pct.toFixed(1)+'٪ مارجین است، بالاتر از هدف '+faN(S.risk)+'٪.','warn');
+           note('ریسک این ورود '+pct.toFixed(1)+'٪ '+(sp?'مبلغ خرید':'مارجین')+' است، بالاتر از هدف '+faN(S.risk)+'٪.','warn');
          if(auto()&&a&&a.capped)
            note('برای رسیدن به ریسک هدف، اهرم بیشتر از سقف تو ('+faN(S.maxLev)+'x) لازم بود؛ روی سقف ماند و ریسک کمتر از هدف شد.','warn');
-       }else note('بدون حد ضرر، نه ریسک معلوم است نه لیکوئید معنی دارد. اگر می‌توانی بنویسش.','warn');
+         if(sp){
+           const want=(S.cap*(S.risk/100))/sd;     // بودجه‌ی هر معامله، نه عددی که همین الان تایپ شده
+           if(isFinite(want)&&want>0&&Math.abs(want-v.margin)>Math.max(0.05,v.margin*0.02))
+             note('در اسپات اهرمی نیست که ریسک را تنظیم کند؛ تنها اهرمِ تو خودِ مبلغ است. با استاپ '+
+               (sd*100).toFixed(1)+'٪، برای اینکه ضررت '+faN(S.risk)+'٪ از '+fmtUsd(S.cap)+
+               ' سرمایه‌ی هر معامله باشد باید '+fmtUsd(want)+' بخری.','warn');
+         }
+       }else note(sp
+         ?'بدون حد ضرر، معلوم نیست کجا می‌خواهی بیرون بیایی. در اسپات لیکوئید نمی‌شوی ولی ضرر بی‌سقف می‌ماند.'
+         :'بدون حد ضرر، نه ریسک معلوم است نه لیکوئید معنی دارد. اگر می‌توانی بنویسش.','warn');
        if(px)add('سود/ضرر الان',fmtUsd(m.pnl)+' ('+fmtPct(m.roi)+')',cls(m.pnl));
      };
      const upd=()=>{updNums();drawLad();};
+     paintMkt();
 
      // کشویی و کادر عدد دو نمای یک مقدارند
      const pair=(r,f)=>{
@@ -3744,21 +3963,25 @@ function sheetEnter(p,sig,ov,px){
      upd();
      $('#cx').onclick=closeSheet;
      $('#ok').onclick=()=>{
-       const v=grab();
+       const v=grab(), sp=spot();
        if(!v.entry||v.entry<=0)return toast('قیمت ورود را وارد کن','err');
-       if(!v.margin||v.margin<=0)return toast('مارجین را وارد کن','err');
+       if(!v.margin||v.margin<=0)return toast((sp?'مبلغ خرید':'مارجین')+' را وارد کن','err');
        if(!v.lev||v.lev<=0)return toast('اهرم را وارد کن','err');
        if(v.stop&&((v.dir==='long'&&v.stop>=v.entry)||(v.dir==='short'&&v.stop<=v.entry)))
          return toast('استاپ با جهت معامله نمی‌خواند','err');
-       const pos=ensureBase({id:uid(),sigId:p.id,ticker:sig.ticker||'—',dir:v.dir,entry:v.entry,
+       const pos=ensureBase({id:uid(),sigId:p.id,ticker:sig.ticker||'—',kind:sp?'spot':'futures',
+         dir:v.dir,entry:v.entry,
          stop:v.stop||null,stop0:v.stop||null,margin:v.margin,baseMargin:v.margin,lev:v.lev,
          targets:sig.targets||[],openedAt:Date.now(),status:'open',
          exitPrice:null,closedAt:null,fees:null,note:v.note,partials:[],log:[],
          src:{link:p.link,text:(p.text||'').slice(0,400),img:p.img||null,at:p.date?p.date.getTime():null}});
-       logAdd(pos,'open','ورود با '+fmtUsd(v.margin)+' مارجین و اهرم '+(+v.lev)+'x روی '+fmtPrice(v.entry));
+       logAdd(pos,'open',sp
+         ?('خرید اسپات '+fmtUsd(v.margin)+' روی '+fmtPrice(v.entry))
+         :('ورود با '+fmtUsd(v.margin)+' مارجین و اهرم '+(+v.lev)+'x روی '+fmtPrice(v.entry)));
        DB.positions.push(pos);
-       DB.decisions[p.id]={action:'taken',at:Date.now(),posId:pos.id,snap:snapOf(p,sig,v.entry,v.stop)};
-       save();closeSheet();renderAll();toast('پوزیشن ثبت شد','ok');
+       DB.decisions[p.id]={action:'taken',at:Date.now(),posId:pos.id,market:sp?'spot':'futures',
+         snap:snapOf(p,sig,v.entry,v.stop)};
+       save();closeSheet();renderAll();toast(sp?'خرید اسپات ثبت شد':'پوزیشن ثبت شد','ok');
      };
    });
 }
@@ -3808,7 +4031,7 @@ function buildSummary(){
    داخلش هست، و آرشیو — که «جای دیگر» است نه «فیلتر دیگر» — با فاصله جدا شده. */
 function renderFbar(){
   const bar=$('#fbar');if(!bar)return;
-  const live=POSTS.filter(p=>!isArch(p.id));
+  const live=POSTS.filter(p=>bucketOf(p)==='live');
   const sigs=live.filter(p=>sigOf(p).isSignal);
   const segs=[
     {k:'new', label:'در انتظار', n:sigs.filter(p=>!decisionOf(p.id)).length,
@@ -3816,7 +4039,7 @@ function renderFbar(){
     {k:'sig', label:'سیگنال‌ها', n:sigs.length, hint:'همه‌ی سیگنال‌ها'},
     {k:'all', label:'همه',       n:live.length, hint:'همه‌ی پست‌های کانال'}
   ];
-  const cur=showArchived?'arch':sigFilter;
+  const cur=bucket==='live'?sigFilter:bucket;
   bar.innerHTML='';
   const grp=el('div','fseg');
   for(const sg of segs){
@@ -3824,20 +4047,27 @@ function renderFbar(){
     b.setAttribute('role','tab');b.setAttribute('aria-selected',cur===sg.k?'true':'false');
     b.title=sg.hint;
     b.innerHTML='<span>'+sg.label+'</span><i>'+faN(sg.n)+'</i>';
-    b.onclick=()=>{showArchived=false;sigFilter=sg.k;shownMax=PAGE;renderSignals();
+    b.onclick=()=>{bucket='live';sigFilter=sg.k;shownMax=PAGE;renderSignals();
       window.scrollTo({top:0,behavior:'smooth'});};
     grp.appendChild(b);
   }
   bar.appendChild(grp);
-  const nArch=Object.keys(DB.archived).length;
-  const ab=el('button','fb farch'+(showArchived?' on':''));
-  ab.setAttribute('role','tab');ab.setAttribute('aria-selected',showArchived?'true':'false');
-  ab.title='پست‌هایی که کنار گذاشته‌ای';
-  ab.setAttribute('aria-label','آرشیو');
-  ab.innerHTML='<span>'+ic('box')+'آرشیو</span><i>'+faN(nArch)+'</i>';
-  ab.onclick=()=>{showArchived=!showArchived;shownMax=PAGE;renderSignals();
-    window.scrollTo({top:0,behavior:'smooth'});};
-  bar.appendChild(ab);
+  /* دو سطلِ کنارِ گروه: «جای دیگر»اند نه «فیلتر دیگر»، پس بیرون از گروه می‌ایستند. */
+  const side=el('div','fside');
+  const mkSide=(key,icon,label,count,hint)=>{
+    const b=el('button','fb fbucket'+(bucket===key?' on':''));
+    b.setAttribute('role','tab');b.setAttribute('aria-selected',bucket===key?'true':'false');
+    b.setAttribute('aria-label',label);b.title=hint;
+    b.innerHTML='<span>'+ic(icon)+label+'</span><i>'+faN(count)+'</i>';
+    b.onclick=()=>{bucket=bucket===key?'live':key;shownMax=PAGE;renderSignals();
+      window.scrollTo({top:0,behavior:'smooth'});};
+    side.appendChild(b);
+  };
+  mkSide('res','flag','نتایج',POSTS.filter(p=>bucketOf(p)==='res').length,
+    'پست‌های نتیجه: تارگت خورد، استاپ خورد، سیو سود');
+  mkSide('arch','box','آرشیو',POSTS.filter(p=>bucketOf(p)==='arch').length,
+    'پست‌هایی که کنار گذاشته‌ای');
+  bar.appendChild(side);
 }
 
 function renderSignals(){
@@ -3849,7 +4079,7 @@ function renderSignals(){
   let n=0, shown=0, matched=0;
   for(const p of POSTS){
     const sig=sigOf(p);
-    if(isArch(p.id)!==showArchived)continue;
+    if(bucketOf(p)!==bucket)continue;
     if(coinFilter&&(sig.ticker||'')!==coinFilter)continue;
     if(sigFilter==='sig'&&!sig.isSignal)continue;
     if(sigFilter==='new'&&(!sig.isSignal||decisionOf(p.id)))continue;
@@ -3870,8 +4100,8 @@ function renderSignals(){
   }
   list.innerHTML='';
   renderFbar();
-  if(F('summary')&&!showArchived)list.appendChild(buildSummary());
-  if(!showArchived){
+  if(F('summary')&&bucket==='live')list.appendChild(buildSummary());
+  if(bucket==='live'){
     const done=POSTS.filter(x=>decisionOf(x.id)&&!isArch(x.id));
     if(done.length){
       const bulk=el('button','tidy','کنار گذاشتن '+faN(done.length)+' پستِ تصمیم‌گرفته');
@@ -3891,7 +4121,8 @@ function renderSignals(){
   }
   if(!n){
     list.appendChild(el('div','empty',STAR+(POSTS.length
-      ?(showArchived?'آرشیو خالی است.<br>روی هر پستی دکمه‌ی «آرشیو» را بزن تا اینجا بیاید.'
+      ?(bucket==='arch'?'آرشیو خالی است.<br>روی هر پستی دکمه‌ی «آرشیو» را بزن تا اینجا بیاید.'
+        :bucket==='res'?'هنوز پست نتیجه‌ای نیامده.<br>پست‌هایی مثل «تارگت اول زد» یا «استاپ خورد» خودشان اینجا جمع می‌شوند؛ هر پست دیگری را هم با دکمه‌ی «نتیجه» می‌فرستی اینجا.'
         :coinFilter?'برای '+esc(coinFilter)+' چیزی نیست.<br>فیلتر ارز را بردار.'
                   :'چیزی با این فیلتر نیست.<br>«همه» را بزن یا جستجو را خالی کن.')
       :'هنوز پستی نیامده.<br>دکمه بروزرسانی را بزن.')));
@@ -3963,6 +4194,375 @@ function showFetching(txt){
   b.innerHTML=STAR+'<span>'+txt+'</span>';
 }
 
+
+/* ==================== کارت اشتراک‌گذاری ==================== */
+/* چرا کانواس و نه اسکرین‌شات: تصویری که برای دیگران می‌فرستی نباید هرچه روی صفحه‌ی
+   توست را لو بدهد — نه مانده‌ی حساب، نه بقیه‌ی پوزیشن‌ها. این کارت فقط همان چیزی
+   را می‌کشد که خودت انتخاب کرده‌ای، در اندازه‌ی ثابت، مستقل از گوشی و زوم.
+   طراحی از خود برنامه آمده (همان تیره، همان طلایی، همان کندل‌های نشان) تا هرکس
+   دیدش بداند از کجاست، بدون اینکه لوگوی بزرگ رویش بنشیند. */
+const SHARE_FONT="'Vazirmatn','Segoe UI',Tahoma,system-ui,-apple-system,sans-serif";
+const SHKEY='signaldesk.share.v1';
+let shareOpt=Object.assign({amount:true,channel:true,ratio:'45'},lsGet(SHKEY)||{});
+const shareSave=()=>lsSet(SHKEY,shareOpt);
+
+const SH={bg:'#0D0E12',card:'#16181D',card2:'#1C1E25',line:'#262A33',
+  tx:'#E9EBF0',tx2:'#9BA1AE',tx3:'#6C7280',
+  up:'#46C08A',dn:'#E0636E',gold:'#D9A441',gold2:'#B8842F',goldL:'#F0C67C'};
+
+function rr(c,x,y,w,h,r){
+  c.beginPath();
+  if(c.roundRect)c.roundRect(x,y,w,h,r);
+  else{c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);
+       c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+}
+/* نشان برنامه: همان سه کندل صعودیِ آیکون، از فضای ۵۱۲ به اندازه‌ی دلخواه */
+function drawMark(c,x,y,size){
+  const k=size/512;
+  c.save();c.translate(x,y);c.scale(k,k);
+  const g=c.createLinearGradient(0,420,0,105);
+  g.addColorStop(0,SH.gold2);g.addColorStop(1,SH.goldL);
+  c.fillStyle=g;c.strokeStyle=g;c.lineCap='round';
+  const cd=(tx,y1,y2,ry,rh)=>{
+    c.lineWidth=14;c.beginPath();c.moveTo(tx,y1);c.lineTo(tx,y2);c.stroke();
+    rr(c,tx-34,ry,68,rh,18);c.fill();
+  };
+  cd(140,252,418,300,76); cd(256,186,382,238,102); cd(372,112,346,162,140);
+  c.restore();
+}
+const shFont=(c,size,weight)=>{c.font=(weight||700)+' '+size+'px '+SHARE_FONT;};
+/* عددها همیشه چپ‌به‌راست‌اند حتی وسط متن فارسی؛ متن فارسی راست‌به‌چپ. */
+function shText(c,txt,x,y,{size=32,weight=700,color=SH.tx,align='right',rtl=true}={}){
+  c.save();shFont(c,size,weight);c.fillStyle=color;
+  c.direction=rtl?'rtl':'ltr';c.textAlign=align;c.textBaseline='alphabetic';
+  c.fillText(txt,x,y);c.restore();
+}
+function shPill(c,txt,x,y,{bg,fg,size=26,padX=22,h=48,align='right'}={}){
+  c.save();shFont(c,size,800);
+  const w=c.measureText(txt).width+padX*2;
+  const left=align==='right'?x-w:x;
+  c.fillStyle=bg;rr(c,left,y,w,h,h/2);c.fill();
+  c.fillStyle=fg;c.direction='rtl';c.textAlign='center';c.textBaseline='middle';
+  c.fillText(txt,left+w/2,y+h/2+1);
+  c.restore();
+  return w;
+}
+const mix=(hex,pct)=>{
+  const n=parseInt(hex.slice(1),16), r=n>>16, g=(n>>8)&255, b=n&255;
+  const bg=parseInt(SH.bg.slice(1),16);
+  const br=bg>>16, bgc=(bg>>8)&255, bb=bg&255;
+  const m=(a,bv)=>Math.round(bv+(a-bv)*pct);
+  return 'rgb('+m(r,br)+','+m(g,bgc)+','+m(b,bb)+')';
+};
+
+/* ورودیِ کارت را از پوزیشن می‌سازیم تا همان اعدادی برود روی تصویر که در برنامه دیده‌ای */
+function shareDataOf(p){
+  const live=liveOf(p.ticker), m=posMetrics(p,live), open=p.status==='open';
+  const spot=p.kind==='spot';
+  return {ticker:p.ticker,spot,dir:p.dir,lev:p.lev,open,
+    roi:m.roi,pnl:m.pnl,r:m.r,entry:p.entry,exit:m.exit,stop:p.stop0!=null?p.stop0:p.stop,
+    since:open?Date.now():p.closedAt,openedAt:p.openedAt,
+    title:open?(spot?'خرید باز':'پوزیشن باز'):(spot?'فروش انجام شد':'پوزیشن بسته شد')};
+}
+function drawShareCard(d,opt){
+  const o=opt||shareOpt;
+  const sq=o.ratio==='11';
+  const W=1080, H=sq?1080:1350;
+  /* چیدمان با عدد ثابت نوشته می‌شود نه با «هرچه آمد»: در ۴:۵ و مربع باید هر دو
+     پر و متعادل باشند، وگرنه پایین کارت یک وجب خالی می‌ماند. */
+  const L=sq
+    ?{sym:250,hero:460,heroLab:520,pnl:600,lad:700,cells:780,cellH:140,fs:140}
+    :{sym:300,hero:600,heroLab:662,pnl:748,lad:900,cells:1000,cellH:152,fs:170};
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const c=cv.getContext('2d');
+  const win=(d.pnl||0)>=0, acc=win?SH.up:SH.dn;
+  const P=76;
+
+  c.fillStyle=SH.bg;c.fillRect(0,0,W,H);
+  // هاله‌ی پشت عدد: قبل از خواندن هر رقمی، سبز یا قرمز بودنش را می‌فهمی
+  const glow=c.createRadialGradient(W/2,L.hero-60,0,W/2,L.hero-60,W*0.8);
+  glow.addColorStop(0,mix(acc,0.17));glow.addColorStop(1,SH.bg);
+  c.fillStyle=glow;c.fillRect(0,0,W,H);
+  c.strokeStyle='rgba(255,255,255,.07)';c.lineWidth=3;
+  rr(c,6,6,W-12,H-12,54);c.stroke();
+
+  // ── سربرگ ──
+  drawMark(c,W-P-64,P-6,64);
+  shText(c,'میز سیگنال',W-P-84,P+46,{size:36,weight:900,color:SH.gold});
+  shText(c,jStampFa(new Date(d.since||Date.now())).split(' ')[0],P,P+42,
+    {size:26,weight:700,color:SH.tx3,align:'left'});
+
+  // ── نماد و برچسب‌ها ──
+  c.save();shFont(c,86,900);c.fillStyle=SH.tx;c.direction='ltr';c.textAlign='right';
+  c.fillText(d.ticker||'—',W-P,L.sym);
+  const tw=c.measureText(d.ticker||'—').width;c.restore();
+  let px=W-P-tw-24;
+  if(d.spot)px-=shPill(c,'اسپات',px,L.sym-46,{bg:mix(SH.gold,.18),fg:SH.gold})+12;
+  else{
+    px-=shPill(c,d.dir==='long'?'لانگ':'شورت',px,L.sym-46,
+      {bg:mix(d.dir==='long'?SH.up:SH.dn,.18),fg:d.dir==='long'?SH.up:SH.dn})+12;
+    shPill(c,(+d.lev)+'x',px,L.sym-46,{bg:SH.card2,fg:SH.tx2});
+  }
+  shText(c,d.title,P,L.sym-8,{size:28,weight:700,color:SH.tx3,align:'left'});
+
+  // ── عدد اصلی ──
+  const roiTxt=(d.roi==null||!isFinite(d.roi))?'—':
+    (d.roi>0?'+':d.roi<0?'−':'')+Math.abs(d.roi).toFixed(1)+'٪';
+  c.save();
+  c.shadowColor=mix(acc,.9);c.shadowBlur=90;
+  shFont(c,L.fs,900);c.fillStyle=acc;c.direction='ltr';c.textAlign='center';
+  c.fillText(roiTxt,W/2,L.hero);
+  c.restore();
+  shText(c,d.spot?'بازده':'بازده روی مارجین',W/2,L.heroLab,
+    {size:28,weight:700,color:SH.tx3,align:'center'});
+  if(o.amount){
+    c.save();shFont(c,64,900);c.fillStyle=acc;c.direction='ltr';c.textAlign='center';
+    c.fillText(fmtUsd(d.pnl),W/2,L.pnl);c.restore();
+  }
+
+  // ── نردبان: همان تصویری که در خود برنامه تصمیم را با آن می‌گیری ──
+  /* نوار درصدیِ ساده گمراه‌کننده بود: حرکتِ ۴٪ قیمت با اهرم ۵ یعنی ۲۱٪ بازده،
+     ولی نوار تقریباً خالی می‌ماند. اینجا به‌جای «چقدر حرکت کرد»، «کجا ایستاد
+     نسبت به استاپ و ورود» را نشان می‌دهیم — همان چیزی که واقعاً معنی دارد. */
+  drawShareLadder(c,d,acc,P,L.lad,W-P*2);
+
+  // ── سه خانه‌ی عدد ──
+  const bw=W-P*2, cw=(bw-24*2)/3, y=L.cells;
+  const cells=[
+    [d.spot?'قیمت خرید':'ورود',d.entry!=null?fmtPrice(d.entry):'—',SH.tx],
+    [d.open?'قیمت الان':'خروج',d.exit!=null&&isFinite(d.exit)?fmtPrice(d.exit):'—',SH.tx],
+    (d.r!=null&&isFinite(d.r))
+      ?['نسبت به ریسک',fmtR(d.r),acc]
+      :['مدت نگهداری',shDur(d.openedAt,d.since),SH.tx]
+  ];
+  cells.forEach((cl,i)=>{
+    const x=W-P-cw-(cw+24)*i;
+    c.fillStyle=SH.card;rr(c,x,y,cw,L.cellH,26);c.fill();
+    c.strokeStyle=SH.line;c.lineWidth=2;rr(c,x,y,cw,L.cellH,26);c.stroke();
+    shText(c,cl[0],x+cw/2,y+50,{size:24,weight:700,color:SH.tx3,align:'center'});
+    c.save();shFont(c,38,900);c.fillStyle=cl[2];
+    c.direction=/[۰-۹0-9]/.test(cl[1])&&!/[آ-ی]/.test(cl[1])?'ltr':'rtl';
+    c.textAlign='center';
+    c.fillText(cl[1],x+cw/2,y+108);c.restore();
+  });
+
+  // ── پاورقی ──
+  const fy=H-P-4;
+  c.strokeStyle=mix(SH.gold,.3);c.lineWidth=3;
+  c.beginPath();c.moveTo(P,fy-56);c.lineTo(W-P,fy-56);c.stroke();
+  if(o.channel)shText(c,'@'+S.channel,W-P,fy,{size:28,weight:800,color:SH.gold,align:'right',rtl:false});
+  shText(c,'گزارش شخصی — توصیه‌ی مالی نیست',P,fy,{size:24,weight:700,color:SH.tx3,align:'left'});
+  return cv;
+}
+/* نردبانِ کوچکِ کارت: استاپ، ورود و خروج روی یک محور.
+   راست‌به‌چپ نیست — قیمت یک محور عددی است و باید مثل نمودار چپ‌به‌راست بماند. */
+function drawShareLadder(c,d,acc,x,y,w){
+  const pts=[d.entry,d.exit,d.stop].filter(v=>v!=null&&isFinite(v)&&v>0);
+  if(pts.length<2){                       // چیزی برای کشیدن نیست: فقط یک خط آرام
+    c.fillStyle=SH.card2;rr(c,x,y,w,12,6);c.fill();return;
+  }
+  let lo=Math.min.apply(null,pts), hi=Math.max.apply(null,pts);
+  const pad=(hi-lo)*0.18||hi*0.01;
+  lo-=pad;hi+=pad;
+  const at=v=>x+((v-lo)/(hi-lo))*w;
+  const h=12;
+  c.fillStyle=SH.card2;rr(c,x,y,w,h,h/2);c.fill();
+  // ناحیه‌ی بین ورود و خروج: همان فاصله‌ای که سود یا ضرر از آن آمده
+  if(d.exit!=null&&isFinite(d.exit)&&d.entry){
+    const a=at(d.entry), b=at(d.exit);
+    c.fillStyle=mix(acc,.75);rr(c,Math.min(a,b),y,Math.abs(a-b),h,h/2);c.fill();
+  }
+  const tick=(v,label,color,below)=>{
+    if(v==null||!isFinite(v)||v<=0)return;
+    const tx=Math.max(x+2,Math.min(x+w-2,at(v)));
+    c.fillStyle=color;c.beginPath();c.arc(tx,y+h/2,11,0,Math.PI*2);c.fill();
+    c.fillStyle=SH.bg;c.beginPath();c.arc(tx,y+h/2,4.5,0,Math.PI*2);c.fill();
+    shText(c,label,tx,below?y+h+40:y-24,{size:23,weight:800,color,align:'center'});
+  };
+  tick(d.stop,'استاپ '+fmtPrice(d.stop),SH.dn,true);
+  tick(d.entry,'ورود',SH.tx3,true);
+  tick(d.exit,d.open?'قیمت الان':'خروج',acc,false);
+}
+/* همان کارت، ولی برای یک بازه به‌جای یک پوزیشن. عمداً همان چیدمان است تا کسی
+   که هر دو را دیده باشد بداند از یک جا آمده‌اند. */
+function drawSummaryCard(a,label,opt){
+  const o=opt||shareOpt;
+  const sq=o.ratio==='11';
+  const W=1080,H=sq?1080:1350;
+  const L=sq?{hero:430,heroLab:490,pnl:566,cells:640,cellH:132,fs:132}
+            :{hero:580,heroLab:642,pnl:730,cells:840,cellH:150,fs:160};
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const c=cv.getContext('2d');
+  /* عدد اصلی مجموع R است نه نرخ برد: نرخ برد می‌تواند ۷۰٪ باشد و حساب در ضرر،
+     و آن‌وقت عددِ سبز روی کارتِ ضرر می‌نشیند. R هم مستقل از اندازه‌ی حساب است،
+     پس فرستادنش چیزی از سرمایه‌ات لو نمی‌دهد. */
+  const hasR=a.totalR!=null&&isFinite(a.totalR);
+  const heroVal=hasR?a.totalR:(a.pnl||0);
+  const acc=heroVal>=0?SH.up:SH.dn, P=76;
+  c.fillStyle=SH.bg;c.fillRect(0,0,W,H);
+  const glow=c.createRadialGradient(W/2,L.hero-60,0,W/2,L.hero-60,W*0.8);
+  glow.addColorStop(0,mix(acc,0.17));glow.addColorStop(1,SH.bg);
+  c.fillStyle=glow;c.fillRect(0,0,W,H);
+  c.strokeStyle='rgba(255,255,255,.07)';c.lineWidth=3;rr(c,6,6,W-12,H-12,54);c.stroke();
+
+  drawMark(c,W-P-64,P-6,64);
+  shText(c,'میز سیگنال',W-P-84,P+46,{size:36,weight:900,color:SH.gold});
+  shText(c,jStampFa(new Date()).split(' ')[0],P,P+42,{size:26,weight:700,color:SH.tx3,align:'left'});
+  shText(c,label,W-P,sq?230:280,{size:46,weight:900,color:SH.tx});
+  shText(c,'کارنامه',P,sq?226:276,{size:28,weight:700,color:SH.tx3,align:'left'});
+
+  const heroTxt=hasR?fmtR(a.totalR):(a.winRate==null?'—':faN(a.winRate.toFixed(0))+'٪');
+  c.save();c.shadowColor=mix(acc,.9);c.shadowBlur=90;
+  shFont(c,L.fs,900);c.fillStyle=acc;c.direction=hasR?'ltr':'rtl';c.textAlign='center';
+  c.fillText(heroTxt,W/2,L.hero);c.restore();
+  shText(c,hasR?'مجموع R — چند برابر ریسکِ هر معامله':'نرخ برد',
+    W/2,L.heroLab,{size:hasR?26:28,weight:700,color:SH.tx3,align:'center'});
+  if(o.amount){
+    c.save();shFont(c,64,900);c.fillStyle=acc;c.direction='ltr';c.textAlign='center';
+    c.fillText(fmtUsd(a.pnl),W/2,L.pnl);c.restore();
+  }
+
+  const bw=W-P*2, cw=(bw-20*2)/3, y=L.cells, y2=y+L.cellH+20;
+  const cells=[
+    ['معامله',faN(a.n),SH.tx],['برد',faN(a.wins),SH.up],['باخت',faN(a.losses),SH.dn],
+    ['نرخ برد',a.winRate==null?'—':faN(a.winRate.toFixed(0))+'٪',
+      a.winRate==null?SH.tx3:(a.winRate>=50?SH.up:SH.dn)],
+    ['ضریب سود',a.pf==null?'—':(a.pf===Infinity?'∞':a.pf.toFixed(2)),
+      a.pf!=null&&a.pf>=1?SH.up:SH.tx],
+    ['میانگین R',a.avgR!=null?fmtR(a.avgR):'—',a.avgR!=null?(a.avgR>=0?SH.up:SH.dn):SH.tx3]
+  ];
+  cells.forEach((cl,i)=>{
+    const row=i<3?0:1, col=i%3;
+    const x=W-P-cw-(cw+20)*col, cy=row?y2:y;
+    c.fillStyle=SH.card;rr(c,x,cy,cw,L.cellH,26);c.fill();
+    c.strokeStyle=SH.line;c.lineWidth=2;rr(c,x,cy,cw,L.cellH,26);c.stroke();
+    shText(c,cl[0],x+cw/2,cy+48,{size:23,weight:700,color:SH.tx3,align:'center'});
+    c.save();shFont(c,38,900);c.fillStyle=cl[2];
+    c.direction=/[آ-ی۰-۹٪]/.test(cl[1])?'rtl':'ltr';c.textAlign='center';
+    c.fillText(cl[1],x+cw/2,cy+104);c.restore();
+  });
+
+  const fy=H-P-4;
+  c.strokeStyle=mix(SH.gold,.3);c.lineWidth=3;
+  c.beginPath();c.moveTo(P,fy-56);c.lineTo(W-P,fy-56);c.stroke();
+  if(o.channel)shText(c,'@'+S.channel,W-P,fy,{size:28,weight:800,color:SH.gold,align:'right',rtl:false});
+  shText(c,'گزارش شخصی — توصیه‌ی مالی نیست',P,fy,{size:24,weight:700,color:SH.tx3,align:'left'});
+  return cv;
+}
+function sheetShareSummary(a,label){
+  openSheet(
+   '<h3>تصویر کارنامه · '+esc(label)+'</h3>'+
+   '<div class="sub">خلاصه‌ی این بازه در یک تصویر. مانده‌ی حساب و جزئیات معامله‌ها رویش نمی‌رود.</div>'+
+   '<div class="shprev"><img id="shImg" alt="پیش‌نمایش کارت"></div>'+
+   '<div class="shopts">'+
+     '<label class="shopt"><input type="checkbox" id="o_amt"><span>نمایش مبلغ خالص</span></label>'+
+     '<label class="shopt"><input type="checkbox" id="o_ch"><span>نوشتن نام کانال</span></label>'+
+   '</div>'+
+   '<div class="mkt" id="shRatio" style="margin:10px 0"></div>'+
+   '<div class="srow"><button class="btn pri" id="ok">'+ic('share')+'<span>اشتراک‌گذاری</span></button>'+
+   '<button class="btn" id="cx">بستن</button></div>',
+   ()=>{
+     let cv=null;
+     const paint=()=>{
+       cv=drawSummaryCard(a,label,shareOpt);
+       $('#shImg').src=cv.toDataURL('image/png');
+       const rb=$('#shRatio');rb.innerHTML='';
+       for(const [k,lab] of [['45','۴:۵ — استوری و پست'],['11','مربع']]){
+         const b=el('button','mktb'+(shareOpt.ratio===k?' on':''),lab);
+         b.setAttribute('aria-pressed',shareOpt.ratio===k?'true':'false');
+         b.onclick=()=>{shareOpt.ratio=k;shareSave();paint();};
+         rb.appendChild(b);
+       }
+     };
+     $('#o_amt').checked=shareOpt.amount;$('#o_ch').checked=shareOpt.channel;
+     $('#o_amt').onchange=()=>{shareOpt.amount=$('#o_amt').checked;shareSave();paint();};
+     $('#o_ch').onchange=()=>{shareOpt.channel=$('#o_ch').checked;shareSave();paint();};
+     paint();
+     $('#ok').onclick=async()=>{
+       const r=await shareOrSave(cv,'report-'+new Date().toISOString().slice(0,10));
+       if(r==='save')toast('تصویر ذخیره شد — از گالری بفرستش','ok');
+       else if(r==='share')closeSheet();
+     };
+     $('#cx').onclick=closeSheet;
+   });
+}
+function shDur(a,b){
+  if(!a||!b)return '—';
+  const mn=Math.max(0,Math.round((b-a)/60000));
+  if(mn<60)return faN(mn)+' دقیقه';
+  if(mn<1440)return faN(Math.round(mn/60))+' ساعت';
+  return faN(Math.round(mn/1440))+' روز';
+}
+const canvasBlob=cv=>new Promise(r=>cv.toBlob(r,'image/png'));
+/* اشتراک‌گذاری بومی فقط در بستر امن و با پشتیبانی فایل کار می‌کند؛ هرجا نشد،
+   دانلود می‌کنیم — تصویر در هر دو حالت یکی است. */
+async function shareOrSave(cv,name){
+  const blob=await canvasBlob(cv);
+  if(!blob)return toast('ساخت تصویر نشد','err');
+  const file=new File([blob],name+'.png',{type:'image/png'});
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file]});
+      return 'share';
+    }
+  }catch(e){ if(e&&e.name==='AbortError')return 'cancel'; }
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=name+'.png';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+  return 'save';
+}
+function sheetShare(p){
+  const d=shareDataOf(p);
+  openSheet(
+   '<h3>تصویر نتیجه · '+esc(d.ticker||'')+'</h3>'+
+   '<div class="sub">یک تصویر آماده برای فرستادن. فقط همین اعداد رویش می‌رود — '+
+   'مانده‌ی حساب و بقیه‌ی پوزیشن‌هایت هیچ‌جای تصویر نیست.</div>'+
+   '<div class="shprev"><img id="shImg" alt="پیش‌نمایش کارت"></div>'+
+   '<div class="shopts">'+
+     '<label class="shopt"><input type="checkbox" id="o_amt"><span>نمایش مبلغ سود/ضرر</span></label>'+
+     '<label class="shopt"><input type="checkbox" id="o_ch"><span>نوشتن نام کانال</span></label>'+
+   '</div>'+
+   '<div class="mkt" id="shRatio" style="margin:10px 0"></div>'+
+   '<div class="srow"><button class="btn pri" id="ok">'+ic('share')+'<span>اشتراک‌گذاری</span></button>'+
+   '<button class="btn" id="dlb">'+ic('down')+'<span>ذخیره</span></button>'+
+   '<button class="btn" id="cx">بستن</button></div>',
+   ()=>{
+     let cv=null;
+     const paint=()=>{
+       cv=drawShareCard(d,shareOpt);
+       $('#shImg').src=cv.toDataURL('image/png');
+       const rb=$('#shRatio');rb.innerHTML='';
+       for(const [k,lab] of [['45','۴:۵ — استوری و پست'],['11','مربع']]){
+         const b=el('button','mktb'+(shareOpt.ratio===k?' on':''),lab);
+         b.setAttribute('aria-pressed',shareOpt.ratio===k?'true':'false');
+         b.onclick=()=>{shareOpt.ratio=k;shareSave();paint();};
+         rb.appendChild(b);
+       }
+     };
+     $('#o_amt').checked=shareOpt.amount;
+     $('#o_ch').checked=shareOpt.channel;
+     $('#o_amt').onchange=()=>{shareOpt.amount=$('#o_amt').checked;shareSave();paint();};
+     $('#o_ch').onchange=()=>{shareOpt.channel=$('#o_ch').checked;shareSave();paint();};
+     paint();
+     const name=()=>'signal-'+(d.ticker||'x')+'-'+new Date().toISOString().slice(0,10);
+     $('#ok').onclick=async()=>{
+       const r=await shareOrSave(cv,name());
+       if(r==='save')toast('تصویر ذخیره شد — از گالری بفرستش','ok');
+       else if(r==='share')closeSheet();
+     };
+     $('#dlb').onclick=async()=>{
+       const blob=await canvasBlob(cv);if(!blob)return;
+       const url=URL.createObjectURL(blob);
+       const a=document.createElement('a');a.href=url;a.download=name()+'.png';
+       document.body.appendChild(a);a.click();a.remove();
+       setTimeout(()=>URL.revokeObjectURL(url),4000);
+       toast('تصویر ذخیره شد','ok');
+     };
+     $('#cx').onclick=closeSheet;
+   });
+}
+
 /* ==================== نمای پوزیشن‌ها ==================== */
 let posFilter='open';
 let DRAGGING=false;               // وقتی دستگیره استاپ زیر انگشت است، رندر دوباره نباید بپرد
@@ -3974,7 +4574,8 @@ function buildPendingCard(w){
   const c=el('div','card d-'+w.dir+(w.hit?' hitcard':''));
   const head=el('div','chead');
   head.appendChild(el('span','tick',esc(w.ticker)));
-  head.appendChild(el('span','pill '+w.dir,w.dir==='long'?'لانگ':'شورت'));
+  if(w.market==='spot')head.appendChild(el('span','pill gold','اسپات'));
+  else head.appendChild(el('span','pill '+w.dir,w.dir==='long'?'لانگ':'شورت'));
   head.appendChild(el('span','pill '+(w.hit?'win':'mut'),w.hit?'رسید':'منتظر'));
   head.appendChild(el('div','when',relTime(new Date(w.at))));
   c.appendChild(head);
@@ -4220,10 +4821,14 @@ function buildPosCard(p){
   const live=liveOf(p.ticker), m=posMetrics(p,live), open=p.status==='open';
   const card=el('div','card d-'+p.dir);card.id='pos-'+p.id;
 
+  const isSpot=p.kind==='spot';     // پوزیشن‌های قدیمی kind ندارند و همه فیوچرز بوده‌اند
   const head=el('div','chead');
   head.appendChild(el('span','tick',p.ticker));
-  head.appendChild(el('span','pill '+p.dir,p.dir==='long'?'لانگ':'شورت'));
-  head.appendChild(el('span','pill mut',(+p.lev)+'x'));
+  if(isSpot)head.appendChild(el('span','pill gold','اسپات'));
+  else{
+    head.appendChild(el('span','pill '+p.dir,p.dir==='long'?'لانگ':'شورت'));
+    head.appendChild(el('span','pill mut',(+p.lev)+'x'));
+  }
   if(open){
     head.appendChild(el('span','pill open','باز'));
     if(m.parts)head.appendChild(el('span','pill gold','پله‌ای'));
@@ -4238,7 +4843,7 @@ function buildPosCard(p){
   const hero=el('div','pnlhero');
   hero.innerHTML='<div><span class="lab">'+(open?'سود/ضرر شناور':'سود/ضرر نهایی')+'</span>'+
       '<div class="big '+cls(m.pnl)+'">'+fmtUsd(m.pnl)+'</div></div>'+
-    '<div><span class="lab">روی مارجین</span><div class="lp '+cls(m.pnl)+'">'+fmtPct(m.roi)+'</div></div>'+
+    '<div><span class="lab">'+(isSpot?'بازده':'روی مارجین')+'</span><div class="lp '+cls(m.pnl)+'">'+fmtPct(m.roi)+'</div></div>'+
     (m.r!=null?'<div><span class="lab">R</span><div class="lp '+cls(m.r)+'">'+fmtR(m.r)+'</div></div>':'')+
     '<div class="side"><span class="lab">'+(open?'قیمت الان':'قیمت خروج')+'</span>'+
       '<div class="lp'+(open&&flashOf(p.ticker)?' fl-'+flashOf(p.ticker):'')+'">'+
@@ -4253,9 +4858,10 @@ function buildPosCard(p){
   let kh='';
   const add=(l,v,c,big)=>kh+='<div class="k"><b>'+l+'</b><span class="'+(c||'')+(big?' big':'')+'">'+v+'</span></div>';
   add('ورود',fmtPrice(p.entry)+(m.parts?' (میانگین)':''));
-  add('مارجین باز',fmtUsd(p.margin));
-  if(m.parts)add('مارجین کل',fmtUsd(m.base),'m');
-  add('حجم',fmtUsd(m.notional));
+  add(isSpot?'مبلغ باقی‌مانده':'مارجین باز',fmtUsd(p.margin));
+  if(m.parts)add(isSpot?'کل مبلغ خرید':'مارجین کل',fmtUsd(m.base),'m');
+  if(isSpot)add('مقدار '+p.ticker,(+m.qty.toPrecision(6))+'');
+  else add('حجم',fmtUsd(m.notional));
   if(m.realized)add('سود قطعی‌شده',fmtUsd(m.realized),cls(m.realized));
   if(m.unreal!=null&&m.realized)add('شناور باقی‌مانده',fmtUsd(m.unreal),cls(m.unreal));
   if(m.movePct!=null)add('حرکت قیمت',fmtPct(m.movePct),cls(m.movePct));
@@ -4266,7 +4872,7 @@ function buildPosCard(p){
     add('اگر استاپ بخورد',fmtUsd(o.pnl)+' ('+fmtR(o.r)+')',cls(o.pnl));
   }
   if(p.stop0!=null&&p.stop!=null&&Math.abs(p.stop0-p.stop)>1e-12)add('استاپ اولیه',fmtPrice(p.stop0),'m');
-  add('لیکوئید',m.liqPrice==null?'ندارد':fmtPrice(m.liqPrice),m.liqPrice==null?'m':'d');
+  if(!isSpot)add('لیکوئید',m.liqPrice==null?'ندارد':fmtPrice(m.liqPrice),m.liqPrice==null?'m':'d');
   if(!open&&p.fees!=null)add('کارمزد',fmtUsd(-(m.fees||0)),'m');
   kv.innerHTML=kh;b.appendChild(kv);
 
@@ -4347,6 +4953,10 @@ function buildPosCard(p){
     for(const k in DB.decisions)if(DB.decisions[k].posId===p.id)delete DB.decisions[k];
     save();renderAll();toast('حذف شد','ok');
   };
+  const sh=el('button','btn xs side',ic('share')+'<span>تصویر</span>');
+  sh.title='ساختن تصویر نتیجه برای فرستادن';
+  sh.onclick=()=>sheetShare(p);
+  a.appendChild(sh);
   a.appendChild(e);a.appendChild(d);
   card.appendChild(a);
 
@@ -4722,7 +5332,13 @@ function renderReport(){
 
   const total=agg(closed);
   const head=el('div','panel');
-  head.appendChild(el('div',null,'<b style="font-size:15px">تصویر کلی</b>'));
+  const ht=el('div','panelhead');
+  ht.appendChild(el('b',null,'تصویر کلی'));
+  const shAll=el('button','btn xs',ic('share')+'<span>تصویر</span>');
+  shAll.title='ساختن تصویر کارنامه برای فرستادن';
+  shAll.onclick=()=>sheetShareSummary(total,'همه‌ی معامله‌ها');
+  ht.appendChild(shAll);
+  head.appendChild(ht);
   head.appendChild(statsOf(total,true));
   head.appendChild(equityCurve(closed));
   body.appendChild(head);
@@ -4740,6 +5356,12 @@ function renderReport(){
     c.appendChild(h);
     const bd=el('div','body');
     bd.appendChild(statsOf(a));
+    const lbl=repPeriod==='range'
+      ?jStampFa(new Date(repFrom)).slice(0,10)+' تا '+jStampFa(new Date(repTo)).slice(0,10)
+      :periodLabel(k,repPeriod);
+    const shP=el('button','btn xs',ic('share')+'<span>تصویر این دوره</span>');
+    shP.onclick=()=>sheetShareSummary(a,lbl);
+    bd.appendChild(shP);
     const tb=el('table','tp');
     tb.innerHTML='<thead><tr><th>نماد</th><th>جهت</th><th>اهرم</th><th>٪ مارجین</th><th>سود/ضرر</th><th>R</th></tr></thead>';
     const tb2=el('tbody');let rows='';
@@ -4985,7 +5607,7 @@ function dataCounts(d){
   const n=x=>Array.isArray(x)?x.length:(x&&typeof x==='object'?Object.keys(x).length:0);
   return [['پوزیشن',n(d.positions)],['تصمیم',n(d.decisions)],['آموزش',n(d.lessons)],
           ['واچ‌لیست',n(d.watch)],['اسپات',n(d.spot)],['منتظر',n(d.pending)],
-          ['آرشیو',n(d.archived)],['اصلاح دستی',n(d.overrides)]];
+          ['آرشیو',n(d.archived)],['نتایج',n(d.results)],['اصلاح دستی',n(d.overrides)]];
 }
 function applyBackup(d){
   DB.positions=(d.positions||[]).map(ensureBase);
@@ -4994,6 +5616,7 @@ function applyBackup(d){
   DB.overrides=d.overrides&&typeof d.overrides==='object'?d.overrides:{};
   DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
   DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
+  DB.results=d.results&&typeof d.results==='object'?d.results:{};
   DB.pending=Array.isArray(d.pending)?d.pending:[];
   DB.watch=Array.isArray(d.watch)?d.watch:[];
   DB.spot=Array.isArray(d.spot)?d.spot:[];
@@ -5110,7 +5733,7 @@ function moveInd(){
 function renderAll(){
   const open=DB.positions.filter(p=>p.status==='open').length;
   const cp=$('#cPos');cp.textContent=faN(open);cp.classList.toggle('z',!open);
-  const und=POSTS.filter(p=>sigOf(p).isSignal&&!decisionOf(p.id)&&!isArch(p.id)).length;
+  const und=POSTS.filter(p=>sigOf(p).isSignal&&!decisionOf(p.id)&&bucketOf(p)==='live').length;
   const cs=$('#cSig');cs.textContent=faN(und);cs.classList.toggle('z',!und);
   const nm=DB.watch.length+DB.spot.length;
   const cm=$('#cMkt');if(cm){cm.textContent=faN(nm);cm.classList.toggle('z',!nm);}
