@@ -200,7 +200,9 @@ html.busy .prog{opacity:1}
   overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .tabs::-webkit-scrollbar{display:none}
 .tab{flex:1 0 auto;min-width:64px}
-.tabs .ind{position:absolute;top:4px;bottom:4px;inset-inline-start:0;width:0;border-radius:12px;z-index:0;
+/* left فیزیکی، نه inset منطقی: نشانگر با offsetLeft جابجا می‌شود که در هر دو جهت
+   یک معنی دارد و برخلاف getBoundingClientRect با اسکرولِ نوار جابه‌جا نمی‌شود. */
+.tabs .ind{position:absolute;top:4px;bottom:4px;left:0;width:0;border-radius:12px;z-index:0;
   background:linear-gradient(180deg,color-mix(in srgb,var(--gold) 22%,var(--card2)),var(--card2));
   border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);
   transition:transform .45s var(--spring),width .45s var(--spring)}
@@ -398,6 +400,13 @@ html.busy .prog{opacity:1}
 .wgrid b{display:block;font-size:10.5px;color:var(--tx3);font-weight:700;margin-bottom:3px}
 .wgrid span{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;direction:ltr}
 .wsub{font-size:11.5px;color:var(--tx3);margin-top:9px;line-height:1.9}
+.cmptab{width:100%;border-collapse:collapse;font-size:12.5px}
+.cmptab th{font-size:11px;color:var(--tx3);font-weight:700;padding:6px 8px;text-align:center}
+.cmptab th:first-child{text-align:start}
+.cmptab td{padding:7px 8px;border-top:1px solid var(--line);text-align:center;
+  font-variant-numeric:tabular-nums;color:var(--tx2)}
+.cmptab td:first-child{text-align:start;color:var(--tx)}
+.cmptab tr.df td{color:var(--gold);font-weight:800}
 .guessrow{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
 .pxnote{font-size:11.5px;color:var(--tx3);margin-top:5px;min-height:15px}
 .pxnote b{color:var(--tx);font-variant-numeric:tabular-nums}
@@ -4929,9 +4938,72 @@ function dl(name,text,type){
   a.href=u;a.download=name;document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},400);
 }
+/* شمارشِ همه‌ی چیزهایی که پشتیبان نگه می‌دارد — هم برای فایل هم برای دستگاه،
+   تا قبل از جایگزینی معلوم باشد دقیقاً چه چیزی جای چه چیزی می‌نشیند. */
+function dataCounts(d){
+  const n=x=>Array.isArray(x)?x.length:(x&&typeof x==='object'?Object.keys(x).length:0);
+  return [['پوزیشن',n(d.positions)],['تصمیم',n(d.decisions)],['آموزش',n(d.lessons)],
+          ['واچ‌لیست',n(d.watch)],['اسپات',n(d.spot)],['منتظر',n(d.pending)],
+          ['آرشیو',n(d.archived)],['اصلاح دستی',n(d.overrides)]];
+}
+function applyBackup(d){
+  DB.positions=(d.positions||[]).map(ensureBase);
+  DB.decisions=d.decisions&&typeof d.decisions==='object'?d.decisions:{};
+  // پشتیبان‌های قدیمی‌تر بعضی کلیدها را ندارند؛ نبودشان یعنی خالی، نه خطا
+  DB.overrides=d.overrides&&typeof d.overrides==='object'?d.overrides:{};
+  DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
+  DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
+  DB.pending=Array.isArray(d.pending)?d.pending:[];
+  DB.watch=Array.isArray(d.watch)?d.watch:[];
+  DB.spot=Array.isArray(d.spot)?d.spot:[];
+  OVERRIDE=DB.overrides; PCACHE.clear();
+  if(d.settings&&typeof d.settings==='object')Object.assign(S,d.settings);
+  applySettingsToForm();readSettings();
+  save();renderAll();
+}
+function sheetRestore(d,name){
+  const mine=dataCounts(dbBlob()), file=dataCounts(d);
+  const when=d.exportedAt?jStampFa(new Date(d.exportedAt)):'نامعلوم';
+  const rows=file.map(([l,v],i)=>{
+    const m=mine[i][1], diff=v!==m;
+    return '<tr'+(diff?' class="df"':'')+'><td>'+l+'</td><td>'+faN(v)+'</td><td>'+faN(m)+'</td></tr>';
+  }).join('');
+  openSheet(
+   '<h3>بازیابی از پشتیبان</h3>'+
+   '<div class="sub">فایل: <b dir="ltr">'+esc(name||'—')+'</b><br>ساخته شده: '+when+'</div>'+
+   '<div class="tscroll"><table class="cmptab">'+
+     '<thead><tr><th></th><th>در فایل</th><th>این دستگاه</th></tr></thead>'+
+     '<tbody>'+rows+'</tbody></table></div>'+
+   '<div class="rwarn bad">داده‌ی این دستگاه <b>کامل جایگزین</b> می‌شود، نه ادغام. '+
+   'ردیف‌های برجسته آن‌هایی‌اند که فرق دارند.</div>'+
+   (syncOn()?'<div class="hint">همگام‌سازی روشن است، پس بعد از بازیابی همین داده به سرور '+
+     'فرستاده می‌شود و دستگاه‌های دیگر هم همین را می‌گیرند.</div>':
+     '<div class="hint">همگام‌سازی خاموش است؛ این کار فقط روی همین دستگاه اثر دارد.</div>')+
+   '<div class="srow"><button class="btn pri" id="ok">جایگزین کن</button>'+
+   '<button class="btn" id="cx">انصراف</button></div>',
+   ()=>{
+     $('#cx').onclick=closeSheet;
+     $('#ok').onclick=async()=>{
+       applyBackup(d);
+       closeSheet();
+       toast('بازیابی شد','ok');
+       if(syncOn()){
+         // اول rev تازه را می‌گیریم، وگرنه نوشتن روی نسخه‌ی کهنه تعارض می‌دهد
+         try{
+           const r=await syncReq('GET');
+           if(r.ok&&r.j){syncCfg.rev=r.j.rev||0;syncSave();}
+           const ok=await syncPush();
+           toast(ok?'روی سرور هم نشست':'به سرور نرفت — دستی «ارسال به سرور» را بزن',ok?'ok':'err');
+         }catch(err){toast('به سرور نرفت','err');}
+       }
+     };
+   });
+}
 function wireIO(){
   $('#btnExport').onclick=()=>{
-    dl('signal-desk-'+jKey(new Date())+'.json',
+    const now=new Date(), hh=String(now.getHours()).padStart(2,'0'),
+          mm=String(now.getMinutes()).padStart(2,'0');
+    dl('signal-desk-'+jKey(now)+'-'+hh+mm+'.json',
       JSON.stringify({v:4,exportedAt:Date.now(),positions:DB.positions,decisions:DB.decisions,
         settings:S,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,
         pending:DB.pending,watch:DB.watch,spot:DB.spot},null,2));
@@ -4957,24 +5029,12 @@ function wireIO(){
     const f=e.target.files[0];if(!f)return;
     const rd=new FileReader();
     rd.onload=()=>{
+      let d=null;
       try{
-        const d=JSON.parse(rd.result);
-        if(!d||!Array.isArray(d.positions))throw 0;
-        if(!confirm('داده فعلی با فایل پشتیبان جایگزین شود؟\nپوزیشن‌های فایل: '+d.positions.length))return;
-        DB.positions=d.positions.map(ensureBase);
-        DB.decisions=d.decisions||{};
-        // پشتیبان‌های نسخه‌ی ۲ این را ندارند؛ نبودش یعنی خالی، نه خطا
-        DB.overrides=d.overrides&&typeof d.overrides==='object'?d.overrides:{};
-        DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
-        DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
-        DB.pending=Array.isArray(d.pending)?d.pending:[];
-        DB.watch=Array.isArray(d.watch)?d.watch:[];
-        DB.spot=Array.isArray(d.spot)?d.spot:[];
-        OVERRIDE=DB.overrides; PCACHE.clear();
-        if(d.settings)Object.assign(S,d.settings);
-        applySettingsToForm();readSettings();
-        save();renderAll();toast('بازیابی شد','ok');
-      }catch(err){toast('فایل معتبر نیست','err');}
+        d=JSON.parse(rd.result);
+        if(!d||typeof d!=='object'||!Array.isArray(d.positions))throw 0;
+      }catch(err){toast('فایل معتبر نیست','err');e.target.value='';return;}
+      sheetRestore(d,f.name);
       e.target.value='';
     };
     rd.readAsText(f);
@@ -5000,12 +5060,10 @@ function go(v,noScroll){
 function moveInd(){
   const t=$('.tab[aria-selected="true"]'), ind=$('#tabInd');
   if(!t||!ind)return;
-  const box=t.parentElement.getBoundingClientRect(), b=t.getBoundingClientRect();
-  const rtl=getComputedStyle(document.documentElement).direction==='rtl';
-  const off=rtl?box.right-b.right:b.left-box.left;
-  ind.style.width=b.width+'px';
-  ind.style.transform='translateX('+(rtl?-off:off)+'px)';
-  // نوار تب‌ها اسکرول افقی دارد؛ تب فعال باید خودش دیده شود
+  // offsetLeft نسبت به همان ظرفی است که نشانگر هم در آن مطلق شده، پس اسکرولِ نوار
+  // رویش اثر ندارد. با rect قبلی، هر مقدار scrollLeft نشانگر را به اندازه‌ی خودش کج می‌کرد.
+  ind.style.width=t.offsetWidth+'px';
+  ind.style.transform='translateX('+t.offsetLeft+'px)';
   try{t.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});}catch(e){}
 }
 function renderAll(){
