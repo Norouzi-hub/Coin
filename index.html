@@ -362,6 +362,7 @@ html.busy .prog{opacity:1}
   overflow-wrap:anywhere;unicode-bidi:plaintext}
 .replyfull .shot{margin-top:9px;border-radius:var(--r2);overflow:hidden;border-bottom:0}
 .replyfull .mark{margin-top:9px}
+.card.hitcard{border-color:color-mix(in srgb,var(--up) 45%,transparent)}
 .card.flashcard{animation:flashc 1.6s var(--ease)}
 @keyframes flashc{0%,100%{box-shadow:var(--sh)}25%,60%{box-shadow:0 0 0 2px var(--gold)}}
 .brief{padding:0 14px 12px}
@@ -373,6 +374,10 @@ html.busy .prog{opacity:1}
   font-variant-numeric:tabular-nums}
 .bk span.u{color:var(--up)}.bk span.d{color:var(--dn)}
 .bk span.w{color:var(--warn)}.bk span.m{color:var(--tx3)}
+.guessrow{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.pxnote{font-size:11.5px;color:var(--tx3);margin-top:5px;min-height:15px}
+.pxnote b{color:var(--tx);font-variant-numeric:tabular-nums}
+.pxnote .bad{color:var(--dn)}
 .archseg{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
 .archchip{padding:6px 13px;border-radius:99px;font-size:12.5px;font-weight:800;cursor:pointer;
   background:var(--inset);color:var(--tx2);border:1px solid var(--line2)}
@@ -792,6 +797,7 @@ input[type=range]{width:100%;accent-color:var(--gold)}
   <section id="vPositions" class="view hide">
     <div class="tools">
       <div class="segf">
+        <button class="btn sm" id="pWait" aria-pressed="false">منتظر <span class="cnt z" id="cWait">0</span></button>
         <button class="btn sm" id="pOpen" aria-pressed="true">باز</button>
         <button class="btn sm" id="pClosed" aria-pressed="false">بسته‌شده</button>
         <button class="btn sm" id="pAllP" aria-pressed="false">همه</button>
@@ -1072,9 +1078,9 @@ function jShort(d){const p=jParts(d);return faN(p.jd)+' '+J_M[p.jm-1];}
 /* ==================== ذخیره‌سازی ==================== */
 const KEY='signaldesk.v1';
 let storeOK=true;
-const DB={positions:[],decisions:{},settings:{},overrides:{},lessons:{},archived:{}};
+const DB={positions:[],decisions:{},settings:{},overrides:{},lessons:{},archived:{},pending:[]};
 function save(){
-  try{ localStorage.setItem(KEY,JSON.stringify({positions:DB.positions,decisions:DB.decisions,settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived})); }
+  try{ localStorage.setItem(KEY,JSON.stringify({positions:DB.positions,decisions:DB.decisions,settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,pending:DB.pending})); }
   catch(e){ storeOK=false; showStoreWarn(); }
   if(typeof syncSoon==='function')syncSoon();
 }
@@ -1090,6 +1096,7 @@ function load(){
       DB.overrides=d.overrides&&typeof d.overrides==='object'?d.overrides:{};
       DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
       DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
+      DB.pending=Array.isArray(d.pending)?d.pending:[];
     }
   }catch(e){ storeOK=false; }
 }
@@ -1342,6 +1349,14 @@ const FA_COIN=[
   [/سویی\b/,'SUI'], [/اپتوس/,'APT'], [/تون\s*کوین|تون\b/,'TON'],
   [/فانتوم/,'FTM'], [/الگورند/,'ALGO'], [/استلار/,'XLM'], [/اینجکتیو/,'INJ']
 ];
+/* نام کامل انگلیسی هم رایج است («solana خوبه»)، و در فهرست صرافی فقط نماد کوتاه هست،
+   پس SOLANA هیچ‌وقت پیدا نمی‌شد. */
+const EN_COIN={bitcoin:'BTC',ethereum:'ETH',ether:'ETH',ripple:'XRP',solana:'SOL',
+  cardano:'ADA',dogecoin:'DOGE',doge:'DOGE',shiba:'SHIB',binance:'BNB',tron:'TRX',
+  polkadot:'DOT',chainlink:'LINK',litecoin:'LTC',avalanche:'AVAX',polygon:'MATIC',
+  arbitrum:'ARB',optimism:'OP',cosmos:'ATOM',near:'NEAR',filecoin:'FIL',uniswap:'UNI',
+  pepe:'PEPE',worldcoin:'WLD',aptos:'APT',toncoin:'TON',fantom:'FTM',algorand:'ALGO',
+  stellar:'XLM',injective:'INJ',sui:'SUI'};
 /* «ك» و «ي» عربی و نیم‌فاصله را یکدست می‌کنیم تا الگوهای بالا به هر دو املا بخورند */
 const faNorm=t=>String(t||'').replace(/ك/g,'ک').replace(/ي/g,'ی').replace(/[\u200c_]/g,' ');
 function detectTicker(t){
@@ -1349,6 +1364,10 @@ function detectTicker(t){
   if(h){const u=h[1].toUpperCase();if(!SYMBOLS.size||SYMBOLS.has(u))return u;}
   for(const tok of (t.split('\n').slice(0,4).join('\n').match(/\b[A-Za-z]{2,10}\b/g)||[])){
     const u=tok.toUpperCase(); if(BLOCK.has(u))continue; if(SYMBOLS.has(u))return u;
+  }
+  for(const tok of (t.match(/\b[A-Za-z]{3,12}\b/g)||[])){
+    const sym=EN_COIN[tok.toLowerCase()];
+    if(sym&&(!SYMBOLS.size||SYMBOLS.has(sym)))return sym;
   }
   const fa=faNorm(t);
   for(const [re,sym] of FA_COIN)if(re.test(fa))return sym;
@@ -1395,6 +1414,7 @@ function sigOf(p){
   if(!ov||(ov.ticker==null&&ov.sig==null))return r;
   const o=Object.assign({},r);
   if(ov.ticker)o.ticker=ov.ticker;
+  if(ov.trigger!=null)o.trigger=ov.trigger;
   if(ov.sig!=null)o.isSignal=!!ov.sig;
   return o;
 }
@@ -1709,7 +1729,7 @@ function applyPrices(m,srcName,route,ms){
   if(symChanged)SYMVER++;
   Object.assign(H.px,{state:'ok',src:srcName,route,ms,at:PX_AT,n:m.size,err:null});
   savePxCache();
-  try{checkAlerts();}catch(e){}
+  try{checkAlerts();checkPending();}catch(e){}
 }
 function rowsToMap(rows){
   const m=new Map();
@@ -1821,6 +1841,54 @@ async function loadChannel(before){
   }finally{renderHealth();}
 }
 
+/* ==================== سفارش منتظر ==================== */
+/* خیلی از سیگنال‌ها می‌گویند «بالای X وارد شو» — یعنی تا قیمت به آن نرسیده کاری نکن.
+   تا حالا یا باید زودتر وارد می‌شدی یا سیگنال را از دست می‌دادی. حالا ثبت می‌شود،
+   قیمت که رسید خبر می‌دهد، و با یک زدن به پوزیشن واقعی تبدیل می‌شود. */
+const pendingOf=id=>DB.pending.find(x=>x.id===id);
+function addPending(p,sig,trigger,px){
+  const I=planInputsOf(p,sig,OVERRIDE[p.id]||{},px);
+  const dir=I.dir;
+  // بالای تریگر برای لانگ، زیرش برای شورت — جهت عبور را همین‌جا قفل می‌کنیم
+  const side=dir==='long'?'up':'down';
+  DB.pending.push({id:uid(),postId:p.id,ticker:sig.ticker||'—',dir,trigger,side,
+    entry:I.entry!=null?I.entry:trigger,stop:I.stop||null,targets:sig.targets||[],
+    at:Date.now(),hit:null});
+  save();renderAll();
+  toast('منتظر '+fmtPrice(trigger)+' ماند','ok');
+}
+function dropPending(id){
+  DB.pending=DB.pending.filter(x=>x.id!==id);
+  save();renderAll();toast('سفارش منتظر برداشته شد','info');
+}
+function checkPending(){
+  for(const w of DB.pending){
+    if(w.hit)continue;
+    const px=PRICES.get(w.ticker);
+    if(px==null)continue;
+    const reached=w.side==='up'?px>=w.trigger:px<=w.trigger;
+    if(!reached)continue;
+    w.hit=Date.now();
+    const msg=w.ticker+' به تریگر ورود رسید ('+fmtPrice(w.trigger)+')';
+    toast(msg,'ok');
+    if(F('notify'))notify('میز سیگنال',msg,'trg'+w.id);
+  }
+  if(DB.pending.some(w=>w.hit))save();
+}
+/* سفارش منتظر که به پوزیشن تبدیل شود، از همان فرم ورود رد می‌شود تا محاسبه یکی بماند */
+function fillPending(w){
+  const post=POSTS.find(x=>x.id===w.postId);
+  if(!post){toast('پست این سیگنال در حافظه نیست','err');return;}
+  const sig=sigOf(post);
+  const ov=OVERRIDE[post.id]||{};
+  // ورود را روی تریگر می‌گذاریم چون عملاً همان‌جا پر می‌شود
+  OVERRIDE[post.id]=Object.assign({},ov,{entry:w.trigger});
+  DB.overrides=OVERRIDE;PCACHE.delete(post.id);
+  sheetEnter(post,sig,OVERRIDE[post.id],PRICES.get(w.ticker)||null);
+  DB.pending=DB.pending.filter(x=>x.id!==w.id);
+  save();
+}
+
 /* ==================== اعلان و هشدار ==================== */
 /* بدون سرور Push، نوتیفیکیشن فقط وقتی می‌آید که صفحه باز باشد — حتی اگر در پس‌زمینه.
    اگر تب را ببندی هیچ اعلانی نمی‌آید؛ این محدودیت مرورگر است نه کد. */
@@ -1884,13 +1952,15 @@ let syncCfg=lsGet(SYNCKEY)||{url:'',token:'',rev:0,at:0};
 let syncTimer=null, syncing=false;
 const syncOn=()=>!!(syncCfg.url&&syncCfg.token);
 const dbBlob=()=>({positions:DB.positions,decisions:DB.decisions,
-  settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived});
+  settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,
+  pending:DB.pending});
 function applyBlob(d){
   DB.positions=Array.isArray(d.positions)?d.positions.map(ensureBase):[];
   DB.decisions=d.decisions&&typeof d.decisions==='object'?d.decisions:{};
   DB.overrides=d.overrides&&typeof d.overrides==='object'?d.overrides:{};
   DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
   DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
+  DB.pending=Array.isArray(d.pending)?d.pending:[];
   if(d.settings&&typeof d.settings==='object'){DB.settings=d.settings;Object.assign(S,d.settings);}
   OVERRIDE=DB.overrides;PCACHE.clear();
   save();applySettingsToForm();renderAll();
@@ -3031,6 +3101,14 @@ function buildBrief(p,sig,ov,px){
   const b2=el('button','btn no',ic('x')+'<span>وارد نشدم</span>');
   b2.onclick=()=>sheetSkip(p,sig,ov,px);
   a.appendChild(b1);a.appendChild(b2);
+  // سیگنالی که تریگر دارد و هنوز نرسیده: به‌جای ورود زودهنگام، منتظرش می‌مانیم
+  const trg=sig.trigger!=null?sig.trigger:(I.entry!=null?I.entry:null);
+  const already=DB.pending.some(x=>x.postId===p.id);
+  if(trg!=null&&!already){
+    const b3=el('button','btn xs','منتظر '+fmtPrice(trg));
+    b3.onclick=()=>addPending(p,sig,trg,px);
+    a.appendChild(b3);
+  }else if(already)a.appendChild(el('span','markhint','در فهرست منتظرها'));
   w.appendChild(a);
   return w;
 }
@@ -3127,31 +3205,69 @@ function buildMark(p,sig,ov,isSig,dec,px){
 }
 function sheetMarkSignal(p,sig){
   const t=normDig(p.text||'');
-  const guessEntry=sig.entry!=null?sig.entry:'', guessStop=sig.stop!=null?sig.stop:'';
+  /* نمادهای محتمل: هرچه در متن هست و در فهرست صرافی هم پیدا می‌شود. اگر تشخیص خودکار
+     چیزی نیافته، دست‌کم گزینه‌ها جلوی چشم باشد تا تایپ نکنی. */
+  const guesses=[...new Set((t.match(/\b[A-Za-z]{2,10}\b/g)||[])
+    .map(x=>x.toUpperCase()).filter(x=>!BLOCK.has(x)&&SYMBOLS.has(x)))];
+  for(const tok of (t.match(/\b[A-Za-z]{3,12}\b/g)||[])){
+    const sym=EN_COIN[tok.toLowerCase()];
+    if(sym&&!guesses.includes(sym))guesses.push(sym);
+  }
+  const fa=faNorm(t);
+  for(const [re,sym] of FA_COIN)if(re.test(fa)&&!guesses.includes(sym))guesses.push(sym);
+  const all=[...SYMBOLS].sort();
+  const start=sig.ticker||guesses[0]||'';
   openSheet(
    '<h3>افزودن به سیگنال‌ها</h3>'+
    '<div class="sub">این کار <b>پوزیشن باز نمی‌کند</b> — فقط پست را به فهرست سیگنال‌ها می‌برد '+
-   'تا ماشین‌حساب رویش فعال شود. برای ورود، بعداً روی خود کارت «وارد شدم» را بزن.</div>'+
-   '<div class="sub">نماد را با حروف انگلیسی بنویس، مثل BTC. اعداد اختیاری‌اند و '+
-   'هرچه از متن پست خوانده شده از قبل پر است.</div>'+
-   '<div class="grid">'+
-     '<div class="fld"><label>نماد</label><input id="f_tk" dir="ltr" placeholder="BTC" value="'+
-       esc(sig.ticker||'')+'"></div>'+
+   'تا ماشین‌حساب رویش فعال شود.</div>'+
+   '<div class="fld"><label>نماد</label>'+
+     '<input id="f_tk" dir="ltr" list="symlist" placeholder="BTC" value="'+esc(start)+'">'+
+     '<datalist id="symlist">'+all.slice(0,900).map(x=>'<option value="'+esc(x)+'"></option>').join('')+'</datalist>'+
+     '<div class="pxnote" id="pxNote"></div></div>'+
+   (guesses.length?'<div class="guessrow" id="guessRow">'+
+     guesses.slice(0,6).map(g=>'<button class="catchip" data-g="'+esc(g)+'">'+esc(g)+'</button>').join('')+
+     '</div>':'')+
+   '<div class="grid" style="margin-top:10px">'+
      '<div class="fld"><label>جهت</label><select id="f_d">'+
        '<option value="long"'+(sig.direction==='long'?' selected':'')+'>لانگ</option>'+
        '<option value="short"'+(sig.direction==='short'?' selected':'')+'>شورت</option></select></div>'+
-     fldHtml('en','قیمت ورود سیگنال',guessEntry)+fldHtml('st','حد ضرر سیگنال',guessStop)+
+     fldHtml('en','قیمت ورود سیگنال',sig.entry!=null?sig.entry:'')+
    '</div>'+
+   '<div class="grid" style="margin-top:10px">'+
+     fldHtml('st','حد ضرر سیگنال',sig.stop!=null?sig.stop:'')+
+     fldHtml('tr','تریگر ورود (اختیاری)',sig.trigger!=null?sig.trigger:'')+
+   '</div>'+
+   '<div class="hint">اگر پست عددی نداده، نماد را که بزنی قیمت روز به‌عنوان ورود پیشنهاد می‌شود. '+
+   '«تریگر» یعنی تا قیمت به آن نرسیده وارد نمی‌شوی.</div>'+
    '<div class="srow"><button class="btn pri" id="ok">ثبت سیگنال</button>'+
    '<button class="btn" id="cx">انصراف</button></div>',
    ()=>{
+     const tkEl=$('#f_tk');
+     /* نماد که عوض شود قیمت روز را نشان می‌دهیم، و اگر کادر ورود خالی است پرش می‌کنیم —
+        چون در سیگنال‌های «همین الان بخر» عددی در متن نیست. */
+     const syncPx=()=>{
+       const tk=(tkEl.value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+       const px=tk?PRICES.get(tk):null;
+       const n=$('#pxNote');
+       if(!tk){n.textContent='';return;}
+       if(px==null){n.innerHTML='<span class="bad">قیمتی برای '+esc(tk)+' پیدا نشد</span>';return;}
+       n.innerHTML='قیمت الان <b>'+fmtPrice(px)+'</b>';
+       const e=$('#f_en');
+       if(!e.value)e.value=roundP(px);
+     };
+     tkEl.oninput=syncPx; tkEl.onchange=syncPx;
+     const gr=$('#guessRow');
+     if(gr)gr.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{
+       tkEl.value=b.dataset.g;syncPx();});
+     syncPx();
      $('#cx').onclick=closeSheet;
      $('#ok').onclick=()=>{
-       const tk=($('#f_tk').value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+       const tk=(tkEl.value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
        if(!tk){toast('نماد را بنویس','err');return;}
        const id=p.id;
        OVERRIDE[id]=Object.assign({},OVERRIDE[id],{sig:true,ticker:tk,dir:$('#f_d').value});
-       for(const [k,f] of [['entry','f_en'],['stop','f_st']]){
+       for(const [k,f] of [['entry','f_en'],['stop','f_st'],['trigger','f_tr']]){
          const v=num(f);
          if(v!=null)OVERRIDE[id][k]=v; else delete OVERRIDE[id][k];
        }
@@ -3511,10 +3627,49 @@ let DRAGGING=false;               // وقتی دستگیره استاپ زیر �
 const PENDING=new Map();          // استاپ جابجاشده و هنوز تأیید نشده، برای هر پوزیشن
 const liveOf=t=>PRICES.get(t)||null;
 
+function buildPendingCard(w){
+  const px=PRICES.get(w.ticker);
+  const c=el('div','card d-'+w.dir+(w.hit?' hitcard':''));
+  const head=el('div','chead');
+  head.appendChild(el('span','tick',esc(w.ticker)));
+  head.appendChild(el('span','pill '+w.dir,w.dir==='long'?'لانگ':'شورت'));
+  head.appendChild(el('span','pill '+(w.hit?'win':'mut'),w.hit?'رسید':'منتظر'));
+  head.appendChild(el('div','when',relTime(new Date(w.at))));
+  c.appendChild(head);
+
+  const kv=el('div','briefkv');kv.style.margin='0 14px 10px';
+  const add=(l,v,cl)=>{const d=el('div','bk');d.appendChild(el('b',null,l));
+    d.appendChild(el('span',cl||null,v));kv.appendChild(d);};
+  add('تریگر',fmtPrice(w.trigger));
+  add('قیمت الان',px!=null?fmtPrice(px):'—',px==null?'m':null);
+  if(px!=null){
+    const gap=((w.trigger-px)/px)*100;
+    add('فاصله',fmtPct(gap),Math.abs(gap)<1?'w':'m');
+  }else add('حد ضرر',w.stop!=null?fmtPrice(w.stop):'—','m');
+  c.appendChild(kv);
+
+  const a=el('div','acts');
+  const b1=el('button','btn '+(w.hit?'pri':''),ic('check')+'<span>ورود با این تریگر</span>');
+  b1.onclick=()=>fillPending(w);
+  const b2=el('button','btn dgr xs','برداشتن');
+  b2.onclick=()=>{if(confirm('این سفارش منتظر برداشته شود؟'))dropPending(w.id);};
+  a.appendChild(b1);a.appendChild(b2);
+  c.appendChild(a);
+  return c;
+}
 function renderPositions(){
   if(DRAGGING)return;
   const wrap=$('#posList'), sum=$('#posSummary');
   wrap.innerHTML='';sum.innerHTML='';
+  const nWait=DB.pending.length;
+  const cw=$('#cWait');if(cw){cw.textContent=faN(nWait);cw.classList.toggle('z',!nWait);}
+  if(posFilter==='pending'){
+    if(!nWait){wrap.appendChild(el('div','empty',STAR+
+      'سفارش منتظری نداری.<br>روی سیگنالی که تریگر ورود دارد،<br>دکمه‌ی «منتظر …» را بزن.'));return;}
+    for(const w of [...DB.pending].sort((x,y)=>(y.hit||0)-(x.hit||0)||y.at-x.at))
+      wrap.appendChild(buildPendingCard(w));
+    return;
+  }
   const all=[...DB.positions].sort((a,b)=>(b.closedAt||b.openedAt)-(a.closedAt||a.openedAt));
   const open=all.filter(p=>p.status==='open');
 
@@ -4486,7 +4641,8 @@ function wireIO(){
   $('#btnExport').onclick=()=>{
     dl('signal-desk-'+jKey(new Date())+'.json',
       JSON.stringify({v:4,exportedAt:Date.now(),positions:DB.positions,decisions:DB.decisions,
-        settings:S,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived},null,2));
+        settings:S,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,
+        pending:DB.pending},null,2));
     toast('پشتیبان گرفته شد','ok');
   };
   $('#btnCsv').onclick=()=>{
@@ -4519,6 +4675,7 @@ function wireIO(){
         DB.overrides=d.overrides&&typeof d.overrides==='object'?d.overrides:{};
         DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
         DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
+        DB.pending=Array.isArray(d.pending)?d.pending:[];
         OVERRIDE=DB.overrides; PCACHE.clear();
         if(d.settings)Object.assign(S,d.settings);
         applySettingsToForm();readSettings();
@@ -4704,8 +4861,8 @@ function wire(){
     ['fSig','fNew','fAll'].forEach(x=>$('#'+x).setAttribute('aria-pressed',x===btn?'true':'false'));renderSignals();};};
   sf('fSig','sig');sf('fNew','new');sf('fAll','all');
   const pf=(btn,val)=>{$('#'+btn).onclick=()=>{posFilter=val;
-    ['pOpen','pClosed','pAllP'].forEach(x=>$('#'+x).setAttribute('aria-pressed',x===btn?'true':'false'));renderPositions();};};
-  pf('pOpen','open');pf('pClosed','closed');pf('pAllP','all');
+    ['pWait','pOpen','pClosed','pAllP'].forEach(x=>$('#'+x).setAttribute('aria-pressed',x===btn?'true':'false'));renderPositions();};};
+  pf('pWait','pending');pf('pOpen','open');pf('pClosed','closed');pf('pAllP','all');
   $('#btnManual').onclick=()=>sheetEditPos(null);
   $$('#vReport .tools .btn').forEach(b=>b.onclick=()=>{
     if(b.dataset.p==='range')return sheetRange();
