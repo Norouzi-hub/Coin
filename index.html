@@ -313,6 +313,14 @@ html.busy .prog{opacity:1}
 .mark.ghost{background:var(--inset);color:var(--tx3);border-color:var(--line2)}
 .mark:active{transform:scale(.97)}
 .markhint{font-size:11px;color:var(--tx3)}
+.autolev{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:13px;
+  color:var(--tx2);cursor:pointer}
+.autolev input{width:19px;height:19px;accent-color:var(--gold);flex:none}
+.rwarn{margin-top:10px;padding:10px 12px;border-radius:var(--r2);font-size:12.5px;line-height:1.9}
+.rwarn.warn{background:color-mix(in srgb,var(--warn) 13%,transparent);color:var(--warn);
+  border:1px solid color-mix(in srgb,var(--warn) 32%,transparent)}
+.rwarn.bad{background:color-mix(in srgb,var(--dn) 13%,transparent);color:var(--dn);
+  border:1px solid color-mix(in srgb,var(--dn) 34%,transparent)}
 .mark.on{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up);
   border-color:color-mix(in srgb,var(--up) 35%,transparent)}
 .lesson .ltitle{font-weight:800;font-size:14.5px;color:var(--tx);line-height:1.6;
@@ -2814,7 +2822,7 @@ function buildMark(p,sig,ov,isSig,dec){
     row.appendChild(b);
     if(manual)row.appendChild(el('span','markhint','دستی علامت خورده'));
   }else{
-    const b=el('button','mark','این سیگنال است');
+    const b=el('button','mark','افزودن به سیگنال‌ها');
     b.onclick=()=>sheetMarkSignal(p,sig);
     row.appendChild(b);
     if(ov.sig===false){
@@ -2833,16 +2841,18 @@ function sheetMarkSignal(p,sig){
   const t=normDig(p.text||'');
   const guessEntry=sig.entry!=null?sig.entry:'', guessStop=sig.stop!=null?sig.stop:'';
   openSheet(
-   '<h3>این پست سیگنال است</h3>'+
-   '<div class="sub">هرچه از متن خوانده شده از قبل پر است. نماد را با حروف انگلیسی بنویس، مثل BTC.</div>'+
+   '<h3>افزودن به سیگنال‌ها</h3>'+
+   '<div class="sub">این کار <b>پوزیشن باز نمی‌کند</b> — فقط پست را به فهرست سیگنال‌ها می‌برد '+
+   'تا ماشین‌حساب رویش فعال شود. برای ورود، بعداً روی خود کارت «وارد شدم» را بزن.</div>'+
+   '<div class="sub">نماد را با حروف انگلیسی بنویس، مثل BTC. اعداد اختیاری‌اند و '+
+   'هرچه از متن پست خوانده شده از قبل پر است.</div>'+
    '<div class="grid">'+
      '<div class="fld"><label>نماد</label><input id="f_tk" dir="ltr" placeholder="BTC" value="'+
        esc(sig.ticker||'')+'"></div>'+
      '<div class="fld"><label>جهت</label><select id="f_d">'+
        '<option value="long"'+(sig.direction==='long'?' selected':'')+'>لانگ</option>'+
        '<option value="short"'+(sig.direction==='short'?' selected':'')+'>شورت</option></select></div>'+
-     fldHtml('en','قیمت ورود',guessEntry)+fldHtml('st','حد ضرر',guessStop)+
-     fldHtml('lv','اهرم (اختیاری)',sig.leverage!=null?sig.leverage:'')+
+     fldHtml('en','قیمت ورود سیگنال',guessEntry)+fldHtml('st','حد ضرر سیگنال',guessStop)+
    '</div>'+
    '<div class="srow"><button class="btn pri" id="ok">ثبت سیگنال</button>'+
    '<button class="btn" id="cx">انصراف</button></div>',
@@ -2853,12 +2863,12 @@ function sheetMarkSignal(p,sig){
        if(!tk){toast('نماد را بنویس','err');return;}
        const id=p.id;
        OVERRIDE[id]=Object.assign({},OVERRIDE[id],{sig:true,ticker:tk,dir:$('#f_d').value});
-       for(const [k,f] of [['entry','f_en'],['stop','f_st'],['lev','f_lv']]){
+       for(const [k,f] of [['entry','f_en'],['stop','f_st']]){
          const v=num(f);
          if(v!=null)OVERRIDE[id][k]=v; else delete OVERRIDE[id][k];
        }
        DB.overrides=OVERRIDE; save(); PCACHE.delete(id);
-       closeSheet(); renderAll(); toast(tk+' به سیگنال‌ها اضافه شد','ok');
+       closeSheet(); renderAll(); toast(tk+' به سیگنال‌ها اضافه شد — پوزیشنی باز نشد','ok');
      };
    });
 }
@@ -2870,42 +2880,83 @@ function snapOf(p,sig,entry,stop){
 /* ---- ورق «وارد شدم» ---- */
 function sheetEnter(p,sig,ov,px){
   const I=planInputsOf(p,sig,ov,px);
-  const r=computePlan({direction:I.dir,entry:I.entry,stop:I.stop,live:px,capital:S.cap,
-    riskPct:S.risk,maxLeverage:S.maxLev,leverageOverride:I.lev,mode:S.mode,rMultiples:S.rMul});
-  const entry=I.entry||px||'', stop=I.stop||'', lev=r.ok?(+r.leverage.toFixed(2)):(I.lev||1),
-        margin=r.ok?(+r.margin.toFixed(2)):S.cap;
+  const entry0=I.entry||px||'', stop0=I.stop||'';
   openSheet(
    '<h3>ثبت ورود'+(sig.ticker?' · '+esc(sig.ticker):'')+'</h3>'+
-   '<div class="sub">اعداد از سیگنال پر شده‌اند. هر کدام را لازم داری عوض کن؛ دقیقاً همین‌ها ذخیره می‌شوند.</div>'+
+   '<div class="sub">فقط بگو چقدر پول می‌گذاری؛ اهرم و بقیه را خودش حساب می‌کند تا ضررِ '+
+   'خوردنِ استاپ همان ریسک هدفت باشد (الان '+faN(S.risk)+'٪ مارجین).</div>'+
    '<div class="grid">'+
-     fldHtml('e','قیمت ورود واقعی',entry)+fldHtml('s','حد ضرر',stop)+
-     fldHtml('m','مارجین ($)',margin)+fldHtml('l','اهرم',lev)+
+     fldHtml('e','قیمت ورود واقعی',entry0)+fldHtml('s','حد ضرر',stop0)+
    '</div>'+
+   '<div class="grid" style="margin-top:10px">'+
+     fldHtml('m','مارجین ($) — چقدر می‌گذاری',S.cap)+
+     '<div class="fld"><label>اهرم</label>'+
+       '<input id="f_l" type="number" step="any" inputmode="decimal"></div>'+
+   '</div>'+
+   '<label class="autolev"><input type="checkbox" id="f_auto" checked>'+
+     '<span>اهرم را خودت حساب کن</span></label>'+
    '<div class="grid" style="margin-top:10px">'+
      '<div class="fld"><label>جهت</label><select id="f_d">'+
        '<option value="long"'+(I.dir==='long'?' selected':'')+'>لانگ</option>'+
        '<option value="short"'+(I.dir==='short'?' selected':'')+'>شورت</option></select></div>'+
      '<div class="fld"><label>یادداشت</label><input id="f_n" placeholder="چرا وارد شدی؟"></div>'+
    '</div>'+
+   '<div id="riskBox"></div>'+
    '<div id="prev" class="kv" style="margin-top:12px"></div>'+
    '<div class="srow"><button class="btn pri" id="ok">ثبت پوزیشن</button>'+
    '<button class="btn" id="cx">انصراف</button></div>',
    sh=>{
+     const auto=()=>$('#f_auto').checked;
      const grab=()=>({entry:num('f_e'),stop:num('f_s'),margin:num('f_m'),lev:num('f_l'),
        dir:$('#f_d').value,note:($('#f_n').value||'').trim()});
+     /* اهرمی که ضررِ خوردن استاپ را دقیقاً به ریسک هدف می‌رساند. همان فرمول computePlan
+        است تا عددِ کارت و عددِ این فرم هیچ‌وقت با هم فرق نکنند. */
+     const levFor=v=>{
+       if(!v.entry||!v.stop||v.entry<=0)return null;
+       const sd=Math.abs(v.entry-v.stop)/v.entry;
+       if(!(sd>0))return null;
+       return {lev:clamp((S.risk/100)/sd,1,S.maxLev),sd,capped:(S.risk/100)/sd>S.maxLev};
+     };
      const upd=()=>{
-       const v=grab(), pv=$('#prev');pv.innerHTML='';
-       if(!v.entry||!v.margin||!v.lev){pv.innerHTML='<div class="k"><b>پیش‌نمایش</b><span class="m">اعداد ناقص است</span></div>';return;}
-       const tmp={dir:v.dir,entry:v.entry,stop:v.stop,margin:v.margin,lev:v.lev,status:'open'};
-       const m=posMetrics(tmp,px);
+       let v=grab();
+       const a=levFor(v);
+       if(auto()){
+         $('#f_l').readOnly=true;
+         $('#f_l').value=a?(+a.lev.toFixed(2)):'';
+         v=grab();
+       }else $('#f_l').readOnly=false;
+
+       const rb=$('#riskBox'); rb.innerHTML='';
+       const note=(txt,kind)=>rb.innerHTML+='<div class="rwarn '+kind+'">'+txt+'</div>';
+       const pv=$('#prev'); pv.innerHTML='';
+
+       if(!v.entry||!v.margin||!v.lev){
+         pv.innerHTML='<div class="k"><b>پیش‌نمایش</b><span class="m">اعداد ناقص است</span></div>';
+         if(auto()&&!v.stop)note('برای حساب کردن اهرم، حد ضرر لازم است. یا بنویسش یا تیک خودکار را بردار.','warn');
+         return;
+       }
+       const m=posMetrics({dir:v.dir,entry:v.entry,stop:v.stop,margin:v.margin,lev:v.lev,status:'open'},px);
        const add=(l,x,c)=>pv.innerHTML+='<div class="k"><b>'+l+'</b><span class="'+(c||'')+'">'+x+'</span></div>';
        add('حجم',fmtUsd(m.notional));
        add('مقدار',(+m.qty.toPrecision(6))+'');
        add('لیکوئید',m.liqPrice==null?'ندارد':fmtPrice(m.liqPrice),m.liqPrice==null?'m':'d');
+
        if(v.stop){
-         const risk=m.qty*Math.abs(v.entry-v.stop);
-         add('ضرر در استاپ',fmtUsd(-risk)+' ('+((risk/v.margin)*100).toFixed(1)+'٪)','d');
-       }
+         const risk=m.qty*Math.abs(v.entry-v.stop), pct=(risk/v.margin)*100;
+         add('ضرر در استاپ',fmtUsd(-risk)+' ('+pct.toFixed(1)+'٪)','d');
+         // استاپ بعد از لیکوئید یعنی قبل از رسیدن به استاپ، پوزیشن بسته شده
+         const ld=1/v.lev-MMR, sd=Math.abs(v.entry-v.stop)/v.entry;
+         if(v.lev>1.05&&ld>0&&sd>=ld)
+           note('<b>استاپ بعد از لیکوئید می‌افتد.</b> با این اهرم قبل از رسیدن به حد ضرر، کل مارجین از بین می‌رود. اهرم را کم کن.','bad');
+         else if(v.lev>1.05&&ld>0&&sd>ld*.75)
+           note('استاپ خیلی به لیکوئید نزدیک است — کمی نوسان کافی است تا پوزیشن بسته شود.','warn');
+         if(pct>S.risk*2)
+           note('ریسک این ورود '+pct.toFixed(1)+'٪ مارجین است، بیش از دو برابرِ هدف '+faN(S.risk)+'٪.','bad');
+         else if(pct>S.risk*1.2)
+           note('ریسک این ورود '+pct.toFixed(1)+'٪ مارجین است، بالاتر از هدف '+faN(S.risk)+'٪.','warn');
+         if(auto()&&a&&a.capped)
+           note('برای رسیدن به ریسک هدف، اهرم بیشتر از سقف تو ('+faN(S.maxLev)+'x) لازم بود؛ روی سقف ماند و ریسک کمتر از هدف شد.','warn');
+       }else note('بدون حد ضرر، نه ریسک معلوم است نه لیکوئید معنی دارد. اگر می‌توانی بنویسش.','warn');
        if(px)add('سود/ضرر الان',fmtUsd(m.pnl)+' ('+fmtPct(m.roi)+')',cls(m.pnl));
      };
      sh.querySelectorAll('input,select').forEach(i=>{i.oninput=upd;i.onchange=upd;});
