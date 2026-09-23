@@ -348,6 +348,31 @@ html.busy .prog{opacity:1}
 .sldrow input[type=range]{width:100%;accent-color:var(--gold);height:26px;direction:ltr}
 .sldrow input[type=range]:disabled{opacity:.45}
 .sldrow input[type=number]{width:100%;text-align:center}
+.replyhead{display:flex;align-items:center;gap:7px;width:100%;background:none;border:0;
+  padding:0;color:inherit;font:inherit;text-align:start;cursor:pointer}
+.replyhead span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.replyhead i{flex:none;width:7px;height:7px;border-inline-end:2px solid var(--tx3);
+  border-block-end:2px solid var(--tx3);transform:rotate(45deg);transition:transform .2s var(--ease)}
+.replyhead i.op{transform:rotate(-135deg)}
+.replyfull{margin-top:9px;padding:10px;border-radius:var(--r2);background:var(--inset);
+  border:1px solid var(--line)}
+.replysig{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px}
+.replysig .tick{font-size:14px}
+.replytxt{font-size:12.5px;line-height:2;color:var(--tx2);white-space:pre-wrap;
+  overflow-wrap:anywhere;unicode-bidi:plaintext}
+.replyfull .shot{margin-top:9px;border-radius:var(--r2);overflow:hidden;border-bottom:0}
+.replyfull .mark{margin-top:9px}
+.card.flashcard{animation:flashc 1.6s var(--ease)}
+@keyframes flashc{0%,100%{box-shadow:var(--sh)}25%,60%{box-shadow:0 0 0 2px var(--gold)}}
+.brief{padding:0 14px 12px}
+.briefkv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.bk{background:var(--inset);border:1px solid var(--line);border-radius:var(--r2);
+  padding:8px 6px;text-align:center;min-width:0}
+.bk b{display:block;font-size:10.5px;font-weight:700;color:var(--tx3)}
+.bk span{display:block;font-size:13.5px;font-weight:800;margin-top:3px;color:var(--tx);
+  font-variant-numeric:tabular-nums}
+.bk span.u{color:var(--up)}.bk span.d{color:var(--dn)}
+.bk span.w{color:var(--warn)}.bk span.m{color:var(--tx3)}
 .archseg{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
 .archchip{padding:6px 13px;border-radius:99px;font-size:12.5px;font-weight:800;cursor:pointer;
   background:var(--inset);color:var(--tx2);border:1px solid var(--line2)}
@@ -1745,8 +1770,15 @@ function parseChannelHTML(html){
     }
     let reply=null;
     const rp=b.querySelector('.tgme_widget_message_reply');
-    if(rp){const rt=rp.querySelector('.tgme_widget_message_text,.tgme_widget_message_metatext');
-      reply={text:nodeText(rt).trim().replace(/\s+/g,' ').slice(0,160)};}
+    if(rp){
+      const rt=rp.querySelector('.tgme_widget_message_text,.tgme_widget_message_metatext');
+      // خودِ بلوک ریپلای یک لینک به پست اصلی است؛ شناسه‌اش را برمی‌داریم تا بشود
+      // پست اصلی را همین‌جا نشان داد، نه فقط ۱۶۰ نویسه از متنش
+      const href=rp.getAttribute('href')||'';
+      const mm=href.match(/t\.me\/(?:s\/)?(.+)$/);
+      reply={text:nodeText(rt).trim().replace(/\s+/g,' ').slice(0,160),
+             id:mm?mm[1].replace(/[?#].*$/,''):null,link:href||null};
+    }
     let img=null;
     const ph=b.querySelector('.tgme_widget_message_photo_wrap,.tgme_widget_message_video_thumb,.tgme_widget_message_roundvideo_thumb');
     if(ph){const m=(ph.getAttribute('style')||'').match(/background-image\s*:\s*url\(['"]?(.*?)['"]?\)/);if(m)img=m[1];}
@@ -2803,7 +2835,7 @@ function buildCard(p){
     a.appendChild(im);card.appendChild(a);
   }
   const body=el('div','body');
-  if(p.reply&&p.reply.text)body.appendChild(el('div','reply','در پاسخ به: '+esc(p.reply.text)));
+  if(p.reply&&(p.reply.text||p.reply.id))body.appendChild(buildReply(p));
   const long=(p.text||'').length>320, col=long&&COLLAPSED[p.id]!==false;
   body.appendChild(el('div','txt'+(col?' clamp':''),linkify(esc(p.text||'(بدون متن)'))));
   if(long){
@@ -2814,12 +2846,75 @@ function buildCard(p){
   card.appendChild(body);
 
   if(isSig){
-    card.appendChild(buildPlan(p,sig,ov,px));
-    card.appendChild(buildActions(p,sig,ov,px,dec));
+    // جزئیات محاسبه فقط وقتی باز می‌شود که خودت خواسته باشی. تصمیم که گرفته شد
+    // ماشین‌حساب دیگر به کار نمی‌آید، پس فقط سطر وضعیت می‌ماند.
+    if(dec){
+      card.appendChild(buildActions(p,sig,ov,px,dec));
+    }else if(PLANOPEN.has(p.id)){
+      card.appendChild(buildPlan(p,sig,ov,px));
+      card.appendChild(buildActions(p,sig,ov,px,dec));
+    }else{
+      card.appendChild(buildBrief(p,sig,ov,px));
+    }
   }
   card.appendChild(buildMark(p,sig,ov,isSig,dec,px));
   CARDS.set(p.id,card);
   return card;
+}
+/* یک پست می‌تواند فقط بگوید «به نقطه ورود رسید» و معنی‌اش کاملاً به پستی باشد که
+   جوابش را داده. تا حالا فقط ۱۶۰ نویسه از آن دیده می‌شد؛ حالا خودِ پست اصلی باز می‌شود. */
+const REPLYOPEN=new Set();
+const findPost=id=>id?POSTS.find(x=>x.id===id||x.id.endsWith('/'+String(id).split('/').pop())):null;
+function buildReply(p){
+  const box=el('div','reply');
+  const src=findPost(p.reply.id);
+  const open=REPLYOPEN.has(p.id);
+  const head=el('button','replyhead');
+  head.innerHTML='<span>در پاسخ به: '+esc(p.reply.text||'(بدون متن)')+'</span>'+
+    '<i class="'+(open?'op':'')+'"></i>';
+  head.onclick=()=>{open?REPLYOPEN.delete(p.id):REPLYOPEN.add(p.id);rebuildCard(p);};
+  box.appendChild(head);
+  if(!open)return box;
+
+  const full=el('div','replyfull');
+  if(src){
+    const sg=sigOf(src);
+    if(sg.ticker){
+      const bar=el('div','replysig');
+      bar.appendChild(el('span','tick',esc(sg.ticker)));
+      bar.appendChild(el('span','pill '+sg.direction,sg.direction==='long'?'لانگ':'شورت'));
+      if(sg.entry!=null)bar.appendChild(el('span','pill mut','ورود '+fmtPrice(sg.entry)));
+      if(sg.stop!=null)bar.appendChild(el('span','pill mut','استاپ '+fmtPrice(sg.stop)));
+      full.appendChild(bar);
+    }
+    full.appendChild(el('div','replytxt',linkify(esc(src.text||'(بدون متن)'))));
+    if(src.img){
+      const a=el('div','shot');a.setAttribute('role','button');a.tabIndex=0;
+      const im=el('img');im.loading='lazy';im.decoding='async';im.alt='تصویر پست اصلی';
+      im.onload=()=>a.classList.add('loaded');im.onerror=()=>a.remove();im.src=src.img;
+      a.onclick=()=>openLightbox(im);
+      a.appendChild(im);full.appendChild(a);
+    }
+    const go=el('button','mark ghost','رفتن به پست اصلی');
+    go.onclick=()=>{
+      if(isArch(src.id)!==showArchived){showArchived=isArch(src.id);}
+      coinFilter=null;shownMax=Math.max(shownMax,POSTS.indexOf(src)+5);
+      renderSignals();
+      const c=CARDS.get(src.id);
+      if(c){c.scrollIntoView({behavior:'smooth',block:'center'});c.classList.add('flashcard');
+        setTimeout(()=>c.classList.remove('flashcard'),1600);}
+    };
+    full.appendChild(go);
+  }else{
+    full.appendChild(el('div','replytxt',
+      'پست اصلی در حافظه نیست — احتمالاً قدیمی‌تر از آن است که خوانده شده.<br>'+
+      'با «پست‌های قدیمی‌تر» پایین صفحه بیاورش، بعد دوباره اینجا را باز کن.'));
+    if(p.reply.link)full.appendChild(el('div',null,
+      '<a href="'+esc(p.reply.link)+'" target="_blank" rel="noopener" '+
+      'style="font-size:12px;color:var(--gold)">دیدن در تلگرام</a>'));
+  }
+  box.appendChild(full);
+  return box;
 }
 function rebuildCard(p){
   const old=CARDS.get(p.id);
@@ -2914,6 +3009,31 @@ function buildPlan(p,sig,ov,px){
   plan.appendChild(fl);
   return plan;
 }
+const PLANOPEN=new Set();
+/* حالت بسته: فقط آنچه برای تصمیم لازم است، به‌علاوه‌ی دو دکمه. باز کردن جزئیات
+   یک کار جداست تا لیست بلند نشود و پیمایش سنگین نشود. */
+function buildBrief(p,sig,ov,px){
+  const I=planInputsOf(p,sig,ov,px);
+  const w=el('div','brief');
+  const kv=el('div','briefkv');
+  const add=(l,v,c)=>{const d=el('div','bk');d.appendChild(el('b',null,l));
+    d.appendChild(el('span',c||null,v));kv.appendChild(d);};
+  add('ورود',I.entry!=null?fmtPrice(I.entry):'—');
+  add('حد ضرر',I.stop!=null?fmtPrice(I.stop):'—');
+  if(px!=null&&I.entry){
+    const gap=((px-I.entry)/I.entry)*100*(I.dir==='long'?1:-1);
+    add('فاصله تا ورود',fmtPct(gap),gap>3?'d':(gap>0?'w':'u'));
+  }else add('قیمت الان','—','m');
+  w.appendChild(kv);
+  const a=el('div','acts');
+  const b1=el('button','btn ok',ic('check')+'<span>بررسی و ورود</span>');
+  b1.onclick=()=>{PLANOPEN.add(p.id);rebuildCard(p);};
+  const b2=el('button','btn no',ic('x')+'<span>وارد نشدم</span>');
+  b2.onclick=()=>sheetSkip(p,sig,ov,px);
+  a.appendChild(b1);a.appendChild(b2);
+  w.appendChild(a);
+  return w;
+}
 function buildActions(p,sig,ov,px,dec){
   const a=el('div','acts');
   if(!dec){
@@ -2921,7 +3041,9 @@ function buildActions(p,sig,ov,px,dec){
     b1.onclick=()=>sheetEnter(p,sig,ov,px);
     const b2=el('button','btn no',ic('x')+'<span>وارد نشدم</span>');
     b2.onclick=()=>sheetSkip(p,sig,ov,px);
-    a.appendChild(b1);a.appendChild(b2);
+    const b3=el('button','btn xs','بستن جزئیات');
+    b3.onclick=()=>{PLANOPEN.delete(p.id);rebuildCard(p);};
+    a.appendChild(b1);a.appendChild(b2);a.appendChild(b3);
   }else{
     const info=el('div',null,'<span style="font-size:12.5px;color:var(--tx2)">'+
       (dec.action==='taken'?'ثبت شده در پوزیشن‌ها':'در آرشیو نگرفته‌ها')+
