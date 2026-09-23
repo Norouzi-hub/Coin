@@ -196,7 +196,10 @@ html.busy .prog{opacity:1}
 
 /* ================= تب‌ها ================= */
 .tabs{position:relative;display:flex;gap:2px;margin-top:10px;padding:4px;background:var(--card);
-  border:1px solid var(--line);border-radius:16px;margin-bottom:10px}
+  border:1px solid var(--line);border-radius:16px;margin-bottom:10px;
+  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:1 0 auto;min-width:64px}
 .tabs .ind{position:absolute;top:4px;bottom:4px;inset-inline-start:0;width:0;border-radius:12px;z-index:0;
   background:linear-gradient(180deg,color-mix(in srgb,var(--gold) 22%,var(--card2)),var(--card2));
   border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);
@@ -374,6 +377,27 @@ html.busy .prog{opacity:1}
   font-variant-numeric:tabular-nums}
 .bk span.u{color:var(--up)}.bk span.d{color:var(--dn)}
 .bk span.w{color:var(--warn)}.bk span.m{color:var(--tx3)}
+.wrow{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;
+  padding:12px 14px;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r2);margin-bottom:6px;cursor:pointer}
+.wrow.open{border-color:var(--line2);border-end-start-radius:0;border-end-end-radius:0;margin-bottom:0}
+.wrow.whead{background:none;border:0;padding:6px 14px;margin-bottom:2px;cursor:default;
+  font-size:11px;color:var(--tx3);font-weight:700}
+.wsym{font-weight:900;font-size:15px;direction:ltr;text-align:start;display:flex;
+  align-items:center;gap:7px;min-width:0}
+.wsym i{font-style:normal;font-size:10.5px;font-weight:700;color:var(--tx3);
+  background:var(--inset);border:1px solid var(--line2);padding:2px 7px;border-radius:99px}
+.wpx{font-variant-numeric:tabular-nums;font-weight:700;direction:ltr}
+.wch{font-variant-numeric:tabular-nums;font-weight:800;min-width:66px;text-align:end;direction:ltr}
+.wch .u,.wgrid .u{color:var(--up)}.wch .d,.wgrid .d{color:var(--dn)}
+.wch .m,.wgrid .m{color:var(--tx3)}
+.wdet{background:var(--inset);border:1px solid var(--line2);border-top:0;
+  border-end-start-radius:var(--r2);border-end-end-radius:var(--r2);padding:12px 14px;margin-bottom:6px}
+.wgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center}
+.wgrid div{background:var(--card);border:1px solid var(--line);border-radius:var(--r2);padding:8px 4px}
+.wgrid b{display:block;font-size:10.5px;color:var(--tx3);font-weight:700;margin-bottom:3px}
+.wgrid span{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;direction:ltr}
+.wsub{font-size:11.5px;color:var(--tx3);margin-top:9px;line-height:1.9}
 .guessrow{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
 .pxnote{font-size:11.5px;color:var(--tx3);margin-top:5px;min-height:15px}
 .pxnote b{color:var(--tx);font-variant-numeric:tabular-nums}
@@ -762,6 +786,7 @@ input[type=range]{width:100%;accent-color:var(--gold)}
       <button class="tab" data-v="signals" role="tab" aria-selected="true" data-ic="trend"><span>سیگنال‌ها</span><span class="cnt g z" id="cSig">0</span></button>
       <button class="tab" data-v="positions" role="tab" aria-selected="false" data-ic="wallet"><span>پوزیشن‌ها</span><span class="cnt z" id="cPos">0</span></button>
       <button class="tab" data-v="report" role="tab" aria-selected="false" data-ic="bars"><span>کارنامه</span></button>
+      <button class="tab" data-v="market" role="tab" aria-selected="false" data-ic="star"><span>بازار</span><span class="cnt z" id="cMkt">0</span></button>
       <button class="tab" data-v="lessons" role="tab" aria-selected="false" data-ic="book"><span>آموزش</span><span class="cnt z" id="cLes">0</span></button>
       <button class="tab" data-v="calendar" role="tab" aria-selected="false" data-ic="cal"><span>تقویم</span></button>
     </nav>
@@ -823,6 +848,17 @@ input[type=range]{width:100%;accent-color:var(--gold)}
   </section>
 
   <!-- تقویم -->
+  <!-- بازار: واچ‌لیست و اسپات -->
+  <section id="vMarket" class="view hide">
+    <div class="tools">
+      <div class="segf">
+        <button class="btn sm" id="mWatch" aria-pressed="true">واچ‌لیست</button>
+        <button class="btn sm" id="mSpot" aria-pressed="false">اسپات</button>
+      </div>
+    </div>
+    <div id="marketBody"></div>
+  </section>
+
   <!-- آموزش -->
   <section id="vLessons" class="view hide">
     <div class="tools">
@@ -987,6 +1023,7 @@ const ICO={
   down:'<path d="M12 5v14M6 13l6 6 6-6"/>',
   // کلاه فارغ‌التحصیلی: در ۲۰ پیکسل از کتاب خواناتر است (کتاب مثل دو میله دیده می‌شد)
   book:'<path d="M2 9.5 12 5l10 4.5-10 4.5z"/><path d="M6.5 11.8V16c0 1.6 2.6 2.9 5.5 2.9s5.5-1.3 5.5-2.9v-4.2"/>',
+  star:'<path d="M12 3.5 14.6 9l6 .8-4.4 4.2 1.1 6-5.3-2.9L6.7 20l1.1-6L3.4 9.8l6-.8z"/>',
   coin:'<circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.3c-.5-.8-1.4-1.3-2.5-1.3-1.5 0-2.6.8-2.6 2s1.1 1.7 2.6 2 2.6.8 2.6 2-1.1 2-2.6 2c-1.1 0-2-.5-2.5-1.3M12 6.5V8M12 16v1.5"/>',
   db:'<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>',
   wifi:'<path d="M2.5 9a14 14 0 0 1 19 0M5.8 12.5a9.5 9.5 0 0 1 12.4 0M9 16a5 5 0 0 1 6 0"/><path d="M12 19.4v.2"/>',
@@ -1078,9 +1115,9 @@ function jShort(d){const p=jParts(d);return faN(p.jd)+' '+J_M[p.jm-1];}
 /* ==================== ذخیره‌سازی ==================== */
 const KEY='signaldesk.v1';
 let storeOK=true;
-const DB={positions:[],decisions:{},settings:{},overrides:{},lessons:{},archived:{},pending:[]};
+const DB={positions:[],decisions:{},settings:{},overrides:{},lessons:{},archived:{},pending:[],watch:[],spot:[]};
 function save(){
-  try{ localStorage.setItem(KEY,JSON.stringify({positions:DB.positions,decisions:DB.decisions,settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,pending:DB.pending})); }
+  try{ localStorage.setItem(KEY,JSON.stringify({positions:DB.positions,decisions:DB.decisions,settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,pending:DB.pending,watch:DB.watch,spot:DB.spot})); }
   catch(e){ storeOK=false; showStoreWarn(); }
   if(typeof syncSoon==='function')syncSoon();
 }
@@ -1097,6 +1134,8 @@ function load(){
       DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
       DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
       DB.pending=Array.isArray(d.pending)?d.pending:[];
+      DB.watch=Array.isArray(d.watch)?d.watch:[];
+      DB.spot=Array.isArray(d.spot)?d.spot:[];
     }
   }catch(e){ storeOK=false; }
 }
@@ -1841,6 +1880,114 @@ async function loadChannel(before){
   }finally{renderHealth();}
 }
 
+/* ==================== بازار: واچ‌لیست و اسپات ==================== */
+/* درصد ۲۴ ساعته برای همه‌ی نمادهای واچ‌لیست با یک درخواست می‌آید (سبک است و همیشه تازه).
+   ۱ و ۴ ساعته و هفتگی از کندل‌های ساعتی حساب می‌شوند و فقط وقتی گرفته می‌شوند که روی
+   یک ارز بزنی — وگرنه با واچ‌لیست بزرگ هر بار ده‌ها درخواست می‌شد. */
+let marketTab='watch';
+const D24=new Map();            // sym → {pct, high, low, vol}
+const KL=new Map();             // sym → {at, h1, h4, d1, d7}
+let d24At=0;
+const watchCats=()=>[...new Set(DB.watch.map(w=>(w.cat||'').trim()).filter(Boolean))].sort();
+let watchCat=null;
+
+async function loadD24(force){
+  const syms=DB.watch.map(w=>w.sym);
+  if(!syms.length)return;
+  if(!force&&Date.now()-d24At<60000)return;
+  const list=JSON.stringify(syms.map(s=>s+'USDT'));
+  try{
+    const got=await fetchVia('https://api.binance.com/api/v3/ticker/24hr?symbols='+encodeURIComponent(list),
+      {json:true,timeout:9000,kind:'px',label:'تغییر ۲۴ ساعته',
+       validate:d=>Array.isArray(d)});
+    for(const r of got.data){
+      const sym=String(r.symbol||'').replace(/USDT$/,'');
+      D24.set(sym,{pct:parseFloat(r.priceChangePercent),
+        high:parseFloat(r.highPrice),low:parseFloat(r.lowPrice),vol:parseFloat(r.quoteVolume)});
+    }
+    d24At=Date.now();
+  }catch(e){logIt('warn','تغییر ۲۴ ساعته نیامد');}
+}
+/* از ۱۶۹ کندل ساعتی، هر چهار بازه درمی‌آید: یک درخواست به‌جای چهار تا */
+async function loadKlines(sym){
+  const c=KL.get(sym);
+  if(c&&Date.now()-c.at<120000)return c;
+  try{
+    const got=await fetchVia('https://api.binance.com/api/v3/klines?symbol='+sym+
+      'USDT&interval=1h&limit=169',{json:true,timeout:9000,kind:'px',
+      label:'کندل '+sym,validate:d=>Array.isArray(d)&&d.length>2});
+    const k=got.data, close=k.map(x=>parseFloat(x[4])), n=close.length, now=close[n-1];
+    const at=i=>close[n-1-i]!=null?((now-close[n-1-i])/close[n-1-i])*100:null;
+    const out={at:Date.now(),h1:at(1),h4:at(4),d1:at(24),d7:at(n-1)};
+    KL.set(sym,out);return out;
+  }catch(e){return null;}
+}
+function addWatch(sym,cat){
+  sym=String(sym||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(!sym)return;
+  if(DB.watch.some(w=>w.sym===sym)){toast(sym+' از قبل هست','info');return;}
+  DB.watch.push({sym,cat:(cat||'').trim(),at:Date.now()});
+  save();loadD24(true).then(()=>renderAll());renderAll();
+  toast(sym+' اضافه شد','ok');
+}
+function sheetAddWatch(){
+  const all=[...SYMBOLS].sort(), cats=watchCats();
+  openSheet(
+   '<h3>افزودن به واچ‌لیست</h3>'+
+   '<div class="fld"><label>نماد</label>'+
+     '<input id="f_w" dir="ltr" list="wsyms" placeholder="BTC">'+
+     '<datalist id="wsyms">'+all.slice(0,900).map(x=>'<option value="'+esc(x)+'"></option>').join('')+'</datalist></div>'+
+   '<div class="fld" style="margin-top:10px"><label>دسته</label>'+
+     '<input id="f_wc" list="wcats" placeholder="مثلاً اسپات">'+
+     '<datalist id="wcats">'+[...new Set(cats.concat(['اسپات','بلندمدت','نوسانی','زیر نظر']))]
+       .map(c=>'<option value="'+esc(c)+'"></option>').join('')+'</datalist></div>'+
+   '<div class="srow"><button class="btn pri" id="ok">افزودن</button>'+
+   '<button class="btn" id="cx">انصراف</button></div>',
+   ()=>{
+     $('#cx').onclick=closeSheet;
+     $('#ok').onclick=()=>{
+       const v=($('#f_w').value||'').trim();
+       if(!v)return toast('نماد را بنویس','err');
+       addWatch(v,$('#f_wc').value);closeSheet();
+     };
+   });
+}
+function sheetSpot(item){
+  const ed=!!item, all=[...SYMBOLS].sort();
+  openSheet(
+   '<h3>'+(ed?'ویرایش خرید اسپات':'ثبت خرید اسپات')+'</h3>'+
+   '<div class="sub">مقدارِ ارز و قیمتی که خریدی. سود و ضرر از قیمت روز حساب می‌شود.</div>'+
+   '<div class="fld"><label>نماد</label>'+
+     '<input id="f_s" dir="ltr" list="ssyms" value="'+esc(ed?item.ticker:'')+'" placeholder="BTC">'+
+     '<datalist id="ssyms">'+all.slice(0,900).map(x=>'<option value="'+esc(x)+'"></option>').join('')+'</datalist></div>'+
+   '<div class="grid" style="margin-top:10px">'+
+     fldHtml('q','مقدار',ed?item.qty:'')+fldHtml('b','قیمت خرید',ed?item.buy:'')+
+   '</div>'+
+   '<div class="fld" style="margin-top:10px"><label>یادداشت</label>'+
+     '<input id="f_n" value="'+esc(ed&&item.note||'')+'"></div>'+
+   '<div class="srow"><button class="btn pri" id="ok">ذخیره</button>'+
+   (ed?'<button class="btn dgr" id="del">حذف</button>':'')+
+   '<button class="btn" id="cx">انصراف</button></div>',
+   ()=>{
+     $('#cx').onclick=closeSheet;
+     if(ed)$('#del').onclick=()=>{
+       if(!confirm('این خرید حذف شود؟'))return;
+       DB.spot=DB.spot.filter(x=>x.id!==item.id);save();closeSheet();renderAll();toast('حذف شد','info');
+     };
+     $('#ok').onclick=()=>{
+       const tk=($('#f_s').value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+       const q=num('f_q'), b=num('f_b');
+       if(!tk)return toast('نماد را بنویس','err');
+       if(!q)return toast('مقدار را بنویس','err');
+       if(!b)return toast('قیمت خرید را بنویس','err');
+       const rec={id:ed?item.id:uid(),ticker:tk,qty:q,buy:b,
+         note:($('#f_n').value||'').trim(),at:ed?item.at:Date.now()};
+       if(ed)DB.spot=DB.spot.map(x=>x.id===item.id?rec:x); else DB.spot.push(rec);
+       save();closeSheet();renderAll();toast('ذخیره شد','ok');
+     };
+   });
+}
+
 /* ==================== سفارش منتظر ==================== */
 /* خیلی از سیگنال‌ها می‌گویند «بالای X وارد شو» — یعنی تا قیمت به آن نرسیده کاری نکن.
    تا حالا یا باید زودتر وارد می‌شدی یا سیگنال را از دست می‌دادی. حالا ثبت می‌شود،
@@ -1953,7 +2100,7 @@ let syncTimer=null, syncing=false;
 const syncOn=()=>!!(syncCfg.url&&syncCfg.token);
 const dbBlob=()=>({positions:DB.positions,decisions:DB.decisions,
   settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,
-  pending:DB.pending});
+  pending:DB.pending,watch:DB.watch,spot:DB.spot});
 function applyBlob(d){
   DB.positions=Array.isArray(d.positions)?d.positions.map(ensureBase):[];
   DB.decisions=d.decisions&&typeof d.decisions==='object'?d.decisions:{};
@@ -1961,6 +2108,8 @@ function applyBlob(d){
   DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
   DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
   DB.pending=Array.isArray(d.pending)?d.pending:[];
+  DB.watch=Array.isArray(d.watch)?d.watch:[];
+  DB.spot=Array.isArray(d.spot)?d.spot:[];
   if(d.settings&&typeof d.settings==='object'){DB.settings=d.settings;Object.assign(S,d.settings);}
   OVERRIDE=DB.overrides;PCACHE.clear();
   save();applySettingsToForm();renderAll();
@@ -2314,6 +2463,146 @@ function addLessonQuiet(p){
     date:p.date?+p.date:null,link:p.link||null,at:Date.now(),cat:''};
 }
 
+const WOPEN=new Set();          // ارزهایی که ردیف بازشان باز است (و کندل گرفته‌اند)
+function renderMarket(){
+  const box=$('#marketBody');
+  box.innerHTML='';
+  $('#mWatch').setAttribute('aria-pressed',marketTab==='watch'?'true':'false');
+  $('#mSpot').setAttribute('aria-pressed',marketTab==='spot'?'true':'false');
+  if(marketTab==='spot')return renderSpot(box);
+  renderWatch(box);
+}
+function pctCell(v){
+  if(v==null||!isFinite(v))return '<span class="m">—</span>';
+  return '<span class="'+(v>0?'u':(v<0?'d':'m'))+'">'+fmtPct(v)+'</span>';
+}
+function renderWatch(box){
+  const bar=el('div','lbar');
+  const add=el('button','mark','افزودن ارز');add.onclick=sheetAddWatch;
+  bar.appendChild(add);
+  const rf=el('button','mark ghost','بروزرسانی');
+  rf.onclick=async e=>{btnBusy(e.currentTarget,true);KL.clear();await loadD24(true);
+    btnBusy(e.currentTarget,false);renderMarket();};
+  bar.appendChild(rf);
+  box.appendChild(bar);
+
+  if(!DB.watch.length){
+    box.appendChild(el('div','empty',STAR+
+      'واچ‌لیست خالی است.<br>«افزودن ارز» را بزن و دسته‌اش را هم بنویس<br>(مثلاً «اسپات»).'));
+    return;
+  }
+  const cats=watchCats();
+  if(cats.length){
+    const row=el('div','catrow');
+    const chip=(l,v)=>{const c=el('button','catchip'+(watchCat===v?' on':''),esc(l));
+      c.onclick=()=>{watchCat=(watchCat===v?null:v);renderMarket();};row.appendChild(c);};
+    chip('همه',null);
+    for(const c of cats)chip(c,c);
+    if(DB.watch.some(w=>!(w.cat||'').trim()))chip('بدون دسته','');
+    box.appendChild(row);
+  }
+  const list=DB.watch.filter(w=>watchCat==null||(w.cat||'')===watchCat);
+  const head=el('div','wrow whead');
+  head.innerHTML='<span>نماد</span><span>قیمت</span><span>۲۴ ساعت</span>';
+  box.appendChild(head);
+
+  for(const w of list){
+    const px=PRICES.get(w.sym), d=D24.get(w.sym), open=WOPEN.has(w.sym);
+    const r=el('div','wrow'+(open?' open':''));
+    r.innerHTML='<span class="wsym">'+esc(w.sym)+
+      ((w.cat||'').trim()?'<i>'+esc(w.cat)+'</i>':'')+'</span>'+
+      '<span class="wpx">'+(px!=null?fmtPrice(px):'—')+'</span>'+
+      '<span class="wch">'+pctCell(d?d.pct:null)+'</span>';
+    r.onclick=async()=>{
+      if(open){WOPEN.delete(w.sym);renderMarket();return;}
+      WOPEN.add(w.sym);renderMarket();
+      await loadKlines(w.sym);
+      if(view==='market')renderMarket();
+    };
+    box.appendChild(r);
+    if(open){
+      const k=KL.get(w.sym);
+      const det=el('div','wdet');
+      if(!k)det.innerHTML='<div class="scanprog">در حال گرفتن تغییرات…</div>';
+      else{
+        det.innerHTML=
+          '<div class="wgrid">'+
+            '<div><b>۱ ساعت</b>'+pctCell(k.h1)+'</div>'+
+            '<div><b>۴ ساعت</b>'+pctCell(k.h4)+'</div>'+
+            '<div><b>۲۴ ساعت</b>'+pctCell(k.d1)+'</div>'+
+            '<div><b>۷ روز</b>'+pctCell(k.d7)+'</div>'+
+          '</div>'+
+          (d?'<div class="wsub">سقف روز '+fmtPrice(d.high)+' · کف روز '+fmtPrice(d.low)+
+             ' · حجم '+fmtUsd(d.vol)+'</div>':'');
+      }
+      const acts=el('div','markrow');
+      const rm=el('button','mark ghost','حذف از واچ‌لیست');
+      rm.onclick=ev=>{ev.stopPropagation();
+        DB.watch=DB.watch.filter(x=>x.sym!==w.sym);save();renderAll();toast('حذف شد','info');};
+      const ed=el('button','mark ghost','تغییر دسته');
+      ed.onclick=ev=>{ev.stopPropagation();
+        const c=prompt('دسته‌ی '+w.sym,w.cat||'');
+        if(c==null)return;
+        w.cat=c.trim();save();renderAll();};
+      acts.appendChild(ed);acts.appendChild(rm);
+      det.appendChild(acts);
+      box.appendChild(det);
+    }
+  }
+}
+function renderSpot(box){
+  const bar=el('div','lbar');
+  const add=el('button','mark','ثبت خرید اسپات');add.onclick=()=>sheetSpot(null);
+  bar.appendChild(add);
+  box.appendChild(bar);
+  if(!DB.spot.length){
+    box.appendChild(el('div','empty',STAR+
+      'خرید اسپاتی ثبت نکرده‌ای.<br>مقدار و قیمت خریدت را بزن تا سود و ضررش را ببینی.'));
+    return;
+  }
+  let cost=0,val=0,known=true;
+  for(const x of DB.spot){
+    const px=PRICES.get(x.ticker);
+    cost+=x.qty*x.buy;
+    if(px!=null)val+=x.qty*px; else known=false;
+  }
+  const pnl=val-cost;
+  const st=el('div','sumbar');
+  const cell=(l,v,c)=>{const d=el('div','sumcell');d.appendChild(el('b',null,l));
+    d.appendChild(el('span',c||null,v));st.appendChild(d);};
+  cell('هزینه',fmtUsd(cost));
+  cell('ارزش الان',known?fmtUsd(val):'ناقص',known?null:'m');
+  cell('سود/ضرر',known?fmtUsd(pnl):'—',known?cls(pnl):'m');
+  cell('بازده',known&&cost>0?fmtPct((pnl/cost)*100):'—',known&&cost>0?cls(pnl):'m');
+  box.appendChild(st);
+
+  for(const x of DB.spot){
+    const px=PRICES.get(x.ticker);
+    const c=el('div','card');
+    const head=el('div','chead');
+    head.appendChild(el('span','tick',esc(x.ticker)));
+    head.appendChild(el('span','pill mut',(+x.qty.toPrecision(8))+''));
+    if(px!=null){
+      const p=((px-x.buy)/x.buy)*100;
+      head.appendChild(el('span','pill '+(p>=0?'win':'lose'),fmtPct(p)));
+    }
+    head.appendChild(el('div','when',relTime(new Date(x.at))));
+    c.appendChild(head);
+    const kv=el('div','briefkv');kv.style.margin='0 14px 10px';
+    const a=(l,v,cl)=>{const d=el('div','bk');d.appendChild(el('b',null,l));
+      d.appendChild(el('span',cl||null,v));kv.appendChild(d);};
+    a('قیمت خرید',fmtPrice(x.buy));
+    a('قیمت الان',px!=null?fmtPrice(px):'—',px==null?'m':null);
+    a('سود/ضرر',px!=null?fmtUsd(x.qty*(px-x.buy)):'—',px!=null?cls(x.qty*(px-x.buy)):'m');
+    c.appendChild(kv);
+    if(x.note)c.appendChild(el('div','reply',esc(x.note)));
+    const row=el('div','markrow');
+    const e=el('button','mark ghost','ویرایش');e.onclick=()=>sheetSpot(x);
+    row.appendChild(e);
+    c.appendChild(row);
+    box.appendChild(c);
+  }
+}
 function renderLessons(){
   const box=$('#lessonList');
   const all=Object.values(DB.lessons).sort((a,b)=>(b.at||0)-(a.at||0));
@@ -2622,7 +2911,10 @@ function fmtPrice(n){
   if(a>=0.01)return (+n.toFixed(5)).toString();
   return n.toPrecision(4);
 }
-const fmtUsd=n=>(n==null||!isFinite(n))?'—':(n<0?'−$':'$')+Math.abs(n).toFixed(2);
+/* جداکننده‌ی هزارگان: تا وقتی مبلغ‌ها کوچک بودند فرقی نداشت، ولی ارزش اسپات و حجم
+   بازار چندرقمی‌اند و بدون آن خواندنشان سخت است. */
+const fmtUsd=n=>(n==null||!isFinite(n))?'—':(n<0?'−$':'$')+
+  Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtPct=n=>(n==null||!isFinite(n))?'—':(n>0?'+':n<0?'−':'')+Math.abs(n).toFixed(2)+'٪';
 const fmtR=n=>(n==null||!isFinite(n))?'—':(n>0?'+':'−')+Math.abs(n).toFixed(2)+'R';
 const cls=n=>n==null||!isFinite(n)?'m':(n>0.0001?'u':n<-0.0001?'d':'m');
@@ -4642,7 +4934,7 @@ function wireIO(){
     dl('signal-desk-'+jKey(new Date())+'.json',
       JSON.stringify({v:4,exportedAt:Date.now(),positions:DB.positions,decisions:DB.decisions,
         settings:S,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,
-        pending:DB.pending},null,2));
+        pending:DB.pending,watch:DB.watch,spot:DB.spot},null,2));
     toast('پشتیبان گرفته شد','ok');
   };
   $('#btnCsv').onclick=()=>{
@@ -4676,6 +4968,8 @@ function wireIO(){
         DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
         DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
         DB.pending=Array.isArray(d.pending)?d.pending:[];
+        DB.watch=Array.isArray(d.watch)?d.watch:[];
+        DB.spot=Array.isArray(d.spot)?d.spot:[];
         OVERRIDE=DB.overrides; PCACHE.clear();
         if(d.settings)Object.assign(S,d.settings);
         applySettingsToForm();readSettings();
@@ -4693,7 +4987,7 @@ function go(v,noScroll){
   if(view===v&&noScroll)return;
   view=v;
   $$('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.v===v?'true':'false'));
-  for(const [id,name] of [['vSignals','signals'],['vPositions','positions'],['vReport','report'],['vLessons','lessons'],['vCalendar','calendar']]){
+  for(const [id,name] of [['vSignals','signals'],['vPositions','positions'],['vReport','report'],['vMarket','market'],['vLessons','lessons'],['vCalendar','calendar']]){
     const n=$('#'+id), on=name===v;
     n.classList.toggle('hide',!on);
     if(on){n.classList.remove('enter');void n.offsetWidth;n.classList.add('enter');}
@@ -4711,15 +5005,20 @@ function moveInd(){
   const off=rtl?box.right-b.right:b.left-box.left;
   ind.style.width=b.width+'px';
   ind.style.transform='translateX('+(rtl?-off:off)+'px)';
+  // نوار تب‌ها اسکرول افقی دارد؛ تب فعال باید خودش دیده شود
+  try{t.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});}catch(e){}
 }
 function renderAll(){
   const open=DB.positions.filter(p=>p.status==='open').length;
   const cp=$('#cPos');cp.textContent=faN(open);cp.classList.toggle('z',!open);
   const und=POSTS.filter(p=>sigOf(p).isSignal&&!decisionOf(p.id)&&!isArch(p.id)).length;
   const cs=$('#cSig');cs.textContent=faN(und);cs.classList.toggle('z',!und);
+  const nm=DB.watch.length+DB.spot.length;
+  const cm=$('#cMkt');if(cm){cm.textContent=faN(nm);cm.classList.toggle('z',!nm);}
   const nl=Object.keys(DB.lessons).length;
   const cl=$('#cLes');cl.textContent=faN(nl);cl.classList.toggle('z',!nl);
   if(view==='signals')renderSignals();
+  else if(view==='market'){renderMarket();loadD24().then(()=>{if(view==='market')renderMarket();});}
   else if(view==='lessons')renderLessons();
   else if(view==='positions')renderPositions();
   else if(view==='report')renderReport();
@@ -4857,6 +5156,8 @@ function wire(){
   };
   $('#q').oninput=e=>{query=e.target.value;shownMax=PAGE;renderSignals();};
   $('#lq').oninput=e=>{lessonQ=e.target.value;renderLessons();};
+  $('#mWatch').onclick=()=>{marketTab='watch';renderMarket();};
+  $('#mSpot').onclick=()=>{marketTab='spot';renderMarket();};
   const sf=(btn,val)=>{$('#'+btn).onclick=()=>{sigFilter=val;shownMax=PAGE;
     ['fSig','fNew','fAll'].forEach(x=>$('#'+x).setAttribute('aria-pressed',x===btn?'true':'false'));renderSignals();};};
   sf('fSig','sig');sf('fNew','new');sf('fAll','all');
