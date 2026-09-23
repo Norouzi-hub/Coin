@@ -261,6 +261,25 @@ html.busy .prog{opacity:1}
 .fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 18%,transparent)}
 .hint{font-size:12.5px;color:var(--tx3);margin-top:8px;line-height:1.9}
 .sechd{font-size:13px;font-weight:800;color:var(--tx2);margin:16px 0 8px}
+/* تنظیمات ۲۸۹۰ پیکسل بود — نزدیک هفت صفحه‌ی گوشی، بدون هیچ بخش‌بندی. هر بخش
+   حالا تاشوست و انتخاب باز/بسته‌بودنش یادش می‌ماند. */
+.sec{border:1px solid var(--line);border-radius:var(--r2);margin:10px 0;
+  background:var(--card);overflow:hidden}
+.sec>summary{list-style:none;cursor:pointer;padding:13px 14px;font-size:13.5px;font-weight:800;
+  color:var(--tx);display:flex;align-items:center;gap:9px;user-select:none}
+.sec>summary::-webkit-details-marker{display:none}
+.sec>summary::before{content:'';width:8px;height:8px;flex:none;border-inline-end:2px solid var(--tx3);
+  border-block-end:2px solid var(--tx3);transform:rotate(-45deg);transition:transform .2s var(--ease);
+  margin-block-start:-3px}
+.sec[open]>summary::before{transform:rotate(45deg);margin-block-start:2px}
+.sec[open]>summary{color:var(--gold);border-bottom:1px solid var(--line)}
+.sec>summary:hover{background:var(--card2)}
+.sec>*:not(summary){margin-inline:14px}
+.sec>*:not(summary):last-child{margin-bottom:14px}
+.sec>.grid,.sec>.wsetup,.sec>.srow,.sec>.hint,.sec>.fld{margin-top:12px}
+/* آموزش ورکر: کارِ یک‌بار است، پس پیش‌فرض بسته می‌ماند */
+.sec.sub2{background:var(--inset);margin:12px 14px 14px}
+.sec.sub2>summary{font-size:12.5px;font-weight:700;color:var(--tx2);padding:11px 12px}
 
 /* ================= ابزار و وضعیت ================= */
 .tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
@@ -283,13 +302,18 @@ html.busy .prog{opacity:1}
   max-width:100%}
 .fb i{font-style:normal;font-size:15px;font-weight:900;font-variant-numeric:tabular-nums;
   line-height:1.15;opacity:.85}
-.fb.on{background:color-mix(in srgb,var(--gold) 15%,transparent);color:var(--gold);
-  border-color:color-mix(in srgb,var(--gold) 38%,transparent)}
+.fb.on,.fb[aria-pressed="true"]{background:color-mix(in srgb,var(--gold) 15%,transparent);
+  color:var(--gold);border-color:color-mix(in srgb,var(--gold) 38%,transparent)}
+.fb{min-height:44px}
 .fb:active{transform:scale(.97)}
 /* آرشیو «جای دیگر» است نه فیلتر، پس از گروه جدا می‌ایستد */
 .fside{display:flex;gap:4px;flex:none}
 .fbucket{width:70px;background:var(--inset);border:1px solid var(--line);border-radius:14px;
   padding:8px 2px}
+/* سطلی که عدد ندارد به عرضِ برچسبش باز می‌شود، نه به عرض ثابتِ شمارنده‌دارها.
+   با کلاس صریح، نه با :has() — آن یکی بی‌دلیل کل سند را وارد حالتِ کندِ
+   بازمحاسبه‌ی استایل می‌کند. */
+.fbucket.wide{width:auto;min-width:64px;padding-inline:12px}
 .fbucket span{display:flex;align-items:center;gap:3px;font-size:11.5px}
 .fbucket .ic{width:13px;height:13px;flex:none;stroke-width:2.2}
 .fbucket.on{background:color-mix(in srgb,var(--gold) 15%,transparent);
@@ -306,6 +330,12 @@ html.busy .prog{opacity:1}
 .mktb:active{transform:scale(.97)}
 .mkt.guess{border-style:dashed;border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
 .mkthint{font-size:10.5px;font-weight:800;color:var(--warn);padding-inline:7px}
+/* حالت صریح: برچسب، نه کلید — ولی هنوز زدنی است */
+.mkttag{display:inline-flex;align-items:center;gap:6px;margin:10px 0;padding:6px 11px;
+  border-radius:99px;background:var(--inset);border:1px solid var(--line2);
+  color:var(--tx2);font-size:12px;font-weight:800;cursor:pointer}
+.mkttag .ic{width:14px;height:14px;flex:none}
+.mkttag:active{transform:scale(.97)}
 .tidy{display:block;width:100%;margin:0 0 12px;padding:9px;border-radius:var(--r2);
   background:none;border:1px dashed var(--line2);color:var(--tx3);font-size:12.5px;
   font-weight:700;cursor:pointer}
@@ -411,15 +441,8 @@ html.busy .prog{opacity:1}
 .feattxt{min-width:0}
 .featttl{font-size:13px;font-weight:800;color:var(--tx)}
 .featdesc{font-size:11.5px;color:var(--tx3);line-height:1.8;margin-top:2px}
-.sumbar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
-.sumcell{background:var(--card);border:1px solid var(--line);border-radius:var(--r2);
-  padding:9px 6px;text-align:center;min-width:0}
-.sumcell b{display:block;font-size:10.5px;font-weight:700;color:var(--tx3);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sumcell span{display:block;font-size:14px;font-weight:800;margin-top:3px;
-  font-variant-numeric:tabular-nums;color:var(--tx)}
-.sumcell span.u{color:var(--up)}.sumcell span.d{color:var(--dn)}
-.sumcell span.w{color:var(--warn)}.sumcell span.m{color:var(--tx3)}
+.status .sc b.u{color:var(--up)}.status .sc b.d{color:var(--dn)}
+.status .sc b.w{color:var(--warn)}.status .sc b.m{color:var(--tx3)}
 /* حالت فشرده: متن و پلن پنهان، فقط سرِ کارت می‌ماند */
 .card.tight{cursor:pointer}
 .card.tight .body,.card.tight .plan,.card.tight .acts,.card.tight .prow,.card.tight .shot{display:none}
@@ -524,8 +547,6 @@ html.busy .prog{opacity:1}
   padding:12px;text-align:center}
 .cmpbox b{display:block;font-size:13px;color:var(--tx);margin-bottom:6px}
 .cmpbox span{font-size:11.5px;color:var(--tx2);line-height:1.9}
-.sync-good{color:var(--up)!important}
-.sync-bad{color:var(--dn)!important}
 .showmore{display:block;width:100%;margin:12px 0 4px;padding:12px;border-radius:var(--r2);
   background:var(--card);border:1px solid var(--line2);color:var(--tx2);
   font-size:13px;font-weight:800;cursor:pointer}
@@ -883,7 +904,6 @@ input[type=range]{width:100%;accent-color:var(--gold)}
       <button class="tab" data-v="report" role="tab" aria-selected="false" data-ic="bars"><span>کارنامه</span></button>
       <button class="tab" data-v="market" role="tab" aria-selected="false" data-ic="star"><span>بازار</span><span class="cnt z" id="cMkt">0</span></button>
       <button class="tab" data-v="lessons" role="tab" aria-selected="false" data-ic="book"><span>آموزش</span><span class="cnt z" id="cLes">0</span></button>
-      <button class="tab" data-v="calendar" role="tab" aria-selected="false" data-ic="cal"><span>تقویم</span></button>
     </nav>
   </div>
   <div class="prog" id="prog"></div>
@@ -912,13 +932,17 @@ input[type=range]{width:100%;accent-color:var(--gold)}
   <!-- پوزیشن‌ها -->
   <section id="vPositions" class="view hide">
     <div class="tools">
-      <div class="segf">
-        <button class="btn sm" id="pWait" aria-pressed="false">منتظر <span class="cnt z" id="cWait">0</span></button>
-        <button class="btn sm" id="pOpen" aria-pressed="true">باز</button>
-        <button class="btn sm" id="pClosed" aria-pressed="false">بسته‌شده</button>
-        <button class="btn sm" id="pAllP" aria-pressed="false">همه</button>
+      <div class="fbar">
+        <div class="fseg" role="tablist" aria-label="پوزیشن‌ها">
+          <button class="fb" id="pWait" aria-pressed="false"><span>منتظر</span><i id="cWait">۰</i></button>
+          <button class="fb on" id="pOpen" aria-pressed="true"><span>باز</span><i id="cOpenP">۰</i></button>
+          <button class="fb" id="pClosed" aria-pressed="false"><span>بسته‌شده</span><i id="cClosedP">۰</i></button>
+          <button class="fb" id="pAllP" aria-pressed="false"><span>همه</span><i id="cAllP">۰</i></button>
+        </div>
+        <div class="fside">
+          <button class="fb fbucket" id="btnManual"><span>افزودن</span><i>+</i></button>
+        </div>
       </div>
-      <button class="btn sm" id="btnManual" style="margin-inline-start:auto">افزودن دستی</button>
     </div>
     <div id="posSummary"></div>
     <div id="posList"></div>
@@ -927,26 +951,25 @@ input[type=range]{width:100%;accent-color:var(--gold)}
   <!-- کارنامه -->
   <section id="vReport" class="view hide">
     <div class="tools">
-      <div class="segf">
-        <button class="btn sm" data-p="day" aria-pressed="false">روزانه</button>
-        <button class="btn sm" data-p="month" aria-pressed="true">ماهانه</button>
-        <button class="btn sm" data-p="year" aria-pressed="false">سالانه</button>
-        <button class="btn sm" data-p="all" aria-pressed="false">کل</button>
-        <button class="btn sm hide" id="pRange" data-p="range" aria-pressed="false">بازه‌ی دلخواه</button>
+      <div class="fbar">
+        <div class="fseg" role="tablist" aria-label="دوره‌ی کارنامه">
+          <button class="fb" data-p="day" aria-pressed="false"><span>روزانه</span></button>
+          <button class="fb on" data-p="month" aria-pressed="true"><span>ماهانه</span></button>
+          <button class="fb" data-p="all" aria-pressed="false"><span>کل</span></button>
+        </div>
+        <div class="fside">
+          <button class="fb fbucket wide hide" id="pRange" data-p="range" aria-pressed="false">
+            <span>بازه‌ی دلخواه</span></button>
+          <button class="fb fbucket wide" id="repCal" aria-pressed="false"><span>تقویم</span></button>
+        </div>
       </div>
     </div>
     <div id="repBody"></div>
+    <div id="calBody" class="hide"></div>
   </section>
 
-  <!-- تقویم -->
   <!-- بازار: واچ‌لیست و اسپات -->
   <section id="vMarket" class="view hide">
-    <div class="tools">
-      <div class="segf">
-        <button class="btn sm" id="mWatch" aria-pressed="true">واچ‌لیست</button>
-        <button class="btn sm" id="mSpot" aria-pressed="false">اسپات</button>
-      </div>
-    </div>
     <div id="marketBody"></div>
   </section>
 
@@ -958,7 +981,6 @@ input[type=range]{width:100%;accent-color:var(--gold)}
     <div id="lessonList"></div>
   </section>
 
-  <section id="vCalendar" class="view hide"><div id="calBody"></div></section>
 
   <div class="disc" id="disc">
     <b>حواست باشه:</b> اعداد سیگنال‌ها از روی متن فارسی کانال خودکار استخراج می‌شود و ممکن است اشتباه باشد؛
@@ -976,6 +998,7 @@ input[type=range]{width:100%;accent-color:var(--gold)}
     <button class="sx" id="setX" aria-label="بستن"></button>
     <h3>تنظیمات</h3>
     <div class="sub">هر تغییری همان لحظه ذخیره و روی محاسبه‌ها اعمال می‌شود.</div>
+    <details class="sec" data-sec="conn"><summary>اتصال به کانال</summary>
     <div class="grid">
       <div class="fld"><label>کانال تلگرام</label><input id="sChannel" value="ccoineres" dir="ltr"></div>
       <div class="fld"><label>بروزرسانی خودکار</label>
@@ -990,8 +1013,15 @@ input[type=range]{width:100%;accent-color:var(--gold)}
       واسط خودت این وابستگی را برمی‌دارد. جای آدرس مقصد را با <b>{url}</b> مشخص کن؛
       اگر نگذاری، آخر آدرس اضافه می‌شود. تا ۶ خط قبول است و همه با هم امتحان می‌شوند.
     </div>
-    <div class="wsetup">
-      <div class="wtitle">ساخت واسط روی Cloudflare — رایگان، حدود ۵ دقیقه</div>
+    <div class="srow" style="margin-top:10px">
+      <button class="btn" id="btnWCopy">کپی کد ورکر</button>
+      <button class="btn" id="btnWTest">تست همین واسط</button>
+    </div>
+    <div class="hint" id="wNote">
+      اگر <b dir="ltr">workers.dev</b> روی شبکه‌ات باز نشد، در همان ورکر
+      <b dir="ltr">Settings → Domains &amp; Routes</b> یک دامنه‌ی خودت را وصل کن و آدرس آن را بگذار.
+    </div>
+    <details class="sec sub2" id="wSetup"><summary>راهنمای ساخت واسط روی Cloudflare — یک‌بار، حدود ۵ دقیقه</summary>
       <ol class="wsteps">
         <li>دکمه‌ی پایین را بزن تا کد ورکر کپی شود.</li>
         <li>در <b dir="ltr">dash.cloudflare.com</b> وارد شو (ثبت‌نام رایگان است).</li>
@@ -999,22 +1029,18 @@ input[type=range]{width:100%;accent-color:var(--gold)}
         <li><b dir="ltr">Edit code</b> را بزن، همه‌ی کد پیش‌فرض را پاک کن، کد کپی‌شده را بچسبان، دوباره <b dir="ltr">Deploy</b>.</li>
         <li>آدرسی که می‌دهد را بردار و اینجا در کادر بالا بنویس، با <b dir="ltr">/?url={url}</b> آخرش.</li>
       </ol>
-      <div class="srow">
-        <button class="btn" id="btnWCopy">کپی کد ورکر</button>
-        <button class="btn" id="btnWTest">تست همین واسط</button>
-      </div>
-      <div class="hint" id="wNote">
-        اگر <b dir="ltr">workers.dev</b> روی شبکه‌ات باز نشد، در همان ورکر
-        <b dir="ltr">Settings → Domains &amp; Routes</b> یک دامنه‌ی خودت را وصل کن و آدرس آن را بگذار.
-      </div>
-    </div>
-    <div class="sechd">امکانات</div>
+    </details>
+    </details>
+
+    <details class="sec" data-sec="feat"><summary>امکانات</summary>
     <div class="wsetup">
       <div id="featList"></div>
       <div class="hint">هر کدام را نخواستی خاموش کن — برنامه دقیقاً به حالت بدون آن برمی‌گردد.
         این تنظیم هم بین دستگاه‌ها همگام می‌شود.</div>
     </div>
-    <div class="sechd">همگام‌سازی بین دستگاه‌ها</div>
+    </details>
+
+    <details class="sec" data-sec="sync"><summary>همگام‌سازی بین دستگاه‌ها</summary>
     <div class="wsetup">
       <div class="wtitle">وضعیت: <span id="syncState">خاموش</span></div>
       <div class="fld"><label>آدرس ورکر</label>
@@ -1033,7 +1059,9 @@ input[type=range]{width:100%;accent-color:var(--gold)}
         <b dir="ltr">STORE</b>، و یک Secret به نام <b dir="ltr">SYNC_TOKEN</b> که همان رمز بالاست.
       </div>
     </div>
-    <div class="sechd">قفل ورود</div>
+    </details>
+
+    <details class="sec" data-sec="lock"><summary>قفل ورود</summary>
     <div class="wsetup">
       <div class="wtitle">وضعیت: <span id="lockState">خاموش</span></div>
       <div class="srow">
@@ -1051,7 +1079,9 @@ input[type=range]{width:100%;accent-color:var(--gold)}
         پس اول از «پشتیبان JSON» پایین خروجی بگیر.
       </div>
     </div>
-    <div class="sechd">اندازه و ریسک</div>
+    </details>
+
+    <details class="sec" data-sec="risk" open><summary>اندازه و ریسک</summary>
     <div class="grid">
       <div class="fld"><label>موجودی حساب ($)</label><input id="sAcct" type="number" value="100" min="1" step="1"></div>
       <div class="fld"><label>مارجین هر معامله ($)</label><input id="sCap" type="number" value="10" min="1" step="1"></div>
@@ -1068,13 +1098,16 @@ input[type=range]{width:100%;accent-color:var(--gold)}
       «ریسک ثابت» یعنی فقط بخشی از مبلغ وارد می‌شود تا ضرر دقیقاً اندازه ریسک هدف بماند.
       موجودی حساب فقط برای درصدهای کارنامه و حد ضرر روزانه به کار می‌رود.
     </div>
-    <div class="sechd">داده‌ها</div>
+    </details>
+
+    <details class="sec" data-sec="data"><summary>داده‌ها</summary>
     <div class="srow" style="margin-top:0">
       <button class="btn sm" id="btnExport">پشتیبان JSON</button>
       <button class="btn sm" id="btnCsv">خروجی CSV</button>
       <button class="btn sm" id="btnImport">بازیابی</button>
       <input type="file" id="fileIn" accept=".json,application/json" class="hide">
     </div>
+    </details>
     <div class="srow"><button class="btn pri" id="setDone">تمام</button></div>
   </div>
 </div>
@@ -1663,6 +1696,23 @@ function computePlan(o){
    partials[]  : تکه‌های بسته‌شده — سود/ضررشان قطعی است
    baseMargin  : کل مارجینی که در طول عمر پوزیشن درگیر شده؛ مبنای «درصد روی مارجین»
    risk0/stop0 : ریسک و استاپ اولیه — R همیشه نسبت به ریسک اولیه است، حتی بعد از جابجایی استاپ */
+/* اسپات دو جا بود: DB.spot (خرید دستی در تب بازار) و پوزیشن‌های kind='spot'
+   (ورود از روی سیگنال). یک مفهوم با دو مدل یعنی دو جای نگهداری، دو فرم ورود و
+   کارنامه‌ای که نیمی از خریدهایت را نمی‌بیند. حالا فقط پوزیشن است. */
+const spotList=()=>DB.positions.filter(p=>p.kind==='spot');
+function migrateSpot(){
+  if(!Array.isArray(DB.spot)||!DB.spot.length)return false;
+  for(const x of DB.spot){
+    const cost=(+x.qty||0)*(+x.buy||0);
+    if(!cost)continue;
+    DB.positions.push(ensureBase({id:x.id||uid(),ticker:x.ticker,kind:'spot',dir:'long',
+      entry:+x.buy,stop:null,stop0:null,margin:cost,baseMargin:cost,lev:1,targets:[],
+      openedAt:x.at||Date.now(),status:'open',exitPrice:null,closedAt:null,fees:null,
+      note:x.note||'',partials:[],log:[{at:x.at||Date.now(),k:'open',t:'از فهرست اسپاتِ قدیمی منتقل شد'}]}));
+  }
+  DB.spot=[];
+  return true;
+}
 const partialsOf=p=>Array.isArray(p.partials)?p.partials:[];
 const baseMarginOf=p=>p.baseMargin||(p.margin+partialsOf(p).reduce((s,x)=>s+(x.margin||0),0));
 function risk0Of(p){
@@ -1733,7 +1783,6 @@ function logAdd(p,kind,text){ensureBase(p);p.log.push({at:Date.now(),k:kind,t:te
       ولی وقتی فایل داخل یک WebView یا با دسترسی محلی باز شده، همین راه کار می‌کند و از همه سریع‌تر است.
    ۲) مسیرها را پشت سر هم امتحان نکن. سه تایم‌اوت ۱۱ ثانیه‌ای یعنی ۳۳ ثانیه انتظار، در حالی که
       مسیر پنجم در ۳۰۰ میلی‌ثانیه جواب می‌داد. پس همه با هم فرستاده می‌شوند و اولین جواب درست برنده است. */
-const isTg=u=>/(^|\/\/)([a-z0-9-]+\.)?t\.me\//.test(u);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LOCAL_ORIGIN=!/^https?:$/.test(location.protocol);
 
@@ -2035,7 +2084,6 @@ async function loadChannel(before){
 /* درصد ۲۴ ساعته برای همه‌ی نمادهای واچ‌لیست با یک درخواست می‌آید (سبک است و همیشه تازه).
    ۱ و ۴ ساعته و هفتگی از کندل‌های ساعتی حساب می‌شوند و فقط وقتی گرفته می‌شوند که روی
    یک ارز بزنی — وگرنه با واچ‌لیست بزرگ هر بار ده‌ها درخواست می‌شد. */
-let marketTab='watch';
 const D24=new Map();            // sym → {pct, high, low, vol}
 const KL=new Map();             // sym → {at, h1, h4, d1, d7}
 let d24At=0;
@@ -2103,47 +2151,10 @@ function sheetAddWatch(){
      };
    });
 }
-function sheetSpot(item){
-  const ed=!!item, all=[...SYMBOLS].sort();
-  openSheet(
-   '<h3>'+(ed?'ویرایش خرید اسپات':'ثبت خرید اسپات')+'</h3>'+
-   '<div class="sub">مقدارِ ارز و قیمتی که خریدی. سود و ضرر از قیمت روز حساب می‌شود.</div>'+
-   '<div class="fld"><label>نماد</label>'+
-     '<input id="f_s" dir="ltr" list="ssyms" value="'+esc(ed?item.ticker:'')+'" placeholder="BTC">'+
-     '<datalist id="ssyms">'+all.slice(0,900).map(x=>'<option value="'+esc(x)+'"></option>').join('')+'</datalist></div>'+
-   '<div class="grid" style="margin-top:10px">'+
-     fldHtml('q','مقدار',ed?item.qty:'')+fldHtml('b','قیمت خرید',ed?item.buy:'')+
-   '</div>'+
-   '<div class="fld" style="margin-top:10px"><label>یادداشت</label>'+
-     '<input id="f_n" value="'+esc(ed&&item.note||'')+'"></div>'+
-   '<div class="srow"><button class="btn pri" id="ok">ذخیره</button>'+
-   (ed?'<button class="btn dgr" id="del">حذف</button>':'')+
-   '<button class="btn" id="cx">انصراف</button></div>',
-   ()=>{
-     $('#cx').onclick=closeSheet;
-     if(ed)$('#del').onclick=()=>{
-       if(!confirm('این خرید حذف شود؟'))return;
-       DB.spot=DB.spot.filter(x=>x.id!==item.id);save();closeSheet();renderAll();toast('حذف شد','info');
-     };
-     $('#ok').onclick=()=>{
-       const tk=($('#f_s').value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
-       const q=num('f_q'), b=num('f_b');
-       if(!tk)return toast('نماد را بنویس','err');
-       if(!q)return toast('مقدار را بنویس','err');
-       if(!b)return toast('قیمت خرید را بنویس','err');
-       const rec={id:ed?item.id:uid(),ticker:tk,qty:q,buy:b,
-         note:($('#f_n').value||'').trim(),at:ed?item.at:Date.now()};
-       if(ed)DB.spot=DB.spot.map(x=>x.id===item.id?rec:x); else DB.spot.push(rec);
-       save();closeSheet();renderAll();toast('ذخیره شد','ok');
-     };
-   });
-}
-
 /* ==================== سفارش منتظر ==================== */
 /* خیلی از سیگنال‌ها می‌گویند «بالای X وارد شو» — یعنی تا قیمت به آن نرسیده کاری نکن.
    تا حالا یا باید زودتر وارد می‌شدی یا سیگنال را از دست می‌دادی. حالا ثبت می‌شود،
    قیمت که رسید خبر می‌دهد، و با یک زدن به پوزیشن واقعی تبدیل می‌شود. */
-const pendingOf=id=>DB.pending.find(x=>x.id===id);
 function addPending(p,sig,trigger,px){
   const I=planInputsOf(p,sig,OVERRIDE[p.id]||{},px);
   const dir=I.dir;
@@ -2266,6 +2277,7 @@ function applyBlob(d){
   if(d.settings&&typeof d.settings==='object'){DB.settings=d.settings;Object.assign(S,d.settings);}
   OVERRIDE=DB.overrides;PCACHE.clear();
   save();applySettingsToForm();renderAll();
+  migrateSpot();
 }
 const blobCount=d=>d?(faN((d.positions||[]).length)+' پوزیشن · '+
   faN(Object.keys(d.lessons||{}).length)+' آموزش · '+
@@ -2617,12 +2629,11 @@ function addLessonQuiet(p){
 }
 
 const WOPEN=new Set();          // ارزهایی که ردیف بازشان باز است (و کندل گرفته‌اند)
+/* بازار فقط واچ‌لیست است. خریدهای اسپات به پوزیشن‌ها رفتند، چون همان‌جا کارنامه،
+   حد ضرر و کارت اشتراک‌گذاری را هم دارند. */
 function renderMarket(){
   const box=$('#marketBody');
   box.innerHTML='';
-  $('#mWatch').setAttribute('aria-pressed',marketTab==='watch'?'true':'false');
-  $('#mSpot').setAttribute('aria-pressed',marketTab==='spot'?'true':'false');
-  if(marketTab==='spot')return renderSpot(box);
   renderWatch(box);
 }
 function pctCell(v){
@@ -2701,59 +2712,6 @@ function renderWatch(box){
       det.appendChild(acts);
       box.appendChild(det);
     }
-  }
-}
-function renderSpot(box){
-  const bar=el('div','lbar');
-  const add=el('button','mark','ثبت خرید اسپات');add.onclick=()=>sheetSpot(null);
-  bar.appendChild(add);
-  box.appendChild(bar);
-  if(!DB.spot.length){
-    box.appendChild(el('div','empty',STAR+
-      'خرید اسپاتی ثبت نکرده‌ای.<br>مقدار و قیمت خریدت را بزن تا سود و ضررش را ببینی.'));
-    return;
-  }
-  let cost=0,val=0,known=true;
-  for(const x of DB.spot){
-    const px=PRICES.get(x.ticker);
-    cost+=x.qty*x.buy;
-    if(px!=null)val+=x.qty*px; else known=false;
-  }
-  const pnl=val-cost;
-  const st=el('div','sumbar');
-  const cell=(l,v,c)=>{const d=el('div','sumcell');d.appendChild(el('b',null,l));
-    d.appendChild(el('span',c||null,v));st.appendChild(d);};
-  cell('هزینه',fmtUsd(cost));
-  cell('ارزش الان',known?fmtUsd(val):'ناقص',known?null:'m');
-  cell('سود/ضرر',known?fmtUsd(pnl):'—',known?cls(pnl):'m');
-  cell('بازده',known&&cost>0?fmtPct((pnl/cost)*100):'—',known&&cost>0?cls(pnl):'m');
-  box.appendChild(st);
-
-  for(const x of DB.spot){
-    const px=PRICES.get(x.ticker);
-    const c=el('div','card');
-    const head=el('div','chead');
-    head.appendChild(el('span','tick',esc(x.ticker)));
-    head.appendChild(el('span','pill mut',(+x.qty.toPrecision(8))+''));
-    if(px!=null){
-      const p=((px-x.buy)/x.buy)*100;
-      head.appendChild(el('span','pill '+(p>=0?'win':'lose'),fmtPct(p)));
-    }
-    head.appendChild(el('div','when',relTime(new Date(x.at))));
-    c.appendChild(head);
-    const kv=el('div','briefkv');kv.style.margin='0 14px 10px';
-    const a=(l,v,cl)=>{const d=el('div','bk');d.appendChild(el('b',null,l));
-      d.appendChild(el('span',cl||null,v));kv.appendChild(d);};
-    a('قیمت خرید',fmtPrice(x.buy));
-    a('قیمت الان',px!=null?fmtPrice(px):'—',px==null?'m':null);
-    a('سود/ضرر',px!=null?fmtUsd(x.qty*(px-x.buy)):'—',px!=null?cls(x.qty*(px-x.buy)):'m');
-    c.appendChild(kv);
-    if(x.note)c.appendChild(el('div','reply',esc(x.note)));
-    const row=el('div','markrow');
-    const e=el('button','mark ghost','ویرایش');e.onclick=()=>sheetSpot(x);
-    row.appendChild(e);
-    c.appendChild(row);
-    box.appendChild(c);
   }
 }
 function renderLessons(){
@@ -3492,7 +3450,17 @@ function planInputsOf(p,sig,ov,px){
 const MKT_LABEL={futures:'فیوچرز',spot:'اسپات'};
 /* کلید دوحالته‌ی بازار. اسپات و فیوچرز دو ماشین‌حساب متفاوت‌اند، پس این کلید
    فقط یک برچسب نیست: با زدنش همه‌ی اعداد پایین عوض می‌شوند. */
-function mktToggle(cur,guess,onPick){
+/* وقتی خودِ پست صریح گفته فیوچرز است یا اسپات، کلید لازم نیست: یک برچسب بس است
+   و با زدنش هنوز می‌شود عوضش کرد. کلیدِ دوتکه فقط برای حالتِ حدس می‌ماند، چون
+   آنجاست که واقعاً باید انتخاب کنی. */
+function mktBadge(cur,onFlip){
+  const other=cur==='futures'?'spot':'futures';
+  const b=el('button','mkttag',ic(cur==='spot'?'wallet':'bolt')+'<span>'+MKT_LABEL[cur]+'</span>');
+  b.title='برای عوض کردن به '+MKT_LABEL[other]+' بزن';
+  b.onclick=()=>onFlip(other);
+  return b;
+}
+function mktPicker(cur,onPick,guess){
   const w=el('div','mkt'+(guess?' guess':''));
   for(const k of ['futures','spot']){
     const b=el('button','mktb'+(cur===k?' on':''),ic(k==='spot'?'wallet':'bolt')+'<span>'+MKT_LABEL[k]+'</span>');
@@ -3503,6 +3471,9 @@ function mktToggle(cur,guess,onPick){
   }
   if(guess)w.appendChild(el('span','mkthint','حدس'));
   return w;
+}
+function mktToggle(cur,guess,onPick){
+  return guess?mktPicker(cur,onPick,true):mktBadge(cur,onPick);
 }
 function buildPlan(p,sig,ov,px){
   const plan=el('div','plan');
@@ -3901,7 +3872,7 @@ function sheetEnter(p,sig,ov,px){
         را پنهان/نمایان می‌کند تا عددهایی که وارد کرده‌ای از بین نروند. */
      const paintMkt=()=>{
        const mb=$('#mktBox');mb.innerHTML='';
-       mb.appendChild(mktToggle(MK,false,k=>{MK=k;paintMkt();upd();}));
+       mb.appendChild(mktPicker(MK,k=>{MK=k;paintMkt();upd();}));
        const sp=spot();
        $('#levRow').classList.toggle('hide',sp);
        $('#autoRow').classList.toggle('hide',sp);
@@ -4052,24 +4023,18 @@ function sheetSkip(p,sig,ov,px){
 }
 
 /* یک نگاه به وضعیت امروز، بدون رفتن به تب‌های دیگر */
-function buildSummary(){
-  const bar=el('div','sumbar');
+/* دو عددی که جای دیگری نوشته نمی‌شوند. قبلاً در نوار جداگانه‌ای بودند و آن نوار
+   با نوار وضعیت روی هم ۱۴۱ پیکسل می‌گرفت برای چهار عدد؛ حالا هر دو یک نوارند. */
+function moneyNow(){
   const today=jKey(new Date());
-  const sigToday=POSTS.filter(p=>p.date&&jKey(p.date)===today&&sigOf(p).isSignal).length;
   const open=DB.positions.filter(p=>p.status==='open');
   let openPnl=0, hasPx=false;
   for(const p of open){const px=PRICES.get(p.ticker);if(px!=null){hasPx=true;openPnl+=posMetrics(p,px).pnl||0;}}
   // ضرر امروز فقط از معاملات بسته‌شده‌ی امروز؛ سود به حد ضرر روزانه ربطی ندارد
-  const closedToday=DB.positions.filter(p=>p.status==='closed'&&p.closedAt&&jKey(new Date(p.closedAt))===today);
-  const realToday=closedToday.reduce((s,p)=>s+(posMetrics(p).pnl||0),0);
+  const realToday=DB.positions.filter(p=>p.status==='closed'&&p.closedAt&&jKey(new Date(p.closedAt))===today)
+    .reduce((s,p)=>s+(posMetrics(p).pnl||0),0);
   const cap=S.acct*(S.daily/100), used=Math.max(0,-realToday), left=Math.max(0,cap-used);
-  const cell=(l,v,c)=>{const d=el('div','sumcell');d.appendChild(el('b',null,l));
-    d.appendChild(el('span',c||null,v));bar.appendChild(d);};
-  cell('سیگنال امروز',faN(sigToday));
-  cell('پوزیشن باز',faN(open.length));
-  cell('سود/ضرر باز',hasPx?fmtUsd(openPnl):'—',hasPx?cls(openPnl):'m');
-  cell('تا حد ضرر روزانه',fmtUsd(left),used>=cap?'d':(used>cap*.6?'w':'u'));
-  return bar;
+  return {openPnl,hasPx,left,hot:used>=cap?'d':(used>cap*.6?'w':'u')};
 }
 
 /* یک نوار به‌جای سه دکمه‌ی بی‌عدد به‌علاوه‌ی چیپ‌های آرشیو: هر بخش می‌گوید چند تا
@@ -4152,7 +4117,6 @@ function renderSignals(){
   }
   list.innerHTML='';
   renderFbar();
-  if(F('summary')&&bucket==='live')list.appendChild(buildSummary());
   if(bucket==='live'){
     const done=POSTS.filter(x=>decisionOf(x.id)&&!isArch(x.id));
     if(done.length){
@@ -4213,25 +4177,22 @@ function showStatus(){
     st.appendChild(b);
     return;
   }
-  /* همان حسابی که نوار فیلتر می‌کند: فقط سطلِ فعال. قبلاً اینجا کلِ POSTS شمرده
-     می‌شد، پس به‌محض آرشیو کردن یک سیگنال، این نوار «سیگنال ۳» می‌گفت و نوار
-     فیلتر درست بالایش «سیگنال‌ها ۲» — دو عدد متفاوت برای یک چیز. */
-  let nAll=0,nSig=0,un=0;
-  for(const p of POSTS){
-    if(bucketOf(p)!=='live')continue;
-    nAll++;
-    if(!sigOf(p).isSignal)continue;
-    nSig++;
-    if(!decisionOf(p.id))un++;
-  }
+  /* شمارنده‌های «پست/سیگنال/تصمیم‌نگرفته» از اینجا برداشته شدند: همین سه عدد
+     دقیقاً در نوار فیلترِ بالای همین صفحه هستند (همه/سیگنال‌ها/در انتظار).
+     اینجا فقط چیزی می‌ماند که جای دیگری نوشته نشده. */
   st.className='status';
-  const sc=(l,v,hot)=>'<span class="sc'+(hot?' hot':'')+'">'+l+' <b>'+faN(v)+'</b></span>';
   const px=(priceSrc&&priceSrc!=='—')
     ?(H.px.state==='stale'?'قیمت قدیمی ':'قیمت ')+esc(priceSrc)+' · '+ageTxt(PX_AT)
     :'قیمت هنوز نیامده';        // «قیمت — · —» شبیه خرابی بود، نه شبیه انتظار
-  st.innerHTML=sc('پست',nAll)+sc('سیگنال',nSig)+sc('تصمیم‌نگرفته',un,un>0)+
-    '<span class="sc">مارجین <b>$'+faN(S.cap)+'</b> · ریسک <b>'+faN(S.risk)+'٪</b></span>'+
-    '<span class="sc grow" style="color:var(--tx3)">'+px+'</span>';
+  let money='';
+  if(F('summary')){
+    const m=moneyNow();
+    money='<span class="sc">سود/ضرر باز <b class="'+(m.hasPx?cls(m.openPnl):'m')+'">'+
+        (m.hasPx?fmtUsd(m.openPnl):'—')+'</b></span>'+
+      '<span class="sc">تا حد ضرر روزانه <b class="'+m.hot+'">'+fmtUsd(m.left)+'</b></span>';
+  }
+  st.innerHTML='<span class="sc">مارجین <b>$'+faN(S.cap)+'</b> · ریسک <b>'+faN(S.risk)+'٪</b></span>'+
+    money+'<span class="sc grow" style="color:var(--tx3)">'+px+'</span>';
   if(H.tg.err){
     const w=el('span','sc');w.style.color='var(--warn)';w.textContent='آخرین بروزرسانی ناموفق بود؛ این‌ها از حافظه‌اند.';
     st.appendChild(w);
@@ -5244,14 +5205,18 @@ function sheetEditPos(p){
     openedAt:Date.now(),status:'open',exitPrice:null,closedAt:null,fees:0,note:'',targets:[],partials:[],log:[]};
   const dt=v=>v?new Date(v-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16):'';
   openSheet(
-   '<h3>'+(isNew?'افزودن پوزیشن دستی':'ویرایش پوزیشن')+'</h3>'+
+   '<h3>'+(isNew?'افزودن دستی':'ویرایش پوزیشن')+'</h3>'+
+   '<div id="mktBox"></div>'+
    '<div class="sub">همه اعداد دست خودت است. محاسبات بر اساس همین‌ها انجام می‌شود.</div>'+
    '<div class="grid">'+
      '<div class="fld"><label>نماد</label><input id="f_t" value="'+esc(d.ticker)+'" dir="ltr" placeholder="BTC"></div>'+
-     '<div class="fld"><label>جهت</label><select id="f_d"><option value="long"'+(d.dir==='long'?' selected':'')+
+     '<div class="fld" id="dirRow"><label>جهت</label><select id="f_d"><option value="long"'+(d.dir==='long'?' selected':'')+
        '>لانگ</option><option value="short"'+(d.dir==='short'?' selected':'')+'>شورت</option></select></div>'+
      fldHtml('e','ورود',d.entry==null?'':d.entry)+fldHtml('s','حد ضرر',d.stop==null?'':d.stop)+
-     fldHtml('m','مارجین ($)',d.margin==null?'':d.margin)+fldHtml('l','اهرم',d.lev==null?'':d.lev)+
+     '<div class="fld"><label id="lbl_m">مارجین ($)</label><input id="f_m" step="any" inputmode="decimal" value="'+
+       (d.margin==null?'':d.margin)+'"></div>'+
+     '<div class="fld" id="levRow"><label>اهرم</label><input id="f_l" step="any" inputmode="decimal" value="'+
+       (d.lev==null?'':d.lev)+'"></div>'+
    '</div>'+
    '<div class="grid" style="margin-top:10px">'+
      '<div class="fld"><label>زمان ورود</label><input id="f_o" type="datetime-local" value="'+dt(d.openedAt)+'"></div>'+
@@ -5266,11 +5231,23 @@ function sheetEditPos(p){
    '<div id="prev" class="kv" style="margin-top:12px"></div>'+
    '<div class="srow"><button class="btn pri" id="ok">ذخیره</button><button class="btn" id="cx">انصراف</button></div>',
    sh=>{
+     let MK=d.kind==='spot'?'spot':'futures';
+     const spot=()=>MK==='spot';
      const syncBox=()=>$('#closeBox').classList.toggle('hide',$('#f_st').value!=='closed');
-     const grab=()=>({ticker:($('#f_t').value||'').trim().toUpperCase(),dir:$('#f_d').value,
-       entry:num('f_e'),stop:num('f_s'),margin:num('f_m'),lev:num('f_l'),
+     const grab=()=>({ticker:($('#f_t').value||'').trim().toUpperCase(),
+       dir:spot()?'long':$('#f_d').value,kind:MK,
+       entry:num('f_e'),stop:num('f_s'),margin:num('f_m'),lev:spot()?1:num('f_l'),
        status:$('#f_st').value,exitPrice:num('f_x'),fees:Math.max(0,parseFloat($('#f_f').value)||0),
        note:($('#f_n').value||'').trim()});
+     const paintMkt=()=>{
+       const mb=$('#mktBox');mb.innerHTML='';
+       mb.appendChild(mktPicker(MK,k=>{MK=k;paintMkt();upd();}));
+       const sp=spot();
+       $('#levRow').classList.toggle('hide',sp);
+       $('#dirRow').classList.toggle('hide',sp);
+       $('#lbl_m').textContent=sp?'مبلغ خرید ($)':'مارجین ($)';
+       if(sp)$('#f_l').value=1;
+     };
      const upd=()=>{
        syncBox();
        const v=grab(),pv=$('#prev');pv.innerHTML='';
@@ -5278,18 +5255,22 @@ function sheetEditPos(p){
        const live=v.status==='closed'?null:liveOf(v.ticker);
        const m=posMetrics(Object.assign({},d,v),live);
        const add=(l,x,c)=>pv.innerHTML+='<div class="k"><b>'+l+'</b><span class="'+(c||'')+'">'+x+'</span></div>';
-       add('حجم',fmtUsd(m.notional));
-       add('لیکوئید',m.liqPrice==null?'ندارد':fmtPrice(m.liqPrice),m.liqPrice==null?'m':'d');
-       if(m.pnl!=null){add('سود/ضرر',fmtUsd(m.pnl),cls(m.pnl));add('٪ مارجین',fmtPct(m.roi),cls(m.pnl));}
+       if(spot())add('مقدار '+(v.ticker||'ارز'),(+m.qty.toPrecision(6))+'');
+       else{
+         add('حجم',fmtUsd(m.notional));
+         add('لیکوئید',m.liqPrice==null?'ندارد':fmtPrice(m.liqPrice),m.liqPrice==null?'m':'d');
+       }
+       if(m.pnl!=null){add('سود/ضرر',fmtUsd(m.pnl),cls(m.pnl));
+         add(spot()?'بازده':'٪ مارجین',fmtPct(m.roi),cls(m.pnl));}
      };
      sh.querySelectorAll('input,select').forEach(i=>{i.oninput=upd;i.onchange=upd;});
-     upd();
+     paintMkt();upd();
      $('#cx').onclick=closeSheet;
      $('#ok').onclick=()=>{
        const v=grab();
        if(!v.ticker)return toast('نماد را وارد کن','err');
        if(!v.entry)return toast('قیمت ورود را وارد کن','err');
-       if(!v.margin||!v.lev)return toast('مارجین و اهرم را وارد کن','err');
+       if(!v.margin||!v.lev)return toast((spot()?'مبلغ خرید':'مارجین و اهرم')+' را وارد کن','err');
        if(v.status==='closed'&&!v.exitPrice)return toast('قیمت خروج را وارد کن','err');
        const wasStop=d.stop;
        Object.assign(d,v);
@@ -5306,7 +5287,7 @@ function sheetEditPos(p){
 }
 
 /* ==================== کارنامه ==================== */
-let repPeriod='month';
+let repPeriod='month';        // «سالانه» برداشته شد: با «کل» تقریباً یکی بود
 let repFrom=null, repTo=null;      // بازه‌ی دلخواه (میلی‌ثانیه)، وقتی repPeriod==='range'
 function sheetRange(){
   const d=x=>x?new Date(x).toISOString().slice(0,10):'';
@@ -5327,7 +5308,7 @@ function sheetRange(){
        let from=new Date(a+'T00:00:00').getTime(), to=new Date(b+'T23:59:59').getTime();
        if(from>to){const t=from;from=to;to=t;}   // جابه‌جا نوشته شده بود، خودمان مرتبش می‌کنیم
        repFrom=from;repTo=to;repPeriod='range';
-       $$('#vReport .tools .btn').forEach(x=>x.setAttribute('aria-pressed',x.id==='pRange'?'true':'false'));
+       $$('#vReport .fb[data-p]').forEach(x=>x.setAttribute('aria-pressed',x.id==='pRange'?'true':'false'));
        closeSheet();renderReport();
      };
    });
@@ -5336,7 +5317,7 @@ function periodKey(ts,mode){
   const p=jParts(new Date(ts));
   if(mode==='day')return p.jy+'-'+String(p.jm).padStart(2,'0')+'-'+String(p.jd).padStart(2,'0');
   if(mode==='month')return p.jy+'-'+String(p.jm).padStart(2,'0');
-  if(mode==='year')return ''+p.jy;
+  if(mode==='year')return ''+p.jy;      // فقط برای داده‌ی قدیمی
   return 'all';
 }
 function periodLabel(k,mode){
@@ -5367,14 +5348,27 @@ function agg(list){
   r.expectancy=decided?r.pnl/decided:null;
   return r;
 }
+/* تقویم تب مستقل نیست: همان داده‌ی کارنامه است، فقط ماهانه‌چیده‌شده.
+   با نوار بالای کارنامه بین فهرست و تقویم جابه‌جا می‌شوی. */
+let repView='list';
 function renderReport(){
+  const cal=$('#calBody'), body0=$('#repBody');
+  const onCal=repView==='cal';
+  if(cal)cal.classList.toggle('hide',!onCal);
+  if(body0)body0.classList.toggle('hide',onCal);
+  const cb=$('#repCal');if(cb)cb.setAttribute('aria-pressed',onCal?'true':'false');
+  $$('#vReport .fseg .fb').forEach(b=>b.classList.toggle('dim',onCal));
+  if(onCal){renderCalendar();return;}
+  renderReportList();
+}
+function renderReportList(){
   // مثل بقیه‌ی کلیدها همان لحظه اثر کند، نه بعد از بارگذاری دوباره
   const rb=$('#pRange');
   if(rb){
     rb.classList.toggle('hide',!F('range'));
     if(!F('range')&&repPeriod==='range'){
       repPeriod='month';
-      $$('#vReport .tools .btn').forEach(x=>x.setAttribute('aria-pressed',x.dataset.p==='month'?'true':'false'));
+      $$('#vReport .fb[data-p]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.p==='month'?'true':'false'));
     }
   }
   const body=$('#repBody');body.innerHTML='';
@@ -5668,8 +5662,9 @@ function dl(name,text,type){
    تا قبل از جایگزینی معلوم باشد دقیقاً چه چیزی جای چه چیزی می‌نشیند. */
 function dataCounts(d){
   const n=x=>Array.isArray(x)?x.length:(x&&typeof x==='object'?Object.keys(x).length:0);
-  return [['پوزیشن',n(d.positions)],['تصمیم',n(d.decisions)],['آموزش',n(d.lessons)],
-          ['واچ‌لیست',n(d.watch)],['اسپات',n(d.spot)],['منتظر',n(d.pending)],
+  const spots=(Array.isArray(d.positions)?d.positions.filter(x=>x&&x.kind==='spot').length:0)+n(d.spot);
+  return [['پوزیشن',n(d.positions)+n(d.spot)],['تصمیم',n(d.decisions)],['آموزش',n(d.lessons)],
+          ['واچ‌لیست',n(d.watch)],['از این‌ها اسپات',spots],['منتظر',n(d.pending)],
           ['آرشیو',n(d.archived)],['نتایج',n(d.results)],['اصلاح دستی',n(d.overrides)]];
 }
 function applyBackup(d){
@@ -5687,6 +5682,7 @@ function applyBackup(d){
   if(d.settings&&typeof d.settings==='object')Object.assign(S,d.settings);
   applySettingsToForm();readSettings();
   save();renderAll();
+  migrateSpot();
 }
 function sheetRestore(d,name){
   const mine=dataCounts(dbBlob()), file=dataCounts(d);
@@ -5774,7 +5770,7 @@ function go(v,noScroll){
   if(view===v&&noScroll)return;
   view=v;
   $$('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.v===v?'true':'false'));
-  for(const [id,name] of [['vSignals','signals'],['vPositions','positions'],['vReport','report'],['vMarket','market'],['vLessons','lessons'],['vCalendar','calendar']]){
+  for(const [id,name] of [['vSignals','signals'],['vPositions','positions'],['vReport','report'],['vMarket','market'],['vLessons','lessons']]){
     const n=$('#'+id), on=name===v;
     n.classList.toggle('hide',!on);
     if(on){n.classList.remove('enter');void n.offsetWidth;n.classList.add('enter');}
@@ -5807,8 +5803,14 @@ function renderAll(){
   const cp=$('#cPos');cp.textContent=faN(open);cp.classList.toggle('z',!open);
   const und=POSTS.filter(p=>sigOf(p).isSignal&&!decisionOf(p.id)&&bucketOf(p)==='live').length;
   const cs=$('#cSig');cs.textContent=faN(und);cs.classList.toggle('z',!und);
-  const nm=DB.watch.length+DB.spot.length;
+  const nm=DB.watch.length+spotList().length;
   const cm=$('#cMkt');if(cm){cm.textContent=faN(nm);cm.classList.toggle('z',!nm);}
+  // شمارنده‌های داخل نوارهای پوزیشن و بازار
+  const nOpen=open, nClosed=DB.positions.filter(p=>p.status==='closed').length;
+  const setN=(id,v)=>{const n=$('#'+id);if(n)n.textContent=faN(v);};
+  setN('cWait',DB.pending.length);setN('cOpenP',nOpen);setN('cClosedP',nClosed);
+  setN('cAllP',DB.positions.length+DB.pending.length);
+
   const nl=Object.keys(DB.lessons).length;
   const cl=$('#cLes');cl.textContent=faN(nl);cl.classList.toggle('z',!nl);
   if(view==='signals')renderSignals();
@@ -5816,7 +5818,6 @@ function renderAll(){
   else if(view==='lessons')renderLessons();
   else if(view==='positions')renderPositions();
   else if(view==='report')renderReport();
-  else if(view==='calendar')renderCalendar();
   destackAll();
   renderHealth();
 }
@@ -5955,22 +5956,34 @@ function wire(){
   $('#q').oninput=e=>{query=e.target.value;runQuery();};
   const runLQuery=debounce(()=>renderLessons(),160);
   $('#lq').oninput=e=>{lessonQ=e.target.value;runLQuery();};
-  $('#mWatch').onclick=()=>{marketTab='watch';renderMarket();};
-  $('#mSpot').onclick=()=>{marketTab='spot';renderMarket();};
 
   const pf=(btn,val)=>{$('#'+btn).onclick=()=>{posFilter=val;
     ['pWait','pOpen','pClosed','pAllP'].forEach(x=>$('#'+x).setAttribute('aria-pressed',x===btn?'true':'false'));renderPositions();};};
   pf('pWait','pending');pf('pOpen','open');pf('pClosed','closed');pf('pAllP','all');
   $('#btnManual').onclick=()=>sheetEditPos(null);
-  $$('#vReport .tools .btn').forEach(b=>b.onclick=()=>{
+  $$('#vReport .fb[data-p]').forEach(b=>b.onclick=()=>{
     if(b.dataset.p==='range')return sheetRange();
-    repPeriod=b.dataset.p;
-    $$('#vReport .tools .btn').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+    repView='list';repPeriod=b.dataset.p;
+    $$('#vReport .fb[data-p]').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
     renderReport();
   });
+  $('#repCal').onclick=()=>{repView=repView==='cal'?'list':'cal';renderReport();};
   // تنظیمات
   $('#btnWCopy').onclick=e=>copyWorker(e.currentTarget);
   $('#btnWTest').onclick=e=>testWorker(e.currentTarget);
+  /* باز یا بسته بودن هر بخش یادش می‌ماند، وگرنه هر بار باید همان دو تایی را که
+     واقعاً استفاده می‌کنی دوباره باز کنی. */
+  const SECKEY='signaldesk.sec.v1';
+  const secOpen=lsGet(SECKEY)||null;
+  $$('#setVeil .sec[data-sec]').forEach(d=>{
+    const k=d.dataset.sec;
+    if(secOpen&&k in secOpen)d.open=!!secOpen[k];
+    d.addEventListener('toggle',()=>{
+      const m=lsGet(SECKEY)||{};m[k]=d.open;lsSet(SECKEY,m);});
+  });
+  /* آموزش ورکر وقتی واسط شخصی داری و جواب داده، کارش تمام است */
+  const wsx=$('#wSetup');
+  if(wsx&&!proxyList().length&&!goodFor('tg'))wsx.open=true;
   $('#btnSet').onclick=()=>openPanel('setVeil');
   $('#setX').onclick=()=>closePanel('setVeil');
   $('#setDone').onclick=()=>closePanel('setVeil');
@@ -6034,6 +6047,7 @@ loadLog();
 OVERRIDE=DB.overrides||{};
 if(DB.settings&&Object.keys(DB.settings).length)Object.assign(S,DB.settings);
 DB.positions.forEach(ensureBase);
+if(migrateSpot())save();          // خریدهای اسپاتِ قدیمی به پوزیشن‌ها منتقل می‌شوند
 wire();
 applySettingsToForm();
 readSettings();
