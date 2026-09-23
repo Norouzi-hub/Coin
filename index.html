@@ -313,6 +313,26 @@ html.busy .prog{opacity:1}
 .mark.ghost{background:var(--inset);color:var(--tx3);border-color:var(--line2)}
 .mark:active{transform:scale(.97)}
 .markhint{font-size:11px;color:var(--tx3)}
+.featrow{display:flex;gap:10px;align-items:flex-start;padding:10px 0;cursor:pointer;
+  border-bottom:1px solid var(--line)}
+.featrow:last-child{border-bottom:0}
+.featrow input{width:20px;height:20px;accent-color:var(--gold);flex:none;margin-top:1px}
+.feattxt{min-width:0}
+.featttl{font-size:13px;font-weight:800;color:var(--tx)}
+.featdesc{font-size:11.5px;color:var(--tx3);line-height:1.8;margin-top:2px}
+.sumbar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.sumcell{background:var(--card);border:1px solid var(--line);border-radius:var(--r2);
+  padding:9px 6px;text-align:center;min-width:0}
+.sumcell b{display:block;font-size:10.5px;font-weight:700;color:var(--tx3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sumcell span{display:block;font-size:14px;font-weight:800;margin-top:3px;
+  font-variant-numeric:tabular-nums;color:var(--tx)}
+.sumcell span.u{color:var(--up)}.sumcell span.d{color:var(--dn)}
+.sumcell span.w{color:var(--warn)}.sumcell span.m{color:var(--tx3)}
+/* حالت فشرده: متن و پلن پنهان، فقط سرِ کارت می‌ماند */
+.card.tight{cursor:pointer}
+.card.tight .body,.card.tight .plan,.card.tight .acts,.card.tight .markrow,.card.tight .shot{display:none}
+.card.tight .chead{padding-bottom:12px}
 .autolev{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:13px;
   color:var(--tx2);cursor:pointer}
 .autolev input{width:19px;height:19px;accent-color:var(--gold);flex:none}
@@ -739,6 +759,7 @@ input[type=range]{width:100%;accent-color:var(--gold)}
         <button class="btn sm" data-p="month" aria-pressed="true">ماهانه</button>
         <button class="btn sm" data-p="year" aria-pressed="false">سالانه</button>
         <button class="btn sm" data-p="all" aria-pressed="false">کل</button>
+        <button class="btn sm hide" id="pRange" data-p="range" aria-pressed="false">بازه‌ی دلخواه</button>
       </div>
     </div>
     <div id="repBody"></div>
@@ -802,6 +823,12 @@ input[type=range]{width:100%;accent-color:var(--gold)}
         اگر <b dir="ltr">workers.dev</b> روی شبکه‌ات باز نشد، در همان ورکر
         <b dir="ltr">Settings → Domains &amp; Routes</b> یک دامنه‌ی خودت را وصل کن و آدرس آن را بگذار.
       </div>
+    </div>
+    <div class="sechd">امکانات</div>
+    <div class="wsetup">
+      <div id="featList"></div>
+      <div class="hint">هر کدام را نخواستی خاموش کن — برنامه دقیقاً به حالت بدون آن برمی‌گردد.
+        این تنظیم هم بین دستگاه‌ها همگام می‌شود.</div>
     </div>
     <div class="sechd">همگام‌سازی بین دستگاه‌ها</div>
     <div class="wsetup">
@@ -1150,9 +1177,38 @@ function downloadLog(){
 }
 
 /* ==================== تنظیمات ==================== */
-const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,auto:60,proxy:''};
+/* هر امکان تازه یک کلید مستقل دارد تا بشود بدون دست زدن به کد خاموشش کرد.
+   هر کدام فقط یک شرط است، پس خاموش کردنش دقیقاً به حالت قبل برمی‌گردد. */
+const FEAT={
+  summary:{on:true, t:'نوار خلاصه', d:'بالای سیگنال‌ها: سیگنال امروز، پوزیشن باز، سود/ضرر و فاصله تا حد ضرر روزانه'},
+  compact:{on:false,t:'کارت فشرده', d:'هر سیگنال در یک خط؛ با زدن روی کارت باز می‌شود'},
+  quick:  {on:true, t:'ورود سریع',  d:'دکمه‌ی ورود با مبلغ پیش‌فرض، بدون باز کردن فرم'},
+  notify: {on:false,t:'اعلان سیگنال تازه', d:'وقتی سیگنال تازه بیاید، نوتیفیکیشن مرورگر'},
+  alerts: {on:true, t:'هشدار استاپ و تارگت', d:'روی پوزیشن‌های باز، نزدیک شدن قیمت به استاپ یا رسیدن به تارگت'},
+  tpclose:{on:true, t:'بستن روی تارگت', d:'دکمه‌ی بستن نصف پوزیشن روی تارگت، بدون پر کردن فرم'},
+  range:  {on:true, t:'بازه‌ی دلخواه کارنامه', d:'انتخاب تاریخ شروع و پایان در کارنامه'}
+};
+const featDefaults=()=>Object.fromEntries(Object.entries(FEAT).map(([k,v])=>[k,v.on]));
+const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,auto:60,proxy:'',feat:featDefaults()};
+const F=k=>!!(S.feat&&S.feat[k]);
 let BOOTED=false;
+function buildFeatList(){
+  const box=$('#featList');if(!box)return;
+  box.innerHTML='';
+  for(const [k,v] of Object.entries(FEAT)){
+    const row=el('label','featrow');
+    const cb=el('input');cb.type='checkbox';cb.id='feat_'+k;
+    row.appendChild(cb);
+    const t=el('div','feattxt');
+    t.appendChild(el('div','featttl',esc(v.t)));
+    t.appendChild(el('div','featdesc',esc(v.d)));
+    row.appendChild(t);
+    box.appendChild(row);
+  }
+}
 function applySettingsToForm(){
+  if(!$('#feat_summary'))buildFeatList();
+  for(const k of Object.keys(FEAT)){const c=$('#feat_'+k);if(c)c.checked=F(k);}
   $('#sProxy').value=S.proxy||'';
   $('#sChannel').value=S.channel; $('#sAcct').value=S.acct; $('#sCap').value=S.cap;
   $('#sRisk').value=S.risk; $('#sMaxLev').value=S.maxLev; $('#sDaily').value=S.daily;
@@ -1179,6 +1235,11 @@ function readSettings(){
   S.daily=Math.min(100,Math.max(1,parseFloat($('#sDaily').value)||10));
   S.mode=$('#sMode').value; S.fee=Math.max(0,parseFloat($('#sFee').value)||0);
   S.auto=parseInt($('#sAuto').value)||0;
+  const prevNotify=F('notify');
+  S.feat=S.feat||featDefaults();
+  for(const k of Object.keys(FEAT)){const c=$('#feat_'+k);if(c)S.feat[k]=!!c.checked;}
+  // روشن کردن اعلان بدون اجازه‌ی مرورگر بی‌معنی است، پس همان‌جا می‌پرسیم
+  if(!prevNotify&&S.feat.notify)askNotify();
   const rs=normDig($('#sR').value||'').split(/[,،\s]+/).map(parseFloat).filter(n=>isFinite(n)&&n>0);
   S.rMul=rs.length?rs.slice(0,5):[1.5,3,5];
   DB.settings=Object.assign({},S); save(); SETVER++;
@@ -1596,6 +1657,7 @@ function applyPrices(m,srcName,route,ms){
   if(symChanged)SYMVER++;
   Object.assign(H.px,{state:'ok',src:srcName,route,ms,at:PX_AT,n:m.size,err:null});
   savePxCache();
+  try{checkAlerts();}catch(e){}
 }
 function rowsToMap(rows){
   const m=new Map();
@@ -1698,6 +1760,60 @@ async function loadChannel(before){
             :'«تست اتصال» را بزن تا معلوم شود کدام مسیر از این شبکه باز است.')});
     throw e;
   }finally{renderHealth();}
+}
+
+/* ==================== اعلان و هشدار ==================== */
+/* بدون سرور Push، نوتیفیکیشن فقط وقتی می‌آید که صفحه باز باشد — حتی اگر در پس‌زمینه.
+   اگر تب را ببندی هیچ اعلانی نمی‌آید؛ این محدودیت مرورگر است نه کد. */
+function canNotify(){return typeof Notification!=='undefined'&&Notification.permission==='granted';}
+async function askNotify(){
+  if(typeof Notification==='undefined'){toast('این مرورگر اعلان ندارد','err');S.feat.notify=false;return;}
+  if(Notification.permission==='granted')return;
+  if(Notification.permission==='denied'){
+    toast('اعلان را قبلاً رد کرده‌ای؛ از تنظیمات سایت در مرورگر اجازه بده','err');
+    S.feat.notify=false;return;
+  }
+  const r=await Notification.requestPermission();
+  if(r!=='granted'){S.feat.notify=false;toast('اجازه داده نشد','info');applySettingsToForm();}
+}
+function notify(title,body,tag){
+  if(!canNotify())return false;
+  try{new Notification(title,{body,tag,icon:'icons/icon-192.png',badge:'icons/favicon-32.png'});return true;}
+  catch(e){return false;}
+}
+/* هر هشدار فقط یک بار: کلیدش در همین نشست نگه داشته می‌شود */
+const ALERTED=new Set();
+function checkAlerts(){
+  if(!F('alerts'))return;
+  for(const p of DB.positions){
+    if(p.status!=='open')continue;
+    const px=PRICES.get(p.ticker);
+    if(px==null)continue;
+    const sign=p.dir==='long'?1:-1;
+    if(p.stop){
+      const hit=(p.dir==='long'&&px<=p.stop)||(p.dir==='short'&&px>=p.stop);
+      const near=Math.abs(px-p.stop)/Math.abs(p.entry-p.stop)<0.25;
+      const key=p.id+(hit?':stop':':near');
+      if((hit||near)&&!ALERTED.has(key)){
+        ALERTED.add(key);
+        const msg=hit?p.ticker+' به حد ضرر رسید ('+fmtPrice(px)+')'
+                     :p.ticker+' نزدیک حد ضرر است ('+fmtPrice(px)+')';
+        toast(msg,hit?'err':'info');
+        if(F('notify'))notify('میز سیگنال',msg,key);
+      }
+    }
+    const tg=(p.targets||[]).filter(t=>isFinite(t));
+    for(let i=0;i<tg.length;i++){
+      const reached=sign>0?px>=tg[i]:px<=tg[i];
+      const key=p.id+':tp'+i;
+      if(reached&&!ALERTED.has(key)){
+        ALERTED.add(key);
+        const msg=p.ticker+' به تارگت '+faN(i+1)+' رسید ('+fmtPrice(tg[i])+')';
+        toast(msg,'ok');
+        if(F('notify'))notify('میز سیگنال',msg,key);
+      }
+    }
+  }
 }
 
 /* ==================== همگام‌سازی بین دستگاه‌ها ==================== */
@@ -2611,6 +2727,7 @@ let OVERRIDE={},COLLAPSED={},sigFilter='sig',query='',beforeId=null,busy=false,c
 /* با ۸۰۰ پست در کش، ساختن همه‌ی کارت‌ها در هر رندر روی گوشی کند می‌شود.
    فقط یک پنجره می‌سازیم و با دکمه بزرگش می‌کنیم. هر تغییر فیلتر پنجره را صفر می‌کند. */
 const PAGE=30; let shownMax=PAGE;
+const OPENCARD=new Set();   // کارت‌هایی که در حالت فشرده باز شده‌اند
 const NEWIDS=new Set();          // پستی که در همین نشست تازه رسیده — نشان «تازه» می‌گیرد
 const CARDS=new Map();           // برای بازسازی فقط یک کارت، بدون رندر دوباره‌ی کل فهرست
 const decisionOf=id=>DB.decisions[id]||null;
@@ -2664,7 +2781,7 @@ function buildCard(p){
     card.appendChild(buildPlan(p,sig,ov,px));
     card.appendChild(buildActions(p,sig,ov,px,dec));
   }
-  card.appendChild(buildMark(p,sig,ov,isSig,dec));
+  card.appendChild(buildMark(p,sig,ov,isSig,dec,px));
   CARDS.set(p.id,card);
   return card;
 }
@@ -2806,7 +2923,7 @@ function setOv(p,k,v,isStr){
 }
 /* تشخیص خودکار همیشه کار نمی‌کند: کانال ممکن است نماد را جور دیگری بنویسد یا اصلاً ننویسد.
    این دکمه اجازه می‌دهد هر پستی را دستی سیگنال کنی و همان‌جا نماد و اعداد را درست کنی. */
-function buildMark(p,sig,ov,isSig,dec){
+function buildMark(p,sig,ov,isSig,dec,px){
   const row=el('div','markrow');
   const manual=ov.sig!=null;
   if(isSig){
@@ -2830,6 +2947,11 @@ function buildMark(p,sig,ov,isSig,dec){
       u.onclick=()=>{setOv(p,'sig',null);toast('برگشت به حالت خودکار','info');};
       row.appendChild(u);
     }
+  }
+  if(F('quick')&&isSig&&!dec){
+    const q=el('button','mark','ورود سریع '+fmtUsd(S.cap));
+    q.onclick=()=>quickEnter(p,sig,ov,px);
+    row.appendChild(q);
   }
   const saved=isLesson(p.id);
   const lb=el('button','mark ghost'+(saved?' on':''),saved?'در آموزش‌هاست':'افزودن به آموزش');
@@ -2878,6 +3000,39 @@ function snapOf(p,sig,entry,stop){
 }
 
 /* ---- ورق «وارد شدم» ---- */
+/* ورود با پیش‌فرض‌ها: همان اعدادی که فرم کامل هم می‌ساخت، ولی در یک تأیید.
+   اگر چیزی سر جایش نباشد (استاپ ندارد، استاپ بعد از لیکوئید) به فرم کامل می‌فرستد. */
+function quickEnter(p,sig,ov,px){
+  const I=planInputsOf(p,sig,ov,px);
+  const entry=I.entry||px;
+  if(!entry||!I.stop){
+    toast('برای ورود سریع، ورود و حد ضرر لازم است','err');
+    return sheetEnter(p,sig,ov,px);
+  }
+  const r=computePlan({direction:I.dir,entry,stop:I.stop,live:px,capital:S.cap,
+    riskPct:S.risk,maxLeverage:S.maxLev,leverageOverride:I.lev,mode:S.mode,rMultiples:S.rMul});
+  if(!r.ok){toast('پلن کامل نشد','err');return sheetEnter(p,sig,ov,px);}
+  if(r.warnings.includes('liq-before-stop')){
+    toast('با این اعداد استاپ بعد از لیکوئید می‌افتد — فرم کامل باز شد','err');
+    return sheetEnter(p,sig,ov,px);
+  }
+  const lev=+r.leverage.toFixed(2);
+  if(!confirm('ورود '+(sig.ticker||'')+' '+(I.dir==='long'?'لانگ':'شورت')+'\n\n'+
+    'ورود: '+fmtPrice(entry)+'\nحد ضرر: '+fmtPrice(I.stop)+'\n'+
+    'مارجین: '+fmtUsd(S.cap)+'\nاهرم: '+lev+'x\n'+
+    'حجم: '+fmtUsd(r.notional)+'\nضرر در استاپ: '+fmtUsd(-r.actualRisk)+
+    ' ('+r.actualRiskPct.toFixed(1)+'٪)\n'+
+    (r.liqPrice?'لیکوئید: '+fmtPrice(r.liqPrice)+'\n':'')+'\nثبت شود؟'))return;
+  const pos=ensureBase({id:uid(),sigId:p.id,ticker:sig.ticker||'—',dir:I.dir,entry,
+    stop:I.stop,stop0:I.stop,margin:S.cap,baseMargin:S.cap,lev,
+    targets:sig.targets||[],openedAt:Date.now(),status:'open',
+    exitPrice:null,closedAt:null,fees:null,note:'ورود سریع',partials:[],log:[],
+    src:{link:p.link,text:(p.text||'').slice(0,400),img:p.img||null,at:p.date?p.date.getTime():null}});
+  logAdd(pos,'open','ورود سریع با '+fmtUsd(S.cap)+' مارجین و اهرم '+lev+'x روی '+fmtPrice(entry));
+  DB.positions.push(pos);
+  DB.decisions[p.id]={action:'taken',at:Date.now(),posId:pos.id,snap:snapOf(p,sig,entry,I.stop)};
+  save();renderAll();toast('پوزیشن ثبت شد','ok');
+}
 function sheetEnter(p,sig,ov,px){
   const I=planInputsOf(p,sig,ov,px);
   const entry0=I.entry||px||'', stop0=I.stop||'';
@@ -3002,6 +3157,27 @@ function sheetSkip(p,sig,ov,px){
    });
 }
 
+/* یک نگاه به وضعیت امروز، بدون رفتن به تب‌های دیگر */
+function buildSummary(){
+  const bar=el('div','sumbar');
+  const today=jKey(new Date());
+  const sigToday=POSTS.filter(p=>p.date&&jKey(p.date)===today&&sigOf(p).isSignal).length;
+  const open=DB.positions.filter(p=>p.status==='open');
+  let openPnl=0, hasPx=false;
+  for(const p of open){const px=PRICES.get(p.ticker);if(px!=null){hasPx=true;openPnl+=posMetrics(p,px).pnl||0;}}
+  // ضرر امروز فقط از معاملات بسته‌شده‌ی امروز؛ سود به حد ضرر روزانه ربطی ندارد
+  const closedToday=DB.positions.filter(p=>p.status==='closed'&&p.closedAt&&jKey(new Date(p.closedAt))===today);
+  const realToday=closedToday.reduce((s,p)=>s+(posMetrics(p).pnl||0),0);
+  const cap=S.acct*(S.daily/100), used=Math.max(0,-realToday), left=Math.max(0,cap-used);
+  const cell=(l,v,c)=>{const d=el('div','sumcell');d.appendChild(el('b',null,l));
+    d.appendChild(el('span',c||null,v));bar.appendChild(d);};
+  cell('سیگنال امروز',faN(sigToday));
+  cell('پوزیشن باز',faN(open.length));
+  cell('سود/ضرر باز',hasPx?fmtUsd(openPnl):'—',hasPx?cls(openPnl):'m');
+  cell('تا حد ضرر روزانه',fmtUsd(left),used>=cap?'d':(used>cap*.6?'w':'u'));
+  return bar;
+}
+
 function renderSignals(){
   const list=$('#list');
   if(!POSTS.length&&busy){list.innerHTML=skelHTML(3);$('#btnMore').classList.add('hide');showStatus();return;}
@@ -3018,10 +3194,19 @@ function renderSignals(){
     matched++;
     if(n>=shownMax)continue;                 // بقیه شمرده می‌شوند ولی ساخته نمی‌شوند
     const c=buildCard(p);
+    // فشرده فقط یک کلاس است؛ خاموش کردنش دقیقاً به حالت قبل برمی‌گردد
+    if(F('compact')&&!OPENCARD.has(p.id)){
+      c.classList.add('tight');
+      c.addEventListener('click',e=>{
+        if(e.target.closest('button,a,input,select,.shot'))return;
+        OPENCARD.add(p.id);renderSignals();
+      });
+    }
     if(shown<8){c.classList.add('enter');c.style.setProperty('--d',(shown*45)+'ms');shown++;}
     frag.appendChild(c);n++;
   }
   list.innerHTML='';
+  if(F('summary'))list.appendChild(buildSummary());
   if(coinFilter){
     const chip=el('button','coinchip','فقط '+esc(coinFilter)+' <i>×</i>');
     chip.title='برداشتن فیلتر';
@@ -3084,6 +3269,8 @@ function showStatus(){
 /* نوار «تازه رسید»: بعد از هر بروزرسانی می‌گوید چند سیگنال جدید آمده */
 let incT=null;
 function showIncoming(nNew,nSig){
+  if(F('notify')&&nSig>0&&document.hidden)
+    notify('میز سیگنال',faN(nSig)+' سیگنال تازه در @'+S.channel,'newsig');
   const b=$('#incoming');
   clearTimeout(incT);
   if(!nNew){b.classList.add('hide');return;}
@@ -3389,6 +3576,18 @@ function buildPosCard(p){
     const pc=el('button','btn',ic('scissors')+'<span>بستن بخشی</span>');pc.onclick=()=>sheetPartial(p);
     const ad=el('button','btn',ic('plus')+'<span>افزودن حجم</span>');ad.onclick=()=>sheetAdd(p);
     a.appendChild(c);a.appendChild(pc);a.appendChild(ad);
+    if(F('tpclose')){
+      // نزدیک‌ترین تارگتِ جلوتر از ورود؛ همان که در عمل تارگت بعدی است.
+      // پارامترهای sort عمداً x و y هستند تا روی متغیر a (ظرف دکمه‌ها) سایه نیندازند.
+      const sign=p.dir==='long'?1:-1;
+      const tg=(p.targets||[]).filter(t=>isFinite(t)&&t>0)
+        .sort((x,y)=>(x-y)*sign).find(t=>sign>0?t>p.entry:t<p.entry);
+      if(tg!=null){
+        const tb=el('button','btn','بستن ۵۰٪ روی '+fmtPrice(tg));
+        tb.onclick=()=>closeHalfAt(p,tg);
+        a.appendChild(tb);
+      }
+    }
   }else{
     const r=el('button','btn','باز کردن دوباره');
     r.onclick=()=>{p.status='open';p.exitPrice=null;p.closedAt=null;p.fees=null;
@@ -3481,6 +3680,26 @@ function sheetClose(p){
 }
 
 /* ---- ورق بستن بخشی ---- */
+/* نصف پوزیشن را روی قیمت تارگت می‌بندد — همان کاری که «بستن بخشی» با ۵۰٪ می‌کرد،
+   بدون پر کردن فرم. محاسبه‌اش عیناً از همان مسیر می‌رود تا دو جور حساب نشود. */
+function closeHalfAt(p,price){
+  ensureBase(p);
+  const m=posMetrics(p,price);
+  const part=0.5, qty=m.qty*part, marginPart=p.margin*part;
+  const gross=qty*(price-p.entry)*(p.dir==='long'?1:-1);
+  const fees=(marginPart*p.lev)*(S.fee/100);
+  const pnl=gross-fees;
+  if(!confirm('بستن ۵۰٪ '+p.ticker+' روی '+fmtPrice(price)+'\n\n'+
+    'سود/ضرر این تکه: '+fmtUsd(pnl)+'\nمارجین آزادشده: '+fmtUsd(marginPart)+'\n\nثبت شود؟'))return;
+  p.partials=partialsOf(p).concat([{at:Date.now(),price,qty,margin:marginPart,pnl,fees,part}]);
+  p.margin=p.margin-marginPart;
+  logAdd(p,'partial','۵۰٪ روی '+fmtPrice(price)+' بسته شد · '+fmtUsd(pnl));
+  if(p.margin<=0.0001){
+    p.status='closed';p.closedAt=Date.now();p.exitPrice=price;
+    logAdd(p,'close','پوزیشن کامل بسته شد');
+  }
+  save();renderAll();toast('۵۰٪ بسته شد · '+fmtUsd(pnl),pnl>=0?'ok':'err');
+}
 function sheetPartial(p){
   const live=liveOf(p.ticker);
   let pct=50;
@@ -3670,6 +3889,31 @@ function sheetEditPos(p){
 
 /* ==================== کارنامه ==================== */
 let repPeriod='month';
+let repFrom=null, repTo=null;      // بازه‌ی دلخواه (میلی‌ثانیه)، وقتی repPeriod==='range'
+function sheetRange(){
+  const d=x=>x?new Date(x).toISOString().slice(0,10):'';
+  openSheet(
+   '<h3>بازه‌ی دلخواه</h3>'+
+   '<div class="sub">تاریخ‌ها میلادی‌اند چون تقویم خود مرورگر است؛ نتیجه با تقویم شمسی نشان داده می‌شود.</div>'+
+   '<div class="grid">'+
+     '<div class="fld"><label>از</label><input id="f_a" type="date" value="'+d(repFrom)+'"></div>'+
+     '<div class="fld"><label>تا</label><input id="f_b" type="date" value="'+d(repTo)+'"></div>'+
+   '</div>'+
+   '<div class="srow"><button class="btn pri" id="ok">نشان بده</button>'+
+   '<button class="btn" id="cx">انصراف</button></div>',
+   ()=>{
+     $('#cx').onclick=closeSheet;
+     $('#ok').onclick=()=>{
+       const a=$('#f_a').value, b=$('#f_b').value;
+       if(!a||!b)return toast('هر دو تاریخ را بده','err');
+       let from=new Date(a+'T00:00:00').getTime(), to=new Date(b+'T23:59:59').getTime();
+       if(from>to){const t=from;from=to;to=t;}   // جابه‌جا نوشته شده بود، خودمان مرتبش می‌کنیم
+       repFrom=from;repTo=to;repPeriod='range';
+       $$('#vReport .tools .btn').forEach(x=>x.setAttribute('aria-pressed',x.id==='pRange'?'true':'false'));
+       closeSheet();renderReport();
+     };
+   });
+}
 function periodKey(ts,mode){
   const p=jParts(new Date(ts));
   if(mode==='day')return p.jy+'-'+String(p.jm).padStart(2,'0')+'-'+String(p.jd).padStart(2,'0');
@@ -3706,6 +3950,15 @@ function agg(list){
   return r;
 }
 function renderReport(){
+  // مثل بقیه‌ی کلیدها همان لحظه اثر کند، نه بعد از بارگذاری دوباره
+  const rb=$('#pRange');
+  if(rb){
+    rb.classList.toggle('hide',!F('range'));
+    if(!F('range')&&repPeriod==='range'){
+      repPeriod='month';
+      $$('#vReport .tools .btn').forEach(x=>x.setAttribute('aria-pressed',x.dataset.p==='month'?'true':'false'));
+    }
+  }
   const body=$('#repBody');body.innerHTML='';
   const closed=DB.positions.filter(p=>p.status==='closed'&&p.closedAt);
   if(!closed.length){
@@ -3715,7 +3968,8 @@ function renderReport(){
   }
   const groups=new Map();
   for(const p of closed){
-    const k=periodKey(p.closedAt,repPeriod);
+    if(repPeriod==='range'&&(p.closedAt<repFrom||p.closedAt>repTo))continue;
+    const k=periodKey(p.closedAt,repPeriod==='range'?'all':repPeriod);
     if(!groups.has(k))groups.set(k,[]);
     groups.get(k).push(p);
   }
@@ -3733,7 +3987,9 @@ function renderReport(){
     const a=agg(list);
     const c=el('div','card');
     const h=el('div','chead');
-    h.appendChild(el('span','tick',periodLabel(k,repPeriod)));
+    h.appendChild(el('span','tick',repPeriod==='range'
+      ?jStampFa(new Date(repFrom)).slice(0,10)+' تا '+jStampFa(new Date(repTo)).slice(0,10)
+      :periodLabel(k,repPeriod)));
     h.appendChild(el('span','pill '+(a.pnl>=0?'win':'lose'),fmtUsd(a.pnl)));
     h.appendChild(el('span','pill mut',faN(a.n)+' معامله'));
     c.appendChild(h);
@@ -4152,7 +4408,7 @@ function setTimer(){
   if(timer){clearInterval(timer);timer=null;}
   nextTick=null;
   if(S.auto>0){
-    timer=setInterval(()=>{if(!document.hidden)refresh(false,true);},S.auto*1000);
+    timer=setInterval(()=>{if(!document.hidden||F('notify'))refresh(false,true);},S.auto*1000);
     nextTick=Date.now()+S.auto*1000;
   }
   paintRing();
@@ -4202,6 +4458,7 @@ function wire(){
   pf('pOpen','open');pf('pClosed','closed');pf('pAllP','all');
   $('#btnManual').onclick=()=>sheetEditPos(null);
   $$('#vReport .tools .btn').forEach(b=>b.onclick=()=>{
+    if(b.dataset.p==='range')return sheetRange();
     repPeriod=b.dataset.p;
     $$('#vReport .tools .btn').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
     renderReport();
