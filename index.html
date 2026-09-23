@@ -478,6 +478,16 @@ table.tp .num{direction:ltr;text-align:start}
   color:var(--tx3);font-weight:700;font-variant-numeric:tabular-nums}
 .ladder .lb.bot{top:78px}
 .ladder .lb.top{top:0}
+/* ردیف دوم به بعد، برای وقتی دو نشانه کنار هم می‌افتند */
+.ladder .lb.bot.lv1{top:108px}
+.ladder .lb.bot.lv2{top:138px}
+.ladder .lb.bot.lv3{top:168px}
+.ladder .lb.top.lv1{top:-30px}
+.ladder .lb.top.lv2{top:-60px}
+.ladder .lb.top.lv3{top:-90px}
+/* نردبان به اندازه‌ی ردیف‌های اضافه جا باز می‌کند تا چیزی بیرون نزند */
+.ladder.deep1{height:148px}.ladder.deep2{height:178px}.ladder.deep3{height:208px}
+.ladder.high1{margin-top:32px}.ladder.high2{margin-top:62px}.ladder.high3{margin-top:92px}
 .ladder .lb small{display:block;font-size:9.5px;font-weight:600;color:var(--tx3);direction:rtl}
 .ladder .m.ent .lb{color:var(--tx)}
 .ladder .m.liq .lb{color:var(--dn)}
@@ -3470,6 +3480,34 @@ function commitStop(p,v){
   save();renderAll();toast('استاپ روی '+fmtPrice(v)+' ثبت شد','ok');
 }
 
+/* هر برچسبی که با برچسب قبلیِ همان سمت تداخل داشته باشد، یک ردیف پایین‌تر/بالاتر می‌رود.
+   تا سه ردیف؛ بیشتر از آن نردبان بلند می‌شود و خودش مزاحم است. */
+/* برچسب‌ها با درصد چیده می‌شوند، پس نشانه‌های نزدیک هم روی هم می‌افتند. اندازه‌ی واقعی
+   فقط وقتی معلوم است که نردبان داخل صفحه باشد — برای همین بعد از رندر صدا زده می‌شود،
+   نه موقع ساختن (آنجا هنوز وصل نیست و همه‌ی اندازه‌ها صفرند). */
+function destackAll(){
+  requestAnimationFrame(()=>{for(const L of $$('.ladder'))destack(L);});
+}
+function destack(L){
+  if(!L.isConnected)return;
+  const lanes=[['.lb.bot','down'],['.lb.top','up']];
+  for(const [sel,dir] of lanes){
+    const items=[...L.querySelectorAll(sel)]
+      .map(e=>({e,r:e.getBoundingClientRect()}))
+      .filter(x=>x.r.width>0)
+      .sort((a,b)=>a.r.left-b.r.left);
+    const lastRight=[];
+    let deepest=0;
+    for(const {e,r} of items){
+      e.classList.remove('lv1','lv2','lv3');
+      let t=0;
+      while(lastRight[t]!=null&&r.left<lastRight[t]+6)t++;
+      lastRight[t]=r.right;
+      if(t>0){e.classList.add('lv'+Math.min(t,3));deepest=Math.max(deepest,Math.min(t,3));}
+    }
+    if(deepest)L.classList.add(dir==='down'?'deep'+deepest:'high'+deepest);
+  }
+}
 function buildPosCard(p){
   ensureBase(p);
   const live=liveOf(p.ticker), m=posMetrics(p,live), open=p.status==='open';
@@ -4318,6 +4356,7 @@ function renderAll(){
   else if(view==='positions')renderPositions();
   else if(view==='report')renderReport();
   else if(view==='calendar')renderCalendar();
+  destackAll();
   renderHealth();
 }
 
