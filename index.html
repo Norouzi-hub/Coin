@@ -331,6 +331,12 @@ html.busy .prog{opacity:1}
 @keyframes drop{from{opacity:0;transform:translateY(-8px)}}
 
 /* ================= کارت ================= */
+/* کارت‌های بیرون از کادر دید اصلاً چیده نمی‌شوند. اندازه‌گیری روی گوشیِ
+   شبیه‌سازی‌شده با ۳۰ کارت: چیدمان صفحه از ۱۴۷ به ۸۲ میلی‌ثانیه و رندر دوباره
+   از ۱۸۹ به ۵۹ میلی‌ثانیه رسید. auto یعنی مرورگر ارتفاع واقعیِ هر کارت را بعد
+   از یک بار دیده شدن به یاد می‌سپارد، پس نوار اسکرول هم سر جایش می‌نشیند. */
+#list>.card,#posList>.card,#lessonList>.card{
+  content-visibility:auto;contain-intrinsic-size:auto 330px}
 .card{background:linear-gradient(180deg,var(--card2),var(--card) 90px);border:1px solid var(--line);border-radius:var(--r);
   margin:14px 0;overflow:hidden;box-shadow:var(--sh);position:relative}
 .card.d-long,.card.d-short{border-inline-start-width:3px}
@@ -1285,6 +1291,38 @@ function savePostCache(){
   H.cache.n=ok?posts.length:0; H.cache.at=Date.now(); H.cache.kb=cacheKB();
 }
 function clearPostCache(){try{localStorage.removeItem(CKEY(S.channel));}catch(e){}}
+/* حافظه‌های جانبی به پست گره خورده‌اند ولی خودشان با بیرون رفتن پست از پنجره‌ی
+   ۸۰۰تایی پاک نمی‌شدند. روی کانالی که روزی ۲۰ پست دارد، بعد از چند ماه هزاران
+   کلیدِ مرده می‌ماند — و archived/results چون همگام‌سازی می‌شوند، هر بار روی
+   شبکه هم می‌روند. اینجا به پنجره‌ی زنده برشان می‌گردانیم. */
+const FLAGMAX=1500;                 // سقف پرچم‌های ماندگار (آرشیو/نتایج)
+function trimFlags(obj,live){
+  let changed=false;
+  if(Object.keys(obj).length<=FLAGMAX)return false;   // کوچک است، دست نمی‌زنیم
+  // نقضِ «نتیجه نیست» (مقدار صفر) فقط تا وقتی پست دیده می‌شود معنی دارد
+  for(const k of Object.keys(obj))if(obj[k]===0&&!live.has(k)){delete obj[k];changed=true;}
+  const rest=Object.keys(obj);
+  if(rest.length>FLAGMAX){
+    // تازه‌ترها می‌مانند؛ پستی که ۱۵۰۰ نشانه پیش کنار گذاشته‌ای برنمی‌گردد
+    rest.sort((a,b)=>(obj[b]||0)-(obj[a]||0));
+    for(const k of rest.slice(FLAGMAX))delete obj[k];
+    changed=true;
+  }
+  return changed;
+}
+function pruneCaches(){
+  const live=new Set(POSTS.map(p=>p.id));
+  for(const k of PCACHE.keys())if(!live.has(k))PCACHE.delete(k);
+  for(const k of RCACHE.keys())if(!live.has(k))RCACHE.delete(k);
+  for(const k of [...NEWIDS])if(!live.has(k))NEWIDS.delete(k);
+  for(const k of [...OPENCARD])if(!live.has(k))OPENCARD.delete(k);
+  for(const k of [...PLANOPEN])if(!live.has(k))PLANOPEN.delete(k);
+  for(const k of [...REPLYOPEN])if(!live.has(k))REPLYOPEN.delete(k);
+  let dirty=false;
+  if(trimFlags(DB.archived,live))dirty=true;
+  if(trimFlags(DB.results,live))dirty=true;
+  if(dirty)save();
+}
 
 function loadPxCache(){
   const c=lsGet(PXKEY);
@@ -3285,7 +3323,14 @@ const RX_RESULT=new RegExp(
   '|(?:پوزیشن|معامله|سیگنال)\\s*(?:را\\s*)?(?:بستیم|بسته\\s*شد)'+
   '|نتیجه\\s*(?:ی|\\u200c)?\\s*(?:سیگنال|معامله)'+
   '|\\bTP\\s*\\d?\\s*(?:hit|done|reached)\\b|\\bSL\\s*hit\\b|\\btarget\\s*(?:hit|reached)\\b','i');
-const autoRes=p=>RX_RESULT.test(faNorm(normDig(p.text||'')));
+const RCACHE=new Map();
+function autoRes(p){
+  const c=RCACHE.get(p.id);
+  if(c!==undefined)return c;
+  const v=RX_RESULT.test(faNorm(normDig(p.text||'')));
+  RCACHE.set(p.id,v);
+  return v;
+}
 function isRes(p){
   const v=DB.results[p.id];
   if(v===0)return false;                    // کاربر صریح گفته نتیجه نیست
@@ -4031,13 +4076,22 @@ function buildSummary(){
    داخلش هست، و آرشیو — که «جای دیگر» است نه «فیلتر دیگر» — با فاصله جدا شده. */
 function renderFbar(){
   const bar=$('#fbar');if(!bar)return;
-  const live=POSTS.filter(p=>bucketOf(p)==='live');
-  const sigs=live.filter(p=>sigOf(p).isSignal);
+  // یک پیمایش برای هر پنج شمارنده. قبلاً چهار filter پشت سر هم بود و روی
+  // ۸۰۰ پست هر بار از نو bucketOf می‌گرفت.
+  let nLive=0,nSig=0,nNew=0,nRes=0,nArch=0;
+  for(const p of POSTS){
+    const bk=bucketOf(p);
+    if(bk==='arch'){nArch++;continue;}
+    if(bk==='res'){nRes++;continue;}
+    nLive++;
+    if(!sigOf(p).isSignal)continue;
+    nSig++;
+    if(!decisionOf(p.id))nNew++;
+  }
   const segs=[
-    {k:'new', label:'در انتظار', n:sigs.filter(p=>!decisionOf(p.id)).length,
-     hint:'سیگنال‌هایی که هنوز تصمیمشان را نگرفته‌ای'},
-    {k:'sig', label:'سیگنال‌ها', n:sigs.length, hint:'همه‌ی سیگنال‌ها'},
-    {k:'all', label:'همه',       n:live.length, hint:'همه‌ی پست‌های کانال'}
+    {k:'new', label:'در انتظار', n:nNew, hint:'سیگنال‌هایی که هنوز تصمیمشان را نگرفته‌ای'},
+    {k:'sig', label:'سیگنال‌ها', n:nSig, hint:'همه‌ی سیگنال‌ها'},
+    {k:'all', label:'همه',       n:nLive, hint:'همه‌ی پست‌های کانال'}
   ];
   const cur=bucket==='live'?sigFilter:bucket;
   bar.innerHTML='';
@@ -4063,10 +4117,8 @@ function renderFbar(){
       window.scrollTo({top:0,behavior:'smooth'});};
     side.appendChild(b);
   };
-  mkSide('res','flag','نتایج',POSTS.filter(p=>bucketOf(p)==='res').length,
-    'پست‌های نتیجه: تارگت خورد، استاپ خورد، سیو سود');
-  mkSide('arch','box','آرشیو',POSTS.filter(p=>bucketOf(p)==='arch').length,
-    'پست‌هایی که کنار گذاشته‌ای');
+  mkSide('res','flag','نتایج',nRes,'پست‌های نتیجه: تارگت خورد، استاپ خورد، سیو سود');
+  mkSide('arch','box','آرشیو',nArch,'پست‌هایی که کنار گذاشته‌ای');
   bar.appendChild(side);
 }
 
@@ -4161,14 +4213,25 @@ function showStatus(){
     st.appendChild(b);
     return;
   }
-  const sigs=POSTS.filter(p=>sigOf(p).isSignal);
-  const un=sigs.filter(p=>!decisionOf(p.id)).length;
+  /* همان حسابی که نوار فیلتر می‌کند: فقط سطلِ فعال. قبلاً اینجا کلِ POSTS شمرده
+     می‌شد، پس به‌محض آرشیو کردن یک سیگنال، این نوار «سیگنال ۳» می‌گفت و نوار
+     فیلتر درست بالایش «سیگنال‌ها ۲» — دو عدد متفاوت برای یک چیز. */
+  let nAll=0,nSig=0,un=0;
+  for(const p of POSTS){
+    if(bucketOf(p)!=='live')continue;
+    nAll++;
+    if(!sigOf(p).isSignal)continue;
+    nSig++;
+    if(!decisionOf(p.id))un++;
+  }
   st.className='status';
   const sc=(l,v,hot)=>'<span class="sc'+(hot?' hot':'')+'">'+l+' <b>'+faN(v)+'</b></span>';
-  st.innerHTML=sc('پست',POSTS.length)+sc('سیگنال',sigs.length)+sc('تصمیم‌نگرفته',un,un>0)+
+  const px=(priceSrc&&priceSrc!=='—')
+    ?(H.px.state==='stale'?'قیمت قدیمی ':'قیمت ')+esc(priceSrc)+' · '+ageTxt(PX_AT)
+    :'قیمت هنوز نیامده';        // «قیمت — · —» شبیه خرابی بود، نه شبیه انتظار
+  st.innerHTML=sc('پست',nAll)+sc('سیگنال',nSig)+sc('تصمیم‌نگرفته',un,un>0)+
     '<span class="sc">مارجین <b>$'+faN(S.cap)+'</b> · ریسک <b>'+faN(S.risk)+'٪</b></span>'+
-    '<span class="sc grow" style="color:var(--tx3)">'+
-      (H.px.state==='stale'?'قیمت قدیمی ':'قیمت ')+esc(priceSrc)+' · '+ageTxt(PX_AT)+'</span>';
+    '<span class="sc grow" style="color:var(--tx3)">'+px+'</span>';
   if(H.tg.err){
     const w=el('span','sc');w.style.color='var(--warn)';w.textContent='آخرین بروزرسانی ناموفق بود؛ این‌ها از حافظه‌اند.';
     st.appendChild(w);
@@ -5717,17 +5780,26 @@ function go(v,noScroll){
     if(on){n.classList.remove('enter');void n.offsetWidth;n.classList.add('enter');}
   }
   $('#disc').classList.toggle('hide',v!=='signals');
-  moveInd();
+  moveInd(true);
   renderAll();
   if(!noScroll)window.scrollTo({top:0,behavior:'smooth'});
 }
-function moveInd(){
+/* scroll را فقط وقتی می‌خواهیم که کاربر خودش تبی را زده باشد. قبلاً این تابع
+   بی‌قید scrollIntoView نرم صدا می‌زد و چون در راه‌اندازی دو بار اجرا می‌شد،
+   یک انیمیشن اسکرول روی نخ اصلی راه می‌انداخت: در پروفایلِ گوشی ۲۳۴ میلی‌ثانیه
+   از ۶۹۵ میلی‌ثانیه‌ی راه‌اندازی همین بود، برای نواری که اغلب اصلاً اسکرول ندارد. */
+function moveInd(scroll){
   const t=$('.tab[aria-selected="true"]'), ind=$('#tabInd');
   if(!t||!ind)return;
   // offsetLeft نسبت به همان ظرفی است که نشانگر هم در آن مطلق شده، پس اسکرولِ نوار
   // رویش اثر ندارد. با rect قبلی، هر مقدار scrollLeft نشانگر را به اندازه‌ی خودش کج می‌کرد.
   ind.style.width=t.offsetWidth+'px';
   ind.style.transform='translateX('+t.offsetLeft+'px)';
+  if(!scroll)return;
+  const box=t.parentNode;
+  if(!box||box.scrollWidth<=box.clientWidth+1)return;   // نوار اصلاً اسکرول ندارد
+  const l=t.offsetLeft, r=l+t.offsetWidth;
+  if(l>=box.scrollLeft&&r<=box.scrollLeft+box.clientWidth)return;  // همین حالا دیده می‌شود
   try{t.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});}catch(e){}
 }
 function renderAll(){
@@ -5785,6 +5857,7 @@ async function refresh(append,silent){
       POSTS.sort(byNewest);
       if(POSTS.length>CACHE_MAX)POSTS=POSTS.slice(0,CACHE_MAX);
       beforeId=res.before;
+      pruneCaches();
       savePostCache();
       okAny=true;
       if(append){
@@ -5876,8 +5949,12 @@ function wire(){
     btnBusy(b,false);
     renderMore();
   };
-  $('#q').oninput=e=>{query=e.target.value;shownMax=PAGE;renderSignals();};
-  $('#lq').oninput=e=>{lessonQ=e.target.value;renderLessons();};
+  const debounce=(fn,ms)=>{let t=null;return function(){clearTimeout(t);
+    t=setTimeout(()=>{t=null;fn.apply(this,arguments);},ms);};};
+  const runQuery=debounce(()=>{shownMax=PAGE;renderSignals();},160);
+  $('#q').oninput=e=>{query=e.target.value;runQuery();};
+  const runLQuery=debounce(()=>renderLessons(),160);
+  $('#lq').oninput=e=>{lessonQ=e.target.value;runLQuery();};
   $('#mWatch').onclick=()=>{marketTab='watch';renderMarket();};
   $('#mSpot').onclick=()=>{marketTab='spot';renderMarket();};
 
@@ -5912,8 +5989,8 @@ function wire(){
     paintRing();
     if(S.auto>0&&(!PX_AT||Date.now()-PX_AT>S.auto*1000))refresh(false,true);
   });
-  addEventListener('resize',moveInd);
-  addEventListener('orientationchange',()=>setTimeout(moveInd,200));
+  addEventListener('resize',()=>moveInd(false));
+  addEventListener('orientationchange',()=>setTimeout(()=>moveInd(false),200));
   setInterval(()=>{
     paintRing();
     if(view==='signals'&&!busy&&POSTS.length)showStatus();
@@ -5963,6 +6040,7 @@ readSettings();
 showStoreWarn();
 loadPxCache();
 loadPostCache();
+pruneCaches();          // کلیدهای مرده‌ی نشست‌های قبلی همین‌جا برداشته می‌شوند
 BOOTED=true;
 wireSync();
 // اول از سرور می‌گیریم تا این دستگاه با آخرین وضعیت شروع کند، نه با نسخه‌ی کهنه‌ی خودش
@@ -5973,8 +6051,8 @@ showOriginWarn();
 renderAll();
 {const bt=document.getElementById('boot');
  if(bt){bt.classList.add('gone');setTimeout(()=>bt.remove(),400);}}
-moveInd();
-setTimeout(moveInd,80);
+moveInd(false);
+setTimeout(()=>moveInd(false),80);
 refresh(false);
 </script>
 </body>
