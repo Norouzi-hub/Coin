@@ -537,6 +537,20 @@ tr.tap:hover td{background:var(--card2)}
 .card.flashcard{animation:flashc 1.6s var(--ease)}
 @keyframes flashc{0%,100%{box-shadow:var(--sh)}25%,60%{box-shadow:0 0 0 2px var(--gold)}}
 .brief{padding:0 14px 12px}
+/* سیگنال قدیمی: به‌جای دکمه‌های ورود، یک نوار آرام که می‌گوید فقط برای مرور است */
+.stale{padding:0 14px 12px}
+.stalehd{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;color:var(--tx2)}
+.stalehd .ic{width:16px;height:16px;flex:none}
+.staletx{font-size:12px;color:var(--tx3);line-height:1.9;margin-top:4px}
+.card>.staletx{margin:0 14px 10px}
+.stalehint{margin-top:9px;padding:9px 11px;border-radius:var(--r2);font-size:12.5px;line-height:1.9;color:var(--tx);
+  background:color-mix(in srgb,var(--gold) 10%,transparent);border:1px solid color-mix(in srgb,var(--gold) 35%,transparent)}
+.stalehint b{color:var(--gold)}
+.stalehint a{color:var(--gold);font-weight:800}
+.stale .acts{margin-top:10px}
+.card.old{opacity:.86}
+.card.old .pill .ic{width:12px;height:12px}
+.pill .ic{width:12px;height:12px}
 .briefkv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
 .bk{background:var(--inset);border:1px solid var(--line);border-radius:var(--r2);
   padding:8px 6px;text-align:center;min-width:0}
@@ -1035,7 +1049,10 @@ input[type=range]{width:100%;accent-color:var(--gold)}
       <div class="fld"><label>بروزرسانی خودکار</label>
         <select id="sAuto"><option value="0">خاموش</option><option value="60" selected>هر ۱ دقیقه</option>
         <option value="180">هر ۳ دقیقه</option><option value="600">هر ۱۰ دقیقه</option></select></div>
+      <div class="fld"><label>عمر سیگنال (روز)</label><input id="sStale" type="number" value="7" min="1" max="60" step="1"></div>
     </div>
+    <div class="hint">سیگنالی که از این بیشتر گذشته «قدیمی» است: فقط برای مرور می‌ماند، دکمه‌ی ورود ندارد و
+      در «در انتظار» و شمارنده‌ها نمی‌آید. اگر کانال گفت هنوز می‌شود گرفت، روی خودِ کارت برش می‌گردانی.</div>
     <div class="fld" style="margin-top:10px"><label>واسط شخصی — هر خط یک آدرس</label>
       <textarea id="sProxy" rows="2" dir="ltr" spellcheck="false"
         placeholder="https://example.ir/tg.php?url={url}"></textarea></div>
@@ -1192,6 +1209,7 @@ const ICO={
   bolt:'<path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/>',
   flag:'<path d="M5 21V4M5 5h11l-1.6 3.5L16 12H5"/>',
   share:'<circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="m8.3 10.8 7.4-4.3M8.3 13.2l7.4 4.3"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
   undo:'<path d="M4 9h11a5 5 0 0 1 0 10h-6"/><path d="M8 5 4 9l4 4"/>'
 };
 const ic=(n,c)=>'<svg class="ic'+(c?' '+c:'')+'" viewBox="0 0 24 24" aria-hidden="true">'+(ICO[n]||'')+'</svg>';
@@ -1278,9 +1296,9 @@ function jShort(d){const p=jParts(d);return faN(p.jd)+' '+J_M[p.jm-1];}
 const KEY='signaldesk.v1';
 let storeOK=true;
 const DB={positions:[],decisions:{},settings:{},overrides:{},lessons:{},archived:{},results:{},pending:[],watch:[],spot:[],
-  edits:{},gone:{}};
+  edits:{},gone:{},revived:{}};
 function save(){
-  try{ localStorage.setItem(KEY,JSON.stringify({positions:DB.positions,decisions:DB.decisions,settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,results:DB.results,pending:DB.pending,watch:DB.watch,spot:DB.spot,edits:DB.edits,gone:DB.gone})); }
+  try{ localStorage.setItem(KEY,JSON.stringify({positions:DB.positions,decisions:DB.decisions,settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,results:DB.results,pending:DB.pending,watch:DB.watch,spot:DB.spot,edits:DB.edits,gone:DB.gone,revived:DB.revived})); }
   catch(e){ storeOK=false; showStoreWarn(); }
   if(typeof syncSoon==='function')syncSoon();
 }
@@ -1299,6 +1317,7 @@ function load(){
       DB.results=d.results&&typeof d.results==='object'?d.results:{};
       DB.edits=d.edits&&typeof d.edits==='object'?d.edits:{};
       DB.gone=d.gone&&typeof d.gone==='object'?d.gone:{};
+      DB.revived=d.revived&&typeof d.revived==='object'?d.revived:{};
       DB.pending=Array.isArray(d.pending)?d.pending:[];
       DB.watch=Array.isArray(d.watch)?d.watch:[];
       DB.spot=Array.isArray(d.spot)?d.spot:[];
@@ -1500,7 +1519,7 @@ const FEAT={
   range:  {on:true, t:'بازه‌ی دلخواه کارنامه', d:'انتخاب تاریخ شروع و پایان در کارنامه'}
 };
 const featDefaults=()=>Object.fromEntries(Object.entries(FEAT).map(([k,v])=>[k,v.on]));
-const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,auto:60,proxy:'',feat:featDefaults(),
+const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,auto:60,proxy:'',feat:featDefaults(),staleDays:7,
   aud:{days:30,entryDays:3,tol:1,rule:'tp1'}};
 const F=k=>!!(S.feat&&S.feat[k]);
 let BOOTED=false;
@@ -1524,7 +1543,7 @@ function applySettingsToForm(){
   $('#sProxy').value=S.proxy||'';
   $('#sChannel').value=S.channel; $('#sAcct').value=S.acct; $('#sCap').value=S.cap;
   $('#sRisk').value=S.risk; $('#sMaxLev').value=S.maxLev; $('#sDaily').value=S.daily;
-  $('#sMode').value=S.mode; $('#sR').value=S.rMul.join(', '); $('#sFee').value=S.fee; $('#sAuto').value=S.auto;
+  $('#sMode').value=S.mode; $('#sStale').value=S.staleDays||7; $('#sR').value=S.rMul.join(', '); $('#sFee').value=S.fee; $('#sAuto').value=S.auto;
 }
 function readSettings(){
   const prevCh=S.channel, prevAuto=S.auto, prevProxy=S.proxy;
@@ -1547,6 +1566,7 @@ function readSettings(){
   S.daily=Math.min(100,Math.max(1,parseFloat($('#sDaily').value)||10));
   S.mode=$('#sMode').value; S.fee=Math.max(0,parseFloat($('#sFee').value)||0);
   S.auto=parseInt($('#sAuto').value)||0;
+  S.staleDays=Math.min(60,Math.max(1,parseInt($('#sStale').value,10)||7));
   const prevNotify=F('notify');
   S.feat=S.feat||featDefaults();
   for(const k of Object.keys(FEAT)){const c=$('#feat_'+k);if(c)S.feat[k]=!!c.checked;}
@@ -2161,7 +2181,7 @@ function addPending(p,sig,trigger,px){
   // بالای تریگر برای لانگ، زیرش برای شورت — جهت عبور را همین‌جا قفل می‌کنیم
   const side=dir==='long'?'up':'down';
   DB.pending.push({id:uid(),postId:p.id,ticker:sig.ticker||'—',dir,trigger,side,
-    market:I.market,
+    market:I.market,postAt:p.date?p.date.getTime():null,
     entry:I.entry!=null?I.entry:trigger,stop:I.stop||null,targets:sig.targets||[],
     at:Date.now(),hit:null});
   save();renderAll();
@@ -2171,9 +2191,17 @@ function dropPending(id){
   DB.pending=DB.pending.filter(x=>x.id!==id);
   save();renderAll();toast('سفارش منتظر برداشته شد','info');
 }
+/* سفارش منتظری که تا قدیمی شدنِ سیگنالش نرسیده، دیگر منتظرش نیستیم */
+function pendingStale(w){
+  if(w.hit)return false;
+  const post=POSTS.find(x=>x.id===w.postId);
+  const until=post?freshUntil(post):(w.postAt||w.at)+staleMs();
+  return Date.now()>until;
+}
+const activePending=()=>DB.pending.filter(w=>!pendingStale(w));
 function checkPending(){
   for(const w of DB.pending){
-    if(w.hit)continue;
+    if(w.hit||pendingStale(w))continue;
     const px=PRICES.get(w.ticker);
     if(px==null)continue;
     const reached=w.side==='up'?px>=w.trigger:px<=w.trigger;
@@ -2263,7 +2291,7 @@ let syncTimer=null, syncing=false;
 const syncOn=()=>!!(syncCfg.url&&syncCfg.token);
 const dbBlob=()=>({positions:DB.positions,decisions:DB.decisions,
   settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,
-  results:DB.results,pending:DB.pending,watch:DB.watch,spot:DB.spot,edits:DB.edits,gone:DB.gone});
+  results:DB.results,pending:DB.pending,watch:DB.watch,spot:DB.spot,edits:DB.edits,gone:DB.gone,revived:DB.revived});
 function applyBlob(d){
   DB.positions=Array.isArray(d.positions)?d.positions.map(ensureBase):[];
   DB.decisions=d.decisions&&typeof d.decisions==='object'?d.decisions:{};
@@ -2273,6 +2301,7 @@ function applyBlob(d){
   DB.results=d.results&&typeof d.results==='object'?d.results:{};
   DB.edits=d.edits&&typeof d.edits==='object'?d.edits:{};
   DB.gone=d.gone&&typeof d.gone==='object'?d.gone:{};
+  DB.revived=d.revived&&typeof d.revived==='object'?d.revived:{};
   DB.pending=Array.isArray(d.pending)?d.pending:[];
   DB.watch=Array.isArray(d.watch)?d.watch:[];
   DB.spot=Array.isArray(d.spot)?d.spot:[];
@@ -3236,10 +3265,106 @@ const NEWIDS=new Set();          // پستی که در همین نشست تاز�
 const CARDS=new Map();           // برای بازسازی فقط یک کارت، بدون رندر دوباره‌ی کل فهرست
 const decisionOf=id=>DB.decisions[id]||null;
 
+/* ==================== عمر سیگنال ==================== */
+/* سیگنالی که یک هفته از آن گذشته دیگر گرفتنی نیست؛ فقط برای مرور می‌ماند. «قدیمی» یعنی:
+   دکمه‌ی ورود ندارد، در «در انتظار» و شمارنده‌ی تب نمی‌آید، سفارش منتظرش هشدار نمی‌دهد و
+   اعلانِ «تازه» نمی‌گیرد. کانال‌سنج و کارنامه دست نمی‌خورند — مرور همان‌جاست.
+   اگر کانال گفت هنوز می‌شود گرفت، با یک زدن برمی‌گردد و از همان لحظه یک عمرِ تازه دارد. */
+const staleMs=()=>Math.max(1,+S.staleDays||7)*864e5;
+function freshUntil(p){
+  const t=p&&p.date?p.date.getTime():null;
+  if(t==null)return Infinity;
+  const rv=DB.revived[p.id];
+  return Math.max(t,rv&&rv.at||0)+staleMs();
+}
+const isStale=p=>Date.now()>freshUntil(p);
+/* سیگنالی که هنوز می‌شود رویش تصمیم گرفت: سیگنال است، تصمیمش را نگرفته‌ای و قدیمی نشده */
+const isOpenSig=p=>sigOf(p).isSignal&&!decisionOf(p.id)&&!isStale(p);
+function revive(p,hint){
+  DB.revived[p.id]={at:Date.now(),by:hint?'ch':'me',src:hint?hint.id:null};
+  save();PCACHE.delete(p.id);renderAll();
+  toast('به سیگنال‌ها برگشت — تا '+faN(S.staleDays||7)+' روز دیگر گرفتنی است','ok');
+}
+function unrevive(p){
+  delete DB.revived[p.id];
+  save();PCACHE.delete(p.id);renderAll();toast('دوباره قدیمی شد','info');
+}
+/* کانال گاهی درباره‌ی سیگنال قدیمی می‌گوید «هنوز می‌شود وارد شد». چنین پستی را پیدا
+   می‌کنیم و کنار سیگنال نشانش می‌دهیم، ولی برگرداندن با خودت است. */
+const RX_REENTRY=new RegExp(
+  '(?:هنوز|همچنان)[^\\n.!؟?]{0,25}?(?:قابل\\s*(?:ورود|خرید)|(?:می\\s*شه|می\\s*شود|می\\s*تون|می\\s*توان)\\S*\\s*(?:وارد|ورود|خرید|بخر|گرفت|بگیر)|معتبر|فعال|پابرجا|سر\\s*جاش)'+
+  '|قابل\\s*(?:ورود|خرید)\\s*(?:است|هست|هستش|می\\s*باشد|ه(?![\\u0600-\\u06FF]))'+
+  '|(?:ورود|خرید|انتری)\\s*(?:مجدد|دوباره)|ری\\s*-?\\s*انتری'+
+  '|(?:می\\s*شه|می\\s*شود|می\\s*تونید|می\\s*تونین|می\\s*توانید)\\s*(?:وارد\\s*(?:شد|بشید|شید|شوید)|ورود\\s*(?:کرد|بزنید|کنید|زد)|خرید|بخرید|بگیرید|بگیرین|گرفت)'+
+  '|بگیرید|بگیرین|بگیریدش|بگیرینش|وارد\\s*(?:بشید|شید|شوید)|ورود\\s*(?:بزنید|کنید|بگیرید)'+
+  '|(?:الان|هنوز)\\s*(?:هم\\s*)?(?:وقت|زمان|موقع)\\s*(?:ورود|خرید)'+
+  '|(?:تو|در|داخل)\\s*(?:منطقه|ناحیه|محدوده|رنج)\\S*\\s*(?:ی\\s*)?(?:ورود|خرید)'+
+  '|(?:دوباره|مجدد)\\s*(?:به\\s*)?(?:نقطه|منطقه|قیمت)\\S*\\s*(?:ی\\s*)?(?:ورود|خرید)'+
+  '|\\bre-?entry\\b|\\bstill\\s+(?:valid|active|open)\\b|\\bcan\\s+(?:still\\s+)?(?:enter|buy)\\b','i');
+const RX_REENTRY_NO=/نیست|نمی\s*شه|نمی\s*شود|نمی\s*تون|نکنید|نکنین|نشید|نشوید|نگیرید|نگیرین|نخرید|دیر\s*(?:شده|است|ه(?![؀-ۿ]))|از\s*دست\s*رفت|منقضی|کنسل|لغو|باطل|تموم\s*شد|بسته\s*شد|استاپ\s*خورد|\bnot\b|\bexpired\b|\bcancel/i;
+const reentryText=p=>{const t=faNorm(normDig(p.text||''));return RX_REENTRY.test(t)&&!RX_REENTRY_NO.test(t);};
+let HINTIX=null, HINTKEY='';
+function hintIndex(){
+  const key=POSTS.length+':'+(POSTS[0]&&POSTS[0].id)+':'+(POSTS.length&&POSTS[POSTS.length-1].id);
+  if(HINTIX&&HINTKEY===key)return HINTIX;
+  const byReply=new Map(), byTk=new Map();
+  for(const q of POSTS){
+    if(isStale(q)||!reentryText(q))continue;       // خودِ اشاره باید تازه باشد
+    const g=sigOf(q);
+    if(q.reply&&q.reply.id){
+      const src=findPost(q.reply.id);
+      if(src){(byReply.get(src.id)||byReply.set(src.id,[]).get(src.id)).push(q);continue;}
+    }
+    // سیگنالِ کاملِ تازه روی همان ارز، سیگنال جدید است نه اشاره به قبلی
+    if(g.isSignal&&g.entry!=null&&g.stop!=null)continue;
+    if(g.ticker)(byTk.get(g.ticker)||byTk.set(g.ticker,[]).get(g.ticker)).push(q);
+  }
+  HINTKEY=key;HINTIX={byReply,byTk};
+  return HINTIX;
+}
+function reentryHint(p){
+  const ix=hintIndex(), t=p.date?p.date.getTime():0;
+  const later=q=>q.id!==p.id&&q.date&&q.date.getTime()>t;
+  const r=(ix.byReply.get(p.id)||[]).find(later);
+  if(r)return r;
+  const tk=sigOf(p).ticker;
+  return tk?(ix.byTk.get(tk)||[]).find(later)||null:null;
+}
+/* جای دکمه‌های ورود روی سیگنال قدیمی */
+function buildStale(p,sig){
+  const w=el('div','stale');
+  const days=p.date?Math.floor((Date.now()-p.date.getTime())/864e5):null;
+  w.appendChild(el('div','stalehd',ic('clock')+'<span>قدیمی — فقط برای مرور</span>'));
+  w.appendChild(el('div','staletx',(days!=null?faN(days)+' روز از این سیگنال گذشته. ':'')+
+    'بعد از '+faN(S.staleDays||7)+' روز دیگر گرفتنی حساب نمی‌شود: دکمه‌ی ورود ندارد و در «در انتظار» نمی‌آید.'));
+  const h=reentryHint(p);
+  if(h){
+    const snip=(h.text||'').replace(/\s+/g,' ').trim();
+    const box=el('div','stalehint','<b>کانال '+esc(relTime(h.date))+' گفته:</b> «'+
+      esc(snip.length>110?snip.slice(0,110)+'…':snip)+'» ');
+    const a=el('a',null,'دیدن پست');a.href=h.link;a.target='_blank';a.rel='noopener';
+    box.appendChild(a);w.appendChild(box);
+  }
+  const acts=el('div','acts');
+  const b=el('button','btn '+(h?'ok':'side'),ic('undo')+'<span>برگرداندن به سیگنال‌ها</span>');
+  b.title='یک عمر تازه می‌گیرد و دکمه‌های ورود برمی‌گردند';
+  b.onclick=()=>revive(p,h);
+  acts.appendChild(b);
+  if(AUD[p.id]&&typeof sheetAudPost==='function'){
+    const r=el('button','btn xs side','چه شد؟');
+    r.title='مسیر واقعی قیمت بعد از این سیگنال — کانال‌سنج';
+    r.onclick=()=>sheetAudPost(p);
+    acts.appendChild(r);
+  }
+  w.appendChild(acts);
+  return w;
+}
+
 function buildCard(p){
   const sig=sigOf(p), ov=OVERRIDE[p.id]||{}, isSig=sig.isSignal, dec=decisionOf(p.id);
   const dir=ov.dir||sig.direction;
-  const card=el('div','card'+(isSig?' d-'+dir:'')+(NEWIDS.has(p.id)?' fresh':''));
+  const card=el('div','card'+(isSig?' d-'+dir:'')+(NEWIDS.has(p.id)?' fresh':'')+
+    (isSig&&!dec&&isStale(p)?' old':''));
   card.dataset.id=p.id;
 
   const head=el('div','chead');
@@ -3256,6 +3381,9 @@ function buildCard(p){
   }else head.appendChild(el('span','pill mut','یادداشت'));
   if(bucketOf(p)==='res')head.appendChild(el('span','pill '+(resAuto(p)?'mut':'gold'),'نتیجه'));
   if(NEWIDS.has(p.id))head.appendChild(el('span','pill gold','تازه'));
+  const stale=isSig&&!dec&&isStale(p);
+  if(stale)head.appendChild(el('span','pill mut',ic('clock')+'قدیمی'));
+  else if(isSig&&!dec&&DB.revived[p.id])head.appendChild(el('span','pill gold','برگشته'));
   const px=sig.ticker?PRICES.get(sig.ticker):null;
   if(px!=null)head.appendChild(el('span','pill live '+(flashOf(sig.ticker)?'fl-'+flashOf(sig.ticker):''),'<i></i>'+fmtPrice(px)));
   if(dec)head.appendChild(el('span','pill '+(dec.action==='taken'?'open':'mut'),dec.action==='taken'?'وارد شدم':'نگرفتم'));
@@ -3309,6 +3437,8 @@ function buildCard(p){
     // ماشین‌حساب دیگر به کار نمی‌آید، پس فقط سطر وضعیت می‌ماند.
     if(dec){
       card.appendChild(buildActions(p,sig,ov,px,dec));
+    }else if(stale){
+      card.appendChild(buildStale(p,sig));
     }else if(PLANOPEN.has(p.id)){
       card.appendChild(buildPlan(p,sig,ov,px));
       card.appendChild(buildActions(p,sig,ov,px,dec));
@@ -3586,6 +3716,12 @@ function buildBrief(p,sig,ov,px){
     b3.onclick=()=>addPending(p,sig,trg,px);
     a.appendChild(b3);
   }else if(already)a.appendChild(el('span','markhint','در فهرست منتظرها'));
+  if(DB.revived[p.id]){
+    const u=el('button','btn xs side','قدیمی کن');
+    u.title='برگرداندن را پس بگیر';
+    u.onclick=()=>unrevive(p);
+    a.appendChild(u);
+  }
   w.appendChild(a);
   return w;
 }
@@ -4040,10 +4176,10 @@ function renderFbar(){
     nLive++;
     if(!sigOf(p).isSignal)continue;
     nSig++;
-    if(!decisionOf(p.id))nNew++;
+    if(!decisionOf(p.id)&&!isStale(p))nNew++;
   }
   const segs=[
-    {k:'new', label:'در انتظار', n:nNew, hint:'سیگنال‌هایی که هنوز تصمیمشان را نگرفته‌ای'},
+    {k:'new', label:'در انتظار', n:nNew, hint:'سیگنال‌های این '+faN(S.staleDays||7)+' روز که هنوز تصمیمشان را نگرفته‌ای'},
     {k:'sig', label:'سیگنال‌ها', n:nSig, hint:'همه‌ی سیگنال‌ها'},
     {k:'all', label:'همه',       n:nLive, hint:'همه‌ی پست‌های کانال'}
   ];
@@ -4099,7 +4235,7 @@ function renderSignals(){
     if(bucketOf(p)!==bucket)continue;
     if(coinFilter&&(sig.ticker||'')!==coinFilter)continue;
     if(sigFilter==='sig'&&!sig.isSignal)continue;
-    if(sigFilter==='new'&&(!sig.isSignal||decisionOf(p.id)))continue;
+    if(sigFilter==='new'&&!isOpenSig(p))continue;
     if(q&&!((sig.ticker||'')+' '+p.text).toLowerCase().includes(q))continue;
     matched++;
     if(n>=shownMax)continue;                 // بقیه شمرده می‌شوند ولی ساخته نمی‌شوند
@@ -4140,6 +4276,7 @@ function renderSignals(){
       ?(bucket==='arch'?'آرشیو خالی است.<br>روی هر پستی دکمه‌ی «آرشیو» را بزن تا اینجا بیاید.'
         :bucket==='res'?'هنوز پست نتیجه‌ای نیامده.<br>پست‌هایی مثل «تارگت اول زد» یا «استاپ خورد» خودشان اینجا جمع می‌شوند؛ هر پست دیگری را هم با دکمه‌ی «نتیجه» می‌فرستی اینجا.'
         :coinFilter?'برای '+esc(coinFilter)+' چیزی نیست.<br>فیلتر ارز را بردار.'
+        :sigFilter==='new'?'سیگنال تازه‌ای منتظر تصمیم نیست.<br>سیگنال‌های بیش از '+faN(S.staleDays||7)+' روز قدیمی‌اند و در «سیگنال‌ها» برای مرور مانده‌اند.'
                   :'چیزی با این فیلتر نیست.<br>«همه» را بزن یا جستجو را خالی کن.')
       :'هنوز پستی نیامده.<br>دکمه بروزرسانی را بزن.')));
   }else{
@@ -5435,12 +5572,13 @@ const liveOf=t=>PRICES.get(t)||null;
 
 function buildPendingCard(w){
   const px=PRICES.get(w.ticker);
-  const c=el('div','card d-'+w.dir+(w.hit?' hitcard':''));
+  const old=pendingStale(w);
+  const c=el('div','card d-'+w.dir+(w.hit?' hitcard':'')+(old?' old':''));
   const head=el('div','chead');
   head.appendChild(el('span','tick',esc(w.ticker)));
   if(w.market==='spot')head.appendChild(el('span','pill gold','اسپات'));
   else head.appendChild(el('span','pill '+w.dir,w.dir==='long'?'لانگ':'شورت'));
-  head.appendChild(el('span','pill '+(w.hit?'win':'mut'),w.hit?'رسید':'منتظر'));
+  head.appendChild(el('span','pill '+(w.hit?'win':'mut'),w.hit?'رسید':old?ic('clock')+'قدیمی شد':'منتظر'));
   head.appendChild(el('div','when',relTime(new Date(w.at))));
   c.appendChild(head);
 
@@ -5456,8 +5594,11 @@ function buildPendingCard(w){
   c.appendChild(kv);
 
   const a=el('div','acts');
+  if(old)c.appendChild(el('div','staletx',
+    'قیمت تا قدیمی شدنِ سیگنال به تریگر نرسید؛ دیگر منتظرش نیستیم و هشدار نمی‌دهد. برای مرور مانده — برش دار.'));
   const b1=el('button','btn '+(w.hit?'pri':''),ic('check')+'<span>ورود با این تریگر</span>');
   b1.onclick=()=>fillPending(w);
+  if(old)b1.classList.add('hide');
   const b2=el('button','btn dgr xs','برداشتن');
   b2.onclick=()=>{if(confirm('این سفارش منتظر برداشته شود؟'))dropPending(w.id);};
   a.appendChild(b1);a.appendChild(b2);
@@ -5468,8 +5609,8 @@ function renderPositions(){
   if(DRAGGING)return;
   const wrap=$('#posList'), sum=$('#posSummary');
   wrap.innerHTML='';sum.innerHTML='';
-  const nWait=DB.pending.length;
-  const cw=$('#cWait');if(cw){cw.textContent=faN(nWait);cw.classList.toggle('z',!nWait);}
+  const nWait=DB.pending.length, nAct=activePending().length;
+  const cw=$('#cWait');if(cw){cw.textContent=faN(nAct);cw.classList.toggle('z',!nAct);}
   if(posFilter==='pending'){
     if(!nWait){wrap.appendChild(el('div','empty',STAR+
       'سفارش منتظری نداری.<br>روی سیگنالی که تریگر ورود دارد،<br>دکمه‌ی «منتظر …» را بزن.'));return;}
@@ -6463,7 +6604,7 @@ function dataCounts(d){
   return [['پوزیشن',n(d.positions)+n(d.spot)],['تصمیم',n(d.decisions)],['آموزش',n(d.lessons)],
           ['از این‌ها اسپات',spots],['منتظر',n(d.pending)],
           ['آرشیو',n(d.archived)],['نتایج',n(d.results)],['اصلاح دستی',n(d.overrides)],
-          ['ویرایشِ کانال',n(d.edits)],['حذفِ کانال',n(d.gone)]];
+          ['ویرایشِ کانال',n(d.edits)],['حذفِ کانال',n(d.gone)],['برگشته از قدیمی',n(d.revived)]];
 }
 function applyBackup(d){
   DB.positions=(d.positions||[]).map(ensureBase);
@@ -6475,6 +6616,7 @@ function applyBackup(d){
   DB.results=d.results&&typeof d.results==='object'?d.results:{};
   DB.edits=d.edits&&typeof d.edits==='object'?d.edits:{};
   DB.gone=d.gone&&typeof d.gone==='object'?d.gone:{};
+  DB.revived=d.revived&&typeof d.revived==='object'?d.revived:{};
   DB.pending=Array.isArray(d.pending)?d.pending:[];
   DB.watch=Array.isArray(d.watch)?d.watch:[];
   DB.spot=Array.isArray(d.spot)?d.spot:[];
@@ -6527,9 +6669,7 @@ function wireIO(){
     const now=new Date(), hh=String(now.getHours()).padStart(2,'0'),
           mm=String(now.getMinutes()).padStart(2,'0');
     dl('signal-desk-'+jKey(now)+'-'+hh+mm+'.json',
-      JSON.stringify({v:4,exportedAt:Date.now(),positions:DB.positions,decisions:DB.decisions,
-        settings:S,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,
-        pending:DB.pending,watch:DB.watch,spot:DB.spot},null,2));
+      JSON.stringify(Object.assign({v:5,exportedAt:Date.now()},dbBlob(),{settings:S}),null,2));
     toast('پشتیبان گرفته شد','ok');
   };
   $('#btnCsv').onclick=()=>{
@@ -6601,14 +6741,15 @@ function moveInd(scroll){
 function renderAll(){
   const open=DB.positions.filter(p=>p.status==='open').length;
   const cp=$('#cPos');cp.textContent=faN(open);cp.classList.toggle('z',!open);
-  const und=POSTS.filter(p=>sigOf(p).isSignal&&!decisionOf(p.id)&&bucketOf(p)==='live').length;
+  const und=POSTS.filter(p=>isOpenSig(p)&&bucketOf(p)==='live').length;
   const cs=$('#cSig');cs.textContent=faN(und);cs.classList.toggle('z',!und);
   paintAudBadge();
   // شمارنده‌های داخل نوارهای پوزیشن و بازار
   const nOpen=open, nClosed=DB.positions.filter(p=>p.status==='closed').length;
   const setN=(id,v)=>{const n=$('#'+id);if(n)n.textContent=faN(v);};
-  setN('cWait',DB.pending.length);setN('cOpenP',nOpen);setN('cClosedP',nClosed);
-  setN('cAllP',DB.positions.length+DB.pending.length);
+  const nAct=activePending().length;
+  setN('cWait',nAct);setN('cOpenP',nOpen);setN('cClosedP',nClosed);
+  setN('cAllP',DB.positions.length+nAct);
 
   if(view==='signals')renderSignals();
   else if(view==='audit')renderAudit();
@@ -6648,7 +6789,7 @@ async function refresh(append,silent){
         if(!incoming.length)REACHED_END=true;
         POSTS=POSTS.concat(incoming);
       }else{
-        if(!coldStart)for(const p of incoming)NEWIDS.add(p.id);
+        if(!coldStart)for(const p of incoming)if(!isStale(p))NEWIDS.add(p.id);
         POSTS=POSTS.concat(incoming);
         if(!res.before&&!POSTS.length)REACHED_END=true;
       }
@@ -6664,7 +6805,7 @@ async function refresh(append,silent){
         else{i.className='moreinfo ok';i.textContent=faN(incoming.length)+' پست قدیمی‌تر اضافه شد.';
           setTimeout(()=>{if(i.textContent.includes('قدیمی‌تر'))i.textContent='';},6000);}
       }else if(!coldStart){
-        const nSig=incoming.filter(p=>sigOf(p).isSignal).length;
+        const nSig=incoming.filter(p=>sigOf(p).isSignal&&!isStale(p)).length;
         showIncoming(incoming.length,nSig);
       }else $('#incoming').classList.add('hide');
     }else if(append){
