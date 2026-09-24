@@ -287,9 +287,6 @@ html.busy .prog{opacity:1}
   border-radius:13px;padding:0 12px;color:var(--tx3);transition:border-color .2s,box-shadow .2s}
 .search:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 16%,transparent)}
 .search input{flex:1;min-width:0;background:none;border:none;outline:none;padding:10px 0}
-.segf{display:flex;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:3px}
-.segf .btn{border-color:transparent;background:none;padding:6px 11px;font-size:13px;border-radius:10px}
-.segf .btn[aria-pressed="true"]{background:var(--card2);border-color:var(--line2);color:var(--gold)}
 
 /* نوار نمایش پست‌ها */
 .fbar{display:flex;gap:8px;width:100%;align-items:stretch}
@@ -314,6 +311,14 @@ html.busy .prog{opacity:1}
    با کلاس صریح، نه با :has() — آن یکی بی‌دلیل کل سند را وارد حالتِ کندِ
    بازمحاسبه‌ی استایل می‌کند. */
 .fbucket.wide{width:auto;min-width:64px;padding-inline:12px}
+/* نوار سیگنال‌ها سه سطل دارد (نتایج، آموزش، آرشیو) و در یک ردیف جا نمی‌شد: برچسب‌های
+   اصلی تا ۲۹ پیکسل فشرده و بریده می‌شدند. سطل‌ها ردیفِ دومِ باریک و یک‌خطی گرفتند. */
+#fbar{flex-wrap:wrap;gap:6px}
+#fbar .fseg{flex:1 1 100%}
+#fbar .fside{flex:1 1 100%;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+#fbar .fbucket{width:auto;min-height:40px;flex-direction:row;gap:7px;padding:6px 8px;border-radius:12px}
+#fbar .fbucket span{font-size:12px}
+#fbar .fbucket i{font-size:13px;line-height:1}
 .fbucket span{display:flex;align-items:center;gap:3px;font-size:11.5px}
 .fbucket .ic{width:13px;height:13px;flex:none;stroke-width:2.2}
 .fbucket.on{background:color-mix(in srgb,var(--gold) 15%,transparent);
@@ -346,7 +351,6 @@ html.busy .prog{opacity:1}
 .status:empty{display:none}
 .status .sc{white-space:nowrap}
 .status .sc b{color:var(--tx);font-weight:800;font-variant-numeric:tabular-nums}
-.status .sc.hot b{color:var(--gold)}
 .status .grow{margin-inline-start:auto}
 .status.bad{border-color:color-mix(in srgb,var(--dn) 45%,var(--line));color:var(--dn);display:block;background:color-mix(in srgb,var(--dn) 7%,var(--card))}
 .status.warn{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));color:var(--warn);display:block;background:color-mix(in srgb,var(--warn) 7%,var(--card))}
@@ -388,6 +392,44 @@ html.busy .prog{opacity:1}
 .coinchip i{font-style:normal;font-size:15px;line-height:1;opacity:.85}
 /* پیش‌نمایش کارت اشتراک‌گذاری: همان تصویری که فرستاده می‌شود، نه شبیهش */
 .panelhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+/* ── کانال‌سنج ── */
+.audrules{font-size:11.5px;color:var(--tx3);margin-top:10px;line-height:1.9}
+.audprog{margin-top:10px;font-size:12px;color:var(--tx2);font-weight:700}
+.audprog i{display:block;height:5px;margin-top:6px;border-radius:99px;background:var(--inset);overflow:hidden;position:relative}
+.audprog i::after{content:'';position:absolute;inset-block:0;inset-inline-start:0;width:var(--p);
+  background:linear-gradient(90deg,var(--gold2),var(--gold));border-radius:99px;transition:width .3s var(--ease)}
+.audf .afrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.audf .aflab{font-size:12px;font-weight:800;color:var(--tx2);min-width:74px}
+.audf .afopts{display:flex;gap:6px;flex-wrap:wrap}
+.audf .afopts .catchip{padding:4px 11px}
+.afsel{background:var(--inset);border:1px solid var(--line2);border-radius:10px;padding:6px 10px;min-width:120px}
+.catchip i{font-style:normal;opacity:.7;font-size:11px;margin-inline-start:2px}
+.arow{display:flex;align-items:center;gap:8px;width:100%;text-align:start;background:var(--inset);
+  border:1px solid var(--line);border-radius:12px;padding:9px 11px;margin-top:7px;cursor:pointer;color:var(--tx)}
+.arow b{font-size:13px;flex:none}
+.arow .pill{flex:none}
+.atx{flex:1;min-width:0;font-size:12px;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arow2{border-top:1px solid var(--line);padding:11px 0}
+.arow2:first-of-type{border-top:0}
+.ar1{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.ar1 .tick{font-size:14.5px}
+.ar1 .when{margin-inline-start:auto;font-size:11px;color:var(--tx3)}
+.ar2{font-size:12px;color:var(--tx2);margin-top:5px;font-variant-numeric:tabular-nums}
+.ar2.bad{color:var(--warn)}
+.ar3{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.ar3 .pill{font-size:10.5px;padding:2px 8px}
+.ar4{display:flex;gap:6px;margin-top:8px}
+.audtl{list-style:none;margin:0;padding:0;border-inline-start:2px solid var(--line2)}
+.audtl li{position:relative;padding:6px 14px 6px 0;font-size:12.5px;color:var(--tx)}
+.audtl li::before{content:'';position:absolute;inset-inline-start:-6px;top:12px;width:10px;height:10px;
+  border-radius:50%;background:var(--card2);border:2px solid var(--tx3)}
+.audtl li.add::before{border-color:var(--up);background:color-mix(in srgb,var(--up) 30%,var(--card))}
+.audtl li.cut::before{border-color:var(--dn);background:color-mix(in srgb,var(--dn) 30%,var(--card))}
+.audtl time{display:block;font-size:11px;color:var(--tx3);font-variant-numeric:tabular-nums}
+.audtxt,.atxt{white-space:pre-wrap;font-size:12.5px;line-height:1.9;color:var(--tx2)}
+.audtxt{background:var(--inset);border-radius:var(--r2);padding:10px 12px}
+tr.tap{cursor:pointer}
+tr.tap:hover td{background:var(--card2)}
 .panelhead b{font-size:15px}
 .shprev{margin:12px 0;border-radius:16px;overflow:hidden;border:1px solid var(--line2);
   background:var(--inset);display:flex;justify-content:center}
@@ -488,27 +530,6 @@ html.busy .prog{opacity:1}
   font-variant-numeric:tabular-nums}
 .bk span.u{color:var(--up)}.bk span.d{color:var(--dn)}
 .bk span.w{color:var(--warn)}.bk span.m{color:var(--tx3)}
-.wrow{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;
-  padding:12px 14px;background:var(--card);border:1px solid var(--line);
-  border-radius:var(--r2);margin-bottom:6px;cursor:pointer}
-.wrow.open{border-color:var(--line2);border-end-start-radius:0;border-end-end-radius:0;margin-bottom:0}
-.wrow.whead{background:none;border:0;padding:6px 14px;margin-bottom:2px;cursor:default;
-  font-size:11px;color:var(--tx3);font-weight:700}
-.wsym{font-weight:900;font-size:15px;direction:ltr;text-align:start;display:flex;
-  align-items:center;gap:7px;min-width:0}
-.wsym i{font-style:normal;font-size:10.5px;font-weight:700;color:var(--tx3);
-  background:var(--inset);border:1px solid var(--line2);padding:2px 7px;border-radius:99px}
-.wpx{font-variant-numeric:tabular-nums;font-weight:700;direction:ltr}
-.wch{font-variant-numeric:tabular-nums;font-weight:800;min-width:66px;text-align:end;direction:ltr}
-.wch .u,.wgrid .u{color:var(--up)}.wch .d,.wgrid .d{color:var(--dn)}
-.wch .m,.wgrid .m{color:var(--tx3)}
-.wdet{background:var(--inset);border:1px solid var(--line2);border-top:0;
-  border-end-start-radius:var(--r2);border-end-end-radius:var(--r2);padding:12px 14px;margin-bottom:6px}
-.wgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center}
-.wgrid div{background:var(--card);border:1px solid var(--line);border-radius:var(--r2);padding:8px 4px}
-.wgrid b{display:block;font-size:10.5px;color:var(--tx3);font-weight:700;margin-bottom:3px}
-.wgrid span{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;direction:ltr}
-.wsub{font-size:11.5px;color:var(--tx3);margin-top:9px;line-height:1.9}
 .cmptab{width:100%;border-collapse:collapse;font-size:12.5px}
 .cmptab th{font-size:11px;color:var(--tx3);font-weight:700;padding:6px 8px;text-align:center}
 .cmptab th:first-child{text-align:start}
@@ -901,9 +922,8 @@ input[type=range]{width:100%;accent-color:var(--gold)}
       <span class="ind" id="tabInd"></span>
       <button class="tab" data-v="signals" role="tab" aria-selected="true" data-ic="trend"><span>سیگنال‌ها</span><span class="cnt g z" id="cSig">0</span></button>
       <button class="tab" data-v="positions" role="tab" aria-selected="false" data-ic="wallet"><span>پوزیشن‌ها</span><span class="cnt z" id="cPos">0</span></button>
+      <button class="tab" data-v="audit" role="tab" aria-selected="false" data-ic="shield"><span>کانال‌سنج</span><span class="cnt z" id="cAud">0</span></button>
       <button class="tab" data-v="report" role="tab" aria-selected="false" data-ic="bars"><span>کارنامه</span></button>
-      <button class="tab" data-v="market" role="tab" aria-selected="false" data-ic="star"><span>بازار</span><span class="cnt z" id="cMkt">0</span></button>
-      <button class="tab" data-v="lessons" role="tab" aria-selected="false" data-ic="book"><span>آموزش</span><span class="cnt z" id="cLes">0</span></button>
     </nav>
   </div>
   <div class="prog" id="prog"></div>
@@ -922,6 +942,7 @@ input[type=range]{width:100%;accent-color:var(--gold)}
     <div class="status" id="status"></div>
     <div id="incoming" class="incoming hide"></div>
     <div id="list"></div>
+    <div id="lessonList" class="hide"></div>
     <div id="moreSkel" class="hide"></div>
     <div class="morebox">
       <button class="btn hide" id="btnMore"></button>
@@ -969,16 +990,11 @@ input[type=range]{width:100%;accent-color:var(--gold)}
   </section>
 
   <!-- بازار: واچ‌لیست و اسپات -->
-  <section id="vMarket" class="view hide">
-    <div id="marketBody"></div>
-  </section>
 
   <!-- آموزش -->
-  <section id="vLessons" class="view hide">
-    <div class="tools">
-      <label class="search"><span id="lqIc"></span><input id="lq" placeholder="جستجو در آموزش‌ها…" autocomplete="off"></label>
-    </div>
-    <div id="lessonList"></div>
+  <!-- کانال‌سنج: نتیجه‌ی واقعیِ همه‌ی سیگنال‌های کانال -->
+  <section id="vAudit" class="view hide">
+    <div id="audBody"></div>
   </section>
 
 
@@ -1108,6 +1124,8 @@ input[type=range]{width:100%;accent-color:var(--gold)}
       <input type="file" id="fileIn" accept=".json,application/json" class="hide">
     </div>
     </details>
+    <div class="hint" style="margin-top:12px">میز سیگنال · نسخه‌ی ۲ ·
+      <a href="backup/signal-desk-v1.zip" download>دانلود نسخه‌ی ۱ (زیپ)</a></div>
     <div class="srow"><button class="btn pri" id="setDone">تمام</button></div>
   </div>
 </div>
@@ -1244,9 +1262,10 @@ function jShort(d){const p=jParts(d);return faN(p.jd)+' '+J_M[p.jm-1];}
 /* ==================== ذخیره‌سازی ==================== */
 const KEY='signaldesk.v1';
 let storeOK=true;
-const DB={positions:[],decisions:{},settings:{},overrides:{},lessons:{},archived:{},results:{},pending:[],watch:[],spot:[]};
+const DB={positions:[],decisions:{},settings:{},overrides:{},lessons:{},archived:{},results:{},pending:[],watch:[],spot:[],
+  edits:{},gone:{}};
 function save(){
-  try{ localStorage.setItem(KEY,JSON.stringify({positions:DB.positions,decisions:DB.decisions,settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,results:DB.results,pending:DB.pending,watch:DB.watch,spot:DB.spot})); }
+  try{ localStorage.setItem(KEY,JSON.stringify({positions:DB.positions,decisions:DB.decisions,settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,results:DB.results,pending:DB.pending,watch:DB.watch,spot:DB.spot,edits:DB.edits,gone:DB.gone})); }
   catch(e){ storeOK=false; showStoreWarn(); }
   if(typeof syncSoon==='function')syncSoon();
 }
@@ -1263,6 +1282,8 @@ function load(){
       DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
       DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
       DB.results=d.results&&typeof d.results==='object'?d.results:{};
+      DB.edits=d.edits&&typeof d.edits==='object'?d.edits:{};
+      DB.gone=d.gone&&typeof d.gone==='object'?d.gone:{};
       DB.pending=Array.isArray(d.pending)?d.pending:[];
       DB.watch=Array.isArray(d.watch)?d.watch:[];
       DB.spot=Array.isArray(d.spot)?d.spot:[];
@@ -1316,7 +1337,7 @@ function loadPostCache(){
 }
 function cacheKB(){try{return Math.round(((localStorage.getItem(CKEY(S.channel))||'').length*2)/1024);}catch(e){return 0;}}
 function savePostCache(){
-  let posts=POSTS.slice(0,CACHE_MAX).map(p=>({id:p.id,num:p.num,text:p.text,img:p.img,reply:p.reply,
+  let posts=POSTS.slice(0,CACHE_MAX).map(p=>({id:p.id,num:p.num,text:p.text,origText:p.origText||undefined,img:p.img,reply:p.reply,
     date:p.date?p.date.getTime():null,link:p.link}));
   const pack=()=>({v:2,at:Date.now(),end:REACHED_END&&posts.length===POSTS.length,posts});
   let ok=lsSet(CKEY(S.channel),pack());
@@ -1351,7 +1372,14 @@ function pruneCaches(){
   for(const k of [...OPENCARD])if(!live.has(k))OPENCARD.delete(k);
   for(const k of [...PLANOPEN])if(!live.has(k))PLANOPEN.delete(k);
   for(const k of [...REPLYOPEN])if(!live.has(k))REPLYOPEN.delete(k);
+  let aud=false;
+  for(const k of Object.keys(AUD))if(!live.has(k)){delete AUD[k];aud=true;}
+  if(aud)audSave();
   let dirty=false;
+  for(const o of [DB.edits,DB.gone]){
+    const ks=Object.keys(o);
+    if(ks.length>300){ks.sort((a,b)=>(o[b].at||0)-(o[a].at||0));for(const k of ks.slice(300))delete o[k];dirty=true;}
+  }
   if(trimFlags(DB.archived,live))dirty=true;
   if(trimFlags(DB.results,live))dirty=true;
   if(dirty)save();
@@ -1449,7 +1477,8 @@ const FEAT={
   range:  {on:true, t:'بازه‌ی دلخواه کارنامه', d:'انتخاب تاریخ شروع و پایان در کارنامه'}
 };
 const featDefaults=()=>Object.fromEntries(Object.entries(FEAT).map(([k,v])=>[k,v.on]));
-const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,auto:60,proxy:'',feat:featDefaults()};
+const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,auto:60,proxy:'',feat:featDefaults(),
+  aud:{days:30,entryDays:3,tol:1,rule:'tp1'}};
 const F=k=>!!(S.feat&&S.feat[k]);
 let BOOTED=false;
 function buildFeatList(){
@@ -1699,7 +1728,6 @@ function computePlan(o){
 /* اسپات دو جا بود: DB.spot (خرید دستی در تب بازار) و پوزیشن‌های kind='spot'
    (ورود از روی سیگنال). یک مفهوم با دو مدل یعنی دو جای نگهداری، دو فرم ورود و
    کارنامه‌ای که نیمی از خریدهایت را نمی‌بیند. حالا فقط پوزیشن است. */
-const spotList=()=>DB.positions.filter(p=>p.kind==='spot');
 function migrateSpot(){
   if(!Array.isArray(DB.spot)||!DB.spot.length)return false;
   for(const x of DB.spot){
@@ -2080,77 +2108,6 @@ async function loadChannel(before){
   }finally{renderHealth();}
 }
 
-/* ==================== بازار: واچ‌لیست و اسپات ==================== */
-/* درصد ۲۴ ساعته برای همه‌ی نمادهای واچ‌لیست با یک درخواست می‌آید (سبک است و همیشه تازه).
-   ۱ و ۴ ساعته و هفتگی از کندل‌های ساعتی حساب می‌شوند و فقط وقتی گرفته می‌شوند که روی
-   یک ارز بزنی — وگرنه با واچ‌لیست بزرگ هر بار ده‌ها درخواست می‌شد. */
-const D24=new Map();            // sym → {pct, high, low, vol}
-const KL=new Map();             // sym → {at, h1, h4, d1, d7}
-let d24At=0;
-const watchCats=()=>[...new Set(DB.watch.map(w=>(w.cat||'').trim()).filter(Boolean))].sort();
-let watchCat=null;
-
-async function loadD24(force){
-  const syms=DB.watch.map(w=>w.sym);
-  if(!syms.length)return;
-  if(!force&&Date.now()-d24At<60000)return;
-  const list=JSON.stringify(syms.map(s=>s+'USDT'));
-  try{
-    const got=await fetchVia('https://api.binance.com/api/v3/ticker/24hr?symbols='+encodeURIComponent(list),
-      {json:true,timeout:9000,kind:'px',label:'تغییر ۲۴ ساعته',
-       validate:d=>Array.isArray(d)});
-    for(const r of got.data){
-      const sym=String(r.symbol||'').replace(/USDT$/,'');
-      D24.set(sym,{pct:parseFloat(r.priceChangePercent),
-        high:parseFloat(r.highPrice),low:parseFloat(r.lowPrice),vol:parseFloat(r.quoteVolume)});
-    }
-    d24At=Date.now();
-  }catch(e){logIt('warn','تغییر ۲۴ ساعته نیامد');}
-}
-/* از ۱۶۹ کندل ساعتی، هر چهار بازه درمی‌آید: یک درخواست به‌جای چهار تا */
-async function loadKlines(sym){
-  const c=KL.get(sym);
-  if(c&&Date.now()-c.at<120000)return c;
-  try{
-    const got=await fetchVia('https://api.binance.com/api/v3/klines?symbol='+sym+
-      'USDT&interval=1h&limit=169',{json:true,timeout:9000,kind:'px',
-      label:'کندل '+sym,validate:d=>Array.isArray(d)&&d.length>2});
-    const k=got.data, close=k.map(x=>parseFloat(x[4])), n=close.length, now=close[n-1];
-    const at=i=>close[n-1-i]!=null?((now-close[n-1-i])/close[n-1-i])*100:null;
-    const out={at:Date.now(),h1:at(1),h4:at(4),d1:at(24),d7:at(n-1)};
-    KL.set(sym,out);return out;
-  }catch(e){return null;}
-}
-function addWatch(sym,cat){
-  sym=String(sym||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
-  if(!sym)return;
-  if(DB.watch.some(w=>w.sym===sym)){toast(sym+' از قبل هست','info');return;}
-  DB.watch.push({sym,cat:(cat||'').trim(),at:Date.now()});
-  save();loadD24(true).then(()=>renderAll());renderAll();
-  toast(sym+' اضافه شد','ok');
-}
-function sheetAddWatch(){
-  const all=[...SYMBOLS].sort(), cats=watchCats();
-  openSheet(
-   '<h3>افزودن به واچ‌لیست</h3>'+
-   '<div class="fld"><label>نماد</label>'+
-     '<input id="f_w" dir="ltr" list="wsyms" placeholder="BTC">'+
-     '<datalist id="wsyms">'+all.slice(0,900).map(x=>'<option value="'+esc(x)+'"></option>').join('')+'</datalist></div>'+
-   '<div class="fld" style="margin-top:10px"><label>دسته</label>'+
-     '<input id="f_wc" list="wcats" placeholder="مثلاً اسپات">'+
-     '<datalist id="wcats">'+[...new Set(cats.concat(['اسپات','بلندمدت','نوسانی','زیر نظر']))]
-       .map(c=>'<option value="'+esc(c)+'"></option>').join('')+'</datalist></div>'+
-   '<div class="srow"><button class="btn pri" id="ok">افزودن</button>'+
-   '<button class="btn" id="cx">انصراف</button></div>',
-   ()=>{
-     $('#cx').onclick=closeSheet;
-     $('#ok').onclick=()=>{
-       const v=($('#f_w').value||'').trim();
-       if(!v)return toast('نماد را بنویس','err');
-       addWatch(v,$('#f_wc').value);closeSheet();
-     };
-   });
-}
 /* ==================== سفارش منتظر ==================== */
 /* خیلی از سیگنال‌ها می‌گویند «بالای X وارد شو» — یعنی تا قیمت به آن نرسیده کاری نکن.
    تا حالا یا باید زودتر وارد می‌شدی یا سیگنال را از دست می‌دادی. حالا ثبت می‌شود،
@@ -2263,7 +2220,7 @@ let syncTimer=null, syncing=false;
 const syncOn=()=>!!(syncCfg.url&&syncCfg.token);
 const dbBlob=()=>({positions:DB.positions,decisions:DB.decisions,
   settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,
-  results:DB.results,pending:DB.pending,watch:DB.watch,spot:DB.spot});
+  results:DB.results,pending:DB.pending,watch:DB.watch,spot:DB.spot,edits:DB.edits,gone:DB.gone});
 function applyBlob(d){
   DB.positions=Array.isArray(d.positions)?d.positions.map(ensureBase):[];
   DB.decisions=d.decisions&&typeof d.decisions==='object'?d.decisions:{};
@@ -2271,6 +2228,8 @@ function applyBlob(d){
   DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
   DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
   DB.results=d.results&&typeof d.results==='object'?d.results:{};
+  DB.edits=d.edits&&typeof d.edits==='object'?d.edits:{};
+  DB.gone=d.gone&&typeof d.gone==='object'?d.gone:{};
   DB.pending=Array.isArray(d.pending)?d.pending:[];
   DB.watch=Array.isArray(d.watch)?d.watch:[];
   DB.spot=Array.isArray(d.spot)?d.spot:[];
@@ -2628,92 +2587,6 @@ function addLessonQuiet(p){
     date:p.date?+p.date:null,link:p.link||null,at:Date.now(),cat:''};
 }
 
-const WOPEN=new Set();          // ارزهایی که ردیف بازشان باز است (و کندل گرفته‌اند)
-/* بازار فقط واچ‌لیست است. خریدهای اسپات به پوزیشن‌ها رفتند، چون همان‌جا کارنامه،
-   حد ضرر و کارت اشتراک‌گذاری را هم دارند. */
-function renderMarket(){
-  const box=$('#marketBody');
-  box.innerHTML='';
-  renderWatch(box);
-}
-function pctCell(v){
-  if(v==null||!isFinite(v))return '<span class="m">—</span>';
-  return '<span class="'+(v>0?'u':(v<0?'d':'m'))+'">'+fmtPct(v)+'</span>';
-}
-function renderWatch(box){
-  const bar=el('div','lbar');
-  const add=el('button','mark','افزودن ارز');add.onclick=sheetAddWatch;
-  bar.appendChild(add);
-  const rf=el('button','mark ghost','بروزرسانی');
-  rf.onclick=async e=>{btnBusy(e.currentTarget,true);KL.clear();await loadD24(true);
-    btnBusy(e.currentTarget,false);renderMarket();};
-  bar.appendChild(rf);
-  box.appendChild(bar);
-
-  if(!DB.watch.length){
-    box.appendChild(el('div','empty',STAR+
-      'واچ‌لیست خالی است.<br>«افزودن ارز» را بزن و دسته‌اش را هم بنویس<br>(مثلاً «اسپات»).'));
-    return;
-  }
-  const cats=watchCats();
-  if(cats.length){
-    const row=el('div','catrow');
-    const chip=(l,v)=>{const c=el('button','catchip'+(watchCat===v?' on':''),esc(l));
-      c.onclick=()=>{watchCat=(watchCat===v?null:v);renderMarket();};row.appendChild(c);};
-    chip('همه',null);
-    for(const c of cats)chip(c,c);
-    if(DB.watch.some(w=>!(w.cat||'').trim()))chip('بدون دسته','');
-    box.appendChild(row);
-  }
-  const list=DB.watch.filter(w=>watchCat==null||(w.cat||'')===watchCat);
-  const head=el('div','wrow whead');
-  head.innerHTML='<span>نماد</span><span>قیمت</span><span>۲۴ ساعت</span>';
-  box.appendChild(head);
-
-  for(const w of list){
-    const px=PRICES.get(w.sym), d=D24.get(w.sym), open=WOPEN.has(w.sym);
-    const r=el('div','wrow'+(open?' open':''));
-    r.innerHTML='<span class="wsym">'+esc(w.sym)+
-      ((w.cat||'').trim()?'<i>'+esc(w.cat)+'</i>':'')+'</span>'+
-      '<span class="wpx">'+(px!=null?fmtPrice(px):'—')+'</span>'+
-      '<span class="wch">'+pctCell(d?d.pct:null)+'</span>';
-    r.onclick=async()=>{
-      if(open){WOPEN.delete(w.sym);renderMarket();return;}
-      WOPEN.add(w.sym);renderMarket();
-      await loadKlines(w.sym);
-      if(view==='market')renderMarket();
-    };
-    box.appendChild(r);
-    if(open){
-      const k=KL.get(w.sym);
-      const det=el('div','wdet');
-      if(!k)det.innerHTML='<div class="scanprog">در حال گرفتن تغییرات…</div>';
-      else{
-        det.innerHTML=
-          '<div class="wgrid">'+
-            '<div><b>۱ ساعت</b>'+pctCell(k.h1)+'</div>'+
-            '<div><b>۴ ساعت</b>'+pctCell(k.h4)+'</div>'+
-            '<div><b>۲۴ ساعت</b>'+pctCell(k.d1)+'</div>'+
-            '<div><b>۷ روز</b>'+pctCell(k.d7)+'</div>'+
-          '</div>'+
-          (d?'<div class="wsub">سقف روز '+fmtPrice(d.high)+' · کف روز '+fmtPrice(d.low)+
-             ' · حجم '+fmtUsd(d.vol)+'</div>':'');
-      }
-      const acts=el('div','markrow');
-      const rm=el('button','mark ghost','حذف از واچ‌لیست');
-      rm.onclick=ev=>{ev.stopPropagation();
-        DB.watch=DB.watch.filter(x=>x.sym!==w.sym);save();renderAll();toast('حذف شد','info');};
-      const ed=el('button','mark ghost','تغییر دسته');
-      ed.onclick=ev=>{ev.stopPropagation();
-        const c=prompt('دسته‌ی '+w.sym,w.cat||'');
-        if(c==null)return;
-        w.cat=c.trim();save();renderAll();};
-      acts.appendChild(ed);acts.appendChild(rm);
-      det.appendChild(acts);
-      box.appendChild(det);
-    }
-  }
-}
 function renderLessons(){
   const box=$('#lessonList');
   const all=Object.values(DB.lessons).sort((a,b)=>(b.at||0)-(a.at||0));
@@ -3272,11 +3145,14 @@ function setArch(id,on){
 /* پست نتیجه: کانال بعد از هر سیگنال می‌گوید تارگت خورد یا استاپ. اینها نه سیگنال‌اند
    نه آشغال — کارنامه‌اند، پس جای خودشان را دارند. تشخیص خودکار است و با یک ضربه
    قابل نقض؛ صفر یعنی «تو گفتی نتیجه نیست» و روی تشخیص خودکار می‌چربد. */
+/* کانال‌ها معمولاً نام ارز را وسط می‌گذارند («تارگت اول #BTC زده شد»)؛ تا نسخه‌ی ۱ این
+   شکل اصلاً شناخته نمی‌شد. فاصله‌ی تا ۳۰ نویسه‌ی بی‌عدد مجاز است — بی‌عدد تا خطِ
+   «تارگت ۶۲۰۰۰» در خودِ سیگنال با فعلی که جلوتر آمده اشتباه گرفته نشود. */
 const RX_RESULT=new RegExp(
-  'تارگت\\s*(?:اول|دوم|سوم|چهارم|[۱-۹\\d])?\\s*(?:هم\\s*)?(?:زده\\s*شد|زد|خورد|فعال\\s*شد)'+
-  '|به\\s*تارگت\\s*(?:اول|دوم|سوم)?\\s*رسید'+
+  'تارگت\\s*(?:اول|دوم|سوم|چهارم|پنجم|\\d)?[^\\n\\d]{0,30}?(?:زده\\s*شد|زد|خورد|فعال\\s*شد|رسید)'+
+  '|به\\s*تارگت[^\\n\\d]{0,25}?رسید'+
   '|سیو\\s*سود|سود\\s*(?:گرفته|زده|شناسایی)'+
-  '|(?:استاپ|حد\\s*ضرر)\\s*(?:خورد|فعال\\s*شد)'+
+  '|(?:استاپ|حد\\s*ضرر)[^\\n\\d]{0,25}?(?:خورد|فعال\\s*شد|زده\\s*شد)'+
   '|ریسک\\s*فری|بریک\\s*ایون|سر\\s*به\\s*سر'+
   '|(?:پوزیشن|معامله|سیگنال)\\s*(?:را\\s*)?(?:بستیم|بسته\\s*شد)'+
   '|نتیجه\\s*(?:ی|\\u200c)?\\s*(?:سیگنال|معامله)'+
@@ -3285,7 +3161,13 @@ const RCACHE=new Map();
 function autoRes(p){
   const c=RCACHE.get(p.id);
   if(c!==undefined)return c;
-  const v=RX_RESULT.test(faNorm(normDig(p.text||'')));
+  const t=faNorm(normDig(p.text||''));
+  let v=RX_RESULT.test(t);
+  /* محافظ: سیگنالِ کاملی که داخلش دستور مدیریتی دارد («اگر تارگت اول را زد، استاپ را
+     به ورود بیاور») نتیجه نیست. اشتباه در این جهت سیگنال را از فهرست فعال غیب می‌کرد،
+     که بدتر از نشناختنِ یک پست نتیجه است. */
+  if(v){const g=parseSignal(p.text,p.id);
+    if(g.isSignal&&g.entry!=null&&g.stop!=null&&!p.reply)v=false;}
   RCACHE.set(p.id,v);
   return v;
 }
@@ -3303,7 +3185,9 @@ function setRes(p,on){
   save();renderAll();
 }
 /* در کدام سطل است؟ آرشیو بر نتیجه می‌چربد تا یک پست هم‌زمان دو جا نباشد. */
-const bucketOf=p=>isArch(p.id)?'arch':(isRes(p)?'res':'live');
+/* آموزش هم حالا یک سطل است، نه یک تب: پستی که نگهش داشته‌ای از فهرست فعال بیرون
+   می‌رود، مثل آرشیو. انتخابِ صریح تو (آرشیو، آموزش) بر تشخیص خودکار (نتیجه) می‌چربد. */
+const bucketOf=p=>isArch(p.id)?'arch':(isLesson(p.id)?'les':(isRes(p)?'res':'live'));
 const OPENCARD=new Set();   // کارت‌هایی که در حالت فشرده باز شده‌اند
 const NEWIDS=new Set();          // پستی که در همین نشست تازه رسیده — نشان «تازه» می‌گیرد
 const CARDS=new Map();           // برای بازسازی فقط یک کارت، بدون رندر دوباره‌ی کل فهرست
@@ -3321,7 +3205,7 @@ function buildCard(p){
     tk.title='فقط سیگنال‌های '+sig.ticker;
     tk.onclick=()=>{coinFilter=sig.ticker;shownMax=PAGE;renderSignals();window.scrollTo({top:0,behavior:'smooth'});};
     head.appendChild(tk);
-    head.appendChild(el('span','pill '+dir,dir==='long'?'لانگ':'شورت'));
+    if(isSig)head.appendChild(el('span','pill '+dir,dir==='long'?'لانگ':'شورت'));
   }else head.appendChild(el('span','pill mut','بدون نماد'));
   if(isSig){
     const I=planInputsOf(p,sig,OVERRIDE[p.id]||{},null);
@@ -3332,6 +3216,25 @@ function buildCard(p){
   const px=sig.ticker?PRICES.get(sig.ticker):null;
   if(px!=null)head.appendChild(el('span','pill live '+(flashOf(sig.ticker)?'fl-'+flashOf(sig.ticker):''),'<i></i>'+fmtPrice(px)));
   if(dec)head.appendChild(el('span','pill '+(dec.action==='taken'?'open':'mut'),dec.action==='taken'?'وارد شدم':'نگرفتم'));
+  // کانال‌سنج: فقط وقتی نتیجه قطعی است، یک برچسب — نه شلوغیِ بیشتر
+  if(isSig){
+    const a=AUD[p.id];
+    if(a&&['win','loss','none','exp'].includes(a.st)){
+      const inp=audInput(p), rr=inp?audR(a,inp,audRules().rule):null;
+      const L={win:'برد',loss:'استاپ خورد',none:'فعال نشد',exp:'منقضی'}[a.st];
+      const pl=el('span','pill '+(a.st==='win'?'win':a.st==='loss'?'lose':'mut'),L+(rr!=null&&a.st!=='none'?' '+fmtR(rr):''));
+      pl.title='نتیجه‌ی واقعی با کندل — جزئیات در کانال‌سنج';
+      head.appendChild(pl);
+    }
+  }else if(isRes(p)){
+    const cl=claimOfPost(p.id);
+    if(cl&&cl.vd.v!=='?'){
+      const pl=el('span','pill '+(cl.vd.v==='ok'?'win':'lose'),cl.vd.v==='ok'?'ادعا درست':'ادعا نادرست');
+      pl.title=cl.vd.why;head.appendChild(pl);
+    }
+  }
+  if(DB.edits[p.id]&&DB.edits[p.id].nums)head.appendChild(el('span','pill lose','ویرایش‌شده'));
+  if(DB.gone[p.id])head.appendChild(el('span','pill lose','حذف از کانال'));
   head.appendChild(el('div','when','<a href="'+p.link+'" target="_blank" rel="noopener">'+
     relTime(p.date)+(p.date?' · '+jStampFa(p.date):'')+'</a>'));
   card.appendChild(head);
@@ -4048,6 +3951,7 @@ function renderFbar(){
     const bk=bucketOf(p);
     if(bk==='arch'){nArch++;continue;}
     if(bk==='res'){nRes++;continue;}
+    if(bk==='les')continue;
     nLive++;
     if(!sigOf(p).isSignal)continue;
     nSig++;
@@ -4083,12 +3987,23 @@ function renderFbar(){
     side.appendChild(b);
   };
   mkSide('res','flag','نتایج',nRes,'پست‌های نتیجه: تارگت خورد، استاپ خورد، سیو سود');
+  // آموزش‌ها ممکن است از پست‌هایی باشند که دیگر در ۸۰۰تای کش نیستند، پس از DB شمرده می‌شوند
+  mkSide('les','book','آموزش',Object.keys(DB.lessons).length,'آموزش‌هایی که از کانال نگه داشته‌ای');
   mkSide('arch','box','آرشیو',nArch,'پست‌هایی که کنار گذاشته‌ای');
   bar.appendChild(side);
 }
 
 function renderSignals(){
   const list=$('#list');
+  /* سطل آموزش فهرست خودش را دارد (عنوان، دسته، اسکن کانال)، پس به‌جای کارت پست
+     همان را نشان می‌دهیم. جستجوی بالای صفحه هم همان‌جا روی آموزش‌ها کار می‌کند. */
+  const les=$('#lessonList'), onLes=bucket==='les';
+  list.classList.toggle('hide',onLes);
+  if(les)les.classList.toggle('hide',!onLes);
+  if(onLes){
+    renderFbar();lessonQ=query;renderLessons();
+    $('#btnMore').classList.add('hide');showStatus();return;
+  }
   if(!POSTS.length&&busy){list.innerHTML=skelHTML(3);$('#btnMore').classList.add('hide');showStatus();return;}
   const q=query.trim().toLowerCase();
   const frag=document.createDocumentFragment();
@@ -4584,6 +4499,846 @@ function sheetShare(p){
        toast('تصویر ذخیره شد','ok');
      };
      $('#cx').onclick=closeSheet;
+   });
+}
+
+
+/* ==================== کانال‌سنج ==================== */
+/* هدف برنامه سنجیدن کانال است، نه فقط معاملات خودت. تا نسخه‌ی ۱ تنها چیزی که به
+   کانال نگاه می‌کرد، گزارش «نگرفته‌ها» بود که با قیمتِ همین لحظه حساب می‌کرد: سیگنالی
+   که هفته‌ی پیش تارگت زد و بعد ریخت، باخت دیده می‌شد. اینجا هر سیگنال از لحظه‌ی دقیق
+   انتشار، کندل‌به‌کندل با قیمت واقعی جلو می‌رود تا معلوم شود واقعاً چه شد.
+   منبع کندل: بایننس اسپات، بعد بایننس فیوچرز، بعد MEXC (همان قالب). اولی که برای یک
+   نماد جواب داد یادش می‌ماند. نتیجه‌ی قطعی یک بار حساب و نگه داشته می‌شود. */
+const AUDKEY='signaldesk.audit.v2', AUDSRCKEY='signaldesk.audsrc.v1';
+let AUD=(()=>{const a=lsGet(AUDKEY);return a&&a.v===2&&a.r&&typeof a.r==='object'?a.r:{};})();
+const AUDSRC=lsGet(AUDSRCKEY)||{};
+const audSave=()=>lsSet(AUDKEY,{v:2,r:AUD});
+const AUD_DEF={days:30,entryDays:3,tol:1,rule:'tp1'};
+const audRules=()=>Object.assign({},AUD_DEF,S.aud||{});
+const DAY=86400000;
+const AUD_WHY={
+  'no-ticker':'نماد تشخیص داده نشد',
+  'no-entry':'نقطه‌ی ورود ندارد',
+  'no-stop':'حد ضرر ندارد — بدون استاپ، برد و باخت تعریف ندارد',
+  'no-date':'زمان انتشار معلوم نیست',
+  'bad-stop':'استاپ با جهت معامله نمی‌خواند',
+  'px':'قیمتِ اعلامی با قیمت بازار در لحظه‌ی انتشار بیش از ۳۰٪ فاصله دارد — احتمالاً نماد اشتباه خوانده شده',
+  'nocandle':'کندلِ این نماد از هیچ منبعی نیامد'
+};
+const AUD_NONE={timeout:'قیمت در مهلت ورود به نقطه‌ی ورود نرسید',
+  ran:'قیمت بدون برگشتن به نقطه‌ی ورود، مستقیم به تارگت رفت — قابل گرفتن نبود',
+  inval:'قبل از فعال شدنِ ورود، قیمت از استاپ گذشت'};
+
+/* ورودیِ سنجش: عددهای «اولین نسخه‌ی» پست (اگر کانال بعداً ویرایشش کرده، ملاک همان است
+   که اول منتشر شد) به‌علاوه‌ی اصلاح دستیِ تو، چون پارسر همیشه درست نمی‌خواند. */
+function audInput(p){
+  const ov=OVERRIDE[p.id]||{};
+  const base=p.origText?parseSignal(p.origText):parseSignal(p.text,p.id);
+  const sig=Object.assign({},base);
+  if(ov.ticker)sig.ticker=ov.ticker;
+  if(ov.sig!=null)sig.isSignal=!!ov.sig;
+  if(ov.market){sig.market=ov.market;sig.marketGuess=false;}
+  if(ov.trigger!=null)sig.trigger=ov.trigger;
+  if(!sig.isSignal)return null;
+  const I=planInputsOf(p,sig,ov,null);
+  const sign=I.dir==='long'?1:-1, E=I.entry||null, SL=I.stop||null;
+  let tps=(sig.targets||[]).filter(t=>isFinite(t)&&t>0&&E&&(t-E)*sign>0);
+  tps=[...new Set(tps)].sort((a,b)=>(a-b)*sign).slice(0,5);
+  let tpAssumed=false;
+  // کانال تارگت نداده: تارگت اولِ تنظیماتِ خودت (به R) فرض می‌شود و صریح نوشته می‌شود
+  if(!tps.length&&E&&SL&&(E-SL)*sign>0){
+    tps=[+(E+sign*(S.rMul[0]||1.5)*Math.abs(E-SL)).toPrecision(8)];tpAssumed=true;
+  }
+  return {tk:sig.ticker||null,dir:I.dir,entry:E,trig:sig.trigger!=null?sig.trigger:null,
+    stop:SL,tps,tpAssumed,mkt:I.market,t0:p.date?+p.date:null};
+}
+const audKey=(inp,R)=>JSON.stringify([inp.tk,inp.dir,inp.entry,inp.trig,inp.stop,inp.tps,inp.t0,
+  R.days,R.entryDays,R.tol]);
+function audPre(inp){
+  if(!inp.tk)return 'no-ticker';
+  if(!inp.entry)return 'no-entry';
+  if(!inp.stop)return 'no-stop';
+  if(!inp.t0)return 'no-date';
+  if((inp.entry-inp.stop)*(inp.dir==='long'?1:-1)<=0)return 'bad-stop';
+  return null;
+}
+
+/* قلب کانال‌سنج: شبیه‌سازیِ کندل‌به‌کندلِ یک سیگنال. تابع خالص است — بی‌شبکه و
+   بی‌صفحه — تا بشود جدا آزمودش.
+   نوع ورود از قیمت لحظه‌ی انتشار معلوم می‌شود:
+     mkt   قیمت در ±tol ورود است → همان لحظه فعال
+     limit قیمت در جهت سود از ورود جلوتر است → منتظر برگشت به ورود
+     break قیمت هنوز به ورود نرسیده (یا «بالای X» گفته) → منتظر شکستن
+   پُر شدن همیشه با همان عددِ اعلامی حساب می‌شود؛ یعنی به نفع کانال، نه علیهش.
+   وقتی داخل یک کندل دو رویدادی رخ داده که ترتیبشان نتیجه را عوض می‌کند و هندسه ترتیب
+   را معلوم نمی‌کند، حدس نمی‌زنیم: amb برمی‌گردد و بیرون از اینجا کندلِ ریزتر گرفته می‌شود. */
+function audWalk(inp,C,R){
+  const sign=inp.dir==='long'?1:-1;
+  const up=(k,x)=>sign>0?k.h>=x:k.l<=x;      // قیمت در جهت سود به x رسید
+  const dn=(k,x)=>sign>0?k.l<=x:k.h>=x;      // قیمت در جهت ضرر به x رسید
+  const out={st:'open',fin:false,px0:C.length?C[0].o:null,mode:null,tAct:null,tStop:null,
+    tTp:[],tBE:null,nLad:null,late:false,chase:false,why:null,amb:null,close:null,tEnd:null};
+  if(!C.length)return out;
+  const E=inp.entry, SL=inp.stop, T=inp.tps, px0=out.px0, tol=(R.tol||0)/100, t0=inp.t0;
+  if(T.length&&(px0-T[0])*sign>=0)out.late=true;                   // تارگت اول پیش از انتشار رسیده بود
+  else if(T.length&&(px0-E)*sign>0&&(px0-E)/(T[0]-E)>0.5)out.chase=true;  // بیشترِ راه رفته بود
+  const trigAhead=inp.trig!=null&&(inp.trig-px0)*sign>0;
+  const mode=trigAhead?'break':(Math.abs(px0-E)/E<=tol?'mkt':((px0-E)*sign>0?'limit':'break'));
+  const A=trigAhead?inp.trig:E;
+  out.mode=mode;
+  let active=mode==='mkt', nx=0;
+  if(active)out.tAct=C[0].t;
+  const end=(k,st)=>{if(st)out.st=st;out.fin=true;out.tEnd=k.t;};
+  for(let i=0;i<C.length;i++){
+    const k=C[i];
+    let justActivated=false;
+    if(!active){
+      const hitA=mode==='limit'?dn(k,A):up(k,A);
+      const hitS=dn(k,SL), hitT=T.length&&up(k,T[0]);
+      if(!hitA){
+        if(mode==='limit'&&hitT){out.why='ran';end(k,'none');return out;}
+        if(mode==='break'&&hitS){out.why='inval';end(k,'none');return out;}
+        if(k.t-t0>R.entryDays*DAY){out.why='timeout';end(k,'none');return out;}
+        continue;
+      }
+      if(mode==='limit'){
+        if(hitT){out.amb={t:k.t,i};return out;}      // اول تارگت بود (فرار) یا اول ورود؟
+        active=true;out.tAct=k.t;justActivated=true;
+        // پایین آمدن از ورود تا استاپ ترتیبِ اجباری دارد
+        if(hitS){out.tStop=k.t;end(k,'loss');return out;}
+        continue;
+      }
+      // break: رسیدن به تارگت از مسیرِ ورود می‌گذرد، ولی استاپ آن طرف است
+      if(hitS){out.amb={t:k.t,i};return out;}
+      active=true;out.tAct=k.t;justActivated=true;
+    }
+    const hitS=dn(k,SL), hitT=nx<T.length&&up(k,T[nx]);
+    if(hitS&&hitT&&nx===0&&!(justActivated&&mode==='break')){out.amb={t:k.t,i};return out;}
+    // بعد از تارگت اول، اگر یک کندل هم تارگت بعدی و هم استاپ را لمس کرد، محتاطانه
+    // استاپ را اول می‌گیریم؛ بُرد بودنش دیگر عوض نمی‌شود
+    // برگشت به ورود فقط از کندلِ بعد از تارگت اول: داخل همان کندل معلوم نیست کفِ کندل
+    // قبل از تارگت بوده یا بعدش — و در کندلِ شکست، قطعاً قبلش بوده
+    if(nx>0&&out.tBE==null&&dn(k,E)){out.tBE=k.t;out.nLad=nx;}
+    if(hitT&&!(hitS&&nx>0)){
+      while(nx<T.length&&up(k,T[nx])){out.tTp[nx]=k.t;nx++;}
+      out.st='win';
+    }
+    if(hitS){out.tStop=k.t;end(k,out.st==='win'?'win':'loss');return out;}
+    if(T.length&&nx>=T.length){end(k,'win');return out;}
+    if(k.t-(out.tAct||t0)>R.days*DAY){
+      out.close={t:k.t,px:k.c};end(k,out.st==='win'?'win':'exp');return out;
+    }
+  }
+  const last=C[C.length-1];
+  out.close={t:last.t,px:last.c};out.tEnd=last.t;
+  return out;                                         // هنوز باز یا منتظر ورود
+}
+
+/* R هر سیگنال با قانونِ امتیازدهیِ انتخاب‌شده:
+   tp1    همه در تارگت اول
+   ladder سه پله‌ی مساوی روی تارگت‌های کانال؛ بعد از تارگت اول، استاپ به نقطه‌ی ورود */
+function audR(r,inp,rule){
+  if(!r||!inp||!inp.entry||!inp.stop)return null;
+  const sign=inp.dir==='long'?1:-1, risk=Math.abs(inp.entry-inp.stop), E=inp.entry, T=inp.tps;
+  const rOf=px=>((px-E)*sign)/risk;
+  if(r.st==='loss')return -1;
+  if(r.st==='exp')return r.close?rOf(r.close.px):null;
+  if(r.st==='open')return r.tAct&&r.close?rOf(r.close.px):null;
+  if(r.st!=='win'||!T.length)return null;
+  if(rule!=='ladder')return rOf(T[0]);
+  const n=Math.min(3,T.length);
+  const reached=r.tTp.filter(x=>x!=null).length;
+  const hit=Math.max(1,Math.min(n,r.tBE!=null?(r.nLad||1):reached));
+  let sum=0;
+  for(let i=0;i<hit;i++)sum+=rOf(T[i]);
+  const rest=n-hit;
+  if(rest>0&&r.tBE==null&&r.close)sum+=rest*Math.max(0,rOf(r.close.px));
+  return sum/n;
+}
+
+/* ---- گرفتن کندل ---- */
+const AUD_SRC=[
+  {n:'Binance',u:(s,iv,st,l)=>'https://api.binance.com/api/v3/klines?symbol='+s+'USDT&interval='+iv+'&startTime='+st+'&limit='+l,
+   iv:{'1m':'1m','5m':'5m','1h':'1h'},max:1000},
+  {n:'Binance فیوچرز',u:(s,iv,st,l)=>'https://fapi.binance.com/fapi/v1/klines?symbol='+s+'USDT&interval='+iv+'&startTime='+st+'&limit='+l,
+   iv:{'1m':'1m','5m':'5m','1h':'1h'},max:1500},
+  {n:'MEXC',u:(s,iv,st,l)=>'https://api.mexc.com/api/v3/klines?symbol='+s+'USDT&interval='+iv+'&startTime='+st+'&limit='+l,
+   iv:{'1m':'1m','5m':'5m','1h':'60m'},max:1000}
+];
+async function audCandles(sym,iv,start,limit){
+  const pref=AUDSRC[sym];
+  const order=AUD_SRC.map((_,i)=>i);
+  if(pref!=null&&AUD_SRC[pref]){order.splice(order.indexOf(pref),1);order.unshift(pref);}
+  for(const i of order){
+    const src=AUD_SRC[i];
+    try{
+      /* fetchVia برای یک قیمت، مسیرها را مسابقه‌ای می‌فرستد. برای صدها کندل این یعنی
+         چند برابر درخواست روی واسط‌ها؛ پس اگر مسیرِ سالمِ قیمت معلوم است، فقط همان. */
+      const good=goodFor('px'), url=src.u(sym,src.iv[iv],start,Math.min(limit,src.max));
+      const opt={json:true,timeout:12000,kind:'px',label:'کندل '+sym+' · '+src.n,validate:d=>Array.isArray(d)};
+      let got=null;
+      if(good)got=await fetchVia(url,Object.assign({onlyRoutes:[good]},opt)).catch(()=>null);
+      if(!got)got=await fetchVia(url,opt);         // فقط اگر مسیر سالم برای این منبع جواب نداد
+      const rows=got.data.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]}))
+        .filter(k=>isFinite(k.t)&&isFinite(k.h)&&isFinite(k.l)&&k.h>0);
+      if(!rows.length)continue;                      // این منبع این نماد را ندارد
+      if(AUDSRC[sym]!==i){AUDSRC[sym]=i;lsSet(AUDSRCKEY,AUDSRC);}
+      return rows;
+    }catch(e){}
+  }
+  throw new Error('nocandle');
+}
+const IVMS={'1m':60000,'5m':300000,'1h':3600000};
+
+async function audOne(job,R){
+  const {p,inp,k}=job;
+  const pre=audPre(inp);
+  if(pre){AUD[p.id]={k,st:'bad',why:pre,fin:true,at:Date.now()};return;}
+  const start=Math.ceil(inp.t0/IVMS['5m'])*IVMS['5m'];   // فقط آینده‌ی بعد از انتشار
+  let C=await audCandles(inp.tk,'5m',start,1000);
+  const px0=C[0].o;
+  if(Math.abs(inp.entry-px0)/px0>0.3){AUD[p.id]={k,st:'bad',why:'px',px0,fin:true,at:Date.now()};return;}
+  let r=audWalk(inp,C,R);
+  // ۱۰۰۰ کندل ۵ دقیقه‌ای حدود ۸۳ ساعت است؛ اگر کار تمام نشد، ادامه با کندل ساعتی
+  const last=C[C.length-1];
+  if(!r.fin&&!r.amb&&C.length>=1000&&Date.now()-last.t>IVMS['1h']){
+    const from=Math.floor((last.t+IVMS['5m'])/IVMS['1h'])*IVMS['1h'];
+    const H=await audCandles(inp.tk,'1h',from,1000).catch(()=>[]);
+    if(H.length){C=C.concat(H.filter(h=>h.t>last.t));r=audWalk(inp,C,R);}
+  }
+  // ابهام: همان یک کندل را با کندل‌های ریزتر عوض کن و دوباره برو
+  for(let n=0;r.amb&&n<4;n++){
+    const i=r.amb.i, c0=C[i], nxt=C[i+1];
+    const dur=(nxt?nxt.t:c0.t+IVMS['5m'])-c0.t;
+    const iv=dur>IVMS['5m']?'5m':(dur>IVMS['1m']?'1m':null);
+    if(!iv)break;
+    const sub=await audCandles(inp.tk,iv,c0.t,Math.ceil(dur/IVMS[iv])).catch(()=>null);
+    const inside=sub?sub.filter(x=>x.t>=c0.t&&x.t<c0.t+dur):[];
+    if(!inside.length)break;
+    C=C.slice(0,i).concat(inside,C.slice(i+1));
+    r=audWalk(inp,C,R);
+  }
+  if(r.amb){r.st='amb';r.fin=true;}
+  delete r.amb;
+  AUD[p.id]=Object.assign(r,{k,at:Date.now()});
+}
+
+const AUDQ={on:false,n:0,done:0,fail:0,at:0};
+function audJobs(force){
+  const R=audRules(), now=Date.now(), out=[];
+  for(const p of POSTS){
+    const inp=audInput(p);if(!inp)continue;
+    const k=audKey(inp,R), a=AUD[p.id];
+    if(a&&a.k===k&&!force){
+      if(a.fin&&!(a.st==='bad'&&a.why==='nocandle'))continue;
+      if(a.st==='bad'&&a.why==='nocandle'&&(a.tries||0)>=3)continue;
+      if(now-(a.at||0)<20*60000)continue;               // تازه سنجیده شده
+    }
+    out.push({p,inp,k});
+  }
+  return out;
+}
+async function audRun(force){
+  if(AUDQ.on)return;
+  const jobs=audJobs(force);
+  if(!jobs.length){AUDQ.at=Date.now();paintAudProgress();return;}
+  Object.assign(AUDQ,{on:true,n:jobs.length,done:0,fail:0});
+  paintAudProgress();
+  const R=audRules(), failed=[];
+  let idx=0, ok=0;
+  // سه‌تا هم‌زمان: هم سریع است هم به محدودیت درخواستِ صرافی نمی‌خورد
+  const worker=async()=>{
+    while(idx<jobs.length){
+      const job=jobs[idx++];
+      try{await audOne(job,R);ok++;}catch(e){failed.push(job);}
+      AUDQ.done++;
+      if(AUDQ.done%5===0){audSave();paintAudProgress();}
+      if(!ok&&failed.length>=5)idx=jobs.length;          // شبکه قطع است؛ ادامه بی‌فایده
+    }
+  };
+  await Promise.all([worker(),worker(),worker()]);
+  // شکست فقط وقتی به حساب نماد گذاشته می‌شود که بقیه آمده باشند — یعنی شبکه سالم بوده
+  if(ok){
+    for(const j of failed){
+      const a=AUD[j.p.id];
+      AUD[j.p.id]={k:j.k,st:'bad',why:'nocandle',fin:false,
+        tries:((a&&a.k===j.k&&a.tries)||0)+1,at:Date.now()};
+    }
+  }else if(failed.length)toast('کندل‌ها نیامد — اتصال یا واسط قیمت را بررسی کن','err');
+  Object.assign(AUDQ,{on:false,at:Date.now(),fail:failed.length});
+  audSave();
+  renderAll();
+}
+/* نشان تب کانال‌سنج (تعداد ادعاهای نادرست). حسابش برای راه‌اندازی عجله‌ای ندارد، پس
+   بعد از نقاشی انجام می‌شود؛ در دفعه‌های بعد از حافظه می‌آید و آنی است. */
+let audBadgeT=null;
+function paintAudBadge(){
+  if(audBadgeT)return;
+  const run=()=>{audBadgeT=null;
+    const nNo=claimsAll().filter(x=>x.vd.v==='no').length;
+    const ca=$('#cAud');if(ca){ca.textContent=faN(nNo);ca.classList.toggle('z',!nNo);
+      ca.title=nNo?faN(nNo)+' ادعای نادرستِ کانال':'';}};
+  audBadgeT=(window.requestIdleCallback||setTimeout)(run,{timeout:1500});
+}
+function paintAudProgress(){
+  const b=$('#audProg');if(!b)return;
+  if(AUDQ.on){
+    b.classList.remove('hide');
+    b.innerHTML='<span>در حال سنجش '+faN(AUDQ.done)+' از '+faN(AUDQ.n)+'…</span>'+
+      '<i style="--p:'+Math.round(AUDQ.done/Math.max(1,AUDQ.n)*100)+'%"></i>';
+  }else b.classList.add('hide');
+}
+
+/* ---- ادعاهای کانال ---- */
+/* پست نتیجه («تارگت دوم زد»، «استاپ خورد») به سیگنالِ اصلی‌اش ریپلای می‌زند و شناسه‌ی آن
+   ذخیره است. اگر ریپلای نبود، آخرین سیگنالِ همان نماد تا ۲۱ روز قبل — با برچسب «حدسی». */
+const CLAIM_N={'اول':1,'دوم':2,'سوم':3,'چهارم':4,'پنجم':5};
+function claimOf(p){
+  const t=faNorm(normDig(p.text||''));
+  if(/(?:استاپ|حد\s*ضرر)[^\n\d]{0,25}?(?:خورد|فعال\s*شد|زده\s*شد)|\bSL\s*hit\b/i.test(t))return {kind:'sl'};
+  const m=t.match(/تارگت\s*(اول|دوم|سوم|چهارم|پنجم|\d)?/)||t.match(/\bTP\s*(\d)?/i);
+  if(m&&RX_RESULT.test(t))return {kind:'tp',n:m[1]?(CLAIM_N[m[1]]||parseInt(m[1],10)||1):1};
+  if(/سیو\s*سود|سود\s*(?:گرفته|زده|شناسایی)/.test(t))return {kind:'tp',n:1};
+  if(/ریسک\s*فری|بریک\s*ایون|سر\s*به\s*سر/.test(t))return {kind:'be'};
+  return null;
+}
+/* sigIdx: نماد → سیگنال‌ها به ترتیب زمان؛ یک بار برای همه‌ی پست‌های نتیجه ساخته می‌شود */
+function claimTarget(p,sigIdx,byNum,inpOf){
+  inpOf=inpOf||audInput;
+  if(p.reply&&p.reply.id){
+    const s=byNum?byNum.get(String(p.reply.id).split('/').pop()):findPost(p.reply.id);
+    if(s&&s!==p&&inpOf(s))return {p:s,how:'reply'};
+  }
+  const tk=detectTicker(normDig(p.text||''));
+  if(!tk||!p.date||!sigIdx)return null;
+  const list=sigIdx.get(tk);if(!list)return null;
+  let best=null;
+  for(const s of list){
+    if(+s.date>=+p.date)break;
+    if(+p.date-+s.date<=21*DAY)best=s;
+  }
+  return best?{p:best,how:'guess'}:null;
+}
+function claimVerdict(c,cp,sp,inpOf){
+  const inp=(inpOf||audInput)(sp), R=audRules(), a=AUD[sp.id];
+  if(!inp||!a||a.k!==audKey(inp,R))return {v:'?',why:'سیگنال اصلی هنوز سنجیده نشده'};
+  if(a.st==='bad')return {v:'?',why:AUD_WHY[a.why]||'سیگنال اصلی قابل سنجش نیست'};
+  if(a.st==='amb')return {v:'?',why:'ترتیب رویدادها حتی با کندل یک‌دقیقه‌ای معلوم نشد'};
+  const tc=(cp.date?+cp.date:Date.now())+IVMS['5m'];     // کندل از شروعش ثبت می‌شود
+  if(c.kind==='tp'){
+    const n=c.n||1;
+    if(n>inp.tps.length)return {v:'?',why:'سیگنال اصلی تارگت '+faN(n)+' نداشت'};
+    if(a.st==='none')return {v:'no',why:AUD_NONE[a.why]||'ورود فعال نشد'};
+    const t=a.tTp[n-1];
+    if(a.tStop&&a.tStop<=tc&&(t==null||a.tStop<t))
+      return {v:'no',why:'قبل از تارگت '+faN(n)+'، استاپ خورده بود ('+jStampFa(new Date(a.tStop))+')'};
+    if(t!=null&&t<=tc)return {v:'ok',why:'تارگت '+faN(n)+' واقعاً خورد ('+jStampFa(new Date(t))+')'};
+    if(t!=null)return {v:'no',why:'در زمان این پست هنوز نرسیده بود؛ بعداً رسید ('+jStampFa(new Date(t))+')'};
+    return {v:'no',why:'تا الان به تارگت '+faN(n)+' نرسیده'};
+  }
+  if(c.kind==='sl'){
+    if(a.tStop&&a.tStop<=tc)return {v:'ok',why:'استاپ واقعاً خورد — باختش را گزارش کرده'};
+    return {v:'?',why:'در داده‌ها استاپ دیده نشد'};
+  }
+  if(c.kind==='be')return a.tTp[0]!=null&&a.tTp[0]<=tc
+    ?{v:'ok',why:'تارگت اول خورده بود؛ ریسک‌فری کردن منطقی است'}
+    :{v:'?',why:'تارگت اول هنوز نخورده بود'};
+  return {v:'?',why:'ادعای مشخصی در متن پیدا نشد'};
+}
+/* همه‌ی پست‌های نتیجه با سیگنال و حکمشان. حافظه‌دار: فقط وقتی پست، نتیجه‌ی سنجش
+   یا اصلاح دستی عوض شود از نو ساخته می‌شود. */
+let CLAIMS=null, CLAIMV='';
+function claimsAll(){
+  const v=POSTS.length+'|'+(POSTS[0]&&POSTS[0].id)+'|'+AUDQ.at+'|'+SETVER+'|'+
+    Object.keys(OVERRIDE).length+'|'+Object.keys(DB.results).length+'|'+Object.keys(DB.edits).length;
+  if(CLAIMS&&v===CLAIMV)return CLAIMS;
+  /* دو نمایه به‌جای جستجوی خطی: با ۲۰۰ پست نتیجه و ۸۰۰ پست، جستجوی خطیِ ریپلای و
+     خواندنِ دوباره‌ی ورودی هر سیگنال روی گوشی ۱۰۰ میلی‌ثانیه می‌شد. */
+  const memo=new Map(), inpOf=x=>{if(!memo.has(x.id))memo.set(x.id,audInput(x));return memo.get(x.id);};
+  const byNum=new Map();
+  for(const x of POSTS)byNum.set(String(x.id).split('/').pop(),x);
+  const sigIdx=new Map();
+  for(const s of POSTS){
+    if(!s.date)continue;
+    const inp=inpOf(s);if(!inp||!inp.tk)continue;
+    if(!sigIdx.has(inp.tk))sigIdx.set(inp.tk,[]);
+    sigIdx.get(inp.tk).push(s);
+  }
+  for(const l of sigIdx.values())l.sort((a,b)=>a.date-b.date);
+  const out=[];
+  for(const p of POSTS){
+    if(!isRes(p))continue;
+    const c=claimOf(p)||{kind:'?'};
+    const tg=claimTarget(p,sigIdx,byNum,inpOf);
+    out.push({p,c,tg,vd:tg?claimVerdict(c,p,tg.p,inpOf):{v:'?',why:'سیگنال اصلی پیدا نشد'}});
+  }
+  CLAIMS=out;CLAIMV=v;
+  return out;
+}
+const claimOfPost=id=>{for(const c of claimsAll())if(c.p.id===id)return c;return null;};
+
+
+/* ---- تب کانال‌سنج ---- */
+const AFKEY='signaldesk.af.v1';
+let AF=Object.assign({dir:'all',mkt:'all',rr:0,span:0,sym:'',noLate:true},(()=>{try{return lsGet(AFKEY)||{};}catch(e){return {};}})());
+const afSave=()=>lsSet(AFKEY,AF);
+let audList='all', audShown=40;
+const AUD_ST={win:['برد','win'],loss:['باخت','lose'],exp:['منقضی','mut'],none:['فعال نشد','mut'],
+  open:['در جریان','open'],wait:['منتظر ورود','mut'],amb:['نامعلوم','mut'],bad:['نیاز به بررسی','gold'],
+  todo:['سنجیده نشده','mut']};
+const audStKey=r=>!r?'todo':(r.st==='open'&&!r.tAct?'wait':r.st);
+const MODE_FA={mkt:'فوری (قیمت روی ورود بود)',limit:'منتظر برگشت به ورود',break:'منتظر شکستن ورود'};
+
+/* هر سیگنالِ کش با ورودی و نتیجه‌اش */
+function audRows(){
+  const R=audRules(), rows=[];
+  for(const p of POSTS){
+    const inp=audInput(p);if(!inp)continue;
+    const a=AUD[p.id], r=a&&a.k===audKey(inp,R)?a:null;
+    rows.push({p,inp,r,R:r?audR(r,inp,R.rule):null});
+  }
+  return rows;
+}
+const rrOf=inp=>inp.entry&&inp.stop&&inp.tps.length?Math.abs(inp.tps[0]-inp.entry)/Math.abs(inp.entry-inp.stop):null;
+function audFilter(rows){
+  const now=Date.now();
+  return rows.filter(x=>{
+    const i=x.inp;
+    if(AF.dir!=='all'&&i.dir!==AF.dir)return false;
+    if(AF.mkt!=='all'&&i.mkt!==AF.mkt)return false;
+    if(AF.sym&&i.tk!==AF.sym)return false;
+    if(AF.span&&i.t0&&now-i.t0>AF.span*DAY)return false;
+    if(AF.rr){const q=rrOf(i);if(q==null||q<AF.rr)return false;}
+    if(AF.noLate&&x.r&&x.r.late)return false;
+    return true;
+  });
+}
+function audStats(rows){
+  const s={n:rows.length,win:0,loss:0,exp:0,none:0,open:0,wait:0,amb:0,bad:0,todo:0,late:0,chase:0,
+    sumR:0,posR:0,negR:0,cnt:0,maxStreak:0,curve:[],dd:0};
+  for(const x of rows){
+    s[audStKey(x.r)]++;
+    if(x.r&&x.r.late)s.late++;
+    if(x.r&&x.r.chase)s.chase++;
+  }
+  const done=rows.filter(x=>x.r&&['win','loss','exp'].includes(x.r.st)&&x.R!=null)
+    .sort((a,b)=>a.inp.t0-b.inp.t0);
+  let c=0,peak=0,streak=0;
+  for(const x of done){
+    s.sumR+=x.R;s.cnt++;
+    if(x.R>0)s.posR+=x.R;else s.negR+=-x.R;
+    c+=x.R;s.curve.push(c);if(c>peak)peak=c;s.dd=Math.max(s.dd,peak-c);
+    if(x.r.st==='loss'){streak++;s.maxStreak=Math.max(s.maxStreak,streak);}else streak=0;
+  }
+  s.winRate=(s.win+s.loss)?s.win/(s.win+s.loss)*100:null;
+  s.avgR=s.cnt?s.sumR/s.cnt:null;
+  s.pf=s.negR>0?s.posR/s.negR:(s.posR>0?Infinity:null);
+  const tried=s.win+s.loss+s.exp+s.none;
+  s.noneRate=tried?s.none/tried*100:null;
+  return s;
+}
+/* منحنی R تجمعی — همان زبانِ منحنی سرمایه‌ی کارنامه */
+function rCurve(pts,dd){
+  if(pts.length<2)return el('div','hint','برای منحنی، دست‌کم دو سیگنالِ تعیین‌تکلیف‌شده لازم است.');
+  const W=600,H=140,pad=8;
+  const min=Math.min(0,...pts),max=Math.max(0,...pts),rng=(max-min)||1;
+  const X=i=>pad+(i/(pts.length-1))*(W-2*pad), Y=v=>H-pad-((v-min)/rng)*(H-2*pad);
+  let d='',len=0,px=null;
+  pts.forEach((v,i)=>{const x=X(i),y=Y(v);d+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)+' ';
+    if(px)len+=Math.hypot(x-px[0],y-px[1]);px=[x,y];});
+  const zero=Y(0), last=pts[pts.length-1], col=last>=0?'var(--up)':'var(--dn)';
+  const area=d+'L'+X(pts.length-1).toFixed(1)+' '+zero.toFixed(1)+' L'+X(0).toFixed(1)+' '+zero.toFixed(1)+' Z';
+  const w=el('div');
+  w.innerHTML='<div style="font-size:11.5px;color:var(--tx2);font-weight:700;margin:12px 0 4px">'+
+    'اگر همه‌ی این سیگنال‌ها را با ریسک ثابت گرفته بودی · بیشترین افت از سقف: '+
+    '<span style="color:var(--dn);direction:ltr;display:inline-block">'+fmtR(-dd)+'</span></div>'+
+    '<svg class="eq" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="--len:'+Math.ceil(len)+'">'+
+    '<path d="'+area+'" fill="'+col+'" opacity=".10"/>'+
+    '<line x1="0" y1="'+zero.toFixed(1)+'" x2="'+W+'" y2="'+zero.toFixed(1)+'" stroke="var(--line2)" stroke-width="1" stroke-dasharray="3 3"/>'+
+    '<path class="ln" d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round"/></svg>';
+  return w;
+}
+const stHtml=(l,v,c,sub)=>'<div class="st"><b>'+l+'</b><span class="'+(c||'')+'">'+v+'</span>'+(sub?'<small>'+sub+'</small>':'')+'</div>';
+
+function renderAudit(){
+  const box=$('#audBody');if(!box)return;
+  box.innerHTML='';
+  const R=audRules();
+  const all=audRows(), rows=audFilter(all), st=audStats(rows);
+
+  // ── سربرگ ──
+  const hd=el('div','panel audhead');
+  hd.innerHTML='<div class="panelhead"><b>کانال‌سنج · <bdi dir="ltr">@'+esc(S.channel)+'</bdi></b></div>'+
+    '<div class="hint" style="margin-top:4px">هر سیگنال از لحظه‌ی دقیق انتشار با کندل واقعی جلو می‌رود. '+
+    'پُر شدن همیشه با عددِ اعلامیِ کانال حساب می‌شود — یعنی به نفع کانال، نه علیهش.</div>'+
+    '<div class="audprog hide" id="audProg"></div>';
+  const bar=el('div','srow');bar.style.marginTop='10px';
+  const run=el('button','btn sm',ic('refresh')+'<span>سنجش دوباره</span>');
+  run.onclick=()=>{if(AUDQ.on)return;audRun(true);};
+  const rules=el('button','btn sm',ic('sliders')+'<span>قانون‌ها</span>');
+  rules.onclick=sheetAudRules;
+  bar.appendChild(run);bar.appendChild(rules);
+  hd.appendChild(bar);
+  hd.appendChild(el('div','audrules',
+    'مهلت ورود '+faN(R.entryDays)+' روز · مهلت نتیجه '+faN(R.days)+' روز · تحمل ورود '+faN(R.tol)+'٪ · '+
+    (R.rule==='ladder'?'پله‌ای (⅓ در هر تارگت، بعد از تارگت اول استاپ روی ورود)':'همه در تارگت اول')));
+  box.appendChild(hd);
+
+  // ── فیلتر (بک‌تست) ──
+  box.appendChild(buildAudFilter(all));
+
+  if(!all.length){
+    box.appendChild(el('div','empty',STAR+'هنوز سیگنالی در حافظه نیست.<br>از تب سیگنال‌ها بروزرسانی کن.'));
+    paintAudProgress();return;
+  }
+
+  // ── کارنامه‌ی کانال ──
+  const sc=el('div','panel');
+  sc.appendChild(el('div','panelhead','<b>کارنامه‌ی کانال</b>'+
+    (rows.length!==all.length?'<span class="pill gold">فیلتر: '+faN(rows.length)+' از '+faN(all.length)+'</span>':'')));
+  const g=el('div','stats');
+  g.innerHTML=
+    stHtml('سنجیده',faN(st.win+st.loss+st.exp),'',faN(st.win)+' برد · '+faN(st.loss)+' باخت · '+faN(st.exp)+' منقضی')+
+    stHtml('نرخ برد',st.winRate==null?'—':faN(st.winRate.toFixed(0))+'٪',st.winRate==null?'m':(st.winRate>=50?'u':'d'))+
+    stHtml('مجموع R',st.cnt?fmtR(st.sumR):'—',st.cnt?cls(st.sumR):'m','اگر همه را گرفته بودی')+
+    stHtml('میانگین R',st.avgR==null?'—':fmtR(st.avgR),st.avgR==null?'m':cls(st.avgR),'امید ریاضی هر سیگنال')+
+    stHtml('ضریب سود',st.pf==null?'—':(st.pf===Infinity?'∞':st.pf.toFixed(2)),st.pf==null?'m':(st.pf>=1?'u':'d'))+
+    stHtml('باخت پیاپی',faN(st.maxStreak),st.maxStreak>=4?'d':'','بیشترین')+
+    stHtml('فعال نشد',st.noneRate==null?'—':faN(st.noneRate.toFixed(0))+'٪','m',faN(st.none)+' سیگنال')+
+    stHtml('در جریان',faN(st.open+st.wait),'m',faN(st.wait)+' منتظر ورود')+
+    stHtml('نیاز به بررسی',faN(st.bad+st.amb),st.bad?'d':'m',st.todo?faN(st.todo)+' سنجیده نشده':'');
+  sc.appendChild(g);
+  sc.appendChild(rCurve(st.curve,st.dd));
+  if(st.late||st.chase)sc.appendChild(el('div','hint',
+    (st.late?faN(st.late)+' سیگنال بعد از رسیدن قیمت به تارگت اول منتشر شده بود'+(AF.noLate?' (در آمار نیامده)':'')+'. ':'')+
+    (st.chase?faN(st.chase)+' سیگنال وقتی منتشر شد که بیش از نیمی از راه تا تارگت طی شده بود.':'')));
+  box.appendChild(sc);
+
+  // ── صحت‌سنجی ──
+  box.appendChild(buildVerify(all));
+
+  // ── شما در برابر کانال ──
+  box.appendChild(buildVsChannel(rows));
+
+  // ── نمادها ──
+  box.appendChild(buildCoinTable(rows));
+
+  // ── فهرست سیگنال‌ها ──
+  box.appendChild(buildAudList(rows));
+
+  paintAudProgress();
+  // سنجش خودکار: هر بار که تب دیده شود، ولی نه بیشتر از یک بار در دقیقه
+  if(!AUDQ.on&&Date.now()-AUDQ.at>60000&&audJobs().length)audRun();
+}
+
+function buildAudFilter(all){
+  const d=el('details','sec audf');
+  const active=(AF.dir!=='all')+(AF.mkt!=='all')+(!!AF.rr)+(!!AF.span)+(!!AF.sym);
+  d.open=!!active;
+  d.innerHTML='<summary>فیلتر — «اگر فقط این‌ها را گرفته بودم؟»'+
+    (active?' <span class="pill gold">'+faN(active)+' فیلتر</span>':'')+'</summary>';
+  const row=(label,opts,key)=>{
+    const w=el('div','afrow');
+    w.appendChild(el('span','aflab',label));
+    const grp=el('div','afopts');
+    for(const [v,l] of opts){
+      const b=el('button','catchip'+(AF[key]===v?' on':''),l);
+      b.onclick=()=>{AF[key]=v;afSave();audShown=40;renderAudit();};
+      grp.appendChild(b);
+    }
+    w.appendChild(grp);d.appendChild(w);
+  };
+  row('جهت',[['all','همه'],['long','لانگ'],['short','شورت']],'dir');
+  row('بازار',[['all','همه'],['futures','فیوچرز'],['spot','اسپات']],'mkt');
+  row('سود به ریسک',[[0,'همه'],[1,'۱+'],[1.5,'۱٫۵+'],[2,'۲+'],[3,'۳+']],'rr');
+  row('بازه',[[0,'همه'],[30,'۳۰ روز'],[90,'۹۰ روز']],'span');
+  const syms=[...new Set(all.map(x=>x.inp.tk).filter(Boolean))].sort();
+  const w=el('div','afrow');
+  w.appendChild(el('span','aflab','نماد'));
+  const sel=el('select','afsel');
+  sel.innerHTML='<option value="">همه</option>'+syms.map(x=>'<option'+(AF.sym===x?' selected':'')+'>'+esc(x)+'</option>').join('');
+  sel.onchange=()=>{AF.sym=sel.value;afSave();audShown=40;renderAudit();};
+  w.appendChild(sel);d.appendChild(w);
+  const lt=el('label','shopt');
+  lt.innerHTML='<input type="checkbox"'+(AF.noLate?' checked':'')+'><span>سیگنال‌های دیرهنگام در آمار نیایند</span>';
+  lt.querySelector('input').onchange=e=>{AF.noLate=e.target.checked;afSave();renderAudit();};
+  d.appendChild(lt);
+  if(active){
+    const c=el('button','btn xs','برداشتن همه‌ی فیلترها');
+    c.onclick=()=>{Object.assign(AF,{dir:'all',mkt:'all',rr:0,span:0,sym:''});afSave();renderAudit();};
+    d.appendChild(c);
+  }
+  return d;
+}
+
+/* ادعاها، گزارش‌دهی گزینشی، ویرایش و حذف */
+function buildVerify(all){
+  const c=el('div','panel');
+  c.appendChild(el('div','panelhead','<b>صحت‌سنجی کانال</b>'));
+  const claims=claimsAll();
+  const ok=claims.filter(x=>x.vd.v==='ok'), no=claims.filter(x=>x.vd.v==='no'), unk=claims.filter(x=>x.vd.v==='?');
+  const g=el('div','stats');
+  // گزینشی: از سیگنال‌های قطعیِ دست‌کم سه‌روزه، برای چندتا پست نتیجه آمد؟
+  /* «گزارش شد» یعنی کانال راستش را گفته: برای برد، ادعایی که کندل تأییدش کرد؛ برای
+     باخت، پستی که صریحاً گفته استاپ خورد. ادعای دروغِ برد روی یک باخت، گزارشِ آن باخت
+     نیست — برعکسش است، و جدا در «ادعای نادرست» شمرده می‌شود. */
+  const toldWin=new Set(claims.filter(x=>x.tg&&x.vd.v==='ok'&&(x.c.kind==='tp'||x.c.kind==='be')).map(x=>x.tg.p.id));
+  const toldLoss=new Set(claims.filter(x=>x.tg&&x.c.kind==='sl').map(x=>x.tg.p.id));
+  const old=all.filter(x=>x.r&&x.inp.t0&&Date.now()-x.inp.t0>3*DAY);
+  const W=old.filter(x=>x.r.st==='win'), L=old.filter(x=>x.r.st==='loss');
+  const wc=W.filter(x=>toldWin.has(x.p.id)).length, lc=L.filter(x=>toldLoss.has(x.p.id)).length;
+  const pw=W.length?wc/W.length*100:null, pl=L.length?lc/L.length*100:null;
+  g.innerHTML=
+    stHtml('ادعای درست',faN(ok.length),ok.length?'u':'m','با کندل تأیید شد')+
+    stHtml('ادعای نادرست',faN(no.length),no.length?'d':'m','با کندل رد شد')+
+    stHtml('نامعلوم',faN(unk.length),'m','سیگنال اصلی پیدا/سنجیده نشد')+
+    stHtml('گزارشِ بردها',pw==null?'—':faN(pw.toFixed(0))+'٪','',faN(wc)+' از '+faN(W.length)+' — ادعای درست')+
+    stHtml('اعترافِ باخت‌ها',pl==null?'—':faN(pl.toFixed(0))+'٪','',faN(lc)+' از '+faN(L.length)+' — «استاپ خورد»')+
+    stHtml('ویرایش / حذف',faN(Object.keys(DB.edits).length)+' / '+faN(Object.keys(DB.gone).length),
+      Object.values(DB.edits).some(e=>e.nums)||Object.keys(DB.gone).length?'d':'m',
+      faN(Object.values(DB.edits).filter(e=>e.nums).length)+' ویرایشِ عدد');
+  c.appendChild(g);
+  // تفسیرِ گزارش گزینشی — فقط وقتی داده‌ی کافی هست
+  if(W.length>=5&&L.length>=5&&pw!=null&&pl!=null){
+    const gap=pw-pl;
+    c.appendChild(el('div','flag '+(gap>30?'d':gap>15?'w':'u'),'<i>'+(gap>30?'!':'✓')+'</i><span>'+
+      (gap>30?'کانال برای بردها خیلی بیشتر از باخت‌ها پست نتیجه می‌گذارد — تصویری که از بیرون دیده می‌شود بهتر از واقعیت است.'
+      :gap>15?'کانال بردها را کمی بیشتر از باخت‌ها گزارش می‌کند.'
+      :'کانال برد و باخت را تقریباً به یک اندازه گزارش می‌کند.')+'</span>'));
+  }else c.appendChild(el('div','hint','برای قضاوت درباره‌ی گزارش‌دهی گزینشی دست‌کم ۵ برد و ۵ باختِ قطعیِ قدیمی‌تر از سه روز لازم است.'));
+  if(no.length){
+    c.appendChild(el('div','sechd','ادعاهای نادرست'));
+    for(const x of no.slice(0,8))c.appendChild(claimRow(x));
+  }
+  const ed=Object.entries(DB.edits).filter(([,e])=>e.nums).sort((a,b)=>b[1].at-a[1].at);
+  const gone=Object.entries(DB.gone).sort((a,b)=>b[1].at-a[1].at);
+  if(ed.length||gone.length){
+    c.appendChild(el('div','sechd','ویرایش و حذف'));
+    for(const [id,e] of ed.slice(0,6)){
+      const r=el('button','arow');
+      r.innerHTML='<span class="pill lose">عدد عوض شد</span><span class="atx">'+esc((e.old||'').slice(0,70))+'</span>';
+      r.onclick=()=>{const p=POSTS.find(x=>x.id===id);if(p)sheetAudPost(p);};
+      c.appendChild(r);
+    }
+    for(const [id] of gone.slice(0,6)){
+      const p=POSTS.find(x=>x.id===id);
+      const r=el('button','arow');
+      r.innerHTML='<span class="pill lose">حذف شد</span><span class="atx">'+esc(p?(p.text||'').slice(0,70):id)+'</span>';
+      r.onclick=()=>{if(p)sheetAudPost(p);};
+      c.appendChild(r);
+    }
+  }
+  return c;
+}
+function claimRow(x){
+  const r=el('button','arow');
+  const tk=x.tg?audInput(x.tg.p):null;
+  r.innerHTML='<span class="pill '+(x.vd.v==='ok'?'win':x.vd.v==='no'?'lose':'mut')+'">'+
+    (x.vd.v==='ok'?'ادعا درست':x.vd.v==='no'?'ادعا نادرست':'نامعلوم')+'</span>'+
+    (tk&&tk.tk?'<b>'+esc(tk.tk)+'</b>':'')+
+    '<span class="atx">'+esc(x.vd.why)+(x.tg&&x.tg.how==='guess'?' · سیگنالِ حدسی':'')+'</span>';
+  r.onclick=()=>{if(x.tg)sheetAudPost(x.tg.p);};
+  return r;
+}
+
+/* شما در برابر کانال: کجا فیلتر کردنت سود آورد و کجا هزینه */
+function buildVsChannel(rows){
+  const c=el('div','panel');
+  c.appendChild(el('div','panelhead','<b>شما در برابر کانال</b>'));
+  const done=rows.filter(x=>x.R!=null&&x.r&&['win','loss','exp'].includes(x.r.st));
+  const g={taken:{n:0,ch:0,me:0,meN:0},skipped:{n:0,ch:0},none:{n:0,ch:0}};
+  const reasons=new Map();
+  for(const x of done){
+    const d=DB.decisions[x.p.id];
+    if(d&&d.action==='taken'){
+      g.taken.n++;g.taken.ch+=x.R;
+      const pos=d.posId&&DB.positions.find(q=>q.id===d.posId);
+      if(pos&&pos.status==='closed'){const m=posMetrics(pos);if(m.r!=null&&isFinite(m.r)){g.taken.me+=m.r;g.taken.meN++;}}
+    }else if(d&&d.action==='skipped'){
+      g.skipped.n++;g.skipped.ch+=x.R;
+      const why=(d.reason||'بدون دلیل').split(' — ')[0];
+      const o=reasons.get(why)||{n:0,r:0};o.n++;o.r+=x.R;reasons.set(why,o);
+    }else{g.none.n++;g.none.ch+=x.R;}
+  }
+  if(!done.length){c.appendChild(el('div','hint','هنوز سیگنال قطعی‌شده‌ای نیست.'));return c;}
+  const s=el('div','stats');
+  s.innerHTML=
+    stHtml('گرفتی — کانال',g.taken.n?fmtR(g.taken.ch):'—',g.taken.n?cls(g.taken.ch):'m',faN(g.taken.n)+' سیگنال')+
+    stHtml('گرفتی — خودت',g.taken.meN?fmtR(g.taken.me):'—',g.taken.meN?cls(g.taken.me):'m',
+      g.taken.meN?faN(g.taken.meN)+' بسته‌شده':'پوزیشن بسته‌ای نیست')+
+    stHtml('رد کردی',g.skipped.n?fmtR(g.skipped.ch):'—',g.skipped.n?cls(g.skipped.ch):'m','ارزشِ '+faN(g.skipped.n)+' سیگنال رد‌شده')+
+    stHtml('تصمیم نگرفتی',g.none.n?fmtR(g.none.ch):'—',g.none.n?cls(g.none.ch):'m',faN(g.none.n)+' سیگنال');
+  c.appendChild(s);
+  const lines=[];
+  if(g.taken.meN){
+    const gap=g.taken.me-g.taken.ch;
+    lines.push(Math.abs(gap)<0.3?'اجرای تو روی سیگنال‌هایی که گرفتی تقریباً همان نتیجه‌ی کانال را داده.'
+      :gap<0?'روی سیگنال‌هایی که گرفتی '+fmtR(gap)+' کمتر از خود کانال گرفتی — ورود دیر، جابه‌جا کردن استاپ یا بستن زود را بررسی کن.'
+      :'روی سیگنال‌هایی که گرفتی '+fmtR(gap)+' بیشتر از خود کانال گرفتی — مدیریتت از کانال بهتر بوده.');
+  }
+  if(g.skipped.n>=3)lines.push(g.skipped.ch>0
+    ?'سیگنال‌هایی که رد کردی روی هم '+fmtR(g.skipped.ch)+' می‌ارزیدند — فیلتر کردنت سود را از دستت گرفته.'
+    :'سیگنال‌هایی که رد کردی روی هم '+fmtR(g.skipped.ch)+' بودند — رد کردن‌هایت درست بوده.');
+  for(const t of lines)c.appendChild(el('div','hint',t));
+  if(reasons.size){
+    const tb=el('table','tp');
+    tb.innerHTML='<thead><tr><th>دلیلِ رد</th><th>تعداد</th><th>ارزشِ ازدست‌رفته</th></tr></thead>';
+    const b=el('tbody');
+    b.innerHTML=[...reasons].sort((a,b)=>b[1].r-a[1].r).map(([k,v])=>'<tr><td>'+esc(k)+'</td><td class="num">'+faN(v.n)+
+      '</td><td class="num" style="color:var(--'+(v.r>=0?'up':'dn')+')">'+fmtR(v.r)+'</td></tr>').join('');
+    tb.appendChild(b);c.appendChild(tWrap(tb));
+  }
+  return c;
+}
+function buildCoinTable(rows){
+  const m=new Map();
+  for(const x of rows){
+    if(!x.r||!['win','loss','exp'].includes(x.r.st)||x.R==null)continue;
+    const o=m.get(x.inp.tk)||{n:0,w:0,l:0,r:0};
+    o.n++;if(x.r.st==='win')o.w++;if(x.r.st==='loss')o.l++;o.r+=x.R;m.set(x.inp.tk,o);
+  }
+  const c=el('div','panel');
+  c.appendChild(el('div','panelhead','<b>به تفکیک نماد</b>'));
+  if(!m.size){c.appendChild(el('div','hint','هنوز چیزی قطعی نشده.'));return c;}
+  const tb=el('table','tp');
+  tb.innerHTML='<thead><tr><th>نماد</th><th>تعداد</th><th>برد</th><th>باخت</th><th>مجموع R</th></tr></thead>';
+  const b=el('tbody');
+  b.innerHTML=[...m].sort((a,b)=>b[1].n-a[1].n||b[1].r-a[1].r).slice(0,15).map(([k,v])=>
+    '<tr class="tap" data-s="'+esc(k)+'"><td>'+esc(k)+'</td><td class="num">'+faN(v.n)+'</td><td class="num">'+faN(v.w)+
+    '</td><td class="num">'+faN(v.l)+'</td><td class="num" style="color:var(--'+(v.r>=0?'up':'dn')+')">'+fmtR(v.r)+'</td></tr>').join('');
+  b.onclick=e=>{const tr=e.target.closest('tr[data-s]');if(!tr)return;
+    AF.sym=AF.sym===tr.dataset.s?'':tr.dataset.s;afSave();renderAudit();window.scrollTo({top:0,behavior:'smooth'});};
+  tb.appendChild(b);c.appendChild(tWrap(tb));
+  c.appendChild(el('div','hint','روی هر ردیف بزن تا کل کارنامه فقط برای همان نماد حساب شود.'));
+  return c;
+}
+function buildAudList(rows){
+  const c=el('div','panel');
+  c.appendChild(el('div','panelhead','<b>همه‌ی سیگنال‌ها</b>'));
+  const cnt={all:rows.length};
+  for(const x of rows){const k=audStKey(x.r);cnt[k]=(cnt[k]||0)+1;}
+  const chips=el('div','catrow');
+  for(const [k,l] of [['all','همه'],['win','برد'],['loss','باخت'],['none','فعال نشد'],['open','در جریان'],['bad','نیاز به بررسی']]){
+    const n=k==='open'?(cnt.open||0)+(cnt.wait||0):k==='bad'?(cnt.bad||0)+(cnt.amb||0)+(cnt.todo||0):(cnt[k]||0);
+    const b=el('button','catchip'+(audList===k?' on':''),l+' <i>'+faN(n)+'</i>');
+    b.onclick=()=>{audList=k;audShown=40;renderAudit();};
+    chips.appendChild(b);
+  }
+  c.appendChild(chips);
+  const pick=rows.filter(x=>{
+    const k=audStKey(x.r);
+    return audList==='all'||k===audList||(audList==='open'&&k==='wait')||(audList==='bad'&&(k==='amb'||k==='todo'));
+  }).sort((a,b)=>(b.inp.t0||0)-(a.inp.t0||0));
+  const cmap=new Map();
+  for(const x of claimsAll())if(x.tg){const a=cmap.get(x.tg.p.id)||[];a.push(x);cmap.set(x.tg.p.id,a);}
+  for(const x of pick.slice(0,audShown)){
+    const i=x.inp, k=audStKey(x.r), S0=AUD_ST[k];
+    const r=el('div','arow2');
+    const tags=[];
+    if(x.r&&x.r.late)tags.push('<span class="pill lose">دیرهنگام</span>');
+    else if(x.r&&x.r.chase)tags.push('<span class="pill mut">ورود دیر</span>');
+    if(DB.edits[x.p.id]&&DB.edits[x.p.id].nums)tags.push('<span class="pill lose">ویرایش‌شده</span>');
+    if(DB.gone[x.p.id])tags.push('<span class="pill lose">حذف‌شده</span>');
+    for(const cl of (cmap.get(x.p.id)||[]))
+      tags.push('<span class="pill '+(cl.vd.v==='ok'?'win':cl.vd.v==='no'?'lose':'mut')+'">ادعا '+(cl.vd.v==='ok'?'✓':cl.vd.v==='no'?'✗':'؟')+'</span>');
+    if(i.tpAssumed)tags.push('<span class="pill mut">تارگت فرضی</span>');
+    r.innerHTML='<div class="ar1"><b class="tick">'+esc(i.tk||'—')+'</b>'+
+      '<span class="pill '+i.dir+'">'+(i.dir==='long'?'لانگ':'شورت')+'</span>'+
+      '<span class="pill '+S0[1]+'">'+S0[0]+(x.R!=null&&k!=='open'?' '+fmtR(x.R):'')+'</span>'+
+      '<span class="when">'+(i.t0?jStampFa(new Date(i.t0)):'')+'</span></div>'+
+      '<div class="ar2">ورود '+(i.entry?fmtPrice(i.entry):'—')+' · استاپ '+(i.stop?fmtPrice(i.stop):'—')+
+      ' · تارگت '+(i.tps.length?i.tps.slice(0,3).map(fmtPrice).join('، '):'—')+'</div>'+
+      (k==='bad'&&x.r?'<div class="ar2 bad">'+esc(AUD_WHY[x.r.why]||'')+'</div>':'')+
+      (tags.length?'<div class="ar3">'+tags.join('')+'</div>':'');
+    const act=el('div','ar4');
+    const d=el('button','btn xs','جزئیات');d.onclick=()=>sheetAudPost(x.p);
+    const f=el('button','btn xs','اصلاح عددها');f.onclick=()=>sheetMarkSignal(x.p,sigOf(x.p));
+    act.appendChild(d);act.appendChild(f);r.appendChild(act);
+    c.appendChild(r);
+  }
+  if(pick.length>audShown){
+    const m=el('button','showmore','نمایش '+faN(Math.min(40,pick.length-audShown))+' مورد بیشتر <span>از '+faN(pick.length)+'</span>');
+    m.onclick=()=>{audShown+=40;renderAudit();};
+    c.appendChild(m);
+  }else if(!pick.length)c.appendChild(el('div','hint','چیزی در این دسته نیست.'));
+  return c;
+}
+
+/* جزئیاتِ یک سیگنال: خط زمانیِ واقعی، ادعاهای کانال درباره‌اش، و ویرایش‌ها */
+function sheetAudPost(p){
+  const inp=audInput(p)||{};
+  const R=audRules(), a=AUD[p.id], r=a&&inp.tk&&a.k===audKey(inp,R)?a:null;
+  const T=(t,l,c)=>'<li class="'+(c||'')+'">'+(t?'<time>'+jStampFa(new Date(t))+'</time>':'')+l+'</li>';
+  let tl='';
+  if(inp.t0)tl+=T(inp.t0,'منتشر شد'+(r&&r.px0?' — قیمت بازار '+fmtPrice(r.px0):''));
+  if(r){
+    if(r.mode)tl+=T(null,'نوع ورود: '+MODE_FA[r.mode]);
+    if(r.tAct)tl+=T(r.tAct,'ورود فعال شد روی '+fmtPrice(inp.entry));
+    (r.tTp||[]).forEach((t,i)=>{if(t!=null)tl+=T(t,'تارگت '+faN(i+1)+' ('+fmtPrice(inp.tps[i])+')','add');});
+    if(r.tBE)tl+=T(r.tBE,'برگشت به نقطه‌ی ورود');
+    if(r.tStop)tl+=T(r.tStop,'استاپ خورد ('+fmtPrice(inp.stop)+')','cut');
+    if(r.st==='none')tl+=T(r.tEnd,AUD_NONE[r.why]||'فعال نشد');
+    if(r.st==='exp'&&r.close)tl+=T(r.close.t,'مهلت تمام شد روی '+fmtPrice(r.close.px));
+    if(r.st==='bad')tl+=T(null,AUD_WHY[r.why]||'قابل سنجش نیست','cut');
+    if(r.st==='amb')tl+=T(null,'ترتیب رویدادها حتی با کندل یک‌دقیقه‌ای معلوم نشد');
+  }else tl+=T(null,'هنوز سنجیده نشده');
+  const k=audStKey(r), S0=AUD_ST[k];
+  const r1=r?audR(r,inp,'tp1'):null, r2=r?audR(r,inp,'ladder'):null;
+  const claims=claimsAll().filter(x=>x.tg&&x.tg.p.id===p.id);
+  const ed=DB.edits[p.id];
+  openSheet(
+   '<h3>'+esc(inp.tk||'سیگنال')+' · <span class="pill '+S0[1]+'">'+S0[0]+'</span></h3>'+
+   '<div class="kv">'+
+     '<div class="k"><b>ورود</b><span>'+(inp.entry?fmtPrice(inp.entry):'—')+'</span></div>'+
+     '<div class="k"><b>استاپ</b><span>'+(inp.stop?fmtPrice(inp.stop):'—')+'</span></div>'+
+     '<div class="k"><b>تارگت‌ها</b><span>'+(inp.tps&&inp.tps.length?inp.tps.map(fmtPrice).join('، '):'—')+
+       (inp.tpAssumed?' (فرضی)':'')+'</span></div>'+
+     '<div class="k"><b>همه در تارگت اول</b><span class="'+(r1==null?'m':cls(r1))+'">'+(r1==null?'—':fmtR(r1))+'</span></div>'+
+     '<div class="k"><b>پله‌ای</b><span class="'+(r2==null?'m':cls(r2))+'">'+(r2==null?'—':fmtR(r2))+'</span></div>'+
+   '</div>'+
+   '<div class="sechd">خط زمانیِ واقعی</div><ol class="audtl">'+tl+'</ol>'+
+   (claims.length?'<div class="sechd">ادعاهای کانال درباره‌ی این سیگنال</div>'+
+     claims.map(x=>'<div class="flag '+(x.vd.v==='ok'?'u':x.vd.v==='no'?'d':'i')+'"><i>'+
+       (x.vd.v==='ok'?'✓':x.vd.v==='no'?'✕':'?')+'</i><span><b>'+esc((x.p.text||'').slice(0,80))+'</b><br>'+
+       esc(x.vd.why)+(x.p.date?' · پست: '+jStampFa(x.p.date):'')+'</span></div>').join(''):'')+
+   (ed?'<div class="sechd">کانال این پست را ویرایش کرده'+(ed.nums?' — عددها عوض شد':'')+'</div>'+
+     '<div class="kv"><div class="k"><b>نسخه‌ی اول (ملاکِ سنجش)</b><span class="atxt">'+esc(ed.old)+'</span></div>'+
+     '<div class="k"><b>الان</b><span class="atxt">'+esc(ed.now)+'</span></div></div>':'')+
+   (DB.gone[p.id]?'<div class="flag d"><i>!</i><span>این پست دیگر در کانال نیست ('+jStampFa(new Date(DB.gone[p.id].at))+
+     ' متوجه شدیم). متن بالا نسخه‌ای است که برنامه پیش از حذف دیده بود.</span></div>':'')+
+   '<div class="sechd">متن پست</div><div class="audtxt">'+esc(p.origText||p.text||'')+'</div>'+
+   '<div class="srow"><button class="btn" id="fx">اصلاح عددها</button><button class="btn" id="cx">بستن</button></div>',
+   ()=>{
+     $('#cx').onclick=closeSheet;
+     $('#fx').onclick=()=>{closeSheet();setTimeout(()=>sheetMarkSignal(p,sigOf(p)),260);};
+   });
+}
+function sheetAudRules(){
+  const R=audRules();
+  openSheet(
+   '<h3>قانون‌های کانال‌سنج</h3>'+
+   '<div class="sub">این‌ها تعیین می‌کنند یک سیگنال کِی «برد»، «باخت» یا «فعال نشد» حساب شود. '+
+   'عوض کردن سه مورد اول سنجش را از نو انجام می‌دهد؛ قانون امتیازدهی فوری است.</div>'+
+   '<div class="grid">'+
+     fldHtml('ed','مهلت فعال شدنِ ورود (روز)',R.entryDays)+
+     fldHtml('dd','مهلت رسیدن به نتیجه (روز)',R.days)+
+     fldHtml('tl','تحمل ورود (٪)',R.tol)+
+     '<div class="fld"><label>امتیازدهی</label><select id="f_rl">'+
+       '<option value="tp1"'+(R.rule==='tp1'?' selected':'')+'>همه در تارگت اول</option>'+
+       '<option value="ladder"'+(R.rule==='ladder'?' selected':'')+'>پله‌ای، استاپ به ورود بعد از تارگت اول</option></select></div>'+
+   '</div>'+
+   '<div class="hint">«تحمل ورود» یعنی اگر قیمتِ لحظه‌ی انتشار تا این اندازه با عددِ ورود فاصله داشت، ورود همان لحظه فعال حساب شود. '+
+   'بیشتر از آن، منتظر برگشت یا شکستنِ همان عدد می‌مانیم.<br>R ناخالص است: کارمزد و لغزش در آن نیست.</div>'+
+   '<div class="srow"><button class="btn pri" id="ok">ذخیره</button><button class="btn" id="cx">انصراف</button></div>',
+   ()=>{
+     $('#cx').onclick=closeSheet;
+     $('#ok').onclick=()=>{
+       const n=(id,lo,hi,dv)=>{const v=parseFloat(normDig($('#'+id).value));return isFinite(v)?clamp(v,lo,hi):dv;};
+       S.aud={entryDays:n('f_ed',0.1,30,3),days:n('f_dd',1,180,30),tol:n('f_tl',0,20,1),rule:$('#f_rl').value};
+       DB.settings=Object.assign({},S);save();SETVER++;
+       closeSheet();AUDQ.at=0;renderAll();toast('قانون‌ها ذخیره شد','ok');
+     };
    });
 }
 
@@ -5375,7 +6130,7 @@ function renderReportList(){
   const closed=DB.positions.filter(p=>p.status==='closed'&&p.closedAt);
   if(!closed.length){
     body.appendChild(el('div','empty',STAR+'هنوز معامله بسته‌شده‌ای نداری.<br>وقتی پوزیشنی را ببندی، کارنامه‌ات اینجا ساخته می‌شود.'));
-    body.appendChild(buildSkipReport());
+    body.appendChild(repVsChannel());
     return;
   }
   const groups=new Map();
@@ -5432,7 +6187,7 @@ function renderReportList(){
     tb2.innerHTML=rows;tb.appendChild(tb2);bd.appendChild(tWrap(tb));
     c.appendChild(bd);body.appendChild(c);
   }
-  body.appendChild(buildSkipReport());
+  body.appendChild(repVsChannel());
 }
 function statsOf(a,big){
   const st=el('div','stats');
@@ -5485,55 +6240,12 @@ function equityCurve(closed){
     '<path class="ln" d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round"/></svg>';
   return wrap;
 }
-/* هزینه فرصت سیگنال‌های نگرفته */
-function buildSkipReport(){
-  const skips=Object.entries(DB.decisions).filter(([,d])=>d.action==='skipped'&&d.snap);
-  const c=el('div','card');
-  const h=el('div','chead');
-  h.appendChild(el('span','tick','سیگنال‌های نگرفته'));
-  h.appendChild(el('span','pill mut',faN(skips.length)+' مورد'));
-  c.appendChild(h);
-  const b=el('div','body');
-  if(!skips.length){
-    b.appendChild(el('div','hint','هنوز سیگنالی را با «وارد نشدم» رد نکرده‌ای. '+
-      'وقتی رد کنی، اینجا می‌بینی آن سیگنال‌ها بعداً چه کردند — یعنی می‌فهمی فیلتر کردن تو سود می‌آورد یا ضرر.'));
-    c.appendChild(b);return c;
-  }
-  let up=0,dn=0,sumR=0,withR=0;
-  const rows=[];
-  for(const [sid,d] of skips){
-    const s=d.snap, live=s.ticker?liveOf(s.ticker):null;
-    let r=null,movePct=null;
-    if(live&&s.entry){
-      const sign=s.dir==='long'?1:-1;
-      movePct=((live-s.entry)/s.entry)*100*sign;
-      if(s.stop){const sd=Math.abs(s.entry-s.stop)/s.entry; if(sd>0){r=(movePct/100)/sd; sumR+=r;withR++;}}
-      if(movePct>0.2)up++;else if(movePct<-0.2)dn++;
-    }
-    rows.push({t:s.ticker||'—',dir:s.dir,reason:d.reason||'',movePct,r,at:d.at});
-  }
-  const st=el('div','stats');
-  let sh='';
-  const add=(l,v,cl2,sub)=>sh+='<div class="st"><b>'+l+'</b><span class="'+(cl2||'')+'">'+v+'</span>'+(sub?'<small>'+sub+'</small>':'')+'</div>';
-  add('الان در سود',faN(up),up?'u':'m','اگر گرفته بودی');
-  add('الان در ضرر',faN(dn),dn?'d':'m','خوب شد نگرفتی');
-  add('میانگین R',withR?fmtR(sumR/withR).replace('R',''):'—',withR?cls(sumR/withR):'m','روی نگرفته‌ها');
-  st.innerHTML=sh;b.appendChild(st);
-  b.appendChild(el('div','hint',
-    'این جدول با قیمت همین لحظه حساب می‌شود، نه با نتیجه نهایی آن معامله. '+
-    'اگر «میانگین R» نگرفته‌ها مرتب مثبت بود، یعنی فیلتر کردن تو دارد سود را از دستت می‌گیرد؛ '+
-    'اگر منفی بود، یعنی رد کردن‌هایت درست بوده.'));
-  const tb=el('table','tp');
-  tb.innerHTML='<thead><tr><th>نماد</th><th>جهت</th><th>حرکت تا الان</th><th>R</th><th>دلیل رد</th></tr></thead>';
-  const tb2=el('tbody');let rr='';
-  for(const r of rows.sort((a,b)=>b.at-a.at).slice(0,40)){
-    rr+='<tr><td>'+esc(r.t)+'</td><td>'+(r.dir==='long'?'لانگ':'شورت')+
-      '</td><td class="num" style="color:var(--'+(r.movePct==null?'tx3':r.movePct>=0?'up':'dn')+')">'+
-      (r.movePct==null?'—':fmtPct(r.movePct))+'</td><td class="num">'+
-      (r.r==null?'—':fmtR(r.r))+'</td><td style="font-size:12px;color:var(--tx2)">'+esc(r.reason)+'</td></tr>';
-  }
-  tb2.innerHTML=rr;tb.appendChild(tb2);b.appendChild(tWrap(tb));
-  c.appendChild(b);return c;
+/* جای گزارش قدیمیِ «نگرفته‌ها» که با قیمت همین لحظه حساب می‌کرد: همان مقایسه، ولی با
+   نتیجه‌ی واقعیِ کانال‌سنج. اگر هنوز سنجیده نشده، سنجش همین‌جا شروع می‌شود. */
+function repVsChannel(){
+  const c=buildVsChannel(audRows());
+  if(!AUDQ.on&&Date.now()-AUDQ.at>60000&&audJobs().length)setTimeout(()=>audRun(),50);
+  return c;
 }
 
 /* ==================== تقویم ==================== */
@@ -5664,8 +6376,9 @@ function dataCounts(d){
   const n=x=>Array.isArray(x)?x.length:(x&&typeof x==='object'?Object.keys(x).length:0);
   const spots=(Array.isArray(d.positions)?d.positions.filter(x=>x&&x.kind==='spot').length:0)+n(d.spot);
   return [['پوزیشن',n(d.positions)+n(d.spot)],['تصمیم',n(d.decisions)],['آموزش',n(d.lessons)],
-          ['واچ‌لیست',n(d.watch)],['از این‌ها اسپات',spots],['منتظر',n(d.pending)],
-          ['آرشیو',n(d.archived)],['نتایج',n(d.results)],['اصلاح دستی',n(d.overrides)]];
+          ['از این‌ها اسپات',spots],['منتظر',n(d.pending)],
+          ['آرشیو',n(d.archived)],['نتایج',n(d.results)],['اصلاح دستی',n(d.overrides)],
+          ['ویرایشِ کانال',n(d.edits)],['حذفِ کانال',n(d.gone)]];
 }
 function applyBackup(d){
   DB.positions=(d.positions||[]).map(ensureBase);
@@ -5675,6 +6388,8 @@ function applyBackup(d){
   DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
   DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
   DB.results=d.results&&typeof d.results==='object'?d.results:{};
+  DB.edits=d.edits&&typeof d.edits==='object'?d.edits:{};
+  DB.gone=d.gone&&typeof d.gone==='object'?d.gone:{};
   DB.pending=Array.isArray(d.pending)?d.pending:[];
   DB.watch=Array.isArray(d.watch)?d.watch:[];
   DB.spot=Array.isArray(d.spot)?d.spot:[];
@@ -5770,7 +6485,7 @@ function go(v,noScroll){
   if(view===v&&noScroll)return;
   view=v;
   $$('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.v===v?'true':'false'));
-  for(const [id,name] of [['vSignals','signals'],['vPositions','positions'],['vReport','report'],['vMarket','market'],['vLessons','lessons']]){
+  for(const [id,name] of [['vSignals','signals'],['vPositions','positions'],['vReport','report'],['vAudit','audit']]){
     const n=$('#'+id), on=name===v;
     n.classList.toggle('hide',!on);
     if(on){n.classList.remove('enter');void n.offsetWidth;n.classList.add('enter');}
@@ -5803,19 +6518,15 @@ function renderAll(){
   const cp=$('#cPos');cp.textContent=faN(open);cp.classList.toggle('z',!open);
   const und=POSTS.filter(p=>sigOf(p).isSignal&&!decisionOf(p.id)&&bucketOf(p)==='live').length;
   const cs=$('#cSig');cs.textContent=faN(und);cs.classList.toggle('z',!und);
-  const nm=DB.watch.length+spotList().length;
-  const cm=$('#cMkt');if(cm){cm.textContent=faN(nm);cm.classList.toggle('z',!nm);}
+  paintAudBadge();
   // شمارنده‌های داخل نوارهای پوزیشن و بازار
   const nOpen=open, nClosed=DB.positions.filter(p=>p.status==='closed').length;
   const setN=(id,v)=>{const n=$('#'+id);if(n)n.textContent=faN(v);};
   setN('cWait',DB.pending.length);setN('cOpenP',nOpen);setN('cClosedP',nClosed);
   setN('cAllP',DB.positions.length+DB.pending.length);
 
-  const nl=Object.keys(DB.lessons).length;
-  const cl=$('#cLes');cl.textContent=faN(nl);cl.classList.toggle('z',!nl);
   if(view==='signals')renderSignals();
-  else if(view==='market'){renderMarket();loadD24().then(()=>{if(view==='market')renderMarket();});}
-  else if(view==='lessons')renderLessons();
+  else if(view==='audit')renderAudit();
   else if(view==='positions')renderPositions();
   else if(view==='report')renderReport();
   destackAll();
@@ -5844,6 +6555,7 @@ async function refresh(append,silent){
     try{res=await loadChannel(before);}catch(e){err=e;}
     await pxP;
     if(res){
+      trackChanges(res.posts);
       const have=new Set(POSTS.map(p=>p.id));
       const incoming=res.posts.filter(p=>!have.has(p.id));
       const coldStart=!POSTS.length;      // بار اول همه‌چیز «تازه» است، پس نشان تازه معنی ندارد
@@ -5885,6 +6597,42 @@ async function refresh(append,silent){
     if(!append)setTimer();
     if(pendingRefresh&&!append){pendingRefresh=false;setTimeout(()=>refresh(false,true),60);}
   }
+}
+/* ویرایش و حذف: برنامه نسخه‌ی خودش از هر پست را نگه می‌دارد. تا نسخه‌ی ۱ اگر کانال
+   پستی را بعداً ویرایش می‌کرد، متن تازه بی‌صدا دور ریخته می‌شد. حالا مقایسه می‌شود:
+   اگر عددی عوض شده باشد (ورود، استاپ، تارگت، نماد) ثبت می‌شود، و کانال‌سنج همیشه با
+   همان عددهایی حساب می‌کند که اول منتشر شد. پستی هم که قبلاً دیده بودیم و در بازه‌ی
+   همان صفحه دیگر نیست، دو بار پشت سر هم نبودنش یعنی حذف شده. */
+const GONEMISS=new Map();
+const normTxt=t=>String(t||'').replace(/\s+/g,' ').trim();
+const sigNums=t=>{const a=parseSignal(t);return JSON.stringify([a.ticker,a.entry,a.stop,a.targets]);};
+function trackChanges(fresh){
+  if(!fresh||!fresh.length)return;
+  const byId=new Map(POSTS.map(p=>[p.id,p]));
+  let changed=false;
+  for(const f of fresh){
+    const o=byId.get(f.id);if(!o)continue;
+    GONEMISS.delete(o.id);
+    if(DB.gone[o.id]){delete DB.gone[o.id];changed=true;}
+    if(!f.text||normTxt(o.text)===normTxt(f.text))continue;
+    const first=o.origText||o.text||'';
+    DB.edits[o.id]={at:Date.now(),old:first.slice(0,700),now:f.text.slice(0,700),
+      nums:sigNums(first)!==sigNums(f.text)};
+    if(!o.origText)o.origText=first;
+    o.text=f.text;PCACHE.delete(o.id);RCACHE.delete(o.id);changed=true;
+    logIt('warn','کانال پست '+o.id+' را ویرایش کرد'+(DB.edits[o.id].nums?' — عددها عوض شد':''));
+  }
+  const nums=fresh.map(p=>p.num).filter(Boolean);
+  if(nums.length>=2){
+    const lo=Math.min(...nums), hi=Math.max(...nums), got=new Set(fresh.map(p=>p.id));
+    for(const p of POSTS){
+      if(!p.num||p.num<=lo||p.num>=hi||got.has(p.id)||DB.gone[p.id])continue;
+      const n=(GONEMISS.get(p.id)||0)+1;GONEMISS.set(p.id,n);
+      if(n>=2){DB.gone[p.id]={at:Date.now()};changed=true;
+        logIt('warn','پست '+p.id+' دیگر در کانال نیست');}
+    }
+  }
+  if(changed)save();
 }
 /* برای گرفتن قدیمی‌ترها، از شماره‌ی کوچک‌ترین پستی که داریم عقب می‌رویم */
 function beforeForOlder(){
@@ -5934,7 +6682,6 @@ function wire(){
   $('#btnSet').innerHTML=ic('sliders');
   $('#btnRef').innerHTML=ic('refresh')+'<span>بروزرسانی</span>';
   $('#qIc').innerHTML=ic('search');
-  $('#lqIc').innerHTML=ic('search');
   wireLightbox();
   $('#btnMore').innerHTML=ic('down')+'<span>پست‌های قدیمی‌تر</span>';
   $$('.tab').forEach(t=>{
@@ -5954,8 +6701,7 @@ function wire(){
     t=setTimeout(()=>{t=null;fn.apply(this,arguments);},ms);};};
   const runQuery=debounce(()=>{shownMax=PAGE;renderSignals();},160);
   $('#q').oninput=e=>{query=e.target.value;runQuery();};
-  const runLQuery=debounce(()=>renderLessons(),160);
-  $('#lq').oninput=e=>{lessonQ=e.target.value;runLQuery();};
+
 
   const pf=(btn,val)=>{$('#'+btn).onclick=()=>{posFilter=val;
     ['pWait','pOpen','pClosed','pAllP'].forEach(x=>$('#'+x).setAttribute('aria-pressed',x===btn?'true':'false'));renderPositions();};};

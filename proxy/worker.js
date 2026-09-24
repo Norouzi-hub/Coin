@@ -18,6 +18,7 @@
 const ALLOW = [
   't.me',
   'api.binance.com',
+  'fapi.binance.com',   // کندلِ کوین‌هایی که فقط فیوچرز دارند (کانال‌سنج)
   'api.mexc.com',
   'api.gateio.ws',
   'www.okx.com',
