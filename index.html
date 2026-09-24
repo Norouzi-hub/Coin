@@ -1330,6 +1330,14 @@ function loadPostCache(){
   // کش‌هایی که نسخه‌ی قبلی ساخته، شماره‌ی غلط دارند (شناسه‌ی کانال به‌جای شماره‌ی پست)
   // و آن پست‌ها بالای همه می‌نشستند؛ پس شماره را همیشه از روی شناسه دوباره حساب می‌کنیم.
   POSTS=c.posts.map(p=>Object.assign({},p,{date:p.date?new Date(p.date):null,num:postNum(p.id)||p.num||0}));
+  // پستی که پیش از این اصلاح از کانال دیگری وارد کش شده بود، همین‌جا بیرون می‌رود
+  const bad=POSTS.filter(p=>!ownPost(p.id));
+  if(bad.length){
+    POSTS=POSTS.filter(p=>ownPost(p.id));
+    logIt('warn',faN(bad.length)+' پستِ کانال دیگر در حافظه بود و پاک شد: '+
+      bad.slice(0,6).map(p=>p.id).join('، '));
+    setTimeout(()=>savePostCache(),0);
+  }
   POSTS.sort(byNewest);
   REACHED_END=!!c.end;
   H.cache={n:POSTS.length,kb:cacheKB(),at:c.at||null,fromCache:POSTS.length>0};
@@ -2044,11 +2052,28 @@ function nodeText(n){
 }
 /* اگر «tgme_» در متن نباشد، آن پاسخ از تلگرام نیست — صفحه‌ی خطای پروکسی است */
 const looksLikeTg=t=>typeof t==='string'&&/tgme_/.test(t);
+/* فقط پستِ همین کانال. تا اینجا هر صفحه‌ای که «tgme_» داشت قبول می‌شد — یعنی صفحه‌ی
+   هر کانال تلگرامی. اگر یکی از واسط‌های عمومی (که بین کاربرها مشترک‌اند و گاهی جوابِ
+   اشتباهی از کش خودشان پس می‌دهند) صفحه‌ی کانال دیگری را برمی‌گرداند، پست‌هایش بی‌صدا
+   وارد فهرست و کش می‌شد. شناسه‌ی هر پست در صفحه‌ی عمومی «نام‌کانال/شماره» است؛ شکلِ
+   عددیِ c/123 هم پذیرفته است چون نام کانال دیگری در آن نیست. */
+const postChan=id=>String(id||'').split('/').slice(0,-1).join('/');
+const ownPost=id=>{const c=postChan(id);
+  return c.toLowerCase()===String(S.channel||'').toLowerCase()||/^c\/\d+$/.test(c);};
+/* اعتبارسنجیِ خودِ جواب: اگر صفحه پست دارد ولی هیچ‌کدام مال این کانال نیست، این مسیر
+   جوابِ اشتباه داده؛ fetchVia آن را رد می‌کند و سراغ مسیر بعدی می‌رود. */
+function looksLikeOurTg(t){
+  if(!looksLikeTg(t))return false;
+  const ids=[...t.matchAll(/data-post=["']([^"']+)["']/g)].map(m=>m[1]);
+  return !ids.length||ids.some(ownPost);
+}
 function parseChannelHTML(html){
   const doc=new DOMParser().parseFromString(html,'text/html');
   const out=[];
+  let foreign=0;const fromCh=new Set();
   for(const n of doc.querySelectorAll('.tgme_widget_message[data-post]')){
     const id=n.getAttribute('data-post')||'', num=postNum(id);
+    if(!ownPost(id)){foreign++;fromCh.add(postChan(id));continue;}
     const b=n.querySelector('.tgme_widget_message_bubble')||n;
     let text='';
     for(const d of b.querySelectorAll('.tgme_widget_message_text')){
@@ -2075,7 +2100,8 @@ function parseChannelHTML(html){
       date:tm?new Date(tm.getAttribute('datetime')):null,link:'https://t.me/'+id});
   }
   const more=doc.querySelector('.tme_messages_more[data-before]');
-  return {posts:out,before:more?more.getAttribute('data-before'):null,empty:!out.length};
+  return {posts:out,before:more?more.getAttribute('data-before'):null,empty:!out.length,
+    foreign,fromCh:[...fromCh]};
 }
 /* اگر شماره‌ها مساوی باشند مرتب‌سازی بی‌اثر می‌شود و ترتیب خامِ صفحه می‌ماند؛
    تاریخ به عنوان تصمیم‌گیر دوم این حالت را هم می‌پوشاند. */
@@ -2090,9 +2116,11 @@ async function loadChannel(before){
   const u=tgUrl(before);
   H.tg.state='busy';renderHealth();
   try{
-    const got=await fetchVia(u,{validate:looksLikeTg,timeout:11000,kind:'tg',
+    const got=await fetchVia(u,{validate:looksLikeOurTg,timeout:11000,kind:'tg',
       label:'کانال @'+S.channel+(before?' (قدیمی‌تر)':'')});
     const res=parseChannelHTML(got.data);
+    if(res.foreign)logIt('warn',faN(res.foreign)+' پست از کانال دیگر ('+res.fromCh.join('، ')+
+      ') در جوابِ مسیر «'+got.route+'» بود و کنار گذاشته شد');
     Object.assign(H.tg,{state:'ok',route:got.route,ms:got.ms,at:Date.now(),err:null,ok:H.tg.ok+1});
     if(res.empty&&!before)
       logIt('warn','صفحه‌ی کانال آمد ولی پستی داخلش نبود — نام کانال یا عمومی بودنش را چک کن');
