@@ -334,6 +334,21 @@ html.busy .prog{opacity:1}
   border-color:color-mix(in srgb,var(--gold) 38%,transparent)}
 .mktb:active{transform:scale(.97)}
 .mkt.guess{border-style:dashed;border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
+/* مبلغ همین معامله: چند مبلغ آماده + یک کادر دستی، کنار هم */
+.amt{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.amtl{font-size:12px;font-weight:800;color:var(--tx2);margin-inline-end:2px}
+.amtch{display:flex;gap:3px;background:var(--inset);border:1px solid var(--line);border-radius:11px;padding:3px}
+.amtb{min-width:44px;min-height:34px;padding:0 9px;border-radius:8px;background:none;border:1px solid transparent;
+  color:var(--tx2);font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;font-variant-numeric:tabular-nums}
+.amtb.on{background:color-mix(in srgb,var(--gold) 15%,transparent);color:var(--gold);
+  border-color:color-mix(in srgb,var(--gold) 38%,transparent)}
+.amtb:active{transform:scale(.96)}
+.amtin{width:84px;min-height:36px;padding:0 9px;border-radius:11px;background:var(--card);border:1px solid var(--line2);
+  color:var(--tx);font:inherit;font-size:13.5px;font-weight:800;direction:ltr;text-align:center;font-variant-numeric:tabular-nums}
+.amtin.on{border-color:var(--gold);color:var(--gold)}
+.amtin:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 18%,transparent)}
+.brief .amt{margin-top:-2px}
+.sheet .amt{margin:8px 0 0}
 .mkthint{font-size:10.5px;font-weight:800;color:var(--warn);padding-inline:7px}
 /* حالت صریح: برچسب، نه کلید — ولی هنوز زدنی است */
 .mkttag{display:inline-flex;align-items:center;gap:6px;margin:10px 0;padding:6px 11px;
@@ -3375,10 +3390,43 @@ function planInputsOf(p,sig,ov,px){
   const entryAssumed=(ov.entry==null&&sig.entry==null&&px!=null);
   const stop=ov.stop!=null?ov.stop:sig.stop;
   const lev=spot?1:(ov.lev!=null?ov.lev:sig.leverage);
+  const amt=ov.amt>0?ov.amt:S.cap;   // مبلغ همین سیگنال؛ اگر دستی نداده باشی همان پیش‌فرض تنظیمات
   return {market,spot,marketGuess:!ov.market&&!!sig.marketGuess,dir,entry,entryAssumed,stop,lev,
+    amt,amtManual:ov.amt>0,
     levSrc:spot?'':(ov.lev!=null?' (دستی)':(sig.leverage!=null?' (کانال)':''))};
 }
 const MKT_LABEL={futures:'فیوچرز',spot:'اسپات'};
+/* مبلغِ همین معامله. پیش‌فرضش «مارجین هر معامله»ی تنظیمات است، ولی هر سیگنال
+   می‌تواند مبلغ خودش را داشته باشد؛ حجم، ضرر در استاپ، سود تارگت‌ها، ورود سریع و
+   فرم ورود همه از همین عدد حساب می‌شوند. */
+const AMT_CHIPS=[10,25,50,100];
+const amtChips=()=>[...new Set([...AMT_CHIPS,+(+S.cap).toFixed(2)])].sort((a,b)=>a-b);
+const amtEq=(a,b)=>Math.abs(a-b)<1e-9;
+function amtRow(cur,onPick,spot,bare){
+  const w=el('div','amt');
+  if(!bare)w.appendChild(el('span','amtl',spot?'مبلغ خرید':'مارجین'));
+  const ch=el('div','amtch'), list=amtChips();
+  for(const v of list){
+    const on=amtEq(v,cur);
+    const b=el('button','amtb'+(on?' on':''),faN(v)+'$');
+    b.type='button';b.setAttribute('aria-pressed',on?'true':'false');
+    b.onclick=()=>{if(!amtEq(v,cur))onPick(v);};
+    ch.appendChild(b);
+  }
+  w.appendChild(ch);
+  if(bare)return w;   // در فرم ورود، کادر عدد و کشویی خودشان کنار همین‌اند
+  const i=el('input','amtin'+(list.some(v=>amtEq(v,cur))?'':' on'));
+  i.type='number';i.step='any';i.min='0';i.inputMode='decimal';
+  i.placeholder='دستی $';i.value=+(+cur).toFixed(2);
+  i.setAttribute('aria-label','مبلغ دلخواه به دلار');
+  i.onchange=()=>{const v=parseFloat(i.value);
+    if(v>0){if(!amtEq(v,cur))onPick(v);}else i.value=+(+cur).toFixed(2);};
+  i.onkeydown=e=>{if(e.key==='Enter')i.blur();};
+  w.appendChild(i);
+  return w;
+}
+/* مبلغی برابر پیش‌فرض را ذخیره نمی‌کنیم تا اگر پیش‌فرض را عوض کردی، این سیگنال هم دنبالش برود */
+const setAmt=(p,v)=>setOv(p,'amt',amtEq(v,S.cap)?null:v);
 /* کلید دوحالته‌ی بازار. اسپات و فیوچرز دو ماشین‌حساب متفاوت‌اند، پس این کلید
    فقط یک برچسب نیست: با زدنش همه‌ی اعداد پایین عوض می‌شوند. */
 /* وقتی خودِ پست صریح گفته فیوچرز است یا اسپات، کلید لازم نیست: یک برچسب بس است
@@ -3410,6 +3458,7 @@ function buildPlan(p,sig,ov,px){
   const plan=el('div','plan');
   const I=planInputsOf(p,sig,ov,px);
   plan.appendChild(mktToggle(I.market,I.marketGuess,k=>setOv(p,'market',k,true)));
+  plan.appendChild(amtRow(I.amt,v=>setAmt(p,v),I.spot));
   const inp=el('div','inputs');
   inp.appendChild(numField('ورود'+(I.entryAssumed?' (قیمت روز)':''),I.entry,v=>setOv(p,'entry',v)));
   inp.appendChild(numField('حد ضرر',I.stop,v=>setOv(p,'stop',v)));
@@ -3422,7 +3471,7 @@ function buildPlan(p,sig,ov,px){
   }
   plan.appendChild(inp);
 
-  const r=computePlan({direction:I.dir,entry:I.entry,stop:I.stop,live:px,capital:S.cap,
+  const r=computePlan({direction:I.dir,entry:I.entry,stop:I.stop,live:px,capital:I.amt,
     riskPct:S.risk,maxLeverage:S.maxLev,leverageOverride:I.lev,mode:S.mode,
     rMultiples:S.rMul,channelTargets:sig.targets,market:I.market});
 
@@ -3484,7 +3533,7 @@ function buildPlan(p,sig,ov,px){
   for(const c of [...r.flags,...r.warnings]){
     if(seen.has(c))continue;seen.add(c);
     if(c==='over-risk'&&r.ok){
-      F(r.actualRiskPct>S.risk*3?'d':'w','با کل '+fmtUsd(S.cap)+'، ضرر در استاپ '+r.actualRiskPct.toFixed(1)+
+      F(r.actualRiskPct>S.risk*3?'d':'w','با کل '+fmtUsd(I.amt)+'، ضرر در استاپ '+r.actualRiskPct.toFixed(1)+
         '٪ مارجین می‌شود، نه '+S.risk+'٪ که هدف گذاشتی. برای ریسک هدف، فقط '+fmtUsd(r.suggestedMargin)+' وارد کن.');
       continue;
     }
@@ -3513,6 +3562,7 @@ function buildBrief(p,sig,ov,px){
   w.appendChild(kv);
   /* کلیدی که قبل از هر عددی تکلیف را روشن می‌کند: اسپات یا فیوچرز */
   w.appendChild(mktToggle(I.market,I.marketGuess,k=>setOv(p,'market',k,true)));
+  if(!decisionOf(p.id))w.appendChild(amtRow(I.amt,v=>setAmt(p,v),I.spot));
   const a=el('div','acts');
   const b1=el('button','btn ok',ic('check')+'<span>بررسی و ورود</span>');
   b1.onclick=()=>{PLANOPEN.add(p.id);rebuildCard(p);};
@@ -3522,7 +3572,7 @@ function buildBrief(p,sig,ov,px){
   /* ورود سریع میان‌بُرِ همان دکمه‌ی اول است، نه کارِ سومی: کنارش و کوچک‌تر،
      وگرنه دو دکمه‌ی طلاییِ هم‌وزن روبه‌روی هم می‌نشینند و انتخاب سخت می‌شود. */
   if(F('quick')&&!decisionOf(p.id)){
-    const q=el('button','btn xs side',ic('bolt')+'<span>سریع '+faN(Math.round(S.cap))+'$</span>');
+    const q=el('button','btn xs side',ic('bolt')+'<span>سریع '+faN(+I.amt.toFixed(2))+'$</span>');
     q.title='ورود با اعداد پیش‌فرض، در یک تأیید';
     q.onclick=()=>quickEnter(p,sig,ov,px);
     a.appendChild(q);
@@ -3728,7 +3778,7 @@ function quickEnter(p,sig,ov,px){
     toast('برای ورود سریع، ورود و حد ضرر لازم است','err');
     return sheetEnter(p,sig,ov,px);
   }
-  const r=computePlan({direction:I.dir,entry,stop:I.stop,live:px,capital:S.cap,
+  const r=computePlan({direction:I.dir,entry,stop:I.stop,live:px,capital:I.amt,
     riskPct:S.risk,maxLeverage:S.maxLev,leverageOverride:I.lev,mode:S.mode,
     rMultiples:S.rMul,market:I.market});
   if(!r.ok){toast('پلن کامل نشد','err');return sheetEnter(p,sig,ov,px);}
@@ -3743,18 +3793,18 @@ function quickEnter(p,sig,ov,px){
     (I.spot?'':' '+(I.dir==='long'?'لانگ':'شورت'))+'\n\n'+
     'بازار: '+MKT_LABEL[I.market]+(I.marketGuess?' (حدس — پست نگفته بود)':'')+'\n'+
     'ورود: '+fmtPrice(entry)+'\nحد ضرر: '+fmtPrice(I.stop)+'\n'+
-    (I.spot?'مبلغ خرید: '+fmtUsd(S.cap)+'\nمقدار: '+(+r.qty.toPrecision(6))+'\n'
-           :'مارجین: '+fmtUsd(S.cap)+'\nاهرم: '+lev+'x\nحجم: '+fmtUsd(r.notional)+'\n')+
+    (I.spot?'مبلغ خرید: '+fmtUsd(I.amt)+'\nمقدار: '+(+r.qty.toPrecision(6))+'\n'
+           :'مارجین: '+fmtUsd(I.amt)+'\nاهرم: '+lev+'x\nحجم: '+fmtUsd(r.notional)+'\n')+
     'ضرر در استاپ: '+fmtUsd(-r.actualRisk)+' ('+r.actualRiskPct.toFixed(1)+'٪)\n'+
     (r.liqPrice?'لیکوئید: '+fmtPrice(r.liqPrice)+'\n':'')+'\nثبت شود؟'))return;
   const pos=ensureBase({id:uid(),sigId:p.id,ticker:sig.ticker||'—',kind:I.spot?'spot':'futures',
     dir:I.dir,entry,
-    stop:I.stop,stop0:I.stop,margin:S.cap,baseMargin:S.cap,lev,
+    stop:I.stop,stop0:I.stop,margin:I.amt,baseMargin:I.amt,lev,
     targets:sig.targets||[],openedAt:Date.now(),status:'open',
     exitPrice:null,closedAt:null,fees:null,note:'ورود سریع',partials:[],log:[],
     src:{link:p.link,text:(p.text||'').slice(0,400),img:p.img||null,at:p.date?p.date.getTime():null}});
-  logAdd(pos,'open',I.spot?('خرید سریع اسپات '+fmtUsd(S.cap)+' روی '+fmtPrice(entry))
-                          :('ورود سریع با '+fmtUsd(S.cap)+' مارجین و اهرم '+lev+'x روی '+fmtPrice(entry)));
+  logAdd(pos,'open',I.spot?('خرید سریع اسپات '+fmtUsd(I.amt)+' روی '+fmtPrice(entry))
+                          :('ورود سریع با '+fmtUsd(I.amt)+' مارجین و اهرم '+lev+'x روی '+fmtPrice(entry)));
   DB.positions.push(pos);
   DB.decisions[p.id]={action:'taken',at:Date.now(),posId:pos.id,market:I.spot?'spot':'futures',
     snap:snapOf(p,sig,entry,I.stop)};
@@ -3765,8 +3815,8 @@ function quickEnter(p,sig,ov,px){
 function sheetEnter(p,sig,ov,px){
   let MK=(planInputsOf(p,sig,ov,px)).market;
   const I0=planInputsOf(p,sig,ov,px);
-  const entry0=I0.entry||px||'', stop0=I0.stop||'';
-  const maxMargin=Math.max(S.cap*4,Math.min(S.acct,1000));
+  const entry0=I0.entry||px||'', stop0=I0.stop||'', amt0=I0.amt;
+  const maxMargin=Math.ceil(Math.max(amt0*2,S.cap*4,...AMT_CHIPS,Math.min(S.acct,1000)));
   const spot=()=>MK==='spot';
   openSheet(
    '<h3>ثبت ورود'+(sig.ticker?' · '+esc(sig.ticker):'')+'</h3>'+
@@ -3777,8 +3827,9 @@ function sheetEnter(p,sig,ov,px){
      fldHtml('e','قیمت ورود واقعی',entry0)+fldHtml('s','حد ضرر',stop0)+
    '</div>'+
    '<div class="sldrow"><label id="lbl_m">مارجین ($)</label>'+
-     '<input type="range" id="r_m" min="1" max="'+maxMargin+'" step="1" value="'+S.cap+'">'+
-     '<input type="number" id="f_m" step="any" inputmode="decimal" value="'+S.cap+'"></div>'+
+     '<input type="range" id="r_m" min="1" max="'+maxMargin+'" step="1" value="'+amt0+'">'+
+     '<input type="number" id="f_m" step="any" inputmode="decimal" value="'+amt0+'"></div>'+
+   '<div id="amtBox"></div>'+
    '<div class="sldrow" id="levRow"><label>اهرم</label>'+
      '<input type="range" id="r_l" min="1" max="'+S.maxLev+'" step="0.5" value="1">'+
      '<input type="number" id="f_l" step="any" inputmode="decimal"></div>'+
@@ -3830,7 +3881,7 @@ function sheetEnter(p,sig,ov,px){
        if(!host)return;
        if(!v.entry||!v.lev){host.innerHTML='';return;}
        const fake={id:'__ent',ticker:sig.ticker||'—',dir:v.dir,entry:v.entry,stop:v.stop||null,
-         stop0:v.stop||null,margin:v.margin||S.cap,baseMargin:v.margin||S.cap,lev:v.lev,
+         stop0:v.stop||null,margin:v.margin||amt0,baseMargin:v.margin||amt0,lev:v.lev,
          targets:sig.targets||[],status:'open',partials:[],log:[],openedAt:Date.now()};
        const m=posMetrics(fake,px);
        host.innerHTML='';
@@ -3886,10 +3937,10 @@ function sheetEnter(p,sig,ov,px){
          if(auto()&&a&&a.capped)
            note('برای رسیدن به ریسک هدف، اهرم بیشتر از سقف تو ('+faN(S.maxLev)+'x) لازم بود؛ روی سقف ماند و ریسک کمتر از هدف شد.','warn');
          if(sp){
-           const want=(S.cap*(S.risk/100))/sd;     // بودجه‌ی هر معامله، نه عددی که همین الان تایپ شده
+           const want=(amt0*(S.risk/100))/sd;     // بودجه‌ی این معامله، نه عددی که همین الان تایپ شده
            if(isFinite(want)&&want>0&&Math.abs(want-v.margin)>Math.max(0.05,v.margin*0.02))
              note('در اسپات اهرمی نیست که ریسک را تنظیم کند؛ تنها اهرمِ تو خودِ مبلغ است. با استاپ '+
-               (sd*100).toFixed(1)+'٪، برای اینکه ضررت '+faN(S.risk)+'٪ از '+fmtUsd(S.cap)+
+               (sd*100).toFixed(1)+'٪، برای اینکه ضررت '+faN(S.risk)+'٪ از '+fmtUsd(amt0)+
                ' سرمایه‌ی هر معامله باشد باید '+fmtUsd(want)+' بخری.','warn');
          }
        }else note(sp
@@ -3897,7 +3948,13 @@ function sheetEnter(p,sig,ov,px){
          :'بدون حد ضرر، نه ریسک معلوم است نه لیکوئید معنی دارد. اگر می‌توانی بنویسش.','warn');
        if(px)add('سود/ضرر الان',fmtUsd(m.pnl)+' ('+fmtPct(m.roi)+')',cls(m.pnl));
      };
-     const upd=()=>{updNums();drawLad();};
+     /* مبلغ‌های آماده زیر کشویی: زدنشان همان کادر مبلغ را پر می‌کند */
+     const paintAmt=()=>{
+       const box=$('#amtBox'), cur=num('f_m');
+       box.innerHTML='';
+       box.appendChild(amtRow(cur||0,v=>{$('#f_m').value=v;$('#r_m').value=v;upd();},spot(),true));
+     };
+     const upd=()=>{updNums();drawLad();paintAmt();};
      paintMkt();
 
      // کشویی و کادر عدد دو نمای یک مقدارند
