@@ -677,6 +677,56 @@ tr.tap:hover td{background:var(--card2)}
 .gnote>b .ic{width:15px;height:15px}
 .gnote ul{margin:4px 0 0;padding-inline-start:18px}
 .mark.busy{opacity:.7;cursor:progress}
+/* دفترچه‌ی خروج */
+.pbx{margin:12px 0 2px;padding:12px;border-radius:14px;background:var(--inset);border:1px solid color-mix(in srgb,var(--gold) 26%,var(--line))}
+.pbh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
+.pbh .ic{width:16px;height:16px;color:var(--gold)}
+.pbh b{color:var(--tx)}
+.pbh .mark,.pbh .markhint{margin-inline-start:auto}
+.pbx>.hint{margin-top:6px}
+.pbpick{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}
+.pbc{padding:6px 11px;border-radius:99px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;
+  background:var(--card);border:1px solid var(--line2);color:var(--tx2)}
+.pbc.on{background:color-mix(in srgb,var(--gold) 16%,transparent);border-color:color-mix(in srgb,var(--gold) 50%,transparent);color:var(--gold)}
+.pbc:active{transform:scale(.96)}
+.pbsteps{list-style:none;margin:10px 0 0;padding:0}
+.pbsteps li{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px dashed var(--line)}
+.pbsteps li:first-child{border-top:0}
+.pbsteps li>i{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:800;
+  background:var(--card);border:1px solid var(--line2);color:var(--tx3)}
+.pbsteps li>i .ic{width:13px;height:13px}
+.pbsteps li>div:not(.pbact){flex:1;min-width:0}
+.pbsteps b{display:block;font-size:13px;color:var(--tx)}
+.pbsteps li>div>span{display:block;font-size:12px;color:var(--tx2);line-height:1.8}
+.pbsteps em{font-style:normal;font-weight:800;color:var(--up)}
+.pbsteps li.done>i{background:color-mix(in srgb,var(--up) 16%,transparent);border-color:color-mix(in srgb,var(--up) 45%,transparent);color:var(--up)}
+.pbsteps li.done b,.pbsteps li.done>div>span{color:var(--tx3)}
+.pbsteps li.next>i{border-color:var(--gold);color:var(--gold)}
+.pbsteps li.hit>i{background:linear-gradient(180deg,var(--gold),var(--gold2));color:var(--onGold);border-color:transparent;animation:pbping 1.6s infinite}
+.pbsteps li.hit em{color:var(--gold)}
+@keyframes pbping{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--gold) 60%,transparent)}100%{box-shadow:0 0 0 10px transparent}}
+.pbact{display:flex;gap:8px;align-items:center;flex:0 0 100%;padding-inline-start:34px}
+.pbact .btn{padding:7px 14px}
+.pbsheet{margin-top:12px}
+/* آزمایشگاه خروج */
+.lab .panelhead b{display:inline-flex;align-items:center;gap:7px}
+.lab .panelhead .ic{width:17px;height:17px;color:var(--gold)}
+.labl{display:grid;gap:8px;margin-top:10px}
+.labr{padding:11px 12px;border-radius:12px;background:var(--inset);border:1px solid var(--line)}
+.labr.on{border-color:color-mix(in srgb,var(--gold) 50%,transparent)}
+.labr.best{box-shadow:inset 3px 0 0 var(--up)}
+.labh{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.labh b{font-size:13.5px;margin-inline-end:auto}
+.labd{font-size:12px;color:var(--tx3);margin-top:3px;line-height:1.8}
+.labbar{height:8px;border-radius:99px;background:var(--card);margin-top:8px;overflow:hidden;direction:ltr}
+.labbar i{display:block;height:100%;border-radius:4px}
+.labbar i.u{background:var(--up)}.labbar i.d{background:var(--dn)}
+.labk{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:7px;font-size:11.5px;color:var(--tx3)}
+.labk b{color:var(--tx);font-variant-numeric:tabular-nums}
+.labr .mark{margin-top:8px}
+.labcu{margin:12px 0 0!important}
+.labg{grid-template-columns:repeat(4,1fr)}
+@media (max-width:420px){.labg{grid-template-columns:repeat(2,1fr)}}
 /* تحلیل هر درس */
 .gn{margin:12px 12px 4px;padding:14px;border-radius:var(--r2);background:var(--card);
   border:1px solid color-mix(in srgb,var(--gold) 28%,var(--line))}
@@ -1331,6 +1381,9 @@ input[type=range]{width:100%;accent-color:var(--gold)}
         <select id="sMode"><option value="margin">کل مارجین وارد شود</option><option value="risk">ریسک ثابت</option></select></div>
       <div class="fld"><label>تارگت‌ها (R)</label><input id="sR" value="1.5, 3, 5" dir="ltr"></div>
       <div class="fld"><label>کارمزد رفت‌وبرگشت (٪)</label><input id="sFee" type="number" value="0.1" min="0" max="2" step="0.01"></div>
+      <div class="fld"><label>سبک خروج پیش‌فرض</label><select id="sPb">
+        <option value="s1">اسکلپ · تارگت ۱</option><option value="s2">اسکلپ · تارگت ۲</option>
+        <option value="bal">متعادل</option><option value="sw">سوئینگ پله‌ای</option><option value="cu">دلخواه</option></select></div>
     </div>
     <div class="hint">
       «کل مارجین وارد شود» یعنی تمام مبلغ هر معامله وارد می‌شود و اهرم طوری انتخاب می‌شود که ضرر در استاپ به ریسک هدف برسد.
@@ -1709,7 +1762,7 @@ const FEAT={
   range:  {on:true, t:'بازه‌ی دلخواه کارنامه', d:'انتخاب تاریخ شروع و پایان در کارنامه'}
 };
 const featDefaults=()=>Object.fromEntries(Object.entries(FEAT).map(([k,v])=>[k,v.on]));
-const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,auto:60,proxy:'',feat:featDefaults(),staleDays:7,
+const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,auto:60,proxy:'',feat:featDefaults(),staleDays:7,exitPb:'bal',
   aud:{days:30,entryDays:3,tol:1,rule:'tp1'}};
 const F=k=>!!(S.feat&&S.feat[k]);
 let BOOTED=false;
@@ -1733,7 +1786,7 @@ function applySettingsToForm(){
   $('#sProxy').value=S.proxy||'';
   $('#sChannel').value=S.channel; $('#sAcct').value=S.acct; $('#sCap').value=S.cap;
   $('#sRisk').value=S.risk; $('#sMaxLev').value=S.maxLev; $('#sDaily').value=S.daily;
-  $('#sMode').value=S.mode; $('#sStale').value=S.staleDays||7; $('#sR').value=S.rMul.join(', '); $('#sFee').value=S.fee; $('#sAuto').value=S.auto;
+  $('#sMode').value=S.mode; $('#sStale').value=S.staleDays||7; $('#sPb').value=pbDefault(); $('#sR').value=S.rMul.join(', '); $('#sFee').value=S.fee; $('#sAuto').value=S.auto;
 }
 function readSettings(){
   const prevCh=S.channel, prevAuto=S.auto, prevProxy=S.proxy;
@@ -1757,6 +1810,7 @@ function readSettings(){
   S.mode=$('#sMode').value; S.fee=Math.max(0,parseFloat($('#sFee').value)||0);
   S.auto=parseInt($('#sAuto').value)||0;
   S.staleDays=Math.min(60,Math.max(1,parseInt($('#sStale').value,10)||7));
+  S.exitPb=$('#sPb').value||'bal';
   const prevNotify=F('notify');
   S.feat=S.feat||featDefaults();
   for(const k of Object.keys(FEAT)){const c=$('#feat_'+k);if(c)S.feat[k]=!!c.checked;}
@@ -2467,6 +2521,19 @@ function checkAlerts(){
         toast(msg,hit?'err':'info');
         if(F('notify'))notify('میز سیگنال',msg,key);
       }
+    }
+    if(p.pb){
+      const i=p.pbc||0;
+      if(i<p.pb.tps.length&&pbReached(p,i,px)){
+        const key=p.id+':pb'+i;
+        if(!ALERTED.has(key)){
+          ALERTED.add(key);
+          const msg=p.ticker+' به تارگت '+faN(i+1)+' رسید — طبق نقشه: '+pbStepText(p,i);
+          toast(msg,'ok');
+          if(F('notify'))notify('میز سیگنال',msg,key);
+        }
+      }
+      continue;
     }
     const tg=(p.targets||[]).filter(t=>isFinite(t));
     for(let i=0;i<tg.length;i++){
@@ -4569,6 +4636,7 @@ function quickEnter(p,sig,ov,px){
     src:{link:p.link,text:(p.text||'').slice(0,400),img:p.img||null,at:p.date?p.date.getTime():null}});
   logAdd(pos,'open',I.spot?('خرید سریع اسپات '+fmtUsd(I.amt)+' روی '+fmtPrice(entry))
                           :('ورود سریع با '+fmtUsd(I.amt)+' مارجین و اهرم '+lev+'x روی '+fmtPrice(entry)));
+  if(pbTps(pos).length&&pbAttach(pos,pbDefault()))logAdd(pos,'plan','نقشه‌ی خروج: '+pos.pb.n);
   DB.positions.push(pos);
   DB.decisions[p.id]={action:'taken',at:Date.now(),posId:pos.id,market:I.spot?'spot':'futures',
     snap:snapOf(p,sig,entry,I.stop)};
@@ -4582,6 +4650,7 @@ function sheetEnter(p,sig,ov,px){
   const entry0=I0.entry||px||'', stop0=I0.stop||'', amt0=I0.amt;
   // اهرمی که کانال گفته یا خودت روی سیگنال گذاشته‌ای، دستی می‌نشیند؛ وگرنه خودکار
   const lev0=I0.spot?null:(I0.lev>0?Math.min(I0.lev,S.maxLev):null);
+  let pbSel=pbDefault();          // سبک خروجِ همین پوزیشن؛ پیش‌فرض از تنظیمات
   const maxMargin=Math.ceil(Math.max(amt0*2,S.cap*4,...AMT_CHIPS,Math.min(S.acct,1000)));
   const spot=()=>MK==='spot';
   openSheet(
@@ -4614,6 +4683,7 @@ function sheetEnter(p,sig,ov,px){
    '</div>'+
    '<div id="riskBox"></div>'+
    '<div id="prev" class="kv" style="margin-top:12px"></div>'+
+   '<div id="pbBox" class="pbx pbsheet"></div>'+
    '<div class="srow"><button class="btn pri" id="ok">ثبت پوزیشن</button>'+
    '<button class="btn" id="cx">انصراف</button></div>',
    sh=>{
@@ -4729,6 +4799,31 @@ function sheetEnter(p,sig,ov,px){
            note('<b>قیمت الان آن‌طرف استاپ است.</b> این سیگنال دیگر معتبر نیست.','bad');
          else if(gap>3)note('قیمت '+gap.toFixed(1)+'٪ از ورود سیگنال فاصله گرفته؛ ورود دیر است.','warn');
        }
+       paintPb(v,m);
+     };
+     /* نقشه‌ی خروج همین پوزیشن، با همین مبلغ و اهرم: هر پله چه سهمی و چقدر سود */
+     const paintPb=(v,m)=>{
+       const box=$('#pbBox');if(!box)return;
+       box.innerHTML='';
+       const fake={dir:v.dir,entry:v.entry,stop:v.stop||null,stop0:v.stop||null,targets:sig.targets||[]};
+       const tps=pbTps(fake);
+       box.appendChild(el('div','pbh',ic('flag')+'<b>نقشه‌ی خروج</b><span class="markhint">مقایسه‌ی سبک‌ها در کانال‌سنج</span>'));
+       box.appendChild(pbPicker(pbSel,id=>{pbSel=id;upd();}));
+       if(!tps.length){box.appendChild(el('div','hint','برای نقشه، حد ضرر یا تارگت لازم است.'));return;}
+       const def=pbDef(pbSel), parts=pbParts(def,tps.length);
+       fake.pb={parts,be:def.be||0,trail:!!def.trail,tps};
+       const qty=m&&m.qty?m.qty:0, risk=v.stop?Math.abs(v.entry-v.stop):null;
+       let tot=0;
+       const ol=el('ol','pbsteps');
+       tps.forEach((t,i)=>{
+         const pr=qty*parts[i]*Math.abs(t-v.entry);tot+=pr;
+         if(!(parts[i]>0)&&pbStopPrice(fake,i+1)===(i?pbStopPrice(fake,i):null))return;
+         ol.insertAdjacentHTML('beforeend','<li><i>'+faN(i+1)+'</i><div><b>تارگت '+faN(i+1)+' · <span dir="ltr">'+fmtPrice(t)+'</span></b>'+
+           '<span>'+pbStepText(fake,i)+(parts[i]>0&&qty?' · <em dir="ltr">+'+fmtUsd(pr)+'</em>':'')+'</span></div></li>');
+       });
+       box.appendChild(ol);
+       if(qty)box.appendChild(el('div','hint','اگر همه‌ی پله‌ها برسد: <b style="color:var(--up)" dir="ltr">+'+fmtUsd(tot)+'</b>'+
+         (risk?' · <b dir="ltr">'+(tot/(qty*risk)).toFixed(1)+'R</b>':'')+'. سرِ هر پله خبر می‌دهم.'));
      };
      /* مبلغ‌های آماده زیر کشویی: زدنشان همان کادر مبلغ را پر می‌کند */
      const paintAmt=()=>{
@@ -4782,6 +4877,7 @@ function sheetEnter(p,sig,ov,px){
        logAdd(pos,'open',sp
          ?('خرید اسپات '+fmtUsd(v.margin)+' روی '+fmtPrice(v.entry))
          :('ورود با '+fmtUsd(v.margin)+' مارجین و اهرم '+(+v.lev)+'x روی '+fmtPrice(v.entry)));
+       if(pbTps(pos).length&&pbAttach(pos,pbSel))logAdd(pos,'plan','نقشه‌ی خروج: '+pos.pb.n);
        DB.positions.push(pos);
        DB.decisions[p.id]={action:'taken',at:Date.now(),posId:pos.id,market:sp?'spot':'futures',
          snap:snapOf(p,sig,v.entry,v.stop)};
@@ -5465,6 +5561,18 @@ function audWalk(inp,C,R){
   const mode=trigAhead?'break':(Math.abs(px0-E)/E<=tol?'mkt':((px0-E)*sign>0?'limit':'break'));
   const A=trigAhead?inp.trig:E;
   out.mode=mode;
+  /* مسیر قیمت بعد از فعال شدن، روی پله‌های «استاپ، ورود، تارگت‌ها»: هر بار که قیمت به پله‌ی
+     تازه‌ای بالا رفت (+شماره) یا تا پله‌ای پایین برگشت (−شماره−۱). با همین، هر سبک خروجی
+     (پله‌ای، ریسک‌فری، استاپ دنباله‌دار) بدون گرفتن دوباره‌ی کندل شبیه‌سازی می‌شود.
+     ترتیب داخل هر کندل همان قاعده‌ی بالاست: اول برگشت، بعد پیشروی (محتاطانه). */
+  const Lv=[SL,E].concat(T), P=[];out.path=P;
+  let top=1,lastAdv=1,pEnd=false;
+  const pPush=v=>{if(P.length<160)P.push(v);};
+  const pAdv=(k,skipE)=>{if(pEnd)return;
+    for(let j=0;j<lastAdv;j++){if(j===1&&skipE)continue;
+      if(dn(k,Lv[j])){pPush(-(j+1));lastAdv=j;if(j===0)pEnd=true;break;}}};
+  const pFav=k=>{if(pEnd)return;
+    for(let j=Lv.length-1;j>top&&j>=2;j--)if(up(k,Lv[j])){pPush(j);top=j;lastAdv=j;break;}};
   let active=mode==='mkt', nx=0;
   if(active)out.tAct=C[0].t;
   const end=(k,st)=>{if(st)out.st=st;out.fin=true;out.tEnd=k.t;};
@@ -5483,6 +5591,7 @@ function audWalk(inp,C,R){
       if(mode==='limit'){
         if(hitT){out.amb={t:k.t,i};return out;}      // اول تارگت بود (فرار) یا اول ورود؟
         active=true;out.tAct=k.t;justActivated=true;
+        pAdv(k,true);
         // پایین آمدن از ورود تا استاپ ترتیبِ اجباری دارد
         if(hitS){out.tStop=k.t;end(k,'loss');return out;}
         continue;
@@ -5493,6 +5602,8 @@ function audWalk(inp,C,R){
     }
     const hitS=dn(k,SL), hitT=nx<T.length&&up(k,T[nx]);
     if(hitS&&hitT&&nx===0&&!(justActivated&&mode==='break')){out.amb={t:k.t,i};return out;}
+    // در کندلِ شکست، رسیدن به تارگت پیش از برگشت است (همان فرضِ پایین)
+    if(justActivated&&mode==='break'){pFav(k);pAdv(k,true);}else{pAdv(k,justActivated);pFav(k);}
     // بعد از تارگت اول، اگر یک کندل هم تارگت بعدی و هم استاپ را لمس کرد، محتاطانه
     // استاپ را اول می‌گیریم؛ بُرد بودنش دیگر عوض نمی‌شود
     // برگشت به ورود فقط از کندلِ بعد از تارگت اول: داخل همان کندل معلوم نیست کفِ کندل
@@ -5533,6 +5644,274 @@ function audR(r,inp,rule){
   const rest=n-hit;
   if(rest>0&&r.tBE==null&&r.close)sum+=rest*Math.max(0,rOf(r.close.px));
   return sum/n;
+}
+
+
+/* ==================== دفترچه‌ی خروج ==================== */
+/* کانال ورود را می‌دهد و اگر آنلاین باشد ریسک‌فری و سیو سود اول را؛ بقیه‌ی خروج با خودِ
+   معامله‌گر است. «سبک خروج» همین بقیه را یک بار تعریف می‌کند: در هر تارگت چه سهمی بسته
+   شود و استاپ کِی جابه‌جا شود. همان تعریف دو جا کار می‌کند:
+     روی پوزیشن‌ها  — نقشه‌ی خروج با عدد، هشدار سرِ هر پله و «انجام شد» با یک زدن
+     در کانال‌سنج   — آزمایشگاه: هر سبک روی مسیر واقعیِ همه‌ی سیگنال‌های گذشته
+   parts سهمِ هر تارگت از کل حجم است (eq یعنی مساوی بین همه‌ی تارگت‌ها)؛ be یعنی بعد از
+   چندمین تارگت استاپ به ورود برود (۰ = هیچ‌وقت)؛ trail یعنی بعد از هر تارگت، استاپ به
+   تارگتِ قبلی بیاید (بعد از تارگت اول: ورود). */
+const PB={
+  s1:{n:'اسکلپ · تارگت ۱',d:'همه در تارگت اول بسته می‌شود.',parts:[1],be:0,trail:false},
+  s2:{n:'اسکلپ · تارگت ۲',d:'همه در تارگت دوم؛ استاپ سر جایش می‌ماند.',parts:[0,1],be:0,trail:false},
+  bal:{n:'متعادل',d:'نصف در تارگت اول و استاپ به ورود؛ باقی در تارگت دوم.',parts:[.5,.5],be:1,trail:false},
+  sw:{n:'سوئینگ پله‌ای',d:'در هر تارگت سهمی مساوی؛ استاپ پله‌پله پشت قیمت می‌آید.',parts:'eq',be:1,trail:true},
+  cu:{n:'دلخواه',d:'درصد هر تارگت و قانون استاپ را خودت می‌چینی.'}
+};
+const PB_IDS=['s1','s2','bal','sw','cu'];
+const pbCustom=()=>Object.assign({parts:[50,25,25,0],be:1,trail:false},S.pbCustom||{});
+function pbDef(id){
+  if(id==='cu'){const c=pbCustom();
+    return {id,n:PB.cu.n,d:PB.cu.d,parts:c.parts.map(x=>Math.max(0,+x||0)/100),be:+c.be||0,trail:!!c.trail};}
+  return Object.assign({id},PB[id]||PB.bal);
+}
+/* سهم هر تارگت برای سیگنالی که n تارگت دارد. سهمِ تارگت‌هایی که وجود ندارند به آخرین
+   تارگت می‌رسد؛ اگر جمع کمتر از ۱۰۰٪ بود، باقی هم همان‌جا بسته می‌شود. */
+function pbParts(def,n){
+  if(n<1)return [];
+  const a=def.parts==='eq'?Array(n).fill(1/n):(def.parts||[1]);
+  const out=Array(n).fill(0);
+  a.forEach((f,i)=>{out[Math.min(i,n-1)]+=Math.max(0,+f||0);});
+  const sum=out.reduce((x,y)=>x+y,0);
+  if(sum>1)return out.map(x=>x/sum);
+  out[n-1]+=1-sum;
+  return out;
+}
+/* پله‌ی استاپ بعد از c تارگت: ۰ استاپ اولیه، ۱ ورود، ۲ تارگت اول، … */
+function pbStopLevel(def,c,cur){
+  let s=cur;
+  if(def.trail&&c>=1)s=Math.max(s,c);
+  else if(def.be&&c>=def.be)s=Math.max(s,1);
+  return s;
+}
+/* یک سبک روی مسیرِ ثبت‌شده‌ی یک سیگنال: R نهایی و اینکه چطور تمام شد */
+function pbSim(def,inp,a){
+  if(!a||!a.path||!['win','loss','exp'].includes(a.st)||!inp||!inp.entry||!inp.stop)return null;
+  const sign=inp.dir==='long'?1:-1, E=inp.entry, risk=Math.abs(E-inp.stop), T=inp.tps, n=T.length;
+  if(!n||!(risk>0))return null;
+  const lvR=[-1,0].concat(T.map(t=>(t-E)*sign/risk));
+  const parts=pbParts(def,n);
+  let rem=1,R=0,stop=0,c=0,how='open';
+  for(const ev of a.path){
+    if(ev>0){
+      while(c<n&&c+2<=ev){
+        const f=Math.min(rem,parts[c]);
+        if(f>0){R+=f*lvR[c+2];rem-=f;}
+        c++;stop=pbStopLevel(def,c,stop);
+      }
+      if(rem<=1e-9){rem=0;how='tp';break;}
+    }else{
+      const j=-ev-1;
+      if(j<=stop){R+=rem*lvR[stop];how=stop===0?'sl':stop===1?'be':'trail';rem=0;break;}
+    }
+  }
+  if(rem>1e-9){
+    if(a.close&&a.close.px){R+=rem*((a.close.px-E)*sign/risk);how='exp';}
+    else R+=rem*lvR[stop];
+  }
+  return {R,c,how};
+}
+function pbStats(def,rows){
+  const done=[];
+  for(const x of rows){
+    const r=x.r&&x.r.path?pbSim(def,x.inp,x.r):null;
+    if(r)done.push({t:x.inp.t0,R:r.R});
+  }
+  done.sort((a,b)=>a.t-b.t);
+  let sum=0,peak=0,dd=0,win=0;const curve=[];
+  for(const d of done){sum+=d.R;curve.push(sum);if(sum>peak)peak=sum;dd=Math.max(dd,peak-sum);if(d.R>0.001)win++;}
+  return {n:done.length,sum,avg:done.length?sum/done.length:null,win:done.length?win/done.length*100:null,dd,curve};
+}
+const pbDefault=()=>(PB[S.exitPb]?S.exitPb:'bal');
+function pbSetDefault(id){
+  S.exitPb=id;DB.settings=Object.assign({},S);save();SETVER++;
+  const sp=$('#sPb');if(sp)sp.value=id;
+  toast('سبک خروج پیش‌فرض: '+pbDef(id).n,'ok');
+}
+
+/* ---- آزمایشگاه خروج (در کانال‌سنج) ---- */
+let LABAUTO=false;
+function buildExitLab(rows){
+  const c=el('div','panel lab');
+  c.appendChild(el('div','panelhead','<b>'+ic('flag')+'آزمایشگاه خروج</b>'));
+  c.appendChild(el('div','hint','هر سبک روی همان سیگنال‌ها و همان مسیر واقعی قیمت اجرا شده؛ فرقشان فقط نحوه‌ی خروج است. '+
+    'ورود برای همه یکی است و کارمزد حساب نشده. ببین روی همین کانال کدام سبک بیشتر جواب داده، بعد همان را انتخاب کن.'));
+  const fin=rows.filter(x=>x.r&&['win','loss','exp'].includes(x.r.st));
+  const miss=fin.filter(x=>!x.r.path).length;
+  if(miss){
+    c.appendChild(el('div','rwarn warn',faN(miss)+' سیگنالِ سنجیده‌شده هنوز مسیر قیمت ندارد'+
+      (AUDQ.on?' — در حال محاسبه…':'؛ یک بار دیگر با کندل سنجیده می‌شوند.')));
+    if(!LABAUTO&&!AUDQ.on){LABAUTO=true;setTimeout(()=>audRun(false,true),400);}
+  }
+  const cur=pbDefault();
+  const res=PB_IDS.map(id=>({id,def:pbDef(id),st:pbStats(pbDef(id),rows)}));
+  const ok=res.filter(x=>x.st.n);
+  if(!ok.length){c.appendChild(el('div','hint','هنوز سیگنالی با مسیر قیمت نیست.'));return c;}
+  const best=ok.reduce((a,b)=>b.st.sum>a.st.sum?b:a);
+  const maxAbs=Math.max(...ok.map(x=>Math.abs(x.st.sum)),0.01);
+  const list=el('div','labl');
+  for(const x of res){
+    const {st,def,id}=x, on=id===cur, top=x===best&&ok.length>1;
+    const row=el('div','labr'+(on?' on':'')+(top?' best':''));
+    const w=st.n?Math.abs(st.sum)/maxAbs*100:0;
+    row.innerHTML='<div class="labh"><b>'+esc(def.n)+'</b>'+
+      (top?'<span class="pill win">بهترین روی این کانال</span>':'')+(on?'<span class="pill gold">سبک من</span>':'')+'</div>'+
+      '<div class="labd">'+esc(def.d)+'</div>'+
+      (st.n?'<div class="labbar" title="'+esc(def.n)+': '+fmtR(st.sum)+' در '+faN(st.n)+' سیگنال"><i class="'+(st.sum>=0?'u':'d')+'" style="width:'+w.toFixed(1)+'%"></i></div>'+
+        '<div class="labk"><span>مجموع <b dir="ltr">'+fmtR(st.sum)+'</b></span><span>میانگین <b dir="ltr">'+fmtR(st.avg)+'</b></span>'+
+        '<span>سودده <b>'+faN(Math.round(st.win))+'٪</b></span><span>بیشترین افت <b dir="ltr">'+fmtR(-st.dd)+'</b></span></div>'
+       :'<div class="labd">داده‌ای نیست</div>');
+    if(!on){const b=el('button','mark ghost','انتخاب به‌عنوان سبک من');b.onclick=()=>{pbSetDefault(id);renderAudit();};row.appendChild(b);}
+    list.appendChild(row);
+  }
+  c.appendChild(list);
+  // سبک دلخواه
+  const cu=pbCustom();
+  const ed=el('details','sec sub2 labcu');
+  ed.innerHTML='<summary>چیدن سبک دلخواه</summary>'+
+    '<div class="grid labg">'+[0,1,2,3].map(i=>'<div class="fld"><label>تارگت '+faN(i+1)+' (٪)</label>'+
+      '<input type="number" min="0" max="100" step="5" inputmode="decimal" data-i="'+i+'" value="'+(cu.parts[i]||0)+'"></div>').join('')+
+    '</div><div class="grid" style="margin-top:10px"><div class="fld"><label>استاپ به ورود</label><select id="cu_be">'+
+      '<option value="0">هیچ‌وقت</option><option value="1">بعد از تارگت ۱</option><option value="2">بعد از تارگت ۲</option></select></div>'+
+    '<label class="autotog" style="align-self:end;margin:0"><input type="checkbox" id="cu_tr"'+(cu.trail?' checked':'')+'><span>'+ic('trend')+'استاپ دنباله‌دار</span></label></div>'+
+    '<div class="hint">جمع کمتر از ۱۰۰٪ باشد، باقی در آخرین تارگت بسته می‌شود. «استاپ دنباله‌دار» بعد از هر تارگت، استاپ را به تارگت قبلی می‌آورد.</div>';
+  c.appendChild(ed);
+  setTimeout(()=>{
+    const be=ed.querySelector('#cu_be');if(be)be.value=String(cu.be||0);
+    const saveCu=()=>{
+      const parts=[...ed.querySelectorAll('input[data-i]')].map(i=>Math.max(0,Math.min(100,parseFloat(normDig(i.value))||0)));
+      S.pbCustom={parts,be:+ed.querySelector('#cu_be').value||0,trail:ed.querySelector('#cu_tr').checked};
+      DB.settings=Object.assign({},S);save();LABOPEN=true;renderAudit();
+    };
+    ed.querySelectorAll('input,select').forEach(i=>i.onchange=saveCu);
+    if(LABOPEN)ed.open=true;
+  },0);
+  const mine=res.find(x=>x.id===cur);
+  if(mine&&mine.st.n>1){
+    c.appendChild(el('div','sechd','منحنی R سبک من · '+esc(mine.def.n)));
+    c.appendChild(rCurve(mine.st.curve,mine.st.dd));
+  }
+  return c;
+}
+let LABOPEN=false;
+
+/* ---- نقشه‌ی خروج روی پوزیشن ---- */
+function pbTps(p){
+  const sign=p.dir==='long'?1:-1;
+  let T=(p.targets||[]).filter(t=>isFinite(t)&&t>0&&(t-p.entry)*sign>0);
+  T=[...new Set(T)].sort((a,b)=>(a-b)*sign);
+  const st=p.stop0!=null?p.stop0:p.stop;
+  // کانال تارگت نداده: تارگت‌های R تنظیمات
+  if(!T.length&&st&&(p.entry-st)*sign>0)T=(S.rMul||[1.5,3,5]).map(r=>+(p.entry+sign*r*Math.abs(p.entry-st)).toPrecision(8));
+  return T.slice(0,5);
+}
+function pbAttach(p,id){
+  const def=pbDef(id), tps=pbTps(p);
+  if(!tps.length){toast('این پوزیشن نه تارگت دارد نه استاپ؛ نقشه ساخته نشد','err');return false;}
+  p.pb={id,n:def.n,parts:pbParts(def,tps.length),be:def.be||0,trail:!!def.trail,tps};
+  if(p.pbc==null)p.pbc=0;
+  return true;
+}
+function pbStopPrice(p,c){
+  const pb=p.pb, lvl=pbStopLevel(pb,c,0);
+  return lvl===0?null:lvl===1?p.entry:pb.tps[lvl-2];
+}
+const pbReached=(p,i,live)=>live!=null&&(p.dir==='long'?live>=p.pb.tps[i]:live<=p.pb.tps[i]);
+function pbStepText(p,i){
+  const pb=p.pb, f=pb.parts[i], sp=pbStopPrice(p,i+1), prev=i?pbStopPrice(p,i):null;
+  const bits=[];
+  if(f>0)bits.push('ببند '+faN(Math.round(f*100))+'٪');
+  if(sp!=null&&sp!==prev)bits.push('استاپ ← '+(sp===p.entry?'ورود':fmtPrice(sp)));
+  return bits.join(' · ')||'فقط رد شو';
+}
+/* «انجام شد»: همان پله را با قیمت تارگت اجرا می‌کند — بستن سهمِ این پله و جابه‌جایی استاپ */
+function pbDo(p,i){
+  ensureBase(p);
+  const pb=p.pb, tp=pb.tps[i];
+  const before=pb.parts.slice(0,i).reduce((a,b)=>a+b,0), remain=1-before;
+  const frac=remain<=pb.parts[i]+1e-9?1:pb.parts[i]/remain;
+  let pnl=0;
+  if(pb.parts[i]>0)pnl=closePartAt(p,tp,frac,'پله‌ی '+faN(i+1)+' نقشه: '+faN(Math.round(pb.parts[i]*100))+'٪ روی '+fmtPrice(tp));
+  const sp=pbStopPrice(p,i+1), sign=p.dir==='long'?1:-1;
+  if(p.status==='open'&&sp!=null&&(p.stop==null||(sp-p.stop)*sign>0)){
+    const old=p.stop;p.stop=sp;
+    logAdd(p,'stop','طبق نقشه، حد ضرر '+(old?'از '+fmtPrice(old)+' ':'')+'روی '+(sp===p.entry?'ورود ('+fmtPrice(sp)+')':fmtPrice(sp)));
+  }
+  p.pbc=i+1;
+  save();renderAll();
+  toast('پله‌ی '+faN(i+1)+' انجام شد'+(pb.parts[i]>0?' · '+fmtUsd(pnl):''),'ok');
+}
+function closePartAt(p,price,frac,label){
+  ensureBase(p);
+  const m=posMetrics(p,price);
+  const part=Math.min(1,Math.max(0,frac)), qty=m.qty*part, marginPart=p.margin*part;
+  const gross=qty*(price-p.entry)*(p.dir==='long'?1:-1);
+  const fees=(marginPart*p.lev)*(S.fee/100), pnl=gross-fees;
+  p.partials=partialsOf(p).concat([{at:Date.now(),price,qty,margin:marginPart,pnl,fees,part}]);
+  p.margin=p.margin-marginPart;
+  logAdd(p,'partial',label+' · '+fmtUsd(pnl));
+  if(p.margin<=0.0001){
+    p.margin=0;p.status='closed';p.closedAt=Date.now();p.exitPrice=price;
+    logAdd(p,'close','پوزیشن کامل بسته شد');
+  }
+  return pnl;
+}
+function pbPicker(cur,onPick){
+  const w=el('div','pbpick');
+  for(const id of PB_IDS){
+    const b=el('button','pbc'+(id===cur?' on':''),esc(pbDef(id).n));
+    b.type='button';b.title=pbDef(id).d;b.setAttribute('aria-pressed',id===cur?'true':'false');
+    b.onclick=()=>onPick(id);
+    w.appendChild(b);
+  }
+  return w;
+}
+const PBEDIT=new Set();
+function buildPbBox(p,live){
+  const w=el('div','pbx');
+  if(!p.pb){
+    w.appendChild(el('div','pbh',ic('flag')+'<b>نقشه‌ی خروج</b><span class="markhint">ندارد</span>'));
+    w.appendChild(el('div','hint','یک سبک انتخاب کن تا پله‌های خروج با عدد ساخته شوند و سرِ هر پله خبر بدهم.'));
+    w.appendChild(pbPicker(null,id=>{if(pbAttach(p,id)){logAdd(p,'plan','نقشه‌ی خروج: '+pbDef(id).n);save();renderAll();}}));
+    return w;
+  }
+  const pb=p.pb, done=p.pbc||0, n=pb.tps.length;
+  const hd=el('div','pbh',ic('flag')+'<b>نقشه‌ی خروج · '+esc(pb.n)+'</b>');
+  if(p.status==='open'){
+    const ch=el('button','mark ghost',PBEDIT.has(p.id)?'بستن':'عوض کن');
+    ch.onclick=()=>{PBEDIT.has(p.id)?PBEDIT.delete(p.id):PBEDIT.add(p.id);renderPositions();};
+    hd.appendChild(ch);
+  }
+  w.appendChild(hd);
+  if(PBEDIT.has(p.id))w.appendChild(pbPicker(pb.id,id=>{if(pbAttach(p,id)){PBEDIT.delete(p.id);
+    logAdd(p,'plan','نقشه‌ی خروج عوض شد: '+pbDef(id).n);save();renderAll();}}));
+  const ol=el('ol','pbsteps');
+  for(let i=0;i<n;i++){
+    if(!(pb.parts[i]>0)&&pbStopPrice(p,i+1)===(i?pbStopPrice(p,i):null))continue;
+    const hit=i===done&&p.status==='open'&&pbReached(p,i,live);
+    const li=el('li',i<done?'done':hit?'hit':i===done?'next':'');
+    const dist=live!=null&&i>=done?((pb.tps[i]-live)/live*100*(p.dir==='long'?1:-1)):null;
+    li.innerHTML='<i>'+(i<done?ic('check'):faN(i+1))+'</i><div><b>تارگت '+faN(i+1)+' · <span dir="ltr">'+fmtPrice(pb.tps[i])+'</span></b>'+
+      '<span>'+pbStepText(p,i)+(i<done?' · انجام شد':hit?' · <em>رسید!</em>':(dist!=null&&dist>0&&i===done?' · '+dist.toFixed(1)+'٪ مانده':''))+'</span></div>';
+    if(i===done&&p.status==='open'){
+      const acts=el('div','pbact');
+      const ok=el('button','btn '+(hit?'pri':'')+' xs',ic('check')+'<span>انجام شد</span>');
+      ok.title='همین پله را اجرا کن: بستن سهمش روی '+fmtPrice(pb.tps[i])+' و جابه‌جایی استاپ';
+      ok.onclick=()=>pbDo(p,i);
+      const sk=el('button','mark ghost','رد کن');sk.title='این پله را خودت جور دیگری انجام دادی';
+      sk.onclick=()=>{p.pbc=i+1;logAdd(p,'plan','پله‌ی '+faN(i+1)+' نقشه رد شد');save();renderAll();};
+      acts.appendChild(ok);acts.appendChild(sk);li.appendChild(acts);
+    }
+    ol.appendChild(li);
+  }
+  w.appendChild(ol);
+  if(done>=n&&p.status==='open')w.appendChild(el('div','hint','همه‌ی پله‌های نقشه انجام شد؛ باقی‌مانده با استاپ فعلی مدیریت می‌شود.'));
+  return w;
 }
 
 /* ---- گرفتن کندل ---- */
@@ -5603,23 +5982,24 @@ async function audOne(job,R){
 }
 
 const AUDQ={on:false,n:0,done:0,fail:0,at:0};
-function audJobs(force){
+function audJobs(force,needPath){
   const R=audRules(), now=Date.now(), out=[];
   for(const p of POSTS){
     const inp=audInput(p);if(!inp)continue;
     const k=audKey(inp,R), a=AUD[p.id];
     if(a&&a.k===k&&!force){
-      if(a.fin&&!(a.st==='bad'&&a.why==='nocandle'))continue;
+      const noPath=needPath&&!a.path&&['win','loss','exp'].includes(a.st);
+      if(a.fin&&!(a.st==='bad'&&a.why==='nocandle')&&!noPath)continue;
       if(a.st==='bad'&&a.why==='nocandle'&&(a.tries||0)>=3)continue;
-      if(now-(a.at||0)<20*60000)continue;               // تازه سنجیده شده
+      if(!noPath&&now-(a.at||0)<20*60000)continue;               // تازه سنجیده شده
     }
     out.push({p,inp,k});
   }
   return out;
 }
-async function audRun(force){
+async function audRun(force,needPath){
   if(AUDQ.on)return;
-  const jobs=audJobs(force);
+  const jobs=audJobs(force,needPath);
   if(!jobs.length){AUDQ.at=Date.now();paintAudProgress();return;}
   Object.assign(AUDQ,{on:true,n:jobs.length,done:0,fail:0});
   paintAudProgress();
@@ -5898,6 +6278,9 @@ function renderAudit(){
 
   // ── شما در برابر کانال ──
   box.appendChild(buildVsChannel(rows));
+
+  // ── آزمایشگاه خروج ──
+  box.appendChild(buildExitLab(rows));
 
   // ── نمادها ──
   box.appendChild(buildCoinTable(rows));
@@ -6536,6 +6919,7 @@ function buildPosCard(p){
   if(!isSpot)add('لیکوئید',m.liqPrice==null?'ندارد':fmtPrice(m.liqPrice),m.liqPrice==null?'m':'d');
   if(!open&&p.fees!=null)add('کارمزد',fmtUsd(-(m.fees||0)),'m');
   kv.innerHTML=kh;b.appendChild(kv);
+  if(open||p.pb)b.appendChild(buildPbBox(p,live));
 
   if(open&&live&&p.stop){
     const fl=el('div','flags');
