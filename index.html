@@ -616,6 +616,86 @@ tr.tap:hover td{background:var(--card2)}
 .gnote>b .ic{width:15px;height:15px}
 .gnote ul{margin:4px 0 0;padding-inline-start:18px}
 .mark.busy{opacity:.7;cursor:progress}
+/* تحلیل هر درس */
+.gn{margin:12px 12px 4px;padding:14px;border-radius:var(--r2);background:var(--card);
+  border:1px solid color-mix(in srgb,var(--gold) 28%,var(--line))}
+.ghead2{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:800;color:var(--gold)}
+.ghead2 .ic{width:18px;height:18px}
+.gsum{margin-top:8px;font-size:14px;line-height:2;color:var(--tx);font-weight:700}
+.gsec{display:flex;align-items:center;gap:7px;margin:16px 0 8px;font-size:12.5px;font-weight:800;color:var(--tx2)}
+.gsec .ic{width:16px;height:16px;color:var(--gold)}
+.gsec::after{content:'';flex:1;height:1px;background:var(--line)}
+.gn i{font-style:normal;font-weight:800;direction:ltr;unicode-bidi:isolate;color:var(--tx)}
+.gpic{margin:0;padding-inline-start:18px;font-size:13px;line-height:2;color:var(--tx2)}
+.gpic li{margin:3px 0}
+.gpic li::marker{color:var(--gold)}
+.gkv{margin:0 0 8px}
+.glad{position:relative;margin:4px 0 2px;border-radius:12px;background:var(--inset);border:1px solid var(--line);overflow:hidden}
+.gz{position:absolute;inset-inline:0;display:block}
+.gz.dn{background:color-mix(in srgb,var(--dn) 12%,transparent)}
+.gz.up{background:color-mix(in srgb,var(--up) 9%,transparent)}
+.glr{position:absolute;inset-inline:10px;height:22px;display:flex;align-items:center;gap:8px;font-size:12px}
+.glr b{flex:none;min-width:74px;font-weight:800}
+.glr b em{font-style:normal;font-size:11px;opacity:.85;margin-inline-start:3px}
+.glr s{flex:1;height:2px;border-radius:2px;text-decoration:none}
+.glr span{flex:none;min-width:58px;text-align:end;font-weight:800;font-variant-numeric:tabular-nums}
+.glr.dn b,.glr.dn span{color:var(--dn)}.glr.dn s{background:var(--dn)}
+.glr.up b,.glr.up span{color:var(--up)}.glr.up s{background:var(--up);opacity:.8}
+.glr.gold b,.glr.gold span{color:var(--gold)}.glr.gold s{background:repeating-linear-gradient(90deg,var(--gold) 0 6px,transparent 6px 10px);height:2px}
+.gcmp{width:100%;border-collapse:collapse;font-size:12.5px}
+.gcmp th{font-size:12px;color:var(--gold);padding:7px 8px;text-align:start;font-weight:800}
+.gcmp td{padding:8px;border-top:1px solid var(--line);color:var(--tx2);line-height:1.8;vertical-align:top}
+.gcmp td:first-child{color:var(--tx);font-weight:800;white-space:nowrap}
+.gsteps{list-style:none;margin:0;padding:0;position:relative}
+.gsteps li{display:flex;gap:11px;position:relative;padding-bottom:12px}
+.gsteps li:not(:last-child)::before{content:'';position:absolute;inset-inline-start:13px;top:28px;bottom:0;width:2px;
+  background:linear-gradient(var(--gold2),transparent);opacity:.45}
+.gsteps li>i{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;
+  background:linear-gradient(180deg,var(--gold),var(--gold2));color:var(--onGold)!important;box-shadow:0 4px 12px -6px var(--gold)}
+.gsteps li>div{min-width:0;padding-top:3px}
+.gsteps li>div>b{display:block;font-size:13.5px;color:var(--tx)}
+.gsteps p b{color:var(--tx)}
+.gsteps p{margin:3px 0 0;font-size:13px;line-height:2;color:var(--tx2)}
+.grules{list-style:none;margin:0;padding:0}
+.grules li{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:2;color:var(--tx2);margin:2px 0}
+.grules .ic{flex:none;width:16px;height:16px;margin-top:6px;color:var(--up)}
+.gwarnbox{display:flex;gap:9px;align-items:flex-start;margin-top:10px;padding:10px 12px;border-radius:var(--r2);font-size:12.5px;
+  line-height:2;color:var(--tx);background:color-mix(in srgb,var(--warn) 10%,transparent);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+.gwarnbox .ic{flex:none;width:17px;height:17px;margin-top:5px;color:var(--warn)}
+.gapp{display:flex;gap:9px;align-items:flex-start;margin-top:10px;padding:10px 12px;border-radius:var(--r2);font-size:12.5px;
+  line-height:2;color:var(--tx2);background:var(--inset);border:1px dashed color-mix(in srgb,var(--gold) 40%,var(--line2))}
+.gapp .ic{flex:none;width:16px;height:16px;margin-top:5px;color:var(--gold)}
+.gapp b{color:var(--gold)}
+.gcalc,.gclock,.grulesnow{margin-top:12px;padding:12px;border-radius:12px;background:var(--inset);border:1px solid var(--line)}
+.gcalc .grid{grid-template-columns:repeat(2,1fr)}
+.gcalc .fld input{background:var(--card)}
+.gcalc .mark{width:100%;min-height:40px}
+.gcalc .gkv{margin:12px 0 0;grid-template-columns:repeat(2,1fr)}
+.gcalc .rwarn{margin-top:8px}
+.gnext{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.gnext span{font-size:12.5px;color:var(--tx2);font-weight:700}
+.gnext b{font-size:24px;color:var(--gold);font-variant-numeric:tabular-nums}
+.gnext em{font-style:normal;font-size:12px;color:var(--tx3)}
+.gslots{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:10px}
+.gslots i{font-style:normal;text-align:center;font-size:11.5px;font-weight:800;padding:6px 0;border-radius:8px;
+  background:var(--card);border:1px solid var(--line);color:var(--tx3);font-variant-numeric:tabular-nums}
+.gslots i.on{background:color-mix(in srgb,var(--gold) 16%,transparent);border-color:color-mix(in srgb,var(--gold) 45%,transparent);color:var(--gold)}
+.gsess{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.gses{padding:9px 10px;border-radius:10px;background:var(--card);border:1px solid var(--line)}
+.gses b{display:block;font-size:12.5px}
+.gses span{display:block;font-size:11.5px;color:var(--tx3);margin-top:3px;line-height:1.7}
+.gses.on{border-color:color-mix(in srgb,var(--up) 45%,transparent)}
+.gses.on span{color:var(--up)}
+.gmeter{margin-bottom:10px}
+.gmeter>div{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
+.gmeter>div span{font-weight:800;font-variant-numeric:tabular-nums}
+.gmeter>i{display:block;height:7px;border-radius:99px;background:var(--card);overflow:hidden}
+.gmeter>i s{display:block;height:100%;border-radius:99px;background:var(--up);text-decoration:none;transition:width .4s var(--ease)}
+.gmeter.full>i s{background:var(--warn)}.gmeter.bad>i s{background:var(--dn)}
+.gverdict{padding:9px 11px;border-radius:10px;font-size:12.5px;line-height:1.9;font-weight:700}
+.gverdict.ok{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up)}
+.gverdict.no{background:color-mix(in srgb,var(--dn) 12%,transparent);color:var(--dn)}
+.grulesnow .hint{margin-top:6px}
 .gmedia .vfail{display:inline-block;margin:10px 12px 0;text-decoration:none}
 .empty.sm{padding:18px 16px}
 #vLearn .sechd{margin-top:6px}
@@ -2742,9 +2822,137 @@ const GUIDE_DEFAULT=[
   [54656,'حداکثر تعداد پوزیشن‌ها، ریسک مجاز و سیو سود']];
 const GUIDE_WARN='این مطالب پایه‌ی دستورالعمل معاملاتی کانال هستند. قبل از ورود به معاملات یک‌بار کامل '+
   'مطالعه‌شان کن و مخصوصاً قوانین مدیریت ریسک، تعداد پوزیشن‌ها، تریگر و ریسک‌فری را جدی بگیر.';
-/* توضیح و جمع‌بندیِ هر درس، به شماره‌ی پست. خالی یعنی هنوز نوشته نشده؛ متن و تصویر خودِ
-   کانال در هر حال نشان داده می‌شوند. */
-const GUIDE_NOTES={};
+/* تحلیل و آموزش قدم‌به‌قدمِ هر درس، به شماره‌ی پست — از روی عکس و متن خودِ پست‌ها.
+   sum: یک خط خلاصه · pic: تحلیل تصویر · plan: اعداد معامله‌ی نمونه (نردبان رسم می‌شود)
+   steps: قدم‌ها · cmp: جدول مقایسه · rules: قانون‌ها · warn: هشدار · app: ربطش به همین برنامه
+   widget: ابزار زنده (calc ماشین‌حساب، clock ساعت کندل و سشن، rules وضعیت من با قانون کانال).
+   اعداد داخل <i> چپ‌به‌راست و پررنگ نمایش داده می‌شوند. */
+const GUIDE_NOTES={
+ 54648:{
+  sum:'یک معامله‌ی کامل روی چارت روزانه‌ی ICP: از تشخیص روند تا ورود، حد ضرر و سه هدف.',
+  pic:['چارت روزانه‌ی <i>ICP/USDT</i> در بایننس. قیمت ماه‌ها زیر یک <b>خط روند نزولی</b> (خط بنفش که سقف‌ها را به هم وصل کرده) پایین آمده و کف ساخته.',
+       'نزدیک <i>2.7–2.8</i> خط روند شکسته شده (فلش آبی «شکست خط روند نزولی») و قیمت بالای آن تثبیت شده. همان ناحیه‌ای که قبلاً مقاومت بود حالا نقش حمایت را دارد.',
+       'جعبه‌ی سبز ناحیه‌ی سود و جعبه‌ی قرمز ناحیه‌ی ضرر است. خط‌چین سبز مسیر احتمالی قیمت تا سه هدف را نشان می‌دهد.'],
+  plan:{pair:'ICP/USDT',side:'long',entry:[2.7,2.8],sl:1.998,tps:[3.959,5.968,9.25],tf:'روزانه (1D)'},
+  steps:[['روند را بشناس','اول ببین قیمت در چه روندی است. اینجا روند نزولی بود و خط روند سقف‌های پایین‌آمده را به هم وصل می‌کند.'],
+         ['منتظر شکست بمان','تا خط روند نشکسته، خرید یعنی جنگیدن با روند. شکست و تثبیت بالای <i>2.7</i> اولین نشانه‌ی تغییر روند است.'],
+         ['ناحیه‌ی ورود','بهترین ورود بعد از شکست، روی <b>پولبک</b> به حمایتِ تازه است: <i>2.7–2.8</i>. اگر در همین ناحیه یک کندل تأییدی دیدی، وارد شو.'],
+         ['حد ضرر','زیر آخرین کف معتبر: <i>1.998</i>. اگر قیمت به زیر آن برگردد، سناریوی صعودی باطل است و نباید در معامله بمانی.'],
+         ['اهداف','سه هدف روی مقاومت‌های قبلی: <i>3.959</i>، <i>5.968</i> و <i>9.250</i>. در هر هدف بخشی از سود را سیو کن (درس ۹).'],
+         ['حجم را از روی استاپ حساب کن','فاصله‌ی ورود تا استاپ حدود <i>27%</i> است، یعنی خیلی زیاد. با قانون ریسک ۱٪، روی حساب ۱۰۰۰ دلاری حجم کل پوزیشن فقط حدود <i>37$</i> می‌شود. استاپ دورتر یعنی حجم کمتر (درس ۳ و ۴).']],
+  rules:['ترتیب ثابت است: اول روند، بعد شکست، بعد پولبک، بعد ورود.',
+         'حد ضرر جایی است که «ایده غلط از آب درآمده»، نه عددی که دلت می‌خواهد.',
+         'هدف اول حدود <i>1.6R</i>، دوم حدود <i>4.3R</i> و سوم حدود <i>8.6R</i> است؛ حتی رسیدن به هدف اول هم معامله را منطقی می‌کند.'],
+  warn:['با استاپ ۲۷٪ در مارجین ایزوله، اهرم بیشتر از حدود <i>3X</i> یعنی لیکوئید شدن قبل از رسیدن به حد ضرر.',
+        'این مثال آموزشی است، نه سیگنال.'],
+  app:'در تب سیگنال‌ها «بررسی و ورود» همین فاصله‌ی استاپ، R هر تارگت و قیمت لیکوئید را خودش حساب می‌کند.'},
+ 54649:{
+  sum:'ثبت سفارش تریگر در Ourbit: وقتی قیمت به ورود رسید، سفارش خودش فعال می‌شود و لازم نیست پای چارت بنشینی.',
+  pic:['سمت چپ، فرم سفارش فیوچرز Ourbit روی <i>ADA/USDT</i> است (حالت Cross و اهرم <i>35X</i>). فلش‌های شماره‌دار هر کدام به یک فیلد اشاره می‌کنند.',
+       'جدول راست اعداد همین معامله‌ی نمونه است: ورود (تریگر) <i>0.188</i>، حد ضرر <i>0.175</i>، هدف‌ها <i>0.205</i> و <i>0.220</i>، جهت لانگ.',
+       'حجم وارد شده <i>4500 ADA</i> است که با قیمت <i>0.188</i> حدود <i>846$</i> ارزش دارد.'],
+  plan:{pair:'ADA/USDT',side:'long',entry:0.188,sl:0.175,tps:[0.205,0.22]},
+  steps:[['نوع سفارش: Trigger','در فرم سفارش، به‌جای Limit یا Market گزینه‌ی <b>Trigger</b> را انتخاب کن.'],
+         ['معیار فعال شدن: Last Price','Last Price یعنی سفارش با «آخرین قیمت معامله‌شده»ی بازار فعال می‌شود.'],
+         ['قیمت تریگر','عددی که با رسیدن قیمت به آن سفارش فعال شود: <i>0.188</i>.'],
+         ['قیمت سفارش (Limit Price)','قیمتی که سفارش بعد از فعال شدن با آن ثبت می‌شود، معمولاً همان <i>0.188</i>. اگر بازار تند حرکت می‌کند، در لانگ کمی بالاتر بگذار تا جا نمانی.'],
+         ['حجم','مقدار را وارد کن (اینجا <i>4500 ADA</i>). حجم را از روی ریسک و فاصله‌ی استاپ حساب کن، نه از روی حس (درس ۳).'],
+         ['TP/SL را همان‌جا بگذار','تیک TP/SL را بزن: حد ضرر <i>0.175</i> و هدف <i>0.205</i>. سفارش بدون حد ضرر نفرست.'],
+         ['Open Long یا Open Short','برای خرید (لانگ) <b>Open Long</b> سبز و برای فروش (شورت) <b>Open Short</b> قرمز را بزن.']],
+  rules:['Trigger فقط «شرطِ فعال شدن» است. اگر Limit گذاشتی و قیمت تند رد شد، ممکن است سفارش پر نشود.',
+         'اهرم و حجم را بر اساس مدیریت ریسک و فاصله تا حد ضرر انتخاب کن. تنظیمات تصویر فقط نمونه است.',
+         'در این معامله فاصله‌ی استاپ حدود <i>6.9%</i> است؛ هدف اول حدود <i>1.3R</i> و هدف دوم حدود <i>2.5R</i>.'],
+  warn:['با <i>4500 ADA</i>، خوردن استاپ حدود <i>58$</i> ضرر دارد. این برای ریسک ۱٪ یعنی حساب حدود <i>5,800$</i>. با حساب کوچک‌تر حجم را به همان نسبت کم کن.',
+        'اهرم <i>35X</i> در حالت <b>ایزوله</b> یعنی لیکوئید حدود <i>2.4%</i> زیر ورود، یعنی قبل از استاپ <i>6.9%</i>. در ایزوله اهرم را حداکثر حدود <i>13X</i> بگذار. تصویر در حالت Cross است که کل موجودی حساب پشت پوزیشن می‌ایستد.'],
+  app:'دکمه‌ی «منتظر …» روی کارت سیگنال همین منطق تریگر را در برنامه نگه می‌دارد و وقتی قیمت رسید خبر می‌دهد.'},
+ 54650:{
+  sum:'حساب کردن حجم، مارجین و تعداد واحد با قانون ریسک ۱٪، هم با یک پرامپت آماده برای ChatGPT و هم به‌صورت دستی.',
+  pic:['چارت روزانه‌ی <i>RENDER/USDT</i> با برنامه‌ی نمونه: ورود <i>1.455</i>، حد ضرر <i>1.250</i> و سه هدف <i>2.124</i>، <i>2.947</i> و <i>4.501</i>. معامله لانگ با اهرم <i>20X</i> و ریسک ۱٪ روی سرمایه‌ی <i>1000$</i> است.',
+       'پنج جعبه‌ی شماره‌دار پایین تصویر همان پنج قدم محاسبه‌اند. جعبه‌ی سبز پرامپت ChatGPT و جعبه‌ی قرمز نکته‌های مهم است.'],
+  plan:{pair:'RENDER/USDT',side:'long',entry:1.455,sl:1.25,tps:[2.124,2.947,4.501],tf:'روزانه (1D)'},
+  steps:[['ریسک دلاری','<i>1% × 1000 = 10$</i>. یعنی اگر استاپ بخورد، حداکثر ۱۰ دلار از دست می‌دهی.'],
+         ['فاصله‌ی ورود تا استاپ','<i>1.455 − 1.250 = 0.205</i> و به درصد: <i>0.205 ÷ 1.455 = 14.09%</i>.'],
+         ['حجم پوزیشن (Position Size)','<i>10 ÷ 0.1409 ≈ 71$</i>. ارزش کل پوزیشن باید حدود ۷۱ دلار باشد.'],
+         ['مارجین با اهرم 20X','<i>71 ÷ 20 = 3.55$</i>. اهرم فقط مارجین را کم می‌کند؛ ریسک همان ۱۰ دلار می‌ماند.'],
+         ['تعداد واحد (Quantity)','<i>71 ÷ 1.455 ≈ 48.8</i> RENDER. همین عدد را در صرافی وارد می‌کنی.'],
+         ['پرامپت ChatGPT','چارت را بفرست و بنویس: «سرمایه‌ی من ۱۰۰۰ دلار است. می‌خواهم در این معامله حداکثر ۱٪ سرمایه را ریسک کنم. نقطه‌ی ورود و حد ضرر را از روی چارت پیوست‌شده بخوان. اهرم انتخابی من 20X است. حجم پوزیشن، مارجین موردنیاز و تعداد واحد ارز را حساب کن و بگو در صورت خوردن استاپ تقریباً چند دلار ضرر می‌کنم.» سرمایه، درصد ریسک و اهرم را با حساب خودت عوض کن.']],
+  rules:['فرمول اصلی: <b>حجم پوزیشن = ریسک دلاری ÷ درصد فاصله‌ی استاپ</b>. اهرم در این فرمول نیست.',
+         'اگر ChatGPT عدد ورود یا استاپ را اشتباه از تصویر خواند، اعداد را دستی بده و جوابش را با همین پنج قدم چک کن.',
+         'کارمزد، اسلیپیج و فاندینگ در این حساب نیست؛ حجم را ۵ تا ۱۰٪ کمتر بگیر.',
+         'حد ضرر را حتماً در خود صرافی ثبت کن.'],
+  warn:['در مارجین <b>ایزوله</b> با اهرم <i>20X</i>، لیکوئید حدود <i>4.5%</i> زیر ورود (حدود <i>1.39</i>) است و قبل از استاپ <i>1.250</i> می‌رسد. برای استاپ ۱۴٪ در ایزوله اهرم را حداکثر حدود <i>6X</i> بگذار (مارجین حدود <i>12$</i>)، یا در حالت Cross کار کن.'],
+  app:'ماشین‌حساب درس ۴ همین پنج قدم را با اعداد خودت انجام می‌دهد و اهرم امن را هم می‌گوید.'},
+ 54651:{
+  sum:'ماشین‌حساب ریسک و اهرم؛ یک نسخه‌ی زنده‌اش همین‌جاست.',
+  pic:['اسکرین‌شات این پست به دستم نرسید. به‌جایش ماشین‌حساب را همین‌جا ساختم تا با همان روش کانال (ریسک از کل سرمایه) حساب کنی. اعداد پیش‌فرض همان مثال RENDER درس ۳ است.'],
+  widget:'calc',
+  steps:[['سرمایه و درصد ریسک','کل موجودی حساب و درصدی که حاضری در این معامله از دست بدهی. قانون کانال: <i>1%</i>.'],
+         ['ورود و حد ضرر','از پست سیگنال یا چارت. جهت معامله (لانگ یا شورت) از روی همین دو عدد معلوم می‌شود.'],
+         ['اهرم','فقط مارجین را تعیین می‌کند. ماشین‌حساب می‌گوید با این اهرم، در حالت ایزوله، لیکوئید قبل از استاپ می‌رسد یا نه.'],
+         ['اعداد را در صرافی بزن','تعداد واحد (Quantity) و اهرم را در فرم سفارش وارد کن و حد ضرر را همان‌جا ثبت کن.']],
+  rules:['اگر «اهرم امن» کمتر از اهرم انتخابی‌ات شد، یا اهرم را کم کن یا مارجین Cross بگیر.']},
+ 54652:{
+  sum:'کندل ۴ ساعته کی بسته می‌شود و کدام ساعت‌ها بازار شلوغ‌تر است؛ همه به وقت تهران.',
+  pic:['شش ساعت بالای تصویر، زمان بسته شدن کندل‌های <i>4H</i> به وقت تهران است: <i>3:30</i> بامداد، <i>7:30</i> و <i>11:30</i> صبح، <i>15:30</i> بعدازظهر، <i>19:30</i> عصر و <i>23:30</i> شب.',
+       'نوار پایین دو سشن مهم را نشان می‌دهد: بورس شانگهای چین <i>5:00–12:00</i> و بورس نیویورک <i>17:00–24:00</i> به وقت تهران.'],
+  widget:'clock',
+  steps:[['سطح را مشخص کن','حمایت یا مقاومتی که منتظر شکستش هستی.'],
+         ['عبور لحظه‌ای کافی نیست','قیمت ممکن است سایه بزند و برگردد. منتظر <b>بسته شدن</b> کندل ۴ ساعته بمان.'],
+         ['کلوز پشت سطح یعنی تأیید','اگر کندل 4H بالای مقاومت (در لانگ) یا زیر حمایت (در شورت) بسته شد، شکست تأیید شده. این همان Confirm درس ۶ است.'],
+         ['ساعت را بدان','کندل‌ها در همین شش ساعت بسته می‌شوند. ابزار بالا کلوز بعدی و وضعیت سشن‌ها را زنده نشان می‌دهد.']],
+  rules:['سشن نیویورک بیشترین حجم و نوسان را دارد؛ شکست‌های مهم و فیک‌های تند بیشتر در این ساعت‌ها رخ می‌دهد.',
+         'سشن چین روی بازارهای آسیایی و حس ریسک بازار اثر می‌گذارد.'],
+  warn:['با تغییر ساعت آمریکا (تقریباً از اواسط آبان تا اواخر اسفند) سشن نیویورک حدود یک ساعت دیرتر می‌شود. ساعت کندل‌های 4H ثابت می‌ماند چون ایران تغییر ساعت ندارد. در تعطیلات رسمی هم ساعت‌ها ممکن است فرق کند.']},
+ 54653:{
+  sum:'دو روش ورود در شکست مقاومت: زود و با قیمت بهتر (Trigger)، یا دیرتر و مطمئن‌تر (Confirm).',
+  pic:['این پست عکس جدا ندارد و در جواب آموزش سفارش تریگر Ourbit (درس ۲) منتشر شده است.'],
+  cmp:{h:['Trigger','Confirm'],rows:[
+    ['زمان ورود','زودتر، قبل از تأیید کامل شکست','بعد از تأیید، مثلاً کلوز کندل 4H بالای مقاومت'],
+    ['نقطه‌ی ورود','بهتر','دیرتر'],
+    ['ریسک اصلی','ریجکت شدن قیمت','شکست فیک کمتر، ولی جا ماندن از حرکت'],
+    ['اگر اشتباه شد','خروج با ضرر محدود و انتظار برای Confirm','خروج با حد ضرر']]},
+  steps:[['قبل از ورود روش را انتخاب کن','اگر تریگر، باید بپذیری که گاهی ریجکت می‌شوی و این بخشی از بازی است.'],
+         ['ورود تریگری','قیمت که به ناحیه رسید (مثلاً با سفارش Trigger درس ۲) وارد شو.'],
+         ['شکست ادامه داشت؟ بمان','اگر قیمت ریجکت نشد و شکست ادامه پیدا کرد، طبق پلن با پوزیشن بمان.'],
+         ['ریجکت شد؟ ضرر کوچک','پوزیشن را با ضرر محدود ببند و منتظر Confirm بمان، مثلاً کلوز کندل ۴ ساعته بالای مقاومت، و بعد دوباره وارد شو.']],
+  rules:['هدف تریگر «همیشه درست بودن» نیست: اگر موفق شد ورود بهتری داری و اگر ریجکت شد با رعایت حد ضرر بیرون می‌آیی.'],
+  app:'دکمه‌ی «منتظر …» روی کارت سیگنال، تریگر را در برنامه نگه می‌دارد تا قیمت برسد.'},
+ 54654:{
+  sum:'قیمت بعد از ورود از مقاومت برگشت؟ دو راه داری، ولی باید از قبل تصمیم گرفته باشی کدام را می‌روی.',
+  pic:['این پست عکس ندارد؛ متن آن اینجا به قدم‌های عملی تبدیل شده است.'],
+  steps:[['ریجکت را بشناس','قیمت به مقاومت خورده و برگشته، بدون اینکه بالای آن بسته شود.'],
+         ['راه اول: خروج','پوزیشن را ببند و منتظر شکست واقعی مقاومت و فرصت ورود تازه بمان.'],
+         ['راه دوم: کم کردن حجم','حجم را به <i>1/2</i> یا <i>1/3</i> برسان تا ریسک پوزیشن کمتر شود.'],
+         ['شکست تأیید شد؟ دوباره اضافه کن','اگر قیمت برگشت و مقاومت را شکست و در تایم‌فریم <i>1H</i> یا <i>4H</i> تأیید گرفت، طبق مدیریت ریسک دوباره حجم اضافه کن.']],
+  rules:['راه دوم مخصوصاً وقتی به کار می‌آید که چند پوزیشن هم‌زمان داری و می‌خواهی در نوسان شدید ریسک کل حساب را پایین بیاوری.',
+         'اگر پوزیشن‌هایت کم است و از اول ریسک هر معامله را ۱٪ نگه داشته‌ای، کاهش حجم لازم نیست؛ طبق پلن اولیه تا TP یا SL صبر کن.',
+         'ریجکت شدن به معنی خراب شدن پلن نیست. مهم این است که قبل از ورود بدانی در ریجکت، شکست یا تأیید دقیقاً چه می‌کنی.'],
+  app:'در تب پوزیشن‌ها دکمه‌ی «بستن بخشی» همین کاهش حجم را ثبت می‌کند و کارنامه سودش را جدا حساب می‌کند.'},
+ 54655:{
+  sum:'ریسک‌فری یعنی بعد از گرفتن بخشی از سود، کاری کنی که باقی پوزیشن دیگر نتواند ضرر بدهد. Ourbit دو راه برای بستن و مدیریت پوزیشن دارد.',
+  pic:['تصویر دو روش بستن پوزیشن در Ourbit را کنار هم گذاشته. مثال روی یک لانگ <i>EIGEN/USDT</i> با اهرم <i>35X</i> (Cross) است؛ میانگین ورود <i>0.2015</i> و قیمت فعلی <i>0.2070</i>، یعنی حدود <i>2.7%</i> در سود.',
+       '<b>روش ۱ (سبز)، دکمه‌ی Close:</b> برای بستن سریع همه یا بخشی از پوزیشن. در مثال، <i>25%</i> حجم با سفارش Market بسته می‌شود.',
+       '<b>روش ۲ (آبی)، TP/SL:</b> برای گذاشتن حد سود و حد ضرر خودکار روی همه یا بخشی از حجم. در مثال <i>25%</i> یعنی <i>100</i> از <i>400</i> EIGEN.'],
+  steps:[['سود اول را بگیر','قیمت که به هدف اول رسید، از <b>Close</b> بخشی از حجم (مثلاً <i>25%</i>) را با Market ببند.'],
+         ['استاپ را به نقطه‌ی ورود بیاور','در <b>TP/SL</b> قیمت تریگر Stop Loss را روی میانگین ورود (<i>Avg. Price</i>، اینجا <i>0.2015</i>) بگذار. حالا باقی پوزیشن ریسک‌فری است.'],
+         ['حد سود پله‌ای','در <b>TP/SL in Batches</b> برای هر هدف یک Take Profit با درصد حجم جدا بگذار تا سود خودکار سیو شود.'],
+         ['تأیید و بررسی','بعد از ثبت، در بخش Position ببین TP و SL فعال شده باشند.']],
+  rules:['Market سریع‌تر می‌بندد، ولی در بازار تند ممکن است کمی بدتر پر شود.',
+         'قبل از گذاشتن SL فاصله‌اش را با قیمت لیکوئید چک کن؛ SL باید قبل از لیکوئید باشد.',
+         'طبق درس ۹، پوزیشنی که ریسک‌فری شد جای یک پوزیشن تازه را آزاد می‌کند.'],
+  app:'در تب پوزیشن‌ها می‌توانی دستگیره‌ی استاپ را روی نردبان تا قیمت ورود بکشی؛ کارنامه R را همچنان با ریسک اولیه حساب می‌کند.'},
+ 54656:{
+  sum:'قانون سقف: حداکثر ۳ پوزیشن هم‌زمان، و ریسک همه‌شان روی هم حداکثر ۳٪ سرمایه.',
+  pic:['این پست عکس ندارد. ابزار بالا وضعیت پوزیشن‌های باز خودت را همین الان با همین قانون می‌سنجد.'],
+  widget:'rules',
+  steps:[['قبل از هر ورود بشمار','چند پوزیشن «در ریسک» داری؟ اگر ۳ تا، پوزیشن تازه نگیر.'],
+         ['ریسک کل را جمع بزن','ریسک همه‌ی پوزیشن‌های فعال روی هم نباید از <i>3%</i> سرمایه بیشتر شود؛ با ریسک ۱٪ برای هر معامله، یعنی همان ۳ پوزیشن.'],
+         ['ریسک‌فری یعنی جای خالی','به محض اینکه یک پوزیشن ریسک‌فری شد (درس ۸)، می‌توانی یک پوزیشن جدید اضافه کنی.'],
+         ['سیو سود پله‌ای','سیو سود را به لحظه‌ی آخر موکول نکن؛ طبق اهداف چارت، سود را پله‌پله ذخیره کن.'],
+         ['آپدیت‌های کانال را دنبال کن','ممکن است کانال بگوید پوزیشنی زودتر بسته، ریسک‌فری یا مدیریت شود.']],
+  rules:['اولویت همیشه حفظ سرمایه و مدیریت ریسک است، نه تعداد معاملات.'],
+  app:'«موجودی حساب» در تنظیمات، بخش «اندازه و ریسک»، مبنای درصد ریسک این ابزار است.'}
+};
 const GUIDEKEY='signaldesk.guide.v1', GUIDELIST='signaldesk.guide.list';
 const GUIDE={busy:false,tried:false,err:null,open:new Set()};
 function guideList(){
@@ -2882,6 +3090,175 @@ function mediaOf(L){
   }
   return w;
 }
+
+/* ---- نمایش تحلیل هر درس ---- */
+function gSec(icon,title){return el('div','gsec',ic(icon)+'<span>'+title+'</span>');}
+/* نردبان قیمت: حد ضرر، ورود و هدف‌ها روی مقیاس لگاریتمی، با R هر هدف */
+function guideLadder(pl){
+  const e=Array.isArray(pl.entry)?(pl.entry[0]+pl.entry[1])/2:pl.entry;
+  const sign=pl.side==='short'?-1:1, risk=Math.abs(e-pl.sl);
+  const lv=[{p:pl.sl,t:'حد ضرر',c:'dn',lab:pl.sl}]
+    .concat([{p:e,t:'ورود',c:'gold',lab:Array.isArray(pl.entry)?pl.entry.join('–'):pl.entry}])
+    .concat(pl.tps.map((p,i)=>({p,t:'هدف '+faN(i+1),c:'up',lab:p,r:(p-e)*sign/risk})));
+  const ps=lv.map(x=>x.p), lo=Math.min(...ps), hi=Math.max(...ps);
+  const H=Math.max(170,lv.length*38+24), top=14, bot=H-14;
+  const y=p=>top+(Math.log(hi)-Math.log(p))/(Math.log(hi)-Math.log(lo)||1)*(bot-top);
+  const rows=lv.map(x=>Object.assign({},x,{y:y(x.p)})).sort((a,b)=>a.y-b.y);
+  for(let i=1;i<rows.length;i++)if(rows[i].y-rows[i-1].y<26)rows[i].y=rows[i-1].y+26;
+  const w=el('div','glad');w.style.height=(Math.max(H,rows[rows.length-1].y+14))+'px';
+  const yE=y(e), ySl=y(pl.sl), yTop=y(sign>0?hi:lo);
+  w.innerHTML='<i class="gz dn" style="top:'+Math.min(yE,ySl)+'px;height:'+Math.abs(ySl-yE)+'px"></i>'+
+    '<i class="gz up" style="top:'+Math.min(yE,yTop)+'px;height:'+Math.abs(yE-yTop)+'px"></i>'+
+    rows.map(x=>'<div class="glr '+x.c+'" style="top:'+(x.y-11)+'px"><b>'+x.t+
+      (x.r!=null?' <em>'+x.r.toFixed(1)+'R</em>':'')+'</b><s></s><span dir="ltr">'+x.lab+'</span></div>').join('');
+  return w;
+}
+function guideKv(pl){
+  const e=Array.isArray(pl.entry)?(pl.entry[0]+pl.entry[1])/2:pl.entry;
+  const sd=Math.abs(e-pl.sl)/e*100;
+  const kv=el('div','briefkv gkv');
+  const add=(l,v,c)=>kv.insertAdjacentHTML('beforeend','<div class="bk"><b>'+l+'</b><span class="'+(c||'')+'" dir="ltr">'+v+'</span></div>');
+  add('جفت ارز',pl.pair);
+  add('جهت',pl.side==='short'?'شورت':'لانگ',pl.side==='short'?'d':'u');
+  add('فاصله‌ی استاپ',sd.toFixed(1)+'%','w');
+  return kv;
+}
+/* ماشین‌حساب درس ۴: همان روش کانال — ریسک از کل سرمایه، حجم از فاصله‌ی استاپ */
+function guideCalc(){
+  const w=el('div','gcalc');
+  const f=(id,l,v)=>'<div class="fld"><label>'+l+'</label><input id="gc_'+id+'" type="number" step="any" inputmode="decimal" value="'+v+'"></div>';
+  w.innerHTML='<div class="grid">'+f('cap','سرمایه‌ی کل ($)',1000)+f('risk','ریسک (٪ سرمایه)',1)+
+    f('e','قیمت ورود',1.455)+f('sl','حد ضرر',1.25)+f('lev','اهرم',20)+
+    '<div class="fld"><label>&nbsp;</label><button class="mark ghost" id="gc_me" type="button">با موجودی من</button></div></div>'+
+    '<div class="briefkv gkv" id="gc_out"></div><div id="gc_warn"></div>';
+  const g=id=>parseFloat(normDig((w.querySelector('#gc_'+id)||{}).value||''));
+  const paint=()=>{
+    const cap=g('cap'),r=g('risk'),e=g('e'),sl=g('sl'),lev=g('lev');
+    const out=w.querySelector('#gc_out'),wr=w.querySelector('#gc_warn');
+    out.innerHTML='';wr.innerHTML='';
+    if(!(cap>0&&r>0&&e>0&&sl>0&&lev>=1)||e===sl){out.innerHTML='<div class="bk"><b>نتیجه</b><span class="m">اعداد ناقص است</span></div>';return;}
+    const long=sl<e, sd=Math.abs(e-sl)/e, rUsd=cap*r/100, size=rUsd/sd, mg=size/lev, qty=size/e;
+    const ld=1/lev-MMR, liq=ld>0?e*(1-(long?1:-1)*ld):null, safe=Math.floor(1/(sd+MMR));
+    const add=(l,v,c)=>out.insertAdjacentHTML('beforeend','<div class="bk"><b>'+l+'</b><span class="'+(c||'')+'" dir="ltr">'+v+'</span></div>');
+    add('جهت',long?'لانگ':'شورت',long?'u':'d');
+    add('ریسک دلاری',fmtUsd(rUsd),'d');
+    add('فاصله‌ی استاپ',(sd*100).toFixed(2)+'%','w');
+    add('حجم پوزیشن',fmtUsd(size));
+    add('مارجین',fmtUsd(mg));
+    add('تعداد واحد',(+qty.toPrecision(5))+'');
+    add('لیکوئید (ایزوله)',liq&&lev>1?fmtPrice(liq):'ندارد',lev>1?'d':'m');
+    add('اهرم امن (ایزوله)',Math.max(1,safe)+'X',lev>safe?'d':'u');
+    if(lev>safe&&lev>1)wr.innerHTML='<div class="rwarn bad">با اهرم <b dir="ltr">'+lev+'X</b> در مارجین ایزوله، لیکوئید قبل از حد ضرر می‌رسد. اهرم را حداکثر <b dir="ltr">'+Math.max(1,safe)+'X</b> بگذار یا Cross کار کن.</div>';
+    if(mg>cap)wr.innerHTML+='<div class="rwarn bad">مارجین لازم از کل سرمایه بیشتر است؛ اهرم را بالاتر ببر یا حجم را کم کن.</div>';
+  };
+  w.addEventListener('input',paint);
+  setTimeout(()=>{const b=w.querySelector('#gc_me');if(b)b.onclick=()=>{w.querySelector('#gc_cap').value=S.acct;paint();};paint();},0);
+  return w;
+}
+/* ساعت درس ۵: کلوز کندل ۴ ساعته‌ی بعدی و وضعیت دو سشن، به وقت تهران */
+let GCLOCK=null;
+function tehranNow(d){
+  try{
+    const p=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Tehran',hour:'2-digit',
+      minute:'2-digit',weekday:'short',hourCycle:'h23'}).formatToParts(d).map(x=>[x.type,x.value]));
+    return {min:(+p.hour%24)*60+(+p.minute),wd:p.weekday};
+  }catch(e){return null;}
+}
+const WD=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+function sessionState(t,a,b){
+  // a..b دقیقه از شروع روز به وقت تهران، فقط دوشنبه تا جمعه
+  const work=i=>WD.indexOf(WD[(WD.indexOf(t.wd)+i)%7])<5;
+  if(work(0)&&t.min>=a&&t.min<b)return {open:true,left:b-t.min};
+  for(let i=0;i<8;i++){
+    if(!work(i))continue;
+    const start=i*1440+a-t.min;
+    if(start>0)return {open:false,left:start};
+  }
+  return {open:false,left:null};
+}
+const durFa=m=>{m=Math.max(0,Math.round(m));const h=Math.floor(m/60),mm=m%60;
+  return (h?faN(h)+' ساعت'+(mm?' و ':''):'')+(mm||!h?faN(mm)+' دقیقه':'');};
+function paintClock(w){
+  const now=Date.now(), P=4*3600e3, next=Math.ceil((now+1000)/P)*P, t=tehranNow(new Date(now));
+  if(!t){w.innerHTML='<div class="hint">این مرورگر منطقه‌ی زمانی تهران را نمی‌شناسد.</div>';return;}
+  const slots=['03:30','07:30','11:30','15:30','19:30','23:30'];
+  const nt=tehranNow(new Date(next)), nextLbl=String(Math.floor(nt.min/60)).padStart(2,'0')+':'+String(nt.min%60).padStart(2,'0');
+  const cn=sessionState(t,300,720), ny=sessionState(t,1020,1440);
+  const ses=(flag,name,st)=>'<div class="gses '+(st.open?'on':'')+'"><b>'+flag+' '+name+'</b><span>'+
+    (st.open?'باز است · '+durFa(st.left)+' تا بسته شدن':(st.left!=null?'بسته · '+durFa(st.left)+' تا باز شدن':'بسته'))+'</span></div>';
+  w.innerHTML='<div class="gnext"><span>کلوز کندل ۴ ساعته‌ی بعدی</span><b dir="ltr">'+nextLbl+'</b><em>'+durFa((next-now)/60000)+' دیگر</em></div>'+
+    '<div class="gslots">'+slots.map(s=>'<i class="'+(s===nextLbl?'on':'')+'" dir="ltr">'+s+'</i>').join('')+'</div>'+
+    '<div class="gsess">'+ses('🇨🇳','چین',cn)+ses('🇺🇸','نیویورک',ny)+'</div>';
+}
+function guideClock(){
+  const w=el('div','gclock');paintClock(w);
+  if(!GCLOCK)GCLOCK=setInterval(()=>$$('.gclock').forEach(paintClock),30000);
+  return w;
+}
+/* درس ۹: پوزیشن‌های باز همین حالا در برابر قانون ۳ پوزیشن / ۳٪ ریسک */
+function guideRulesNow(){
+  const w=el('div','grulesnow');
+  const open=DB.positions.filter(p=>p.status==='open');
+  let atRisk=0,sum=0,free=0,noStop=0;
+  for(const p of open){
+    const sign=p.dir==='short'?-1:1, q=(p.margin*p.lev)/p.entry;
+    if(!p.stop){noStop++;atRisk++;continue;}
+    const r=(p.entry-p.stop)*sign*q;
+    if(r>1e-9){atRisk++;sum+=r;}else free++;
+  }
+  const pct=S.acct>0?sum/S.acct*100:0;
+  const bar=(v,max,lbl,val)=>'<div class="gmeter '+(v>max?'bad':v>=max?'full':'')+'"><div><b>'+lbl+'</b><span dir="ltr">'+val+'</span></div>'+
+    '<i><s style="width:'+Math.min(100,v/max*100)+'%"></s></i></div>';
+  const ok=atRisk<3&&pct<3&&!noStop;
+  w.innerHTML=bar(atRisk,3,'پوزیشن در ریسک',faN(atRisk)+' / ۳')+
+    bar(pct,3,'ریسک فعال از سرمایه',pct.toFixed(1)+'% / 3%')+
+    '<div class="gverdict '+(ok?'ok':'no')+'">'+(open.length
+      ?(ok?'طبق قانون کانال می‌توانی یک پوزیشن تازه بگیری.':'طبق قانون کانال فعلاً پوزیشن تازه نگیر؛ اول یکی را ریسک‌فری یا بسته کن.')
+      :'پوزیشن بازی نداری؛ جا برای ۳ پوزیشن هست.')+
+    (free?'<br>'+faN(free)+' پوزیشن ریسک‌فری داری که در شمارش نیست.':'')+
+    (noStop?'<br>'+faN(noStop)+' پوزیشن بدون حد ضرر است؛ ریسکش نامحدود حساب می‌شود.':'')+'</div>'+
+    '<div class="hint">مبنا: موجودی حساب <b dir="ltr">'+fmtUsd(S.acct)+'</b> از تنظیمات.</div>';
+  return w;
+}
+function guideNote(n){
+  const N=GUIDE_NOTES[n];if(!N)return null;
+  const w=el('div','gn');
+  w.appendChild(el('div','ghead2',ic('book')+'<span>تحلیل و آموزش قدم‌به‌قدم</span>'));
+  w.appendChild(el('div','gsum',N.sum));
+  if(N.widget==='calc')w.appendChild(guideCalc());
+  else if(N.widget==='clock')w.appendChild(guideClock());
+  else if(N.widget==='rules')w.appendChild(guideRulesNow());
+  if(N.pic&&N.pic.length){
+    w.appendChild(gSec('search','تحلیل تصویر'));
+    const ul=el('ul','gpic');ul.innerHTML=N.pic.map(x=>'<li>'+x+'</li>').join('');w.appendChild(ul);
+  }
+  if(N.plan){
+    w.appendChild(gSec('trend','نقشه‌ی معامله'));
+    w.appendChild(guideKv(N.plan));
+    w.appendChild(guideLadder(N.plan));
+  }
+  if(N.cmp){
+    w.appendChild(gSec('bars','مقایسه'));
+    const t=el('table','gcmp');
+    t.innerHTML='<thead><tr><th></th>'+N.cmp.h.map(h=>'<th dir="ltr">'+h+'</th>').join('')+'</tr></thead><tbody>'+
+      N.cmp.rows.map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('')+'</tbody>';
+    w.appendChild(tWrap(t));
+  }
+  if(N.steps&&N.steps.length){
+    w.appendChild(gSec('flag','قدم‌به‌قدم'));
+    const ol=el('ol','gsteps');
+    ol.innerHTML=N.steps.map((s,i)=>'<li><i>'+faN(i+1)+'</i><div><b>'+s[0]+'</b><p>'+s[1]+'</p></div></li>').join('');
+    w.appendChild(ol);
+  }
+  if(N.rules&&N.rules.length){
+    w.appendChild(gSec('shield','قانون‌های کلیدی'));
+    const ul=el('ul','grules');ul.innerHTML=N.rules.map(x=>'<li>'+ic('check')+'<span>'+x+'</span></li>').join('');
+    w.appendChild(ul);
+  }
+  for(const x of (N.warn||[]))w.appendChild(el('div','gwarnbox',ic('alert')+'<span>'+x+'</span>'));
+  if(N.app)w.appendChild(el('div','gapp',ic('star')+'<span><b>در همین برنامه:</b> '+N.app+'</span>'));
+  return w;
+}
 function guideCard(n,title,i,q){
   const L=guideRec(n), open=GUIDE.open.has(n)||!!q;
   const c=el('div','card lesson gcard'+(L&&L.read?' done':'')+(open?' open':''));
@@ -2895,20 +3272,16 @@ function guideCard(n,title,i,q){
   c.appendChild(head);
   if(!open)return c;
   const body=el('div','gbody');
+  const note=guideNote(n);
   if(!L){
-    body.appendChild(el('div','hint','این درس هنوز از کانال خوانده نشده. «دریافت از کانال» را بالا بزن، '+
+    body.appendChild(el('div','hint','پست این درس هنوز از کانال خوانده نشده. «دریافت از کانال» را بالا بزن، '+
       'یا مستقیم در تلگرام ببین.'));
     const a=el('a','mark ghost','در تلگرام ببین');a.href='https://t.me/'+S.channel+'/'+n;a.target='_blank';a.rel='noopener';
     body.appendChild(a);
+    if(note)body.appendChild(note);
     c.appendChild(body);return c;
   }
   body.appendChild(mediaOf(L));
-  const note=GUIDE_NOTES[n];
-  if(note){
-    const nb=el('div','gnote');
-    nb.innerHTML='<b>'+ic('info')+'خلاصه و توضیح</b>'+note;
-    body.appendChild(nb);
-  }
   const long=(L.text||'').length>420, col=long&&COLLAPSED['G'+n]!==false&&!q;
   body.appendChild(el('div','txt'+(col?' clamp':''),linkify(esc(L.text||'(این پست متن ندارد)'))));
   if(long){
@@ -2916,6 +3289,7 @@ function guideCard(n,title,i,q){
     b.onclick=()=>{COLLAPSED['G'+n]=!col;renderLessons();};
     body.appendChild(b);
   }
+  if(note)body.appendChild(note);
   const row=el('div','markrow');
   const rd=el('button','mark'+(L.read?' on':''),L.read?ic('check')+'خوانده شد':'خواندم');
   rd.onclick=()=>{
