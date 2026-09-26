@@ -518,7 +518,68 @@ tr.tap:hover td{background:var(--card2)}
    در هر دو یک معنی بدهد، وگرنه در RTL برعکس حس می‌شود. */
 .sldrow input[type=range]{width:100%;accent-color:var(--gold);height:26px;direction:ltr}
 .sldrow input[type=range]:disabled{opacity:.45}
-.sldrow input[type=number]{width:100%;text-align:center}
+/* کشویی‌های فرم ورود: دستگیره‌ی طلایی با سایه، هم‌خانواده‌ی دستگیره‌ی استاپ روی نردبان */
+.sldrow input[type=range],.levtrack input[type=range]{-webkit-appearance:none;appearance:none;background:none;height:34px;margin:0;cursor:pointer;accent-color:auto}
+.sldrow input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:99px;
+  background:linear-gradient(90deg,var(--gold2),var(--gold)) 0/var(--val,50%) 100% no-repeat,var(--line2)}
+.sldrow input[type=range]::-moz-range-track{height:6px;border-radius:99px;background:var(--line2)}
+.sldrow input[type=range]::-moz-range-progress{height:6px;border-radius:99px;background:linear-gradient(90deg,var(--gold2),var(--gold))}
+.sldrow input[type=range]::-webkit-slider-thumb,.levtrack input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:30px;height:30px;margin-top:-12px;border-radius:50%;border:2px solid var(--bg);cursor:grab;
+  box-shadow:0 0 0 1px var(--gold),0 6px 16px -4px color-mix(in srgb,var(--gold) 85%,transparent);transition:transform .2s var(--spring)}
+.sldrow input[type=range]::-moz-range-thumb,.levtrack input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;
+  border:2px solid var(--bg);cursor:grab;box-shadow:0 0 0 1px var(--gold),0 6px 16px -4px color-mix(in srgb,var(--gold) 85%,transparent)}
+.sldrow input[type=range]::-webkit-slider-thumb{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 7v10M15 7v10' stroke='%23201a0e' stroke-width='2.4' stroke-linecap='round' opacity='.7'/%3E%3C/svg%3E") center/16px no-repeat,
+  radial-gradient(circle at 50% 35%,rgba(255,255,255,.45),transparent 60%),linear-gradient(180deg,var(--gold),var(--gold2))}
+.sldrow input[type=range]::-moz-range-thumb{background:radial-gradient(circle at 50% 35%,rgba(255,255,255,.45),transparent 60%),linear-gradient(180deg,var(--gold),var(--gold2))}
+.sldrow input[type=range]:active::-webkit-slider-thumb,.levtrack input[type=range]:active::-webkit-slider-thumb{transform:scale(1.15);cursor:grabbing}
+.sldrow input[type=range]:disabled{opacity:1}
+.levbox{margin-top:14px;padding:12px 12px 6px;border-radius:14px;background:var(--inset);border:1px solid var(--line)}
+.levhd{display:flex;align-items:center;gap:10px}
+.levt{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:var(--tx2)}
+.levt .ic{width:16px;height:16px;color:var(--gold)}
+.levv{display:inline-flex;flex-direction:row;align-items:baseline;gap:1px;direction:ltr;unicode-bidi:isolate;padding:2px 10px;border-radius:10px;
+  background:var(--card);border:1px solid var(--line2)}
+.levv input{width:58px;background:none;border:0;padding:2px 0;color:var(--gold);font:inherit;font-size:22px;font-weight:900;
+  text-align:center;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.levv input::-webkit-outer-spin-button,.levv input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.levv input:focus{outline:none}
+.levv:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 18%,transparent)}
+.levv input{order:1}
+.levv em{order:2;font-style:normal;font-size:15px;font-weight:900;color:var(--gold);opacity:.8}
+.autotog{position:relative;display:inline-flex;margin-inline-start:auto;cursor:pointer}
+.autotog input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.autotog span{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:99px;font-size:12px;font-weight:800;
+  background:var(--card);border:1px solid var(--line2);color:var(--tx3);transition:background .2s,color .2s,border-color .2s}
+.autotog .ic{width:14px;height:14px}
+.autotog input:checked+span{background:color-mix(in srgb,var(--gold) 16%,transparent);color:var(--gold);
+  border-color:color-mix(in srgb,var(--gold) 50%,transparent);box-shadow:0 4px 14px -8px var(--gold)}
+.autotog input:focus-visible+span{outline:2px solid var(--gold);outline-offset:2px}
+.levtrack{margin-top:8px;direction:ltr}
+.levtrack input[type=range]{width:100%}
+.levtrack input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:99px;
+  background:linear-gradient(90deg,transparent 0 var(--val,0%),rgba(0,0,0,.42) var(--val,0%) 100%),
+    linear-gradient(90deg,var(--up) 0 var(--safe,100%),var(--dn) var(--safe,100%) 100%)}
+.levtrack input[type=range].nostop::-webkit-slider-runnable-track{
+  background:linear-gradient(90deg,transparent 0 var(--val,0%),rgba(0,0,0,.42) var(--val,0%) 100%),linear-gradient(90deg,var(--gold2),var(--gold))}
+.levtrack input[type=range]::-moz-range-track{height:8px;border-radius:99px;background:linear-gradient(90deg,var(--up) 0 var(--safe,100%),var(--dn) var(--safe,100%) 100%)}
+.levtrack input[type=range].nostop::-moz-range-track{background:linear-gradient(90deg,var(--gold2),var(--gold))}
+.levtrack input[type=range]::-webkit-slider-thumb{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13 2 4.5 13.5H11L10 22l8.5-11.5H12z' fill='%23201a0e'/%3E%3C/svg%3E") center/15px no-repeat,
+  radial-gradient(circle at 50% 35%,rgba(255,255,255,.45),transparent 60%),linear-gradient(180deg,var(--gold),var(--gold2))}
+.levtrack input[type=range]::-moz-range-thumb{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13 2 4.5 13.5H11L10 22l8.5-11.5H12z' fill='%23201a0e'/%3E%3C/svg%3E") center/14px no-repeat,
+  linear-gradient(180deg,var(--gold),var(--gold2))}
+.levtrack input[type=range]:disabled{cursor:default}
+.levtrack input[type=range]:disabled::-webkit-slider-thumb{cursor:default;box-shadow:0 0 0 1px var(--gold),0 0 0 6px color-mix(in srgb,var(--gold) 16%,transparent),0 6px 16px -4px color-mix(in srgb,var(--gold) 85%,transparent)}
+.levticks{position:relative;height:18px;direction:ltr;margin-top:2px}
+.levticks i{position:absolute;transform:translateX(-50%);font-style:normal;font-size:10.5px;font-weight:800;color:var(--tx3);
+  white-space:nowrap;font-variant-numeric:tabular-nums}
+.levticks i.safe{color:var(--up);top:0;direction:rtl;unicode-bidi:isolate}
+.levticks i.safe b{unicode-bidi:isolate;font-weight:900}
+.levticks i.safe.end{transform:translateX(-82%)}.levticks i.safe.end::before{left:82%}
+.levticks i.safe.start{transform:translateX(-18%)}.levticks i.safe.start::before{left:18%}
+.levticks i.safe::before{content:'';position:absolute;left:50%;top:-6px;width:2px;height:6px;margin-left:-1px;background:var(--up);border-radius:2px}
+.sldrow input[type=number]{width:100%;text-align:center;font-size:17px;font-weight:900;color:var(--gold);
+  background:var(--card);border-radius:10px;font-variant-numeric:tabular-nums}
 .replyhead{display:flex;align-items:center;gap:7px;width:100%;background:none;border:0;
   padding:0;color:inherit;font:inherit;text-align:start;cursor:pointer}
 .replyhead span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1542,7 +1603,6 @@ function pruneCaches(){
   for(const k of RCACHE.keys())if(!live.has(k))RCACHE.delete(k);
   for(const k of [...NEWIDS])if(!live.has(k))NEWIDS.delete(k);
   for(const k of [...OPENCARD])if(!live.has(k))OPENCARD.delete(k);
-  for(const k of [...PLANOPEN])if(!live.has(k))PLANOPEN.delete(k);
   for(const k of [...REPLYOPEN])if(!live.has(k))REPLYOPEN.delete(k);
   let aud=false;
   for(const k of Object.keys(AUD))if(!live.has(k)){delete AUD[k];aud=true;}
@@ -4108,9 +4168,6 @@ function buildCard(p){
       card.appendChild(buildActions(p,sig,ov,px,dec));
     }else if(stale){
       card.appendChild(buildStale(p,sig));
-    }else if(PLANOPEN.has(p.id)){
-      card.appendChild(buildPlan(p,sig,ov,px));
-      card.appendChild(buildActions(p,sig,ov,px,dec));
     }else{
       card.appendChild(buildBrief(p,sig,ov,px));
     }
@@ -4253,97 +4310,6 @@ function mktPicker(cur,onPick,guess){
 function mktToggle(cur,guess,onPick){
   return guess?mktPicker(cur,onPick,true):mktBadge(cur,onPick);
 }
-function buildPlan(p,sig,ov,px){
-  const plan=el('div','plan');
-  const I=planInputsOf(p,sig,ov,px);
-  plan.appendChild(mktToggle(I.market,I.marketGuess,k=>setOv(p,'market',k,true)));
-  plan.appendChild(amtRow(I.amt,v=>setAmt(p,v),I.spot));
-  const inp=el('div','inputs');
-  inp.appendChild(numField('ورود'+(I.entryAssumed?' (قیمت روز)':''),I.entry,v=>setOv(p,'entry',v)));
-  inp.appendChild(numField('حد ضرر',I.stop,v=>setOv(p,'stop',v)));
-  if(!I.spot){
-    inp.appendChild(numField('اهرم',I.lev,v=>setOv(p,'lev',v)));
-    const ds=el('div','fld','<label>جهت</label>');
-    const sel=el('select');sel.innerHTML='<option value="long">لانگ</option><option value="short">شورت</option>';
-    sel.value=I.dir;sel.onchange=()=>setOv(p,'dir',sel.value,true);
-    ds.appendChild(sel);inp.appendChild(ds);
-  }
-  plan.appendChild(inp);
-
-  const r=computePlan({direction:I.dir,entry:I.entry,stop:I.stop,live:px,capital:I.amt,
-    riskPct:S.risk,maxLeverage:S.maxLev,leverageOverride:I.lev,mode:S.mode,
-    rMultiples:S.rMul,channelTargets:sig.targets,market:I.market});
-
-  const kv=el('div','kv');
-  const add=(l,v,c)=>{const k=el('div','k');k.appendChild(el('b',null,l));k.appendChild(el('span',c||null,v));kv.appendChild(k);};
-  if(px!=null&&r.gapPct!=null&&!I.entryAssumed)
-    add('فاصله تا سیگنال',fmtPct(r.gapPct),r.adverseGapPct>3?'d':(r.adverseGapPct>0?'w':'u'));
-  if(r.ok&&I.spot){
-    add('فاصله استاپ',r.stopDistPct.toFixed(2)+'٪',r.stopDistPct>25?'w':null);
-    add('مبلغ خرید',fmtUsd(r.margin));
-    add('مقدار '+(sig.ticker||'ارز'),(+r.qty.toPrecision(6))+'');
-    add('ضرر در استاپ',fmtUsd(-r.actualRisk)+' ('+r.actualRiskPct.toFixed(1)+'٪)',
-      r.actualRiskPct>S.risk*1.5?'d':'w');
-    if(Math.abs(r.suggestedMargin-r.margin)>0.05)add('مبلغ پیشنهادی',fmtUsd(r.suggestedMargin),'u');
-  }else if(r.ok){
-    add('فاصله استاپ',r.stopDistPct.toFixed(2)+'٪',r.stopDistPct>25?'w':null);
-    add('اهرم',r.leverage.toFixed(r.leverage<10?1:0)+'x'+I.levSrc);
-    add('مارجین',fmtUsd(r.margin));
-    add('حجم پوزیشن',fmtUsd(r.notional));
-    add('ضرر در استاپ',fmtUsd(-r.actualRisk)+' ('+r.actualRiskPct.toFixed(1)+'٪)',
-      r.actualRiskPct>S.risk*1.5?'d':'w');
-    add('لیکوئید تقریبی',r.liqPrice==null?'ندارد':fmtPrice(r.liqPrice),r.liqPrice==null?'m':'d');
-    if(Math.abs(r.suggestedMargin-r.margin)>0.05)add('مارجین پیشنهادی',fmtUsd(r.suggestedMargin),'u');
-  }else{
-    if(I.entry)add('ورود',fmtPrice(I.entry));
-    add('حد ضرر',I.stop?fmtPrice(I.stop):'ندارد','w');
-  }
-  plan.appendChild(kv);
-
-  if(r.ok){
-    const tb=el('table','tp');
-    tb.innerHTML='<thead><tr><th>تارگت</th><th>قیمت</th><th>سود</th><th>رشد</th></tr></thead>';
-    const tb2=el('tbody');let rows='';
-    for(const t of r.targets)
-      rows+='<tr><td>'+t.r+'R</td><td class="num">'+fmtPrice(t.price)+
-        '</td><td class="num" style="color:var(--up)">+'+t.profit.toFixed(2)+'$</td><td class="num">'+
-        (Math.abs((t.price-r.entry)/r.entry)*100).toFixed(1)+'٪</td></tr>';
-    for(const t of r.channelTargets)
-      rows+='<tr class="ch"><td>کانال</td><td class="num">'+fmtPrice(t.price)+
-        '</td><td class="num">+'+t.profit.toFixed(2)+'$</td><td class="num">'+
-        t.movePct.toFixed(1)+'٪ ('+t.r.toFixed(1)+'R)</td></tr>';
-    tb2.innerHTML=rows;tb.appendChild(tb2);plan.appendChild(tWrap(tb));
-  }
-
-  const fl=el('div','flags'),seen=new Set();
-  const F=(lv,tx)=>fl.appendChild(el('div','flag '+lv,'<i>'+(lv==='d'?'✕':lv==='w'?'!':lv==='u'?'✓':'i')+'</i><span>'+tx+'</span>'));
-  if(I.entryAssumed)F('i','این پست قیمت ورود نداده؛ قیمت لحظه‌ای جای آن نشسته. اگر ورود خودت را داری بالا واردش کن.');
-  if(I.marketGuess)F('i','پست نگفته فیوچرز است یا اسپات؛ فیوچرز فرض شد. اگر اسپات می‌گیری کلید بالا را بزن — اهرم و لیکوئید حذف می‌شوند.');
-  if(I.spot)F('i','اسپات: اهرم ۱، لیکوئید ندارد. بدترین حالت همان مبلغی است که گذاشته‌ای، و آن هم فقط اگر قیمت صفر شود.');
-  const TXT={'no-entry':['i','قیمت ورود پیدا نشد. برای محاسبه، ورود را دستی وارد کن.'],
-    'no-stop':['w','این پست حد ضرر ندارد. بدون استاپ نمی‌شود حجم امن حساب کرد؛ خودت یکی بگذار.'],
-    'bad-stop':['d','استاپ نسبت به جهت معامله اشتباه است.'],
-    'liq-before-stop':['d','با این اهرم قبل از رسیدن به استاپ لیکوئید می‌شوی. اهرم را کم کن.'],
-    'liq-close':['w','قیمت لیکوئید خیلی به استاپ نزدیک است؛ یک فیتیله کافی است.'],
-    'stop-far':['w','فاصله استاپ بیش از ۲۵٪ است.'],
-    'lev-capped':['i','اهرم لازم از سقف تو بیشتر بود و روی سقف تنظیم شد.'],
-    'price-moved':['w','قیمت از قیمت سیگنال فاصله گرفته؛ ورود دیر است.'],
-    'past-stop':['d','قیمت فعلی آن‌طرف استاپ است. این سیگنال دیگر معتبر نیست.']};
-  for(const c of [...r.flags,...r.warnings]){
-    if(seen.has(c))continue;seen.add(c);
-    if(c==='over-risk'&&r.ok){
-      F(r.actualRiskPct>S.risk*3?'d':'w','با کل '+fmtUsd(I.amt)+'، ضرر در استاپ '+r.actualRiskPct.toFixed(1)+
-        '٪ مارجین می‌شود، نه '+S.risk+'٪ که هدف گذاشتی. برای ریسک هدف، فقط '+fmtUsd(r.suggestedMargin)+' وارد کن.');
-      continue;
-    }
-    const d=TXT[c];if(d)F(d[0],d[1]);
-  }
-  if(sig.tier2!=null)F('i','پله دوم روی '+fmtPrice(sig.tier2)+' اعلام شده؛ میانگین ورودت عوض می‌شود.');
-  if(!seen.size&&r.ok)F('u','ایراد عددی پیدا نشد. یعنی محاسبه سالم است، نه اینکه معامله خوبی است.');
-  plan.appendChild(fl);
-  return plan;
-}
-const PLANOPEN=new Set();
 /* حالت بسته: فقط آنچه برای تصمیم لازم است، به‌علاوه‌ی دو دکمه. باز کردن جزئیات
    یک کار جداست تا لیست بلند نشود و پیمایش سنگین نشود. */
 function buildBrief(p,sig,ov,px){
@@ -4364,7 +4330,8 @@ function buildBrief(p,sig,ov,px){
   if(!decisionOf(p.id))w.appendChild(amtRow(I.amt,v=>setAmt(p,v),I.spot));
   const a=el('div','acts');
   const b1=el('button','btn ok',ic('check')+'<span>بررسی و ورود</span>');
-  b1.onclick=()=>{PLANOPEN.add(p.id);rebuildCard(p);};
+  // یک مرحله: همان فرم ورود — نردبان، مبلغ، اهرم، سود هر تارگت و هشدارها همه آنجاست
+  b1.onclick=()=>sheetEnter(p,sig,ov,px);
   const b2=el('button','btn no',ic('x')+'<span>وارد نشدم</span>');
   b2.onclick=()=>sheetSkip(p,sig,ov,px);
   a.appendChild(b1);a.appendChild(b2);
@@ -4396,15 +4363,7 @@ function buildBrief(p,sig,ov,px){
 }
 function buildActions(p,sig,ov,px,dec){
   const a=el('div','acts');
-  if(!dec){
-    const b1=el('button','btn ok',ic('check')+'<span>وارد شدم</span>');
-    b1.onclick=()=>sheetEnter(p,sig,ov,px);
-    const b2=el('button','btn no',ic('x')+'<span>وارد نشدم</span>');
-    b2.onclick=()=>sheetSkip(p,sig,ov,px);
-    const b3=el('button','btn xs','بستن جزئیات');
-    b3.onclick=()=>{PLANOPEN.delete(p.id);rebuildCard(p);};
-    a.appendChild(b1);a.appendChild(b2);a.appendChild(b3);
-  }else{
+  {
     const info=el('div',null,'<span style="font-size:12.5px;color:var(--tx2)">'+
       (dec.action==='taken'?'ثبت شده در پوزیشن‌ها':'در آرشیو نگرفته‌ها')+
       ' · '+jStampFa(new Date(dec.at))+(dec.reason?' · '+esc(dec.reason):'')+'</span>');
@@ -4621,6 +4580,8 @@ function sheetEnter(p,sig,ov,px){
   let MK=(planInputsOf(p,sig,ov,px)).market;
   const I0=planInputsOf(p,sig,ov,px);
   const entry0=I0.entry||px||'', stop0=I0.stop||'', amt0=I0.amt;
+  // اهرمی که کانال گفته یا خودت روی سیگنال گذاشته‌ای، دستی می‌نشیند؛ وگرنه خودکار
+  const lev0=I0.spot?null:(I0.lev>0?Math.min(I0.lev,S.maxLev):null);
   const maxMargin=Math.ceil(Math.max(amt0*2,S.cap*4,...AMT_CHIPS,Math.min(S.acct,1000)));
   const spot=()=>MK==='spot';
   openSheet(
@@ -4635,11 +4596,16 @@ function sheetEnter(p,sig,ov,px){
      '<input type="range" id="r_m" min="1" max="'+maxMargin+'" step="1" value="'+amt0+'">'+
      '<input type="number" id="f_m" step="any" inputmode="decimal" value="'+amt0+'"></div>'+
    '<div id="amtBox"></div>'+
-   '<div class="sldrow" id="levRow"><label>اهرم</label>'+
-     '<input type="range" id="r_l" min="1" max="'+S.maxLev+'" step="0.5" value="1">'+
-     '<input type="number" id="f_l" step="any" inputmode="decimal"></div>'+
-   '<label class="autolev" id="autoRow"><input type="checkbox" id="f_auto" checked>'+
-     '<span>اهرم را خودت حساب کن</span></label>'+
+   /* اهرم: دستگیره‌ی طلایی مثل دستگیره‌ی استاپ، روی نواری که ناحیه‌ی امن (استاپ قبل از
+      لیکوئید) را سبز و بقیه را قرمز نشان می‌دهد */
+   '<div class="levbox" id="levRow">'+
+     '<div class="levhd"><span class="levt">'+ic('bolt')+'اهرم</span>'+
+       '<span class="levv"><input type="number" id="f_l" step="any" inputmode="decimal" aria-label="اهرم" value="'+(lev0||'')+'"><em>x</em></span>'+
+       '<label class="autotog" id="autoRow" title="اهرمی که ضررِ خوردنِ استاپ را دقیقاً به ریسک هدف می‌رساند">'+
+         '<input type="checkbox" id="f_auto"'+(lev0?'':' checked')+'><span>'+ic('bolt')+'خودکار</span></label></div>'+
+     '<div class="levtrack"><input type="range" id="r_l" min="1" max="'+S.maxLev+'" step="0.5" value="'+(lev0||1)+'"></div>'+
+     '<div class="levticks" id="levTicks"></div>'+
+   '</div>'+
    '<div class="grid" style="margin-top:10px">'+
      '<div class="fld" id="dirRow"><label>جهت</label><select id="f_d">'+
        '<option value="long"'+(I0.dir==='long'?' selected':'')+'>لانگ</option>'+
@@ -4706,6 +4672,7 @@ function sheetEnter(p,sig,ov,px){
          v=grab();
        }else{$('#f_l').readOnly=false;$('#r_l').disabled=false;}
 
+       paintLev(v);
        const rb=$('#riskBox'); rb.innerHTML='';
        const note=(txt,kind)=>rb.innerHTML+='<div class="rwarn '+kind+'">'+txt+'</div>';
        const pv=$('#prev'); pv.innerHTML='';
@@ -4752,12 +4719,40 @@ function sheetEnter(p,sig,ov,px){
          ?'بدون حد ضرر، معلوم نیست کجا می‌خواهی بیرون بیایی. در اسپات لیکوئید نمی‌شوی ولی ضرر بی‌سقف می‌ماند.'
          :'بدون حد ضرر، نه ریسک معلوم است نه لیکوئید معنی دارد. اگر می‌توانی بنویسش.','warn');
        if(px)add('سود/ضرر الان',fmtUsd(m.pnl)+' ('+fmtPct(m.roi)+')',cls(m.pnl));
+       // سود هر تارگت کانال با همین مبلغ و اهرم — همان جدولی که قبلاً ماشین‌حساب کارت داشت
+       const sgn=v.dir==='long'?1:-1, rsk=v.stop?Math.abs(v.entry-v.stop):null;
+       (sig.targets||[]).filter(t=>isFinite(t)&&(t-v.entry)*sgn>0).slice(0,4).forEach((t,i)=>
+         add('تارگت '+faN(i+1)+' · '+fmtPrice(t),'+'+fmtUsd(m.qty*Math.abs(t-v.entry))+(rsk?' · '+((t-v.entry)*sgn/rsk).toFixed(1)+'R':''),'u'));
+       if(px&&v.entry){
+         const gap=((px-v.entry)/v.entry)*100*sgn;
+         if(v.stop&&(sgn>0?px<=v.stop:px>=v.stop))
+           note('<b>قیمت الان آن‌طرف استاپ است.</b> این سیگنال دیگر معتبر نیست.','bad');
+         else if(gap>3)note('قیمت '+gap.toFixed(1)+'٪ از ورود سیگنال فاصله گرفته؛ ورود دیر است.','warn');
+       }
      };
      /* مبلغ‌های آماده زیر کشویی: زدنشان همان کادر مبلغ را پر می‌کند */
      const paintAmt=()=>{
        const box=$('#amtBox'), cur=num('f_m');
        box.innerHTML='';
        box.appendChild(amtRow(cur||0,v=>{$('#f_m').value=v;$('#r_m').value=v;upd();},spot(),true));
+     };
+     const paintLev=v=>{
+       const r=$('#r_l'), tk=$('#levTicks'); if(!r||!tk)return;
+       const max=+S.maxLev||10, pos=x=>((clamp(x,1,max)-1)/((max-1)||1))*100;
+       const sd=v.entry&&v.stop?Math.abs(v.entry-v.stop)/v.entry:null;
+       const safe=sd?1/(sd+MMR):null;
+       r.style.setProperty('--val',pos(v.lev||1)+'%');
+       r.style.setProperty('--safe',(safe?pos(safe):100)+'%');
+       r.classList.toggle('nostop',!sd);
+       const rm=$('#r_m');
+       if(rm){const lo=+rm.min||1,hi=+rm.max||100;
+         rm.style.setProperty('--val',((clamp(v.margin||lo,lo,hi)-lo)/((hi-lo)||1))*100+'%');}
+       const at=(p,txt,c)=>'<i class="'+(c||'')+'" style="left:calc(15px + (100% - 30px) * '+(p/100)+')">'+txt+'</i>';
+       // برچسب‌ها روی هم نیفتند: برچسبِ «امن تا» اگر نزدیک یکی از دو سر بود، آن سر را کنار می‌زند
+       const sp=safe&&safe<max?pos(safe):null;
+       let h=(sp!=null&&sp<16?'':at(0,'1x'))+(sp!=null&&sp>80?'':at(100,max+'x'));
+       if(sp!=null)h+=at(sp,'امن تا <b dir="ltr">'+(+safe.toFixed(safe<10?1:0))+'x</b>','safe'+(sp>85?' end':sp<15?' start':''));
+       tk.innerHTML=h;
      };
      const upd=()=>{updNums();drawLad();paintAmt();};
      paintMkt();
