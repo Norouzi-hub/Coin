@@ -577,6 +577,48 @@ tr.tap:hover td{background:var(--card2)}
 .lesson.picked{border-color:var(--gold)}
 .lpick{width:20px;height:20px;accent-color:var(--gold);flex:none}
 .lbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+/* دستورالعمل ترید: یک مسیرِ شماره‌دار، هر درس یک آکاردئون */
+.guide{background:var(--card);border:1px solid color-mix(in srgb,var(--gold) 30%,var(--line));border-radius:var(--r);
+  padding:14px;margin:12px 0 18px;box-shadow:var(--sh)}
+.ghd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.gtitle{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--tx)}
+.gtitle .ic{width:20px;height:20px;color:var(--gold)}
+.gprog{display:flex;flex-direction:column;gap:5px;min-width:130px;font-size:11.5px;color:var(--tx2);font-weight:700}
+.gprog i{display:block;height:5px;border-radius:99px;background:var(--inset);overflow:hidden}
+.gprog s{display:block;height:100%;background:linear-gradient(90deg,var(--gold2),var(--gold));border-radius:99px;transition:width .4s var(--ease)}
+.gwarn{font-size:12px;color:var(--tx3);line-height:1.9;margin:8px 0 10px}
+.guide .lbar{margin-bottom:8px}
+.guide .lbar .markhint{align-self:center}
+.gcard{margin:8px 0!important;box-shadow:none!important;background:var(--inset)!important}
+.ghead{display:flex;align-items:center;gap:10px;width:100%;padding:12px;background:none;border:0;cursor:pointer;
+  color:var(--tx);font:inherit;text-align:start}
+.gnum{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;
+  background:var(--card2);border:1px solid var(--line2);color:var(--gold);font-variant-numeric:tabular-nums}
+.gnum .ic{width:15px;height:15px}
+.gcard.done .gnum{background:color-mix(in srgb,var(--up) 16%,transparent);border-color:color-mix(in srgb,var(--up) 45%,transparent);color:var(--up)}
+.gttl{flex:1;min-width:0;font-size:13.5px;font-weight:800;line-height:1.7}
+.gcard.done .gttl{color:var(--tx2)}
+.gchev{flex:none;width:9px;height:9px;border-inline-end:2px solid var(--tx3);border-bottom:2px solid var(--tx3);
+  transform:rotate(45deg);margin-top:-4px;transition:transform .25s var(--ease)}
+.gcard.open .gchev{transform:rotate(-135deg);margin-top:4px}
+.gbody{padding:0 0 4px}
+.gbody>.hint{padding:0 12px}
+.gbody>a.mark{display:inline-block;margin:8px 12px 10px;text-decoration:none}
+.gbody .txt{padding:10px 12px 0}
+.gbody .more{margin-inline-start:12px}
+.gbody .markrow{padding:10px 12px 8px}
+.gbody .markrow a.mark{text-decoration:none}
+.gmedia .shot{border-top:1px solid var(--line)}
+.gmedia video{display:block;width:100%;max-height:min(60vh,460px);background:#0B0C0F;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.gnote{margin:10px 12px 0;padding:10px 12px;border-radius:var(--r2);font-size:13px;line-height:2;color:var(--tx);
+  background:color-mix(in srgb,var(--gold) 9%,transparent);border:1px solid color-mix(in srgb,var(--gold) 30%,transparent)}
+.gnote>b{display:flex;align-items:center;gap:6px;color:var(--gold);font-size:12.5px;margin-bottom:4px}
+.gnote>b .ic{width:15px;height:15px}
+.gnote ul{margin:4px 0 0;padding-inline-start:18px}
+.mark.busy{opacity:.7;cursor:progress}
+.gmedia .vfail{display:inline-block;margin:10px 12px 0;text-decoration:none}
+.empty.sm{padding:18px 16px}
+#vLearn .sechd{margin-top:6px}
 .catrow{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
 .catchip{padding:5px 12px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;
   background:var(--inset);color:var(--tx2);border:1px solid var(--line2)}
@@ -953,6 +995,7 @@ input[type=range]{width:100%;accent-color:var(--gold)}
       <button class="tab" data-v="positions" role="tab" aria-selected="false" data-ic="wallet"><span>پوزیشن‌ها</span><span class="cnt z" id="cPos">0</span></button>
       <button class="tab" data-v="audit" role="tab" aria-selected="false" data-ic="shield"><span>کانال‌سنج</span><span class="cnt z" id="cAud">0</span></button>
       <button class="tab" data-v="report" role="tab" aria-selected="false" data-ic="bars"><span>کارنامه</span></button>
+      <button class="tab" data-v="learn" role="tab" aria-selected="false" data-ic="book"><span>آموزش</span><span class="cnt g z" id="cLearn">0</span></button>
     </nav>
   </div>
   <div class="prog" id="prog"></div>
@@ -971,7 +1014,6 @@ input[type=range]{width:100%;accent-color:var(--gold)}
     <div class="status" id="status"></div>
     <div id="incoming" class="incoming hide"></div>
     <div id="list"></div>
-    <div id="lessonList" class="hide"></div>
     <div id="moreSkel" class="hide"></div>
     <div class="morebox">
       <button class="btn hide" id="btnMore"></button>
@@ -999,6 +1041,14 @@ input[type=range]{width:100%;accent-color:var(--gold)}
   </section>
 
   <!-- کارنامه -->
+  <!-- آموزش -->
+  <section id="vLearn" class="view hide">
+    <div class="tools">
+      <label class="search"><span id="lqIc"></span><input id="lq" placeholder="جستجو در آموزش‌ها…" autocomplete="off"></label>
+    </div>
+    <div id="lessonList"></div>
+  </section>
+
   <section id="vReport" class="view hide">
     <div class="tools">
       <div class="fbar">
@@ -2126,13 +2176,24 @@ function parseChannelHTML(html){
       reply={text:nodeText(rt).trim().replace(/\s+/g,' ').slice(0,160),
              id:mm?mm[1].replace(/[?#].*$/,''):null,link:href||null};
     }
-    let img=null;
-    const ph=b.querySelector('.tgme_widget_message_photo_wrap,.tgme_widget_message_video_thumb,.tgme_widget_message_roundvideo_thumb');
-    if(ph){const m=(ph.getAttribute('style')||'').match(/background-image\s*:\s*url\(['"]?(.*?)['"]?\)/);if(m)img=m[1];}
+    /* پست آموزشی ممکن است آلبوم چندعکسی یا ویدیو باشد؛ همه‌ی عکس‌ها را برمی‌داریم،
+       ولی فقط وقتی بیش از یکی باشد ذخیره‌شان می‌کنیم تا کشِ ۸۰۰ پستی سنگین نشود */
+    const imgs=[];
+    for(const ph of b.querySelectorAll('.tgme_widget_message_photo_wrap,.tgme_widget_message_video_thumb,.tgme_widget_message_roundvideo_thumb')){
+      if(ph.closest('.tgme_widget_message_reply'))continue;
+      const m=(ph.getAttribute('style')||'').match(/background-image\s*:\s*url\(['"]?(.*?)['"]?\)/);
+      if(m&&!imgs.includes(m[1]))imgs.push(m[1]);
+    }
+    const img=imgs[0]||null;
+    const vEl=b.querySelector('video[src]');
+    const video=vEl?vEl.getAttribute('src'):null;
     const tm=n.querySelector('time[datetime]');
     if(!text&&!img)continue;
-    out.push({id,num,text:(text||'').trim(),img,reply,
-      date:tm?new Date(tm.getAttribute('datetime')):null,link:'https://t.me/'+id});
+    const po={id,num,text:(text||'').trim(),img,reply,
+      date:tm?new Date(tm.getAttribute('datetime')):null,link:'https://t.me/'+id};
+    if(imgs.length>1)po.imgs=imgs;
+    if(video)po.video=video;
+    out.push(po);
   }
   const more=doc.querySelector('.tme_messages_more[data-before]');
   return {posts:out,before:more?more.getAttribute('data-before'):null,empty:!out.length,
@@ -2305,6 +2366,7 @@ function applyBlob(d){
   DB.pending=Array.isArray(d.pending)?d.pending:[];
   DB.watch=Array.isArray(d.watch)?d.watch:[];
   DB.spot=Array.isArray(d.spot)?d.spot:[];
+  guidePurgeOld();   // دستگاه دیگری که هنوز آموزش‌های قدیمی را دارد، برشان نگرداند
   if(d.settings&&typeof d.settings==='object'){DB.settings=d.settings;Object.assign(S,d.settings);}
   OVERRIDE=DB.overrides;PCACHE.clear();
   save();applySettingsToForm();renderAll();
@@ -2516,6 +2578,8 @@ const lessonTitle=t=>{
 function addLesson(p){
   DB.lessons[p.id]={id:p.id,title:lessonTitle(p.text),text:p.text||'',img:p.img||null,
     date:p.date?+p.date:null,link:p.link||null,at:Date.now(),cat:''};
+  if(p.imgs)DB.lessons[p.id].imgs=p.imgs;
+  if(p.video)DB.lessons[p.id].video=p.video;
   save();renderAll();toast('به آموزش‌ها اضافه شد','ok');
 }
 function removeLesson(id){
@@ -2524,7 +2588,7 @@ function removeLesson(id){
 }
 /* دسته‌ها جای ثابت ندارند: هر رشته‌ای که روی یک آموزش نوشته شود خودش یک دسته می‌شود.
    این‌طور نه مدیریت دسته لازم است نه دسته‌ی خالی می‌ماند. */
-const lessonCats=()=>[...new Set(Object.values(DB.lessons).map(L=>(L.cat||'').trim()).filter(Boolean))].sort();
+const lessonCats=()=>[...new Set(Object.values(DB.lessons).filter(L=>!L.guide).map(L=>(L.cat||'').trim()).filter(Boolean))].sort();
 const CAT_SUGGEST=['تحلیل تکنیکال','مدیریت سرمایه','روانشناسی','پرایس اکشن','اندیکاتور','مفاهیم پایه'];
 function sheetEditLesson(id){
   const L=DB.lessons[id];if(!L)return;
@@ -2659,14 +2723,252 @@ function addLessonQuiet(p){
     date:p.date?+p.date:null,link:p.link||null,at:Date.now(),cat:''};
 }
 
+/* ==================== دستورالعمل ترید ==================== */
+/* کانال یک پستِ فهرست دارد (#دستورالعمل_ترید) که ۹ آموزشِ پایه را به‌ترتیب لینک داده و
+   گفته قبل از هر معامله یک‌بار کامل خوانده شوند. آن ۹ پست اینجا به همان ترتیب می‌آیند،
+   با عکس و ویدیوشان، و کنار هر کدام «خواندم» هست تا معلوم باشد کجای مسیر هستی.
+   اگر کانال فهرست را عوض کند (آموزشی اضافه کند)، پستِ فهرست که در کانال دیده شود،
+   فهرست اینجا هم با آن به‌روز می‌شود. */
+const GUIDE_CAT='دستورالعمل ترید';
+const GUIDE_DEFAULT=[
+  [54648,'آموزش چارت‌خوانی؛ ورود، حد ضرر و اهداف'],
+  [54649,'آموزش تنظیم سفارش Trigger در صرافی Ourbit'],
+  [54650,'محاسبه ریسک، حجم و اهرم با کمک ChatGPT'],
+  [54651,'ماشین‌حساب محاسبه ریسک و اهرم'],
+  [54652,'تایم‌فریم ۴ ساعته و سشن‌های مهم معاملاتی'],
+  [54653,'تفاوت Trigger و Confirm'],
+  [54654,'اگر پوزیشن ریجکت شد، چه کار کنیم؟'],
+  [54655,'نحوه ریسک‌فری و مدیریت پوزیشن'],
+  [54656,'حداکثر تعداد پوزیشن‌ها، ریسک مجاز و سیو سود']];
+const GUIDE_WARN='این مطالب پایه‌ی دستورالعمل معاملاتی کانال هستند. قبل از ورود به معاملات یک‌بار کامل '+
+  'مطالعه‌شان کن و مخصوصاً قوانین مدیریت ریسک، تعداد پوزیشن‌ها، تریگر و ریسک‌فری را جدی بگیر.';
+/* توضیح و جمع‌بندیِ هر درس، به شماره‌ی پست. خالی یعنی هنوز نوشته نشده؛ متن و تصویر خودِ
+   کانال در هر حال نشان داده می‌شوند. */
+const GUIDE_NOTES={};
+const GUIDEKEY='signaldesk.guide.v1', GUIDELIST='signaldesk.guide.list';
+const GUIDE={busy:false,tried:false,err:null,open:new Set()};
+function guideList(){
+  const l=lsGet(GUIDELIST);
+  return Array.isArray(l)&&l.length?l:GUIDE_DEFAULT;
+}
+const guideRec=num=>Object.values(DB.lessons).find(L=>L.guide&&L.num===num)||null;
+const guideMissing=()=>guideList().filter(([n])=>!guideRec(n));
+/* فهرستِ «🔹 عنوان ↵ لینک» را از خودِ پست فهرست بیرون می‌کشد */
+function parseGuideIndex(text){
+  const lines=String(text||'').split('\n').map(x=>x.trim());
+  const out=[];let last='';
+  for(const ln of lines){
+    const m=ln.match(/t\.me\/(?:s\/)?([A-Za-z0-9_]+)\/(\d+)/);
+    if(m&&m[1].toLowerCase()===String(S.channel).toLowerCase()){
+      const n=+m[2];
+      if(!out.some(x=>x[0]===n))out.push([n,last.replace(/^[\s🔹🔸▪️•\-–—\d.)]+/u,'').trim()||('درس '+faN(out.length+1))]);
+      last='';continue;
+    }
+    if(ln&&!/^https?:/.test(ln))last=ln;
+  }
+  return out;
+}
+function findGuideIndex(posts){
+  let best=null;
+  for(const p of posts){
+    if(!/دستورالعمل[_\s]ترید/.test(faNorm(p.text||'')))continue;
+    const l=parseGuideIndex(p.text);
+    if(l.length>=3&&(!best||p.num>best.num))best={num:p.num,list:l};
+  }
+  return best;
+}
+function guideMigrate(){
+  if(lsGet(GUIDEKEY))return;
+  const old=Object.values(DB.lessons).filter(L=>!L.guide);
+  if(old.length){
+    // یک نسخه کنار می‌ماند؛ اگر اشتباهی بود از حافظه‌ی مرورگر برمی‌گردد
+    lsSet('signaldesk.lessons.bak',{at:Date.now(),lessons:DB.lessons});
+    for(const L of old)delete DB.lessons[L.id];
+    save();
+    logIt('info',faN(old.length)+' آموزشِ قبلی پاک شد تا دستورالعمل ترید جایش بیاید');
+  }
+  lsSet(GUIDEKEY,{at:Date.now(),cleared:old.length,ids:old.map(L=>L.id)});
+}
+/* فقط همان‌هایی که پاک شدند، با شناسه — نه «هر چه قدیمی‌تر است»، وگرنه آموزشی که روی
+   دستگاه دیگر تازه اضافه شده ولی ساعتش عقب‌تر است بی‌صدا پاک می‌شد */
+function guidePurgeOld(){
+  const g=lsGet(GUIDEKEY);if(!g||!Array.isArray(g.ids))return;
+  for(const id of g.ids){const L=DB.lessons[id];if(L&&!L.guide)delete DB.lessons[id];}
+}
+function guideStore(p,ord,title){
+  const prev=guideRec(p.num);
+  const L={id:p.id,num:p.num,guide:true,ord,title,cat:GUIDE_CAT,text:p.text||'',img:p.img||null,
+    date:p.date?+p.date:null,link:p.link||('https://t.me/'+p.id),at:prev?prev.at:Date.now(),
+    read:prev?prev.read||null:null};
+  if(p.imgs)L.imgs=p.imgs;
+  if(p.video)L.video=p.video;
+  if(prev&&prev.id!==p.id)delete DB.lessons[prev.id];
+  DB.lessons[p.id]=L;
+}
+/* پست‌ها را از خودِ کانال می‌خواند: یک صفحه (۲۰ پست) که همه‌ی شماره‌ها را بپوشاند،
+   و اگر چیزی جا ماند، صفحه‌ی قبلی. force یعنی حتی آن‌هایی که داری تازه شوند. */
+async function loadGuide(force){
+  if(GUIDE.busy)return;
+  GUIDE.busy=true;GUIDE.tried=true;GUIDE.err=null;
+  if(view==='learn')renderLessons();
+  let got=0;
+  try{
+    const ix=findGuideIndex(POSTS);
+    if(ix)lsSet(GUIDELIST,ix.list);
+    let list=guideList();
+    const ord=new Map(list.map(([n,t],i)=>[n,{i:i+1,t}]));
+    const want=new Set((force?list:guideMissing()).map(x=>x[0]));
+    if(!want.size)return;
+    let before=Math.max(...want)+11;         // چند پست بعد از آخری را هم می‌گیرد تا خودِ پست فهرست بیاید
+    for(let page=0;page<5&&want.size;page++){
+      const res=await loadChannel(before);
+      const ix2=findGuideIndex(res.posts);
+      if(ix2){lsSet(GUIDELIST,ix2.list);list=ix2.list;
+        for(const [n,t] of list){if(!ord.has(n)&&!guideRec(n))want.add(n);}
+        ord.clear();list.forEach(([n,t],i)=>ord.set(n,{i:i+1,t}));}
+      for(const p of res.posts){
+        if(!want.has(p.num))continue;
+        const o=ord.get(p.num);
+        guideStore(p,o?o.i:99,o?o.t:lessonTitle(p.text));
+        want.delete(p.num);got++;
+      }
+      if(!res.before||!want.size)break;
+      const lo=Math.min(...res.posts.map(p=>p.num).filter(Boolean));
+      if(!(lo>Math.min(...want)))break;     // آنچه مانده در این صفحه‌ها نیست
+      before=res.before;
+    }
+    // ترتیب و عنوانِ آنچه داری را هم با فهرستِ تازه یکی می‌کنیم
+    for(const [n,t] of list){const L=guideRec(n);if(L){L.ord=ord.get(n).i;L.title=t;}}
+    if(want.size)GUIDE.err=faN(want.size)+' پست پیدا نشد (شاید کانال پاکشان کرده باشد).';
+    save();
+    if(got)logIt('ok','دستورالعمل ترید: '+faN(got)+' درس از کانال آمد');
+    if(force||got)toast(got?faN(got)+' درس از کانال آمد':'چیز تازه‌ای نبود',got?'ok':'info');
+  }catch(e){
+    GUIDE.err='کانال جواب نداد. اتصال یا فیلترشکن را عوض کن و «دریافت از کانال» را بزن.';
+  }finally{
+    GUIDE.busy=false;
+    renderAll();
+  }
+}
+function guideRead(num,on){
+  const L=guideRec(num);if(!L)return;
+  L.read=on?Date.now():null;
+  save();renderLessons();paintLearnBadge();
+}
+function paintLearnBadge(){
+  const b=$('#cLearn');if(!b)return;
+  const list=guideList();
+  const n=list.filter(([num])=>{const L=guideRec(num);return L&&!L.read;}).length;
+  b.textContent=faN(n);b.classList.toggle('z',!n);
+}
+function mediaOf(L){
+  const w=el('div','gmedia');
+  if(L.video){
+    const v=el('video');v.controls=true;v.preload='none';v.playsInline=true;
+    if(L.img)v.poster=L.img;v.src=L.video;
+    // لینک ویدیوی تلگرام موقت است؛ اگر پخش نشد، به‌جایش لینک خودِ پست
+    v.onerror=()=>{const a=el('a','mark ghost vfail','ویدیو اینجا پخش نشد — در تلگرام ببین');
+      a.href=L.link;a.target='_blank';a.rel='noopener';v.replaceWith(a);};
+    w.appendChild(v);
+  }
+  const imgs=L.video?[]:(L.imgs&&L.imgs.length?L.imgs:(L.img?[L.img]:[]));
+  for(const src of imgs){
+    const a=el('div','shot');a.setAttribute('role','button');a.tabIndex=0;
+    const im=el('img');im.loading='lazy';im.decoding='async';im.alt='تصویر آموزش';
+    a.onclick=()=>openLightbox(im);
+    a.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openLightbox(im);}};
+    im.onload=()=>a.classList.add('loaded');im.onerror=()=>a.remove();im.src=src;
+    a.appendChild(im);w.appendChild(a);
+  }
+  return w;
+}
+function guideCard(n,title,i,q){
+  const L=guideRec(n), open=GUIDE.open.has(n)||!!q;
+  const c=el('div','card lesson gcard'+(L&&L.read?' done':'')+(open?' open':''));
+  const head=el('button','ghead');
+  head.setAttribute('aria-expanded',open?'true':'false');
+  head.innerHTML='<span class="gnum">'+(L&&L.read?ic('check'):faN(i))+'</span>'+
+    '<span class="gttl">'+esc(title)+'</span>'+
+    (L?(L.video?'<span class="pill mut">ویدیو</span>':''):'<span class="pill mut">نیامده</span>')+
+    '<span class="gchev"></span>';
+  head.onclick=()=>{GUIDE.open.has(n)?GUIDE.open.delete(n):GUIDE.open.add(n);renderLessons();};
+  c.appendChild(head);
+  if(!open)return c;
+  const body=el('div','gbody');
+  if(!L){
+    body.appendChild(el('div','hint','این درس هنوز از کانال خوانده نشده. «دریافت از کانال» را بالا بزن، '+
+      'یا مستقیم در تلگرام ببین.'));
+    const a=el('a','mark ghost','در تلگرام ببین');a.href='https://t.me/'+S.channel+'/'+n;a.target='_blank';a.rel='noopener';
+    body.appendChild(a);
+    c.appendChild(body);return c;
+  }
+  body.appendChild(mediaOf(L));
+  const note=GUIDE_NOTES[n];
+  if(note){
+    const nb=el('div','gnote');
+    nb.innerHTML='<b>'+ic('info')+'خلاصه و توضیح</b>'+note;
+    body.appendChild(nb);
+  }
+  const long=(L.text||'').length>420, col=long&&COLLAPSED['G'+n]!==false&&!q;
+  body.appendChild(el('div','txt'+(col?' clamp':''),linkify(esc(L.text||'(این پست متن ندارد)'))));
+  if(long){
+    const b=el('button','more',col?'ادامه متن':'بستن متن');
+    b.onclick=()=>{COLLAPSED['G'+n]=!col;renderLessons();};
+    body.appendChild(b);
+  }
+  const row=el('div','markrow');
+  const rd=el('button','mark'+(L.read?' on':''),L.read?ic('check')+'خوانده شد':'خواندم');
+  rd.onclick=()=>{
+    const was=!!L.read;
+    // خواندی؟ این درس بسته و درسِ بعدی باز می‌شود — همان «به‌ترتیب» که کانال خواسته
+    if(!was){GUIDE.open.delete(n);const next=guideList()[i];if(next)GUIDE.open.add(next[0]);}
+    guideRead(n,!was);
+  };
+  row.appendChild(rd);
+  const a=el('a','mark ghost','در تلگرام');a.href=L.link;a.target='_blank';a.rel='noopener';
+  row.appendChild(a);
+  body.appendChild(row);
+  c.appendChild(body);
+  return c;
+}
+function buildGuide(q){
+  const list=guideList();
+  const match=([n,t])=>{if(!q)return true;const L=guideRec(n);
+    return ((t||'')+' '+(L?L.text||'':'')).toLowerCase().includes(q);};
+  const shown=list.map((x,i)=>[x,i+1]).filter(([x])=>match(x));
+  if(q&&!shown.length)return null;
+  const box=el('div','guide');
+  const have=list.filter(([n])=>guideRec(n)).length;
+  const read=list.filter(([n])=>{const L=guideRec(n);return L&&L.read;}).length;
+  const hd=el('div','ghd');
+  hd.innerHTML='<div class="gtitle">'+ic('book')+'<b>'+GUIDE_CAT+'</b></div>'+
+    '<div class="gprog"><span>'+faN(read)+' از '+faN(list.length)+' خوانده شده</span>'+
+    '<i><s style="width:'+Math.round(read/list.length*100)+'%"></s></i></div>';
+  box.appendChild(hd);
+  box.appendChild(el('div','gwarn',esc(GUIDE_WARN)));
+  const bar=el('div','lbar');
+  const fb=el('button','mark'+(GUIDE.busy?' busy':''),GUIDE.busy?'در حال خواندن…':(have<list.length?'دریافت از کانال':'به‌روزرسانی از کانال'));
+  fb.disabled=GUIDE.busy;fb.onclick=()=>loadGuide(true);
+  bar.appendChild(fb);
+  if(have<list.length&&!GUIDE.busy)bar.appendChild(el('span','markhint',faN(list.length-have)+' درس هنوز نیامده'));
+  box.appendChild(bar);
+  if(GUIDE.err)box.appendChild(el('div','rwarn warn',esc(GUIDE.err)));
+  for(const [[n,t],i] of shown)box.appendChild(guideCard(n,t,i,q));
+  return box;
+}
+
 function renderLessons(){
-  const box=$('#lessonList');
-  const all=Object.values(DB.lessons).sort((a,b)=>(b.at||0)-(a.at||0));
+  const box=$('#lessonList');if(!box)return;
+  const all=Object.values(DB.lessons).filter(L=>!L.guide).sort((a,b)=>(b.at||0)-(a.at||0));
   const q=lessonQ.trim().toLowerCase();
   let list=q?all.filter(L=>((L.title||'')+' '+(L.text||'')).toLowerCase().includes(q)):all;
   if(catFilter!=null)list=list.filter(L=>(L.cat||'')===catFilter);
   box.innerHTML='';
 
+  const g=buildGuide(q);
+  if(g)box.appendChild(g);
+
+  box.appendChild(el('div','sechd','آموزش‌های دیگر'));
   // نوار بالا: اسکن، و وقتی آموزشی هست، حالت انتخاب
   const bar=el('div','lbar');
   const scan=el('button','mark','آوردن از کانال');scan.onclick=sheetScan;
@@ -2705,9 +3007,9 @@ function renderLessons(){
   }
 
   if(!list.length){
-    box.appendChild(el('div','empty',STAR+(all.length
+    box.appendChild(el('div','empty sm',(all.length
       ?'با این فیلتر چیزی نیست.'
-      :'هنوز آموزشی ذخیره نکرده‌ای.<br>«آوردن از کانال» را بزن تا کانال را اسکن کنم،<br>یا در تب سیگنال‌ها روی هر پست دکمه‌ی «افزودن به آموزش».')));
+      :'آموزش دیگری ذخیره نکرده‌ای.<br>«آوردن از کانال» کانال را برای پست‌های آموزشی می‌گردد،<br>یا در تب سیگنال‌ها روی هر پست «آموزش» را بزن.')));
     return;
   }
   for(const L of list){
@@ -2724,14 +3026,7 @@ function renderLessons(){
       ?'<a href="'+esc(L.link)+'" target="_blank" rel="noopener">'+relTime(L.date?new Date(L.date):null)+'</a>'
       :relTime(L.date?new Date(L.date):null)));
     c.appendChild(head);
-    if(L.img){
-      const a=el('div','shot');a.setAttribute('role','button');a.tabIndex=0;
-      const im=el('img');im.loading='lazy';im.decoding='async';im.alt='تصویر آموزش';
-      a.onclick=()=>openLightbox(im);
-      a.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openLightbox(im);}};
-      im.onload=()=>a.classList.add('loaded');im.onerror=()=>a.remove();im.src=L.img;
-      a.appendChild(im);c.appendChild(a);
-    }
+    if(L.img||L.video)c.appendChild(mediaOf(L));
     const body=el('div','body');
     const long=(L.text||'').length>320, col=long&&COLLAPSED['L'+L.id]!==false;
     body.appendChild(el('div','txt'+(col?' clamp':''),linkify(esc(L.text||'(بدون متن)'))));
@@ -4208,8 +4503,6 @@ function renderFbar(){
     side.appendChild(b);
   };
   mkSide('res','flag','نتایج',nRes,'پست‌های نتیجه: تارگت خورد، استاپ خورد، سیو سود');
-  // آموزش‌ها ممکن است از پست‌هایی باشند که دیگر در ۸۰۰تای کش نیستند، پس از DB شمرده می‌شوند
-  mkSide('les','book','آموزش',Object.keys(DB.lessons).length,'آموزش‌هایی که از کانال نگه داشته‌ای');
   mkSide('arch','box','آرشیو',nArch,'پست‌هایی که کنار گذاشته‌ای');
   bar.appendChild(side);
 }
@@ -4218,13 +4511,7 @@ function renderSignals(){
   const list=$('#list');
   /* سطل آموزش فهرست خودش را دارد (عنوان، دسته، اسکن کانال)، پس به‌جای کارت پست
      همان را نشان می‌دهیم. جستجوی بالای صفحه هم همان‌جا روی آموزش‌ها کار می‌کند. */
-  const les=$('#lessonList'), onLes=bucket==='les';
-  list.classList.toggle('hide',onLes);
-  if(les)les.classList.toggle('hide',!onLes);
-  if(onLes){
-    renderFbar();lessonQ=query;renderLessons();
-    $('#btnMore').classList.add('hide');showStatus();return;
-  }
+  if(bucket==='les')bucket='live';     // آموزش حالا تبِ خودش را دارد
   if(!POSTS.length&&busy){list.innerHTML=skelHTML(3);$('#btnMore').classList.add('hide');showStatus();return;}
   const q=query.trim().toLowerCase();
   const frag=document.createDocumentFragment();
@@ -6710,7 +6997,7 @@ function go(v,noScroll){
   if(view===v&&noScroll)return;
   view=v;
   $$('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.v===v?'true':'false'));
-  for(const [id,name] of [['vSignals','signals'],['vPositions','positions'],['vReport','report'],['vAudit','audit']]){
+  for(const [id,name] of [['vSignals','signals'],['vPositions','positions'],['vReport','report'],['vAudit','audit'],['vLearn','learn']]){
     const n=$('#'+id), on=name===v;
     n.classList.toggle('hide',!on);
     if(on){n.classList.remove('enter');void n.offsetWidth;n.classList.add('enter');}
@@ -6755,6 +7042,8 @@ function renderAll(){
   else if(view==='audit')renderAudit();
   else if(view==='positions')renderPositions();
   else if(view==='report')renderReport();
+  else if(view==='learn')renderLessons();
+  paintLearnBadge();
   destackAll();
   renderHealth();
 }
@@ -6799,6 +7088,7 @@ async function refresh(append,silent){
       pruneCaches();
       savePostCache();
       okAny=true;
+      if(!GUIDE.tried&&guideMissing().length)setTimeout(()=>loadGuide(false),1200);
       if(append){
         const i=$('#moreInfo');
         if(!incoming.length){i.className='moreinfo';i.textContent='تا اولین پست کانال خوانده شد.';}
@@ -6908,6 +7198,7 @@ function wire(){
   $('#btnSet').innerHTML=ic('sliders');
   $('#btnRef').innerHTML=ic('refresh')+'<span>بروزرسانی</span>';
   $('#qIc').innerHTML=ic('search');
+  $('#lqIc').innerHTML=ic('search');
   wireLightbox();
   $('#btnMore').innerHTML=ic('down')+'<span>پست‌های قدیمی‌تر</span>';
   $$('.tab').forEach(t=>{
@@ -6927,6 +7218,8 @@ function wire(){
     t=setTimeout(()=>{t=null;fn.apply(this,arguments);},ms);};};
   const runQuery=debounce(()=>{shownMax=PAGE;renderSignals();},160);
   $('#q').oninput=e=>{query=e.target.value;runQuery();};
+  const runLq=debounce(()=>renderLessons(),160);
+  $('#lq').oninput=e=>{lessonQ=e.target.value;runLq();};
 
 
   const pf=(btn,val)=>{$('#'+btn).onclick=()=>{posFilter=val;
@@ -7020,6 +7313,7 @@ OVERRIDE=DB.overrides||{};
 if(DB.settings&&Object.keys(DB.settings).length)Object.assign(S,DB.settings);
 DB.positions.forEach(ensureBase);
 if(migrateSpot())save();          // خریدهای اسپاتِ قدیمی به پوزیشن‌ها منتقل می‌شوند
+guideMigrate();                   // آموزش‌های قبلی یک‌بار پاک می‌شوند؛ دستورالعمل ترید جایشان می‌آید
 wire();
 applySettingsToForm();
 readSettings();
