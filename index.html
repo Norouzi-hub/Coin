@@ -502,7 +502,17 @@ tr.tap:hover td{background:var(--card2)}
 .status .sc b.w{color:var(--warn)}.status .sc b.m{color:var(--tx3)}
 /* حالت فشرده: متن و پلن پنهان، فقط سرِ کارت می‌ماند */
 .card.tight{cursor:pointer}
-.card.tight .body,.card.tight .plan,.card.tight .acts,.card.tight .prow,.card.tight .shot{display:none}
+.card.tight .body,.card.tight .plan,.card.tight .acts,.card.tight .prow,.card.tight .shot,
+.card.tight .brief,.card.tight .stale{display:none}
+/* خلاصه‌ی یک‌خطیِ کارتِ بسته در آکاردئون */
+.csum{display:none}
+.card.tight .csum{display:flex;align-items:center;gap:8px;padding:0 14px 12px;margin-top:-4px;font-size:12.5px;color:var(--tx2);
+  line-height:1.8;min-width:0}
+.card.tight .csum b{color:var(--tx);font-weight:800;font-variant-numeric:tabular-nums}
+.csum .chev{margin-inline-start:auto;flex:none;width:8px;height:8px;border-inline-end:2px solid var(--tx3);border-bottom:2px solid var(--tx3);
+  transform:rotate(45deg);margin-top:-3px}
+.card.tight .chead{border-bottom:0}
+.card.accopen .chead{cursor:pointer}
 .card.tight .chead{padding-bottom:12px}
 .autolev{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:13px;
   color:var(--tx2);cursor:pointer}
@@ -849,6 +859,10 @@ tr.tap:hover td{background:var(--card2)}
 .pill.win{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up)}
 .pill.lose{background:color-mix(in srgb,var(--dn) 16%,transparent);color:var(--dn)}
 .pill.open{background:color-mix(in srgb,var(--acc) 15%,transparent);color:var(--acc)}
+.pill.k-news{background:color-mix(in srgb,var(--acc) 16%,transparent);color:#AFC0E6;border-color:color-mix(in srgb,var(--acc) 40%,transparent)}
+.pill.k-ann{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 38%,transparent)}
+.pill.k-res{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 32%,transparent)}
+.pill.k-note{background:var(--inset);color:var(--tx3);border-color:var(--line2)}
 .pill.gold{background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--gold);border-color:color-mix(in srgb,var(--gold) 40%,transparent)}
 .pill.live{background:var(--inset);color:var(--tx);border-color:var(--line2);direction:ltr;font-variant-numeric:tabular-nums}
 .pill.live i{width:6px;height:6px;border-radius:50%;background:var(--up);animation:beat 2s ease-in-out infinite;flex:none}
@@ -1777,7 +1791,6 @@ function pruneCaches(){
   for(const k of PCACHE.keys())if(!live.has(k))PCACHE.delete(k);
   for(const k of RCACHE.keys())if(!live.has(k))RCACHE.delete(k);
   for(const k of [...NEWIDS])if(!live.has(k))NEWIDS.delete(k);
-  for(const k of [...OPENCARD])if(!live.has(k))OPENCARD.delete(k);
   for(const k of [...REPLYOPEN])if(!live.has(k))REPLYOPEN.delete(k);
   let aud=false;
   for(const k of Object.keys(AUD))if(!live.has(k)){delete AUD[k];aud=true;}
@@ -1876,7 +1889,7 @@ function downloadLog(){
    هر کدام فقط یک شرط است، پس خاموش کردنش دقیقاً به حالت قبل برمی‌گردد. */
 const FEAT={
   summary:{on:true, t:'نوار خلاصه', d:'بالای سیگنال‌ها: سیگنال امروز، پوزیشن باز، سود/ضرر و فاصله تا حد ضرر روزانه'},
-  compact:{on:false,t:'کارت فشرده', d:'هر سیگنال در یک خط؛ با زدن روی کارت باز می‌شود'},
+  accordion:{on:true,t:'کارت‌های آکاردئونی', d:'فقط یک کارت باز می‌ماند؛ زدن روی کارتی دیگر، قبلی را می‌بندد تا صفحه شلوغ نشود'},
   quick:  {on:true, t:'ورود سریع',  d:'دکمه‌ی ورود با مبلغ پیش‌فرض، بدون باز کردن فرم'},
   notify: {on:false,t:'اعلان سیگنال تازه', d:'وقتی سیگنال تازه بیاید، نوتیفیکیشن مرورگر'},
   alerts: {on:true, t:'هشدار استاپ و تارگت', d:'روی پوزیشن‌های باز، نزدیک شدن قیمت به استاپ یا رسیدن به تارگت'},
@@ -2069,7 +2082,11 @@ function parseSignal(raw,id){
     targets:allNums(RX.tgt,t),leverage:lm?cleanNum(lm[1]):null,hasNum:/\d/.test(t)};
   const mk=detectMarket(t,r.direction,r.leverage);
   r.market=mk.market; r.marketGuess=mk.guess;
-  r.isSignal=!!(r.ticker&&r.hasNum&&
+  /* سیگنال یعنی عددِ ورود یا استاپ یا تریگر، یا دست‌کم جهتِ صریح (لانگ/شورت). قبلاً اسم ارز +
+     یک عدد + کلمه‌ای مثل «هدف» کافی بود و خبرها («بیت‌کوین به ۶۵ هزار رسید؛ هدف بعدی…») و
+     اطلاعیه‌ها هم سیگنال حساب می‌شدند — هم در فهرست سیگنال‌ها و هم در کانال‌سنج. */
+  const strong=entry!=null||r.stop!=null||trig!=null||/لانگ|شورت|\blong\b|\bshort\b/i.test(t);
+  r.isSignal=!!(r.ticker&&r.hasNum&&strong&&
     /حد\s*ضرر|استاپ|ورود|پله|تارگت|هدف|اهرم|فیوچرز|اسپات|لانگ|شورت|\bentry\b|\bsl\b|\btp\b|\blong\b|\bshort\b/i.test(t));
   if(id)PCACHE.set(id,{v:SYMVER,r});
   return r;
@@ -4190,8 +4207,26 @@ function setRes(p,on){
 /* در کدام سطل است؟ آرشیو بر نتیجه می‌چربد تا یک پست هم‌زمان دو جا نباشد. */
 /* آموزش هم حالا یک سطل است، نه یک تب: پستی که نگهش داشته‌ای از فهرست فعال بیرون
    می‌رود، مثل آرشیو. انتخابِ صریح تو (آرشیو، آموزش) بر تشخیص خودکار (نتیجه) می‌چربد. */
-const bucketOf=p=>isArch(p.id)?'arch':(isLesson(p.id)?'les':(isRes(p)?'res':'live'));
-const OPENCARD=new Set();   // کارت‌هایی که در حالت فشرده باز شده‌اند
+/* فقط آرشیو و آموزش «جای دیگر»اند. نتیجه، خبر و اطلاع‌رسانی در «همه» می‌مانند و فقط از
+   «سیگنال‌ها» و «در انتظار» بیرون‌اند؛ دکمه‌ی «نتایج» فیلترِ همان‌هاست، نه سطلی جدا. */
+const bucketOf=p=>isArch(p.id)?'arch':(isLesson(p.id)?'les':'live');
+const RX_ANN=/اطلاعیه|اطلاع\s*رسانی|قابل\s*توجه|توجه\s*(?:کنید|داشته)|کمپین|ثبت\s*نام|عضویت|لینک|تخفیف|وی\s*آی\s*پی|\bvip\b|پشتیبانی|ادمین|قوانین|دستورالعمل|لایو|وبینار|قرعه|جایزه|حمایت\s*کنید|رتبه|تبلیغ|پین/i;
+const RX_NEWS=/خبر|اخبار|فوری|گزارش|فدرال|نرخ\s*بهره|تورم|\bcpi\b|\betf\b|بلک\s*راک|\bsec\b|ترامپ|هک\s*شد|لیست\s*شد|لیستینگ|دلیست|هاوینگ|آپگرید|آپدیت\s*شبکه|breaking|\bnews\b|بازار\s*امروز/i;
+/* نوعِ هر پست: sig سیگنال · res نتیجه · news خبر · ann اطلاع‌رسانی · note بقیه.
+   علامتِ دستیِ «این سیگنال است» بر همه می‌چربد؛ پستِ نتیجه حتی اگر شکل سیگنال داشته باشد نتیجه است. */
+function postKind(p){
+  const ov=OVERRIDE[p.id];
+  if(ov&&ov.sig===true)return 'sig';
+  if(isRes(p))return 'res';
+  if(sigOf(p).isSignal)return 'sig';
+  const t=faNorm(p.text||'');
+  if(RX_ANN.test(t))return 'ann';
+  if(RX_NEWS.test(t))return 'news';
+  return 'note';
+}
+const isSigPost=p=>postKind(p)==='sig';
+const KIND_FA={res:'نتیجه',news:'خبر',ann:'اطلاع‌رسانی',note:'یادداشت'};
+let ACCOPEN=null;          // کارتِ بازِ آکاردئون؛ null یعنی «اولی»، '' یعنی هیچ‌کدام
 const NEWIDS=new Set();          // پستی که در همین نشست تازه رسیده — نشان «تازه» می‌گیرد
 const CARDS=new Map();           // برای بازسازی فقط یک کارت، بدون رندر دوباره‌ی کل فهرست
 const decisionOf=id=>DB.decisions[id]||null;
@@ -4210,7 +4245,7 @@ function freshUntil(p){
 }
 const isStale=p=>Date.now()>freshUntil(p);
 /* سیگنالی که هنوز می‌شود رویش تصمیم گرفت: سیگنال است، تصمیمش را نگرفته‌ای و قدیمی نشده */
-const isOpenSig=p=>sigOf(p).isSignal&&!decisionOf(p.id)&&!isStale(p);
+const isOpenSig=p=>isSigPost(p)&&!decisionOf(p.id)&&!isStale(p);
 function revive(p,hint){
   DB.revived[p.id]={at:Date.now(),by:hint?'ch':'me',src:hint?hint.id:null};
   save();PCACHE.delete(p.id);renderAll();
@@ -4292,7 +4327,7 @@ function buildStale(p,sig){
 }
 
 function buildCard(p){
-  const sig=sigOf(p), ov=OVERRIDE[p.id]||{}, isSig=sig.isSignal, dec=decisionOf(p.id);
+  const sig=sigOf(p), ov=OVERRIDE[p.id]||{}, kind=postKind(p), isSig=kind==='sig', dec=decisionOf(p.id);
   const dir=ov.dir||sig.direction;
   const card=el('div','card'+(isSig?' d-'+dir:'')+(NEWIDS.has(p.id)?' fresh':'')+
     (isSig&&!dec&&isStale(p)?' old':''));
@@ -4309,8 +4344,7 @@ function buildCard(p){
   if(isSig){
     const I=planInputsOf(p,sig,OVERRIDE[p.id]||{},null);
     if(I.spot)head.appendChild(el('span','pill gold','اسپات'));
-  }else head.appendChild(el('span','pill mut','یادداشت'));
-  if(bucketOf(p)==='res')head.appendChild(el('span','pill '+(resAuto(p)?'mut':'gold'),'نتیجه'));
+  }else head.appendChild(el('span','pill kind k-'+kind+(kind==='res'&&!resAuto(p)?' gold':''),KIND_FA[kind]||'یادداشت'));
   if(NEWIDS.has(p.id))head.appendChild(el('span','pill gold','تازه'));
   const stale=isSig&&!dec&&isStale(p);
   if(stale)head.appendChild(el('span','pill mut',ic('clock')+'قدیمی'));
@@ -4340,6 +4374,19 @@ function buildCard(p){
   head.appendChild(el('div','when','<a href="'+p.link+'" target="_blank" rel="noopener">'+
     relTime(p.date)+(p.date?' · '+jStampFa(p.date):'')+'</a>'));
   card.appendChild(head);
+  // خلاصه‌ی یک‌خطی — فقط وقتی کارت در آکاردئون بسته است دیده می‌شود
+  {
+    let sm='';
+    if(isSig){
+      const I=planInputsOf(p,sig,ov,px);
+      sm=(I.entry!=null?'ورود <b dir="ltr">'+fmtPrice(I.entry)+'</b>':'')+
+         (I.stop!=null?' · استاپ <b dir="ltr">'+fmtPrice(I.stop)+'</b>':'')+
+         (px!=null&&I.entry?' · فاصله <b dir="ltr">'+fmtPct(((px-I.entry)/I.entry)*100*(I.dir==='long'?1:-1))+'</b>':'');
+      if(dec)sm+=(sm?' · ':'')+(dec.action==='taken'?'وارد شدی':'نگرفتی');
+    }
+    if(!sm)sm=esc(String(p.text||'').split('\n').map(x=>x.trim()).find(Boolean)||'').slice(0,90);
+    card.appendChild(el('div','csum',sm+'<i class="chev"></i>'));
+  }
 
   if(p.img){
     const a=el('div','shot');a.setAttribute('role','button');a.tabIndex=0;
@@ -4619,7 +4666,7 @@ function buildMark(p,sig,ov,isSig,dec,px){
 
   const tray=el('div','ftray');
   const bk=bucketOf(p);
-  const ar=bk==='arch', rs=bk==='res', au=rs&&resAuto(p), ls=isLesson(p.id);
+  const ar=bk==='arch', rs=isRes(p), au=rs&&resAuto(p), ls=isLesson(p.id);
   tray.appendChild(fileChip('box','آرشیو',ar,
     ar?'برگرداندن از آرشیو':'کنار گذاشتن این پست',
     ()=>{setArch(p.id,!ar);toast(ar?'برگشت به فعال':'به آرشیو رفت','info');}));
@@ -5066,17 +5113,18 @@ function renderFbar(){
   for(const p of POSTS){
     const bk=bucketOf(p);
     if(bk==='arch'){nArch++;continue;}
-    if(bk==='res'){nRes++;continue;}
     if(bk==='les')continue;
     nLive++;
-    if(!sigOf(p).isSignal)continue;
+    const kd=postKind(p);
+    if(kd==='res')nRes++;
+    if(kd!=='sig')continue;
     nSig++;
     if(!decisionOf(p.id)&&!isStale(p))nNew++;
   }
   const segs=[
     {k:'new', label:'در انتظار', n:nNew, hint:'سیگنال‌های این '+faN(S.staleDays||7)+' روز که هنوز تصمیمشان را نگرفته‌ای'},
     {k:'sig', label:'سیگنال‌ها', n:nSig, hint:'همه‌ی سیگنال‌ها'},
-    {k:'all', label:'همه',       n:nLive, hint:'همه‌ی پست‌های کانال'}
+    {k:'all', label:'همه',       n:nLive, hint:'همه‌ی پست‌های کانال: سیگنال، نتیجه، خبر و اطلاع‌رسانی'}
   ];
   const cur=bucket==='live'?sigFilter:bucket;
   bar.innerHTML='';
@@ -5117,22 +5165,32 @@ function renderSignals(){
   const frag=document.createDocumentFragment();
   CARDS.clear();
   let n=0, shown=0, matched=0;
+  const acc=F('accordion');
+  let firstId=null;
   for(const p of POSTS){
-    const sig=sigOf(p);
-    if(bucketOf(p)!==bucket)continue;
+    const sig=sigOf(p), bk=bucketOf(p);
+    if(bucket==='res'){if(bk!=='live'||postKind(p)!=='res')continue;}
+    else if(bk!==bucket)continue;
     if(coinFilter&&(sig.ticker||'')!==coinFilter)continue;
-    if(sigFilter==='sig'&&!sig.isSignal)continue;
-    if(sigFilter==='new'&&!isOpenSig(p))continue;
+    if(bucket==='live'&&sigFilter==='sig'&&!isSigPost(p))continue;
+    if(bucket==='live'&&sigFilter==='new'&&!isOpenSig(p))continue;
     if(q&&!((sig.ticker||'')+' '+p.text).toLowerCase().includes(q))continue;
     matched++;
     if(n>=shownMax)continue;                 // بقیه شمرده می‌شوند ولی ساخته نمی‌شوند
     const c=buildCard(p);
-    // فشرده فقط یک کلاس است؛ خاموش کردنش دقیقاً به حالت قبل برمی‌گردد
-    if(F('compact')&&!OPENCARD.has(p.id)){
-      c.classList.add('tight');
+    /* آکاردئون: فقط یک کارت باز است؛ زدن روی کارتِ بسته بازش می‌کند و بقیه بسته می‌شوند.
+       اگر هنوز چیزی باز نکرده‌ای، اولین کارت باز است تا صفحه خالی به نظر نرسد. */
+    if(acc){
+      if(firstId==null)firstId=p.id;
+      const isOpen=ACCOPEN===p.id||(ACCOPEN==null&&firstId===p.id);
+      c.classList.add(isOpen?'accopen':'tight');
       c.addEventListener('click',e=>{
-        if(e.target.closest('button,a,input,select,.shot'))return;
-        OPENCARD.add(p.id);renderSignals();
+        if(e.target.closest('button,a,input,select,label,.shot,.reply,.txt a'))return;
+        if(isOpen){if(!e.target.closest('.chead'))return;ACCOPEN='';}
+        else ACCOPEN=p.id;
+        renderSignals();
+        if(ACCOPEN){const cc=CARDS.get(p.id);
+          if(cc)requestAnimationFrame(()=>cc.scrollIntoView({block:'start',behavior:'smooth'}));}
       });
     }
     if(shown<8){c.classList.add('enter');c.style.setProperty('--d',(shown*45)+'ms');shown++;}
@@ -5650,6 +5708,7 @@ function audInput(p){
   if(ov.market){sig.market=ov.market;sig.marketGuess=false;}
   if(ov.trigger!=null)sig.trigger=ov.trigger;
   if(!sig.isSignal)return null;
+  if(ov.sig!==true&&isRes(p))return null;      // پستِ نتیجه سیگنالِ تازه نیست
   const I=planInputsOf(p,sig,ov,null);
   const sign=I.dir==='long'?1:-1, E=I.entry||null, SL=I.stop||null;
   let tps=(sig.targets||[]).filter(t=>isFinite(t)&&t>0&&E&&(t-E)*sign>0);
@@ -6077,7 +6136,7 @@ async function audCandles(sym,iv,start,limit){
       if(!rows.length)continue;                      // این منبع این نماد را ندارد
       if(AUDSRC[sym]!==i){AUDSRC[sym]=i;lsSet(AUDSRCKEY,AUDSRC);}
       return rows;
-    }catch(e){}
+    }catch(e){AUDQ.err=(e&&e.message||'').slice(0,80);}
   }
   throw new Error('nocandle');
 }
@@ -6116,21 +6175,34 @@ async function audOne(job,R){
   AUD[p.id]=Object.assign(r,{k,at:Date.now()});
 }
 
-const AUDQ={on:false,n:0,done:0,fail:0,at:0};
+const AUDQ={on:false,n:0,done:0,fail:0,at:0,err:''};
+/* پیش از این نسخه، شکستِ گرفتنِ مسیرِ قیمت نتیجه‌ی درست را با «کندل نیامد» عوض می‌کرد و بعد
+   از سه بار دیگر هرگز سنجیده نمی‌شد. یک بار شانسِ دوباره: همه‌ی «کندل نیامد»ها به صف برمی‌گردند. */
+if(!lsGet('signaldesk.audfix.v1')){
+  let n=0;for(const k in AUD){const a=AUD[k];if(a&&a.st==='bad'&&a.why==='nocandle'){a.tries=0;a.at=0;n++;}}
+  if(n)audSave();
+  lsSet('signaldesk.audfix.v1',1);
+}
 function audJobs(force,needPath){
   const R=audRules(), now=Date.now(), out=[];
+  const paths=[];
   for(const p of POSTS){
     const inp=audInput(p);if(!inp)continue;
     const k=audKey(inp,R), a=AUD[p.id];
     if(a&&a.k===k&&!force){
       const noPath=needPath&&!a.path&&['win','loss','exp'].includes(a.st);
-      if(a.fin&&!(a.st==='bad'&&a.why==='nocandle')&&!noPath)continue;
+      if(noPath){paths.push({p,inp,k,pathOnly:true});continue;}
+      if(a.fin&&!(a.st==='bad'&&a.why==='nocandle'))continue;
       if(a.st==='bad'&&a.why==='nocandle'&&(a.tries||0)>=3)continue;
-      if(!noPath&&now-(a.at||0)<20*60000)continue;               // تازه سنجیده شده
+      if(now-(a.at||0)<20*60000)continue;               // تازه سنجیده شده
     }
     out.push({p,inp,k});
   }
-  return out;
+  /* سیگنال‌های تازه اول؛ مسیرِ قیمتِ سیگنال‌های قدیمی (برای آزمایشگاه خروج) بعد، و هر بار
+     حداکثر ۴۰ تا — وگرنه صدها درخواستِ کندل جلوی سنجیدنِ سیگنال‌های امروز را می‌گرفت */
+  out.sort((a,b)=>(b.inp.t0||0)-(a.inp.t0||0));
+  paths.sort((a,b)=>(b.inp.t0||0)-(a.inp.t0||0));
+  return out.concat(paths.slice(0,40));
 }
 async function audRun(force,needPath){
   if(AUDQ.on)return;
@@ -6154,11 +6226,12 @@ async function audRun(force,needPath){
   // شکست فقط وقتی به حساب نماد گذاشته می‌شود که بقیه آمده باشند — یعنی شبکه سالم بوده
   if(ok){
     for(const j of failed){
+      if(j.pathOnly)continue;              // نتیجه‌ی درستِ قبلی را به خاطرِ نگرفتنِ مسیر خراب نکن
       const a=AUD[j.p.id];
       AUD[j.p.id]={k:j.k,st:'bad',why:'nocandle',fin:false,
         tries:((a&&a.k===j.k&&a.tries)||0)+1,at:Date.now()};
     }
-  }else if(failed.length)toast('کندل‌ها نیامد — اتصال یا واسط قیمت را بررسی کن','err');
+  }else if(failed.length)toast('کندل‌ها نیامد — اتصال یا واسط قیمت را بررسی کن'+(AUDQ.err?' ('+AUDQ.err+')':''),'err');
   Object.assign(AUDQ,{on:false,at:Date.now(),fail:failed.length});
   audSave();
   renderAll();
@@ -6180,6 +6253,10 @@ function paintAudProgress(){
     b.classList.remove('hide');
     b.innerHTML='<span>در حال سنجش '+faN(AUDQ.done)+' از '+faN(AUDQ.n)+'…</span>'+
       '<i style="--p:'+Math.round(AUDQ.done/Math.max(1,AUDQ.n)*100)+'%"></i>';
+  }else if(AUDQ.fail){
+    b.classList.remove('hide');
+    b.innerHTML='<span style="color:var(--warn)">'+faN(AUDQ.fail)+' سیگنال کندل نگرفت'+
+      (AUDQ.err?' — '+esc(AUDQ.err):'')+'. «سنجش دوباره» را بزن؛ اگر باز نشد، واسط قیمت یا فیلترشکن را عوض کن.</span>';
   }else b.classList.add('hide');
 }
 
@@ -8003,7 +8080,7 @@ async function refresh(append,silent){
         else{i.className='moreinfo ok';i.textContent=faN(incoming.length)+' پست قدیمی‌تر اضافه شد.';
           setTimeout(()=>{if(i.textContent.includes('قدیمی‌تر'))i.textContent='';},6000);}
       }else if(!coldStart){
-        const nSig=incoming.filter(p=>sigOf(p).isSignal&&!isStale(p)).length;
+        const nSig=incoming.filter(p=>isSigPost(p)&&!isStale(p)).length;
         showIncoming(incoming.length,nSig);
       }else $('#incoming').classList.add('hide');
     }else if(append){
