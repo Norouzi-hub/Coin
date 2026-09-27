@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#0D0E12">
 <title>میز سیگنال</title>
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="preload" href="fonts/Vazirmatn.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -19,7 +20,7 @@
      هم تیره می‌کند، وگرنه روی سیستمِ روشن سفید می‌مانند وسط رابط تیره. */
   color-scheme:dark;
   /* زغالی با یک رنگ تأکیدی آمبر — همان آمبرِ آیکون. هر رنگ متنی روی --card
-     دستِ‌کم نسبت کنتراست ۴٫۵ دارد (--tx3 که فقط برای نکته‌های کم‌اهمیت است، ۳). */
+     دستِ‌کم نسبت کنتراست 4٫5 دارد (--tx3 که فقط برای نکته‌های کم‌اهمیت است، 3). */
   --bg:#0D0E12; --bg2:#121317; --card:#16181D; --card2:#1C1E25; --inset:#101115;
   --line:#23262D; --line2:#30343D;
   --tx:#E9EBF0; --tx2:#9BA1AE; --tx3:#6C7280;
@@ -124,6 +125,9 @@
 @media (prefers-reduced-motion:reduce){
   .bootmark::before,.bootmark::after,.bootbar i{animation:none}
 }
+/* وزیرمتن، کنار خودِ برنامه — نه از سرویس بیرونی که ممکن است از ایران باز نشود.
+   فایل متغیر است: همه‌ی وزن‌ها (۱۰۰ تا ۹۰۰) در یک فایل. ارقام لاتین همان شکل انگلیسی‌اند. */
+@font-face{font-family:'Vazirmatn';src:url('fonts/Vazirmatn.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;overflow-x:hidden}
 html{scroll-padding-top:150px}
@@ -261,7 +265,7 @@ html.busy .prog{opacity:1}
 .fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 18%,transparent)}
 .hint{font-size:12.5px;color:var(--tx3);margin-top:8px;line-height:1.9}
 .sechd{font-size:13px;font-weight:800;color:var(--tx2);margin:16px 0 8px}
-/* تنظیمات ۲۸۹۰ پیکسل بود — نزدیک هفت صفحه‌ی گوشی، بدون هیچ بخش‌بندی. هر بخش
+/* تنظیمات 2890 پیکسل بود — نزدیک هفت صفحه‌ی گوشی، بدون هیچ بخش‌بندی. هر بخش
    حالا تاشوست و انتخاب باز/بسته‌بودنش یادش می‌ماند. */
 .sec{border:1px solid var(--line);border-radius:var(--r2);margin:10px 0;
   background:var(--card);overflow:hidden}
@@ -312,7 +316,7 @@ html.busy .prog{opacity:1}
    بازمحاسبه‌ی استایل می‌کند. */
 .fbucket.wide{width:auto;min-width:64px;padding-inline:12px}
 /* نوار سیگنال‌ها سه سطل دارد (نتایج، آموزش، آرشیو) و در یک ردیف جا نمی‌شد: برچسب‌های
-   اصلی تا ۲۹ پیکسل فشرده و بریده می‌شدند. سطل‌ها ردیفِ دومِ باریک و یک‌خطی گرفتند. */
+   اصلی تا 29 پیکسل فشرده و بریده می‌شدند. سطل‌ها ردیفِ دومِ باریک و یک‌خطی گرفتند. */
 #fbar{flex-wrap:wrap;gap:6px}
 #fbar .fseg{flex:1 1 100%}
 #fbar .fside{flex:1 1 100%;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
@@ -381,8 +385,8 @@ html.busy .prog{opacity:1}
 
 /* ================= کارت ================= */
 /* کارت‌های بیرون از کادر دید اصلاً چیده نمی‌شوند. اندازه‌گیری روی گوشیِ
-   شبیه‌سازی‌شده با ۳۰ کارت: چیدمان صفحه از ۱۴۷ به ۸۲ میلی‌ثانیه و رندر دوباره
-   از ۱۸۹ به ۵۹ میلی‌ثانیه رسید. auto یعنی مرورگر ارتفاع واقعیِ هر کارت را بعد
+   شبیه‌سازی‌شده با 30 کارت: چیدمان صفحه از 147 به 82 میلی‌ثانیه و رندر دوباره
+   از 189 به 59 میلی‌ثانیه رسید. auto یعنی مرورگر ارتفاع واقعیِ هر کارت را بعد
    از یک بار دیده شدن به یاد می‌سپارد، پس نوار اسکرول هم سر جایش می‌نشیند. */
 #list>.card,#posList>.card,#lessonList>.card{
   content-visibility:auto;contain-intrinsic-size:auto 330px}
@@ -450,6 +454,8 @@ tr.tap:hover td{background:var(--card2)}
   background:var(--inset);display:flex;justify-content:center}
 .shprev img{display:block;width:100%;max-width:300px;height:auto}
 .shopts{display:flex;flex-direction:column;gap:2px}
+.shtx{margin:8px 0 4px!important}.shtx summary{display:flex;align-items:center;gap:7px}.shtx summary .ic{width:15px;height:15px;color:var(--gold)}
+.shtx .grid{grid-template-columns:1fr 1fr}@media (max-width:420px){.shtx .grid{grid-template-columns:1fr}}
 .shopt{display:flex;align-items:center;gap:9px;padding:9px 2px;cursor:pointer;font-size:13px;
   color:var(--tx2);font-weight:700}
 .shopt input{width:19px;height:19px;accent-color:var(--gold);flex:none}
@@ -506,6 +512,16 @@ tr.tap:hover td{background:var(--card2)}
 .card.tight .brief,.card.tight .stale{display:none}
 /* خلاصه‌ی یک‌خطیِ کارتِ بسته در آکاردئون */
 .csum{display:none}
+/* جداکننده‌ی روز در فهرست پست‌ها */
+.dsep{display:flex;align-items:center;gap:8px;margin:22px 4px 2px;font-size:12.5px;color:var(--tx3)}
+.dsep b{font-size:13.5px;font-weight:900;color:var(--tx2)}
+.dsep.today b{color:var(--gold)}
+.dsep.old b{color:var(--tx3)}
+.dsep::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent)}
+[dir="rtl"] .dsep::after{background:linear-gradient(270deg,var(--line2),transparent)}
+.dsep .dsn{order:3;font-style:normal;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--inset);border:1px solid var(--line)}
+.dsep::after{order:2}
+html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .card.tight .csum{display:flex;align-items:center;gap:8px;padding:0 14px 12px;margin-top:-4px;font-size:12.5px;color:var(--tx2);
   line-height:1.8;min-width:0}
 .card.tight .csum b{color:var(--tx);font-weight:800;font-variant-numeric:tabular-nums}
@@ -1353,10 +1369,10 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
     <div class="tools">
       <div class="fbar">
         <div class="fseg" role="tablist" aria-label="پوزیشن‌ها">
-          <button class="fb" id="pWait" aria-pressed="false"><span>منتظر</span><i id="cWait">۰</i></button>
-          <button class="fb on" id="pOpen" aria-pressed="true"><span>باز</span><i id="cOpenP">۰</i></button>
-          <button class="fb" id="pClosed" aria-pressed="false"><span>بسته‌شده</span><i id="cClosedP">۰</i></button>
-          <button class="fb" id="pAllP" aria-pressed="false"><span>همه</span><i id="cAllP">۰</i></button>
+          <button class="fb" id="pWait" aria-pressed="false"><span>منتظر</span><i id="cWait">0</i></button>
+          <button class="fb on" id="pOpen" aria-pressed="true"><span>باز</span><i id="cOpenP">0</i></button>
+          <button class="fb" id="pClosed" aria-pressed="false"><span>بسته‌شده</span><i id="cClosedP">0</i></button>
+          <button class="fb" id="pAllP" aria-pressed="false"><span>همه</span><i id="cAllP">0</i></button>
         </div>
         <div class="fside">
           <button class="fb fbucket" id="btnManual"><span>افزودن</span><i>+</i></button>
@@ -1424,9 +1440,10 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
     <div class="grid">
       <div class="fld"><label>کانال تلگرام</label><input id="sChannel" value="ccoineres" dir="ltr"></div>
       <div class="fld"><label>بروزرسانی خودکار</label>
-        <select id="sAuto"><option value="0">خاموش</option><option value="60" selected>هر ۱ دقیقه</option>
-        <option value="180">هر ۳ دقیقه</option><option value="600">هر ۱۰ دقیقه</option></select></div>
+        <select id="sAuto"><option value="0">خاموش</option><option value="60" selected>هر 1 دقیقه</option>
+        <option value="180">هر 3 دقیقه</option><option value="600">هر 10 دقیقه</option></select></div>
       <div class="fld"><label>عمر سیگنال (روز)</label><input id="sStale" type="number" value="7" min="1" max="60" step="1"></div>
+      <div class="fld"><label>تقویم</label><select id="sCal"><option value="j">شمسی</option><option value="g">میلادی</option><option value="jg">هر دو</option></select></div>
     </div>
     <div class="hint">سیگنالی که از این بیشتر گذشته «قدیمی» است: فقط برای مرور می‌ماند، دکمه‌ی ورود ندارد و
       در «در انتظار» و شمارنده‌ها نمی‌آید. اگر کانال گفت هنوز می‌شود گرفت، روی خودِ کارت برش می‌گردانی.</div>
@@ -1436,7 +1453,7 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
     <div class="hint">
       واسط‌های عمومی مجانی‌اند ولی زود شلوغ یا فیلتر می‌شوند، و از شبکه‌ای به شبکه‌ی دیگر فرق می‌کنند.
       واسط خودت این وابستگی را برمی‌دارد. جای آدرس مقصد را با <b>{url}</b> مشخص کن؛
-      اگر نگذاری، آخر آدرس اضافه می‌شود. تا ۶ خط قبول است و همه با هم امتحان می‌شوند.
+      اگر نگذاری، آخر آدرس اضافه می‌شود. تا 6 خط قبول است و همه با هم امتحان می‌شوند.
     </div>
     <div class="srow" style="margin-top:10px">
       <button class="btn" id="btnWCopy">کپی کد ورکر</button>
@@ -1446,7 +1463,7 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
       اگر <b dir="ltr">workers.dev</b> روی شبکه‌ات باز نشد، در همان ورکر
       <b dir="ltr">Settings → Domains &amp; Routes</b> یک دامنه‌ی خودت را وصل کن و آدرس آن را بگذار.
     </div>
-    <details class="sec sub2" id="wSetup"><summary>راهنمای ساخت واسط روی Cloudflare — یک‌بار، حدود ۵ دقیقه</summary>
+    <details class="sec sub2" id="wSetup"><summary>راهنمای ساخت واسط روی Cloudflare — یک‌بار، حدود 5 دقیقه</summary>
       <ol class="wsteps">
         <li>دکمه‌ی پایین را بزن تا کد ورکر کپی شود.</li>
         <li>در <b dir="ltr">dash.cloudflare.com</b> وارد شو (ثبت‌نام رایگان است).</li>
@@ -1494,7 +1511,7 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
         <button class="btn hide" id="btnLockOff">برداشتن قفل</button>
       </div>
       <div class="hint">
-        رمز ۴ تا ۸ رقمی. هر بار که برنامه را باز کنی — و اگر بیش از دو دقیقه ازش بیرون بروی —
+        رمز 4 تا 8 رقمی. هر بار که برنامه را باز کنی — و اگر بیش از دو دقیقه ازش بیرون بروی —
         پرسیده می‌شود.<br>
         <b>صریح بگویم:</b> این برنامه تماماً داخل مرورگر اجرا می‌شود، پس این رمز
         <b>پرده است نه قفل</b>. جلوی کسی که گوشی‌ات را برمی‌دارد را می‌گیرد، ولی کسی که
@@ -1518,7 +1535,7 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
       <div class="fld"><label>تارگت‌ها (R)</label><input id="sR" value="1.5, 3, 5" dir="ltr"></div>
       <div class="fld"><label>کارمزد رفت‌وبرگشت (٪)</label><input id="sFee" type="number" value="0.1" min="0" max="2" step="0.01"></div>
       <div class="fld"><label>سبک خروج پیش‌فرض</label><select id="sPb">
-        <option value="s1">اسکلپ · تارگت ۱</option><option value="s2">اسکلپ · تارگت ۲</option>
+        <option value="s1">اسکلپ · تارگت 1</option><option value="s2">اسکلپ · تارگت 2</option>
         <option value="bal">متعادل</option><option value="sw">سوئینگ پله‌ای</option><option value="cu">دلخواه</option></select></div>
     </div>
     <div class="hint">
@@ -1536,8 +1553,8 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
       <input type="file" id="fileIn" accept=".json,application/json" class="hide">
     </div>
     </details>
-    <div class="hint" style="margin-top:12px">میز سیگنال · نسخه‌ی ۲ ·
-      <a href="backup/signal-desk-v1.zip" download>دانلود نسخه‌ی ۱ (زیپ)</a></div>
+    <div class="hint" style="margin-top:12px">میز سیگنال · نسخه‌ی 2 ·
+      <a href="backup/signal-desk-v1.zip" download>دانلود نسخه‌ی 1 (زیپ)</a></div>
     <div class="srow"><button class="btn pri" id="setDone">تمام</button></div>
   </div>
 </div>
@@ -1553,7 +1570,9 @@ const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 // جدول‌ها در عرض کم باید داخل خودشان اسکرول شوند، نه اینکه صفحه را پهن کنند
 const tWrap=t=>{const d=el('div','tscroll');d.appendChild(t);return d;};
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
-const faN=n=>String(n).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+/* همه‌ی اعداد برنامه انگلیسی (لاتین) نمایش داده می‌شوند؛ اسمش از روزی مانده که فارسی می‌کرد.
+   هر رقم فارسی/عربی که از بیرون بیاید هم لاتین می‌شود. */
+const faN=n=>String(n).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));
 
 /* داده‌های مشترک */
 let POSTS=[], PRICES=new Map(), SYMBOLS=new Set(), SYMVER=0, SETVER=0;
@@ -1575,7 +1594,7 @@ const ICO={
   alert:'<path d="M12 8v5M12 16.4v.2"/><circle cx="12" cy="12" r="9"/>',
   info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.6v.2"/>',
   down:'<path d="M12 5v14M6 13l6 6 6-6"/>',
-  // کلاه فارغ‌التحصیلی: در ۲۰ پیکسل از کتاب خواناتر است (کتاب مثل دو میله دیده می‌شد)
+  // کلاه فارغ‌التحصیلی: در 20 پیکسل از کتاب خواناتر است (کتاب مثل دو میله دیده می‌شد)
   book:'<path d="M2 9.5 12 5l10 4.5-10 4.5z"/><path d="M6.5 11.8V16c0 1.6 2.6 2.9 5.5 2.9s5.5-1.3 5.5-2.9v-4.2"/>',
   star:'<path d="M12 3.5 14.6 9l6 .8-4.4 4.2 1.1 6-5.3-2.9L6.7 20l1.1-6L3.4 9.8l6-.8z"/>',
   box:'<path d="M3 8h18v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M2 4h20v4H2zM10 12h4"/>',
@@ -1668,9 +1687,31 @@ const J_M=['فروردین','اردیبهشت','خرداد','تیر','مرداد
 const J_D=['ش','ی','د','س','چ','پ','ج'];
 const TF=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:TZ});
 function jStamp(d){const p=jParts(d);return p.jy+'/'+String(p.jm).padStart(2,'0')+'/'+String(p.jd).padStart(2,'0')+' '+TF.format(d);}
-// jStamp و jShort برای CSV با رقم لاتین می‌مانند؛ نسخه فارسی جداست
-const jStampFa=d=>faN(jStamp(d));
-function jShort(d){const p=jParts(d);return faN(p.jd)+' '+J_M[p.jm-1];}
+/* تقویمِ نمایش از تنظیمات: j شمسی · g میلادی · jg هر دو. خروجی CSV همیشه شمسی می‌ماند (jStamp). */
+const G_M=['ژانویه','فوریه','مارس','آوریل','مه','ژوئن','ژوئیه','اوت','سپتامبر','اکتبر','نوامبر','دسامبر'];
+const J_WD=['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنج‌شنبه','جمعه'];
+const calMode=()=>['j','g','jg'].includes(S.cal)?S.cal:'j';
+const gParts=d=>{const [y,m,dd]=GF.format(d).split('-').map(Number);return {gy:y,gm:m,gd:dd};};
+function gStamp(d){const g=gParts(d);return g.gy+'/'+String(g.gm).padStart(2,'0')+'/'+String(g.gd).padStart(2,'0');}
+function jStampFa(d){
+  const c=calMode();
+  if(c==='g')return gStamp(d)+' '+TF.format(d);
+  if(c==='jg')return jStamp(d)+' · '+gStamp(d);
+  return jStamp(d);
+}
+function jShort(d){
+  const p=jParts(d), g=gParts(d), c=calMode();
+  const js=p.jd+' '+J_M[p.jm-1], gs=g.gd+' '+G_M[g.gm-1];
+  return c==='g'?gs:c==='jg'?js+' ('+gs+')':js;
+}
+/* شماره‌ی روز (به وقت تهران) برای حساب «امروز / دیروز / چند روز پیش» */
+const dayNo=d=>{const g=gParts(d);return Math.floor(Date.UTC(g.gy,g.gm-1,g.gd)/864e5);};
+function dayLabel(d){
+  const diff=dayNo(new Date())-dayNo(d), p=jParts(d);
+  const wd=J_WD[jWeekday(p.jy,p.jm,p.jd)];
+  const rel=diff<=0?'امروز':diff===1?'دیروز':diff+' روز پیش';
+  return {rel,wd,date:jShort(d),diff};
+}
 
 /* ==================== ذخیره‌سازی ==================== */
 const KEY='signaldesk.v1';
@@ -1735,7 +1776,7 @@ const H={
 };
 let REACHED_END=false;
 
-/* شماره‌ی پست همیشه آخرین جزء data-post است: «کانال/۲۰۴» یا «c/۱۸۹۳۰۵۱/۲۰۴» */
+/* شماره‌ی پست همیشه آخرین جزء data-post است: «کانال/204» یا «c/1893051/204» */
 const postNum=id=>parseInt(String(id||'').split('/').pop()||'0',10)||0;
 function loadPostCache(){
   const c=lsGet(CKEY(S.channel));
@@ -1768,7 +1809,7 @@ function savePostCache(){
 }
 function clearPostCache(){try{localStorage.removeItem(CKEY(S.channel));}catch(e){}}
 /* حافظه‌های جانبی به پست گره خورده‌اند ولی خودشان با بیرون رفتن پست از پنجره‌ی
-   ۸۰۰تایی پاک نمی‌شدند. روی کانالی که روزی ۲۰ پست دارد، بعد از چند ماه هزاران
+   800تایی پاک نمی‌شدند. روی کانالی که روزی 20 پست دارد، بعد از چند ماه هزاران
    کلیدِ مرده می‌ماند — و archived/results چون همگام‌سازی می‌شوند، هر بار روی
    شبکه هم می‌روند. اینجا به پنجره‌ی زنده برشان می‌گردانیم. */
 const FLAGMAX=1500;                 // سقف پرچم‌های ماندگار (آرشیو/نتایج)
@@ -1779,7 +1820,7 @@ function trimFlags(obj,live){
   for(const k of Object.keys(obj))if(obj[k]===0&&!live.has(k)){delete obj[k];changed=true;}
   const rest=Object.keys(obj);
   if(rest.length>FLAGMAX){
-    // تازه‌ترها می‌مانند؛ پستی که ۱۵۰۰ نشانه پیش کنار گذاشته‌ای برنمی‌گردد
+    // تازه‌ترها می‌مانند؛ پستی که 1500 نشانه پیش کنار گذاشته‌ای برنمی‌گردد
     rest.sort((a,b)=>(obj[b]||0)-(obj[a]||0));
     for(const k of rest.slice(FLAGMAX))delete obj[k];
     changed=true;
@@ -1908,7 +1949,7 @@ function fxGuard(){
   if(S.feat&&S.feat.fx===false&&!lsGet('signaldesk.fxuser')){S.feat.fx=true;return true;}
   return false;
 }
-const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,auto:60,proxy:'',feat:featDefaults(),staleDays:7,exitPb:'bal',
+const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,auto:60,proxy:'',feat:featDefaults(),staleDays:7,exitPb:'bal',cal:'j',
   aud:{days:30,entryDays:3,tol:1,rule:'tp1'}};
 const F=k=>!!(S.feat&&S.feat[k]);
 let BOOTED=false;
@@ -1934,7 +1975,7 @@ function applySettingsToForm(){
   $('#sProxy').value=S.proxy||'';
   $('#sChannel').value=S.channel; $('#sAcct').value=S.acct; $('#sCap').value=S.cap;
   $('#sRisk').value=S.risk; $('#sMaxLev').value=S.maxLev; $('#sDaily').value=S.daily;
-  $('#sMode').value=S.mode; $('#sStale').value=S.staleDays||7; $('#sPb').value=pbDefault(); $('#sR').value=S.rMul.join(', '); $('#sFee').value=S.fee; $('#sAuto').value=S.auto;
+  $('#sMode').value=S.mode; $('#sStale').value=S.staleDays||7; $('#sCal').value=calMode(); $('#sPb').value=pbDefault(); $('#sR').value=S.rMul.join(', '); $('#sFee').value=S.fee; $('#sAuto').value=S.auto;
 }
 function readSettings(){
   const prevCh=S.channel, prevAuto=S.auto, prevProxy=S.proxy;
@@ -1959,6 +2000,7 @@ function readSettings(){
   S.auto=parseInt($('#sAuto').value)||0;
   S.staleDays=Math.min(60,Math.max(1,parseInt($('#sStale').value,10)||7));
   S.exitPb=$('#sPb').value||'bal';
+  S.cal=$('#sCal').value||'j';
   const prevNotify=F('notify');
   fixFeat();
   for(const k of Object.keys(FEAT)){const c=$('#feat_'+k);if(c)S.feat[k]=!!c.checked;}
@@ -2083,7 +2125,7 @@ function parseSignal(raw,id){
   const mk=detectMarket(t,r.direction,r.leverage);
   r.market=mk.market; r.marketGuess=mk.guess;
   /* سیگنال یعنی عددِ ورود یا استاپ یا تریگر، یا دست‌کم جهتِ صریح (لانگ/شورت). قبلاً اسم ارز +
-     یک عدد + کلمه‌ای مثل «هدف» کافی بود و خبرها («بیت‌کوین به ۶۵ هزار رسید؛ هدف بعدی…») و
+     یک عدد + کلمه‌ای مثل «هدف» کافی بود و خبرها («بیت‌کوین به 65 هزار رسید؛ هدف بعدی…») و
      اطلاعیه‌ها هم سیگنال حساب می‌شدند — هم در فهرست سیگنال‌ها و هم در کانال‌سنج. */
   const strong=entry!=null||r.stop!=null||trig!=null||/لانگ|شورت|\blong\b|\bshort\b/i.test(t);
   r.isSignal=!!(r.ticker&&r.hasNum&&strong&&
@@ -2109,7 +2151,7 @@ const MMR=0.005;
 function computePlan(o){
   const {entry,stop,live,capital=10,riskPct=5,mode='margin',
     rMultiples=[1.5,3,5],channelTargets=[],market='futures'}=o;
-  /* اسپات یعنی اهرم ۱ و لیکوئید ندارد؛ همان فرمول‌ها با سقف اهرم ۱ دقیقاً همین را می‌دهند،
+  /* اسپات یعنی اهرم 1 و لیکوئید ندارد؛ همان فرمول‌ها با سقف اهرم 1 دقیقاً همین را می‌دهند،
      پس ریاضیِ دوم نمی‌نویسیم — فقط ورودی‌ها را قفل می‌کنیم. */
   const spot=market==='spot';
   const direction=spot?'long':(o.direction||'long');
@@ -2149,7 +2191,7 @@ function computePlan(o){
   }else{r.liqPrice=null;r.liqDistPct=null;}
   r.suggestedMargin=Math.min(capital,riskAmt/(sd*lev));
   if(sd>.25)r.warnings.push('stop-far');
-  if(r.capped&&!spot)r.warnings.push('lev-capped');   // در اسپات «اهرم ۱» سقف نیست، ذاتِ کار است
+  if(r.capped&&!spot)r.warnings.push('lev-capped');   // در اسپات «اهرم 1» سقف نیست، ذاتِ کار است
   if(r.actualRiskPct>riskPct*1.5)r.warnings.push('over-risk');
   if(r.adverseGapPct!=null&&r.adverseGapPct>3)r.warnings.push('price-moved');
   if(live&&((direction==='long'&&live<=stop)||(direction==='short'&&live>=stop)))r.warnings.push('past-stop');
@@ -2246,10 +2288,10 @@ function logAdd(p,kind,text){ensureBase(p);p.log.push({at:Date.now(),k:kind,t:te
 
 /* ==================== شبکه ==================== */
 /* درس گرفته از لاگ واقعی:
-   ۱) اتصال مستقیم به t.me را حذف نکن. در مرورگر معمولی به‌خاطر CORS رد می‌شود (سریع و بی‌هزینه)،
+   1) اتصال مستقیم به t.me را حذف نکن. در مرورگر معمولی به‌خاطر CORS رد می‌شود (سریع و بی‌هزینه)،
       ولی وقتی فایل داخل یک WebView یا با دسترسی محلی باز شده، همین راه کار می‌کند و از همه سریع‌تر است.
-   ۲) مسیرها را پشت سر هم امتحان نکن. سه تایم‌اوت ۱۱ ثانیه‌ای یعنی ۳۳ ثانیه انتظار، در حالی که
-      مسیر پنجم در ۳۰۰ میلی‌ثانیه جواب می‌داد. پس همه با هم فرستاده می‌شوند و اولین جواب درست برنده است. */
+   2) مسیرها را پشت سر هم امتحان نکن. سه تایم‌اوت 11 ثانیه‌ای یعنی 33 ثانیه انتظار، در حالی که
+      مسیر پنجم در 300 میلی‌ثانیه جواب می‌داد. پس همه با هم فرستاده می‌شوند و اولین جواب درست برنده است. */
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const LOCAL_ORIGIN=!/^https?:$/.test(location.protocol);
 
@@ -2267,9 +2309,9 @@ const BASE_ROUTES=[
     build:u=>'https://api.allorigins.win/get?url='+encodeURIComponent(u),
     unwrap:t=>{try{const j=JSON.parse(t);return typeof j.contents==='string'?j.contents:null;}catch(e){return null;}}}
 ];
-/* thingproxy و corsproxy.io از فهرست درآمدند: اولی سال‌هاست از کار افتاده (در لاگ همیشه زیر ۲۵
+/* thingproxy و corsproxy.io از فهرست درآمدند: اولی سال‌هاست از کار افتاده (در لاگ همیشه زیر 25
    میلی‌ثانیه رد می‌شد، یعنی اصلاً درخواستی از گوشی بیرون نرفته) و دومی حالا کلید API می‌خواهد
-   و بدون کلید ۴۰۱ برمی‌گرداند. نگه داشتنشان فقط وقت هر بروزرسانی را تلف می‌کرد. */
+   و بدون کلید 401 برمی‌گرداند. نگه داشتنشان فقط وقت هر بروزرسانی را تلف می‌کرد. */
 /* واسط‌های خودِ کاربر: هر خط یک آدرس. چون در دسترس بودن هر واسط از شبکه‌ای به شبکه‌ی دیگر
    فرق می‌کند، هرچه بیشتر باشند شانس بیشتر است و همه با هم امتحان می‌شوند. */
 function proxyList(){
@@ -2423,7 +2465,7 @@ const PRICE_SRC=[
 ];
 const okRows=d=>{try{return Array.isArray(d)?d.length>20:(!!d&&typeof d==='object');}catch(e){return false;}};
 let PX_LOADING=null;
-const PX_TTL=20000;                        // قیمت تازه‌تر از ۲۰ ثانیه دوباره گرفته نمی‌شود
+const PX_TTL=20000;                        // قیمت تازه‌تر از 20 ثانیه دوباره گرفته نمی‌شود
 const FLASH=new Map(); let FLASH_AT=0;     // جهت آخرین تغییر هر نماد، برای چشمک سبز/قرمز
 const flashOf=t=>(t&&Date.now()-FLASH_AT<4000&&FLASH.get(t))||'';
 function applyPrices(m,srcName,route,ms){
@@ -2516,14 +2558,14 @@ function parseChannelHTML(html){
     if(rp){
       const rt=rp.querySelector('.tgme_widget_message_text,.tgme_widget_message_metatext');
       // خودِ بلوک ریپلای یک لینک به پست اصلی است؛ شناسه‌اش را برمی‌داریم تا بشود
-      // پست اصلی را همین‌جا نشان داد، نه فقط ۱۶۰ نویسه از متنش
+      // پست اصلی را همین‌جا نشان داد، نه فقط 160 نویسه از متنش
       const href=rp.getAttribute('href')||'';
       const mm=href.match(/t\.me\/(?:s\/)?(.+)$/);
       reply={text:nodeText(rt).trim().replace(/\s+/g,' ').slice(0,160),
              id:mm?mm[1].replace(/[?#].*$/,''):null,link:href||null};
     }
     /* پست آموزشی ممکن است آلبوم چندعکسی یا ویدیو باشد؛ همه‌ی عکس‌ها را برمی‌داریم،
-       ولی فقط وقتی بیش از یکی باشد ذخیره‌شان می‌کنیم تا کشِ ۸۰۰ پستی سنگین نشود */
+       ولی فقط وقتی بیش از یکی باشد ذخیره‌شان می‌کنیم تا کشِ 800 پستی سنگین نشود */
     const imgs=[];
     for(const ph of b.querySelectorAll('.tgme_widget_message_photo_wrap,.tgme_widget_message_video_thumb,.tgme_widget_message_roundvideo_thumb')){
       if(ph.closest('.tgme_widget_message_reply'))continue;
@@ -2703,7 +2745,7 @@ function checkAlerts(){
 
 /* ==================== همگام‌سازی بین دستگاه‌ها ==================== */
 /* داده روی ورکر خودت نگه داشته می‌شود، نه جای دیگر. هر نوشتن یک شماره‌ی نسخه جلو می‌برد؛
-   اگر دستگاه دیگری وسط کار نوشته باشد سرور ۴۰۹ می‌دهد و ما به‌جای بازنویسی، از کاربر
+   اگر دستگاه دیگری وسط کار نوشته باشد سرور 409 می‌دهد و ما به‌جای بازنویسی، از کاربر
    می‌پرسیم — چون سوابق معامله چیزی نیست که بی‌صدا رویش بنویسیم. */
 const SYNCKEY='signaldesk.sync.v1';
 let syncCfg=lsGet(SYNCKEY)||{url:'',token:'',rev:0,at:0};
@@ -2925,7 +2967,7 @@ function wireLightbox(){
 }
 
 /* ==================== آموزش ==================== */
-/* پست‌های آموزشی کپی کامل ذخیره می‌شوند، نه ارجاع به POSTS: کشِ کانال ۸۰۰ تایی است و
+/* پست‌های آموزشی کپی کامل ذخیره می‌شوند، نه ارجاع به POSTS: کشِ کانال 800 تایی است و
    می‌چرخد، پس یک آموزش قدیمی وگرنه روزی از دست می‌رفت. */
 let lessonQ='', catFilter=null, pickMode=false;
 const picked=new Set();
@@ -2973,7 +3015,7 @@ function sheetEditLesson(id){
    });
 }
 /* ---- اسکن کانال برای پیدا کردن آموزش‌ها ---- */
-/* ۱۵۰ پست را دستی علامت زدن شدنی نیست. کانال را عقب‌عقب می‌خوانیم، کاندیداها را
+/* 150 پست را دستی علامت زدن شدنی نیست. کانال را عقب‌عقب می‌خوانیم، کاندیداها را
    امتیاز می‌دهیم و فهرستِ تیک‌خور نشان می‌دهیم — تصمیم آخر با کاربر است، نه خودکار. */
 const LESSON_HINTS=[
   /نکته/,/چیست/,/چطور/,/چگونه/,/یاد\s*بگیر/,/مفهوم/,/استراتژی/,/اندیکاتور/,
@@ -3015,10 +3057,10 @@ function sheetScan(){
    '<div class="sub">کانال از تازه به قدیم خوانده می‌شود و پست‌هایی که آموزشی به نظر می‌رسند '+
    'فهرست می‌شوند. هیچ‌چیز خودکار اضافه نمی‌شود — خودت تیک می‌زنی.</div>'+
    '<div class="grid"><div class="fld"><label>تا چند صفحه عقب برود</label>'+
-   '<select id="f_pg"><option value="10">۱۰ صفحه (سریع)</option>'+
-   '<option value="25">۲۵ صفحه</option><option value="50" selected>۵۰ صفحه</option>'+
+   '<select id="f_pg"><option value="10">10 صفحه (سریع)</option>'+
+   '<option value="25">25 صفحه</option><option value="50" selected>50 صفحه</option>'+
    '<option value="120">تا آخر کانال (کند)</option></select></div></div>'+
-   '<div class="hint">هر صفحه حدود ۲۰ پست است و یک درخواست به کانال می‌زند. اگر واسط شخصی '+
+   '<div class="hint">هر صفحه حدود 20 پست است و یک درخواست به کانال می‌زند. اگر واسط شخصی '+
    'داری سریع است؛ بدون آن ممکن است خیلی طول بکشد.</div>'+
    '<div class="srow"><button class="btn pri" id="ok">شروع اسکن</button>'+
    '<button class="btn" id="cx">انصراف</button></div>'+
@@ -3029,7 +3071,7 @@ function sheetScan(){
        const pages=parseInt($('#f_pg').value,10)||50;
        const btn=e.currentTarget; btnBusy(btn,true,'در حال خواندن…');
        const box=$('#scanBox');
-       box.innerHTML='<div class="scanprog" id="sp">در حال خواندن صفحه‌ی ۱…</div>';
+       box.innerHTML='<div class="scanprog" id="sp">در حال خواندن صفحه‌ی 1…</div>';
        const rows=await scanLessons(pages,(pg,n,err)=>{
          $('#sp').textContent=err||('صفحه‌ی '+faN(pg)+' خوانده شد · '+faN(n)+' کاندیدا');
        });
@@ -3083,8 +3125,8 @@ function addLessonQuiet(p){
 }
 
 /* ==================== دستورالعمل ترید ==================== */
-/* کانال یک پستِ فهرست دارد (#دستورالعمل_ترید) که ۹ آموزشِ پایه را به‌ترتیب لینک داده و
-   گفته قبل از هر معامله یک‌بار کامل خوانده شوند. آن ۹ پست اینجا به همان ترتیب می‌آیند،
+/* کانال یک پستِ فهرست دارد (#دستورالعمل_ترید) که 9 آموزشِ پایه را به‌ترتیب لینک داده و
+   گفته قبل از هر معامله یک‌بار کامل خوانده شوند. آن 9 پست اینجا به همان ترتیب می‌آیند،
    با عکس و ویدیوشان، و کنار هر کدام «خواندم» هست تا معلوم باشد کجای مسیر هستی.
    اگر کانال فهرست را عوض کند (آموزشی اضافه کند)، پستِ فهرست که در کانال دیده شود،
    فهرست اینجا هم با آن به‌روز می‌شود. */
@@ -3094,7 +3136,7 @@ const GUIDE_DEFAULT=[
   [54649,'آموزش تنظیم سفارش Trigger در صرافی Ourbit'],
   [54650,'محاسبه ریسک، حجم و اهرم با کمک ChatGPT'],
   [54651,'ماشین‌حساب محاسبه ریسک و اهرم'],
-  [54652,'تایم‌فریم ۴ ساعته و سشن‌های مهم معاملاتی'],
+  [54652,'تایم‌فریم 4 ساعته و سشن‌های مهم معاملاتی'],
   [54653,'تفاوت Trigger و Confirm'],
   [54654,'اگر پوزیشن ریجکت شد، چه کار کنیم؟'],
   [54655,'نحوه ریسک‌فری و مدیریت پوزیشن'],
@@ -3117,12 +3159,12 @@ const GUIDE_NOTES={
          ['منتظر شکست بمان','تا خط روند نشکسته، خرید یعنی جنگیدن با روند. شکست و تثبیت بالای <i>2.7</i> اولین نشانه‌ی تغییر روند است.'],
          ['ناحیه‌ی ورود','بهترین ورود بعد از شکست، روی <b>پولبک</b> به حمایتِ تازه است: <i>2.7–2.8</i>. اگر در همین ناحیه یک کندل تأییدی دیدی، وارد شو.'],
          ['حد ضرر','زیر آخرین کف معتبر: <i>1.998</i>. اگر قیمت به زیر آن برگردد، سناریوی صعودی باطل است و نباید در معامله بمانی.'],
-         ['اهداف','سه هدف روی مقاومت‌های قبلی: <i>3.959</i>، <i>5.968</i> و <i>9.250</i>. در هر هدف بخشی از سود را سیو کن (درس ۹).'],
-         ['حجم را از روی استاپ حساب کن','فاصله‌ی ورود تا استاپ حدود <i>27%</i> است، یعنی خیلی زیاد. با قانون ریسک ۱٪، روی حساب ۱۰۰۰ دلاری حجم کل پوزیشن فقط حدود <i>37$</i> می‌شود. استاپ دورتر یعنی حجم کمتر (درس ۳ و ۴).']],
+         ['اهداف','سه هدف روی مقاومت‌های قبلی: <i>3.959</i>، <i>5.968</i> و <i>9.250</i>. در هر هدف بخشی از سود را سیو کن (درس 9).'],
+         ['حجم را از روی استاپ حساب کن','فاصله‌ی ورود تا استاپ حدود <i>27%</i> است، یعنی خیلی زیاد. با قانون ریسک 1٪، روی حساب 1000 دلاری حجم کل پوزیشن فقط حدود <i>37$</i> می‌شود. استاپ دورتر یعنی حجم کمتر (درس 3 و 4).']],
   rules:['ترتیب ثابت است: اول روند، بعد شکست، بعد پولبک، بعد ورود.',
          'حد ضرر جایی است که «ایده غلط از آب درآمده»، نه عددی که دلت می‌خواهد.',
          'هدف اول حدود <i>1.6R</i>، دوم حدود <i>4.3R</i> و سوم حدود <i>8.6R</i> است؛ حتی رسیدن به هدف اول هم معامله را منطقی می‌کند.'],
-  warn:['با استاپ ۲۷٪ در مارجین ایزوله، اهرم بیشتر از حدود <i>3X</i> یعنی لیکوئید شدن قبل از رسیدن به حد ضرر.',
+  warn:['با استاپ 27٪ در مارجین ایزوله، اهرم بیشتر از حدود <i>3X</i> یعنی لیکوئید شدن قبل از رسیدن به حد ضرر.',
         'این مثال آموزشی است، نه سیگنال.'],
   app:'در تب سیگنال‌ها «بررسی و ورود» همین فاصله‌ی استاپ، R هر تارگت و قیمت لیکوئید را خودش حساب می‌کند.'},
  54649:{
@@ -3135,35 +3177,35 @@ const GUIDE_NOTES={
          ['معیار فعال شدن: Last Price','Last Price یعنی سفارش با «آخرین قیمت معامله‌شده»ی بازار فعال می‌شود.'],
          ['قیمت تریگر','عددی که با رسیدن قیمت به آن سفارش فعال شود: <i>0.188</i>.'],
          ['قیمت سفارش (Limit Price)','قیمتی که سفارش بعد از فعال شدن با آن ثبت می‌شود، معمولاً همان <i>0.188</i>. اگر بازار تند حرکت می‌کند، در لانگ کمی بالاتر بگذار تا جا نمانی.'],
-         ['حجم','مقدار را وارد کن (اینجا <i>4500 ADA</i>). حجم را از روی ریسک و فاصله‌ی استاپ حساب کن، نه از روی حس (درس ۳).'],
+         ['حجم','مقدار را وارد کن (اینجا <i>4500 ADA</i>). حجم را از روی ریسک و فاصله‌ی استاپ حساب کن، نه از روی حس (درس 3).'],
          ['TP/SL را همان‌جا بگذار','تیک TP/SL را بزن: حد ضرر <i>0.175</i> و هدف <i>0.205</i>. سفارش بدون حد ضرر نفرست.'],
          ['Open Long یا Open Short','برای خرید (لانگ) <b>Open Long</b> سبز و برای فروش (شورت) <b>Open Short</b> قرمز را بزن.']],
   rules:['Trigger فقط «شرطِ فعال شدن» است. اگر Limit گذاشتی و قیمت تند رد شد، ممکن است سفارش پر نشود.',
          'اهرم و حجم را بر اساس مدیریت ریسک و فاصله تا حد ضرر انتخاب کن. تنظیمات تصویر فقط نمونه است.',
          'در این معامله فاصله‌ی استاپ حدود <i>6.9%</i> است؛ هدف اول حدود <i>1.3R</i> و هدف دوم حدود <i>2.5R</i>.'],
-  warn:['با <i>4500 ADA</i>، خوردن استاپ حدود <i>58$</i> ضرر دارد. این برای ریسک ۱٪ یعنی حساب حدود <i>5,800$</i>. با حساب کوچک‌تر حجم را به همان نسبت کم کن.',
+  warn:['با <i>4500 ADA</i>، خوردن استاپ حدود <i>58$</i> ضرر دارد. این برای ریسک 1٪ یعنی حساب حدود <i>5,800$</i>. با حساب کوچک‌تر حجم را به همان نسبت کم کن.',
         'اهرم <i>35X</i> در حالت <b>ایزوله</b> یعنی لیکوئید حدود <i>2.4%</i> زیر ورود، یعنی قبل از استاپ <i>6.9%</i>. در ایزوله اهرم را حداکثر حدود <i>13X</i> بگذار. تصویر در حالت Cross است که کل موجودی حساب پشت پوزیشن می‌ایستد.'],
   app:'دکمه‌ی «منتظر …» روی کارت سیگنال همین منطق تریگر را در برنامه نگه می‌دارد و وقتی قیمت رسید خبر می‌دهد.'},
  54650:{
-  sum:'حساب کردن حجم، مارجین و تعداد واحد با قانون ریسک ۱٪، هم با یک پرامپت آماده برای ChatGPT و هم به‌صورت دستی.',
-  pic:['چارت روزانه‌ی <i>RENDER/USDT</i> با برنامه‌ی نمونه: ورود <i>1.455</i>، حد ضرر <i>1.250</i> و سه هدف <i>2.124</i>، <i>2.947</i> و <i>4.501</i>. معامله لانگ با اهرم <i>20X</i> و ریسک ۱٪ روی سرمایه‌ی <i>1000$</i> است.',
+  sum:'حساب کردن حجم، مارجین و تعداد واحد با قانون ریسک 1٪، هم با یک پرامپت آماده برای ChatGPT و هم به‌صورت دستی.',
+  pic:['چارت روزانه‌ی <i>RENDER/USDT</i> با برنامه‌ی نمونه: ورود <i>1.455</i>، حد ضرر <i>1.250</i> و سه هدف <i>2.124</i>، <i>2.947</i> و <i>4.501</i>. معامله لانگ با اهرم <i>20X</i> و ریسک 1٪ روی سرمایه‌ی <i>1000$</i> است.',
        'پنج جعبه‌ی شماره‌دار پایین تصویر همان پنج قدم محاسبه‌اند. جعبه‌ی سبز پرامپت ChatGPT و جعبه‌ی قرمز نکته‌های مهم است.'],
   plan:{pair:'RENDER/USDT',side:'long',entry:1.455,sl:1.25,tps:[2.124,2.947,4.501],tf:'روزانه (1D)'},
-  steps:[['ریسک دلاری','<i>1% × 1000 = 10$</i>. یعنی اگر استاپ بخورد، حداکثر ۱۰ دلار از دست می‌دهی.'],
+  steps:[['ریسک دلاری','<i>1% × 1000 = 10$</i>. یعنی اگر استاپ بخورد، حداکثر 10 دلار از دست می‌دهی.'],
          ['فاصله‌ی ورود تا استاپ','<i>1.455 − 1.250 = 0.205</i> و به درصد: <i>0.205 ÷ 1.455 = 14.09%</i>.'],
-         ['حجم پوزیشن (Position Size)','<i>10 ÷ 0.1409 ≈ 71$</i>. ارزش کل پوزیشن باید حدود ۷۱ دلار باشد.'],
-         ['مارجین با اهرم 20X','<i>71 ÷ 20 = 3.55$</i>. اهرم فقط مارجین را کم می‌کند؛ ریسک همان ۱۰ دلار می‌ماند.'],
+         ['حجم پوزیشن (Position Size)','<i>10 ÷ 0.1409 ≈ 71$</i>. ارزش کل پوزیشن باید حدود 71 دلار باشد.'],
+         ['مارجین با اهرم 20X','<i>71 ÷ 20 = 3.55$</i>. اهرم فقط مارجین را کم می‌کند؛ ریسک همان 10 دلار می‌ماند.'],
          ['تعداد واحد (Quantity)','<i>71 ÷ 1.455 ≈ 48.8</i> RENDER. همین عدد را در صرافی وارد می‌کنی.'],
-         ['پرامپت ChatGPT','چارت را بفرست و بنویس: «سرمایه‌ی من ۱۰۰۰ دلار است. می‌خواهم در این معامله حداکثر ۱٪ سرمایه را ریسک کنم. نقطه‌ی ورود و حد ضرر را از روی چارت پیوست‌شده بخوان. اهرم انتخابی من 20X است. حجم پوزیشن، مارجین موردنیاز و تعداد واحد ارز را حساب کن و بگو در صورت خوردن استاپ تقریباً چند دلار ضرر می‌کنم.» سرمایه، درصد ریسک و اهرم را با حساب خودت عوض کن.']],
+         ['پرامپت ChatGPT','چارت را بفرست و بنویس: «سرمایه‌ی من 1000 دلار است. می‌خواهم در این معامله حداکثر 1٪ سرمایه را ریسک کنم. نقطه‌ی ورود و حد ضرر را از روی چارت پیوست‌شده بخوان. اهرم انتخابی من 20X است. حجم پوزیشن، مارجین موردنیاز و تعداد واحد ارز را حساب کن و بگو در صورت خوردن استاپ تقریباً چند دلار ضرر می‌کنم.» سرمایه، درصد ریسک و اهرم را با حساب خودت عوض کن.']],
   rules:['فرمول اصلی: <b>حجم پوزیشن = ریسک دلاری ÷ درصد فاصله‌ی استاپ</b>. اهرم در این فرمول نیست.',
          'اگر ChatGPT عدد ورود یا استاپ را اشتباه از تصویر خواند، اعداد را دستی بده و جوابش را با همین پنج قدم چک کن.',
-         'کارمزد، اسلیپیج و فاندینگ در این حساب نیست؛ حجم را ۵ تا ۱۰٪ کمتر بگیر.',
+         'کارمزد، اسلیپیج و فاندینگ در این حساب نیست؛ حجم را 5 تا 10٪ کمتر بگیر.',
          'حد ضرر را حتماً در خود صرافی ثبت کن.'],
-  warn:['در مارجین <b>ایزوله</b> با اهرم <i>20X</i>، لیکوئید حدود <i>4.5%</i> زیر ورود (حدود <i>1.39</i>) است و قبل از استاپ <i>1.250</i> می‌رسد. برای استاپ ۱۴٪ در ایزوله اهرم را حداکثر حدود <i>6X</i> بگذار (مارجین حدود <i>12$</i>)، یا در حالت Cross کار کن.'],
-  app:'ماشین‌حساب درس ۴ همین پنج قدم را با اعداد خودت انجام می‌دهد و اهرم امن را هم می‌گوید.'},
+  warn:['در مارجین <b>ایزوله</b> با اهرم <i>20X</i>، لیکوئید حدود <i>4.5%</i> زیر ورود (حدود <i>1.39</i>) است و قبل از استاپ <i>1.250</i> می‌رسد. برای استاپ 14٪ در ایزوله اهرم را حداکثر حدود <i>6X</i> بگذار (مارجین حدود <i>12$</i>)، یا در حالت Cross کار کن.'],
+  app:'ماشین‌حساب درس 4 همین پنج قدم را با اعداد خودت انجام می‌دهد و اهرم امن را هم می‌گوید.'},
  54651:{
   sum:'ماشین‌حساب ریسک و اهرم؛ یک نسخه‌ی زنده‌اش همین‌جاست.',
-  pic:['اسکرین‌شات این پست به دستم نرسید. به‌جایش ماشین‌حساب را همین‌جا ساختم تا با همان روش کانال (ریسک از کل سرمایه) حساب کنی. اعداد پیش‌فرض همان مثال RENDER درس ۳ است.'],
+  pic:['اسکرین‌شات این پست به دستم نرسید. به‌جایش ماشین‌حساب را همین‌جا ساختم تا با همان روش کانال (ریسک از کل سرمایه) حساب کنی. اعداد پیش‌فرض همان مثال RENDER درس 3 است.'],
   widget:'calc',
   steps:[['سرمایه و درصد ریسک','کل موجودی حساب و درصدی که حاضری در این معامله از دست بدهی. قانون کانال: <i>1%</i>.'],
          ['ورود و حد ضرر','از پست سیگنال یا چارت. جهت معامله (لانگ یا شورت) از روی همین دو عدد معلوم می‌شود.'],
@@ -3171,29 +3213,29 @@ const GUIDE_NOTES={
          ['اعداد را در صرافی بزن','تعداد واحد (Quantity) و اهرم را در فرم سفارش وارد کن و حد ضرر را همان‌جا ثبت کن.']],
   rules:['اگر «اهرم امن» کمتر از اهرم انتخابی‌ات شد، یا اهرم را کم کن یا مارجین Cross بگیر.']},
  54652:{
-  sum:'کندل ۴ ساعته کی بسته می‌شود و کدام ساعت‌ها بازار شلوغ‌تر است؛ همه به وقت تهران.',
+  sum:'کندل 4 ساعته کی بسته می‌شود و کدام ساعت‌ها بازار شلوغ‌تر است؛ همه به وقت تهران.',
   pic:['شش ساعت بالای تصویر، زمان بسته شدن کندل‌های <i>4H</i> به وقت تهران است: <i>3:30</i> بامداد، <i>7:30</i> و <i>11:30</i> صبح، <i>15:30</i> بعدازظهر، <i>19:30</i> عصر و <i>23:30</i> شب.',
        'نوار پایین دو سشن مهم را نشان می‌دهد: بورس شانگهای چین <i>5:00–12:00</i> و بورس نیویورک <i>17:00–24:00</i> به وقت تهران.'],
   widget:'clock',
   steps:[['سطح را مشخص کن','حمایت یا مقاومتی که منتظر شکستش هستی.'],
-         ['عبور لحظه‌ای کافی نیست','قیمت ممکن است سایه بزند و برگردد. منتظر <b>بسته شدن</b> کندل ۴ ساعته بمان.'],
-         ['کلوز پشت سطح یعنی تأیید','اگر کندل 4H بالای مقاومت (در لانگ) یا زیر حمایت (در شورت) بسته شد، شکست تأیید شده. این همان Confirm درس ۶ است.'],
+         ['عبور لحظه‌ای کافی نیست','قیمت ممکن است سایه بزند و برگردد. منتظر <b>بسته شدن</b> کندل 4 ساعته بمان.'],
+         ['کلوز پشت سطح یعنی تأیید','اگر کندل 4H بالای مقاومت (در لانگ) یا زیر حمایت (در شورت) بسته شد، شکست تأیید شده. این همان Confirm درس 6 است.'],
          ['ساعت را بدان','کندل‌ها در همین شش ساعت بسته می‌شوند. ابزار بالا کلوز بعدی و وضعیت سشن‌ها را زنده نشان می‌دهد.']],
   rules:['سشن نیویورک بیشترین حجم و نوسان را دارد؛ شکست‌های مهم و فیک‌های تند بیشتر در این ساعت‌ها رخ می‌دهد.',
          'سشن چین روی بازارهای آسیایی و حس ریسک بازار اثر می‌گذارد.'],
   warn:['با تغییر ساعت آمریکا (تقریباً از اواسط آبان تا اواخر اسفند) سشن نیویورک حدود یک ساعت دیرتر می‌شود. ساعت کندل‌های 4H ثابت می‌ماند چون ایران تغییر ساعت ندارد. در تعطیلات رسمی هم ساعت‌ها ممکن است فرق کند.']},
  54653:{
   sum:'دو روش ورود در شکست مقاومت: زود و با قیمت بهتر (Trigger)، یا دیرتر و مطمئن‌تر (Confirm).',
-  pic:['این پست عکس جدا ندارد و در جواب آموزش سفارش تریگر Ourbit (درس ۲) منتشر شده است.'],
+  pic:['این پست عکس جدا ندارد و در جواب آموزش سفارش تریگر Ourbit (درس 2) منتشر شده است.'],
   cmp:{h:['Trigger','Confirm'],rows:[
     ['زمان ورود','زودتر، قبل از تأیید کامل شکست','بعد از تأیید، مثلاً کلوز کندل 4H بالای مقاومت'],
     ['نقطه‌ی ورود','بهتر','دیرتر'],
     ['ریسک اصلی','ریجکت شدن قیمت','شکست فیک کمتر، ولی جا ماندن از حرکت'],
     ['اگر اشتباه شد','خروج با ضرر محدود و انتظار برای Confirm','خروج با حد ضرر']]},
   steps:[['قبل از ورود روش را انتخاب کن','اگر تریگر، باید بپذیری که گاهی ریجکت می‌شوی و این بخشی از بازی است.'],
-         ['ورود تریگری','قیمت که به ناحیه رسید (مثلاً با سفارش Trigger درس ۲) وارد شو.'],
+         ['ورود تریگری','قیمت که به ناحیه رسید (مثلاً با سفارش Trigger درس 2) وارد شو.'],
          ['شکست ادامه داشت؟ بمان','اگر قیمت ریجکت نشد و شکست ادامه پیدا کرد، طبق پلن با پوزیشن بمان.'],
-         ['ریجکت شد؟ ضرر کوچک','پوزیشن را با ضرر محدود ببند و منتظر Confirm بمان، مثلاً کلوز کندل ۴ ساعته بالای مقاومت، و بعد دوباره وارد شو.']],
+         ['ریجکت شد؟ ضرر کوچک','پوزیشن را با ضرر محدود ببند و منتظر Confirm بمان، مثلاً کلوز کندل 4 ساعته بالای مقاومت، و بعد دوباره وارد شو.']],
   rules:['هدف تریگر «همیشه درست بودن» نیست: اگر موفق شد ورود بهتری داری و اگر ریجکت شد با رعایت حد ضرر بیرون می‌آیی.'],
   app:'دکمه‌ی «منتظر …» روی کارت سیگنال، تریگر را در برنامه نگه می‌دارد تا قیمت برسد.'},
  54654:{
@@ -3204,29 +3246,29 @@ const GUIDE_NOTES={
          ['راه دوم: کم کردن حجم','حجم را به <i>1/2</i> یا <i>1/3</i> برسان تا ریسک پوزیشن کمتر شود.'],
          ['شکست تأیید شد؟ دوباره اضافه کن','اگر قیمت برگشت و مقاومت را شکست و در تایم‌فریم <i>1H</i> یا <i>4H</i> تأیید گرفت، طبق مدیریت ریسک دوباره حجم اضافه کن.']],
   rules:['راه دوم مخصوصاً وقتی به کار می‌آید که چند پوزیشن هم‌زمان داری و می‌خواهی در نوسان شدید ریسک کل حساب را پایین بیاوری.',
-         'اگر پوزیشن‌هایت کم است و از اول ریسک هر معامله را ۱٪ نگه داشته‌ای، کاهش حجم لازم نیست؛ طبق پلن اولیه تا TP یا SL صبر کن.',
+         'اگر پوزیشن‌هایت کم است و از اول ریسک هر معامله را 1٪ نگه داشته‌ای، کاهش حجم لازم نیست؛ طبق پلن اولیه تا TP یا SL صبر کن.',
          'ریجکت شدن به معنی خراب شدن پلن نیست. مهم این است که قبل از ورود بدانی در ریجکت، شکست یا تأیید دقیقاً چه می‌کنی.'],
   app:'در تب پوزیشن‌ها دکمه‌ی «بستن بخشی» همین کاهش حجم را ثبت می‌کند و کارنامه سودش را جدا حساب می‌کند.'},
  54655:{
   sum:'ریسک‌فری یعنی بعد از گرفتن بخشی از سود، کاری کنی که باقی پوزیشن دیگر نتواند ضرر بدهد. Ourbit دو راه برای بستن و مدیریت پوزیشن دارد.',
   pic:['تصویر دو روش بستن پوزیشن در Ourbit را کنار هم گذاشته. مثال روی یک لانگ <i>EIGEN/USDT</i> با اهرم <i>35X</i> (Cross) است؛ میانگین ورود <i>0.2015</i> و قیمت فعلی <i>0.2070</i>، یعنی حدود <i>2.7%</i> در سود.',
-       '<b>روش ۱ (سبز)، دکمه‌ی Close:</b> برای بستن سریع همه یا بخشی از پوزیشن. در مثال، <i>25%</i> حجم با سفارش Market بسته می‌شود.',
-       '<b>روش ۲ (آبی)، TP/SL:</b> برای گذاشتن حد سود و حد ضرر خودکار روی همه یا بخشی از حجم. در مثال <i>25%</i> یعنی <i>100</i> از <i>400</i> EIGEN.'],
+       '<b>روش 1 (سبز)، دکمه‌ی Close:</b> برای بستن سریع همه یا بخشی از پوزیشن. در مثال، <i>25%</i> حجم با سفارش Market بسته می‌شود.',
+       '<b>روش 2 (آبی)، TP/SL:</b> برای گذاشتن حد سود و حد ضرر خودکار روی همه یا بخشی از حجم. در مثال <i>25%</i> یعنی <i>100</i> از <i>400</i> EIGEN.'],
   steps:[['سود اول را بگیر','قیمت که به هدف اول رسید، از <b>Close</b> بخشی از حجم (مثلاً <i>25%</i>) را با Market ببند.'],
          ['استاپ را به نقطه‌ی ورود بیاور','در <b>TP/SL</b> قیمت تریگر Stop Loss را روی میانگین ورود (<i>Avg. Price</i>، اینجا <i>0.2015</i>) بگذار. حالا باقی پوزیشن ریسک‌فری است.'],
          ['حد سود پله‌ای','در <b>TP/SL in Batches</b> برای هر هدف یک Take Profit با درصد حجم جدا بگذار تا سود خودکار سیو شود.'],
          ['تأیید و بررسی','بعد از ثبت، در بخش Position ببین TP و SL فعال شده باشند.']],
   rules:['Market سریع‌تر می‌بندد، ولی در بازار تند ممکن است کمی بدتر پر شود.',
          'قبل از گذاشتن SL فاصله‌اش را با قیمت لیکوئید چک کن؛ SL باید قبل از لیکوئید باشد.',
-         'طبق درس ۹، پوزیشنی که ریسک‌فری شد جای یک پوزیشن تازه را آزاد می‌کند.'],
+         'طبق درس 9، پوزیشنی که ریسک‌فری شد جای یک پوزیشن تازه را آزاد می‌کند.'],
   app:'در تب پوزیشن‌ها می‌توانی دستگیره‌ی استاپ را روی نردبان تا قیمت ورود بکشی؛ کارنامه R را همچنان با ریسک اولیه حساب می‌کند.'},
  54656:{
-  sum:'قانون سقف: حداکثر ۳ پوزیشن هم‌زمان، و ریسک همه‌شان روی هم حداکثر ۳٪ سرمایه.',
+  sum:'قانون سقف: حداکثر 3 پوزیشن هم‌زمان، و ریسک همه‌شان روی هم حداکثر 3٪ سرمایه.',
   pic:['این پست عکس ندارد. ابزار بالا وضعیت پوزیشن‌های باز خودت را همین الان با همین قانون می‌سنجد.'],
   widget:'rules',
-  steps:[['قبل از هر ورود بشمار','چند پوزیشن «در ریسک» داری؟ اگر ۳ تا، پوزیشن تازه نگیر.'],
-         ['ریسک کل را جمع بزن','ریسک همه‌ی پوزیشن‌های فعال روی هم نباید از <i>3%</i> سرمایه بیشتر شود؛ با ریسک ۱٪ برای هر معامله، یعنی همان ۳ پوزیشن.'],
-         ['ریسک‌فری یعنی جای خالی','به محض اینکه یک پوزیشن ریسک‌فری شد (درس ۸)، می‌توانی یک پوزیشن جدید اضافه کنی.'],
+  steps:[['قبل از هر ورود بشمار','چند پوزیشن «در ریسک» داری؟ اگر 3 تا، پوزیشن تازه نگیر.'],
+         ['ریسک کل را جمع بزن','ریسک همه‌ی پوزیشن‌های فعال روی هم نباید از <i>3%</i> سرمایه بیشتر شود؛ با ریسک 1٪ برای هر معامله، یعنی همان 3 پوزیشن.'],
+         ['ریسک‌فری یعنی جای خالی','به محض اینکه یک پوزیشن ریسک‌فری شد (درس 8)، می‌توانی یک پوزیشن جدید اضافه کنی.'],
          ['سیو سود پله‌ای','سیو سود را به لحظه‌ی آخر موکول نکن؛ طبق اهداف چارت، سود را پله‌پله ذخیره کن.'],
          ['آپدیت‌های کانال را دنبال کن','ممکن است کانال بگوید پوزیشنی زودتر بسته، ریسک‌فری یا مدیریت شود.']],
   rules:['اولویت همیشه حفظ سرمایه و مدیریت ریسک است، نه تعداد معاملات.'],
@@ -3292,7 +3334,7 @@ function guideStore(p,ord,title){
   if(prev&&prev.id!==p.id)delete DB.lessons[prev.id];
   DB.lessons[p.id]=L;
 }
-/* پست‌ها را از خودِ کانال می‌خواند: یک صفحه (۲۰ پست) که همه‌ی شماره‌ها را بپوشاند،
+/* پست‌ها را از خودِ کانال می‌خواند: یک صفحه (20 پست) که همه‌ی شماره‌ها را بپوشاند،
    و اگر چیزی جا ماند، صفحه‌ی قبلی. force یعنی حتی آن‌هایی که داری تازه شوند. */
 async function loadGuide(force){
   if(GUIDE.busy)return;
@@ -3402,7 +3444,7 @@ function guideKv(pl){
   add('فاصله‌ی استاپ',sd.toFixed(1)+'%','w');
   return kv;
 }
-/* ماشین‌حساب درس ۴: همان روش کانال — ریسک از کل سرمایه، حجم از فاصله‌ی استاپ */
+/* ماشین‌حساب درس 4: همان روش کانال — ریسک از کل سرمایه، حجم از فاصله‌ی استاپ */
 function guideCalc(){
   const w=el('div','gcalc');
   const f=(id,l,v)=>'<div class="fld"><label>'+l+'</label><input id="gc_'+id+'" type="number" step="any" inputmode="decimal" value="'+v+'"></div>';
@@ -3434,7 +3476,7 @@ function guideCalc(){
   setTimeout(()=>{const b=w.querySelector('#gc_me');if(b)b.onclick=()=>{w.querySelector('#gc_cap').value=S.acct;paint();};paint();},0);
   return w;
 }
-/* ساعت درس ۵: کلوز کندل ۴ ساعته‌ی بعدی و وضعیت دو سشن، به وقت تهران */
+/* ساعت درس 5: کلوز کندل 4 ساعته‌ی بعدی و وضعیت دو سشن، به وقت تهران */
 let GCLOCK=null;
 function tehranNow(d){
   try{
@@ -3465,7 +3507,7 @@ function paintClock(w){
   const cn=sessionState(t,300,720), ny=sessionState(t,1020,1440);
   const ses=(flag,name,st)=>'<div class="gses '+(st.open?'on':'')+'"><b>'+flag+' '+name+'</b><span>'+
     (st.open?'باز است · '+durFa(st.left)+' تا بسته شدن':(st.left!=null?'بسته · '+durFa(st.left)+' تا باز شدن':'بسته'))+'</span></div>';
-  w.innerHTML='<div class="gnext"><span>کلوز کندل ۴ ساعته‌ی بعدی</span><b dir="ltr">'+nextLbl+'</b><em>'+durFa((next-now)/60000)+' دیگر</em></div>'+
+  w.innerHTML='<div class="gnext"><span>کلوز کندل 4 ساعته‌ی بعدی</span><b dir="ltr">'+nextLbl+'</b><em>'+durFa((next-now)/60000)+' دیگر</em></div>'+
     '<div class="gslots">'+slots.map(s=>'<i class="'+(s===nextLbl?'on':'')+'" dir="ltr">'+s+'</i>').join('')+'</div>'+
     '<div class="gsess">'+ses('🇨🇳','چین',cn)+ses('🇺🇸','نیویورک',ny)+'</div>';
 }
@@ -3474,7 +3516,7 @@ function guideClock(){
   if(!GCLOCK)GCLOCK=setInterval(()=>$$('.gclock').forEach(paintClock),30000);
   return w;
 }
-/* درس ۹: پوزیشن‌های باز همین حالا در برابر قانون ۳ پوزیشن / ۳٪ ریسک */
+/* درس 9: پوزیشن‌های باز همین حالا در برابر قانون 3 پوزیشن / 3٪ ریسک */
 function guideRulesNow(){
   const w=el('div','grulesnow');
   const open=DB.positions.filter(p=>p.status==='open');
@@ -3489,11 +3531,11 @@ function guideRulesNow(){
   const bar=(v,max,lbl,val)=>'<div class="gmeter '+(v>max?'bad':v>=max?'full':'')+'"><div><b>'+lbl+'</b><span dir="ltr">'+val+'</span></div>'+
     '<i><s style="width:'+Math.min(100,v/max*100)+'%"></s></i></div>';
   const ok=atRisk<3&&pct<3&&!noStop;
-  w.innerHTML=bar(atRisk,3,'پوزیشن در ریسک',faN(atRisk)+' / ۳')+
+  w.innerHTML=bar(atRisk,3,'پوزیشن در ریسک',faN(atRisk)+' / 3')+
     bar(pct,3,'ریسک فعال از سرمایه',pct.toFixed(1)+'% / 3%')+
     '<div class="gverdict '+(ok?'ok':'no')+'">'+(open.length
       ?(ok?'طبق قانون کانال می‌توانی یک پوزیشن تازه بگیری.':'طبق قانون کانال فعلاً پوزیشن تازه نگیر؛ اول یکی را ریسک‌فری یا بسته کن.')
-      :'پوزیشن بازی نداری؛ جا برای ۳ پوزیشن هست.')+
+      :'پوزیشن بازی نداری؛ جا برای 3 پوزیشن هست.')+
     (free?'<br>'+faN(free)+' پوزیشن ریسک‌فری داری که در شمارش نیست.':'')+
     (noStop?'<br>'+faN(noStop)+' پوزیشن بدون حد ضرر است؛ ریسکش نامحدود حساب می‌شود.':'')+'</div>'+
     '<div class="hint">مبنا: موجودی حساب <b dir="ltr">'+fmtUsd(S.acct)+'</b> از تنظیمات.</div>';
@@ -3562,7 +3604,7 @@ function guideCard(n,title,i,q){
   }
   body.appendChild(mediaOf(L));
   const long=(L.text||'').length>420, col=long&&COLLAPSED['G'+n]!==false&&!q;
-  body.appendChild(el('div','txt'+(col?' clamp':''),linkify(esc(L.text||'(این پست متن ندارد)'))));
+  body.appendChild(el('div','txt'+(col?' clamp':''),linkify(esc(faN(L.text||'(این پست متن ندارد)')))));
   if(long){
     const b=el('button','more',col?'ادامه متن':'بستن متن');
     b.onclick=()=>{COLLAPSED['G'+n]=!col;renderLessons();};
@@ -3682,7 +3724,7 @@ function renderLessons(){
     if(L.img||L.video)c.appendChild(mediaOf(L));
     const body=el('div','body');
     const long=(L.text||'').length>320, col=long&&COLLAPSED['L'+L.id]!==false;
-    body.appendChild(el('div','txt'+(col?' clamp':''),linkify(esc(L.text||'(بدون متن)'))));
+    body.appendChild(el('div','txt'+(col?' clamp':''),linkify(esc(faN(L.text||'(بدون متن)')))));
     if(long){
       const b=el('button','more',col?'ادامه متن':'بستن متن');
       b.onclick=()=>{COLLAPSED['L'+L.id]=!col;renderLessons();};
@@ -3744,7 +3786,7 @@ function lockFail(msg){
   box.classList.remove('shake');void box.offsetWidth;box.classList.add('shake');
 }
 async function lockSubmit(){
-  if(lockBuf.length<4)return lockFail('رمز دست‌کم ۴ رقم است');
+  if(lockBuf.length<4)return lockFail('رمز دست‌کم 4 رقم است');
   const job=lockAwaiting; if(!job)return;
   const pin=lockBuf;
   if(job.mode==='verify'){
@@ -3865,7 +3907,7 @@ async function testWorker(btn){
       }
       note.innerHTML='<b style="color:var(--dn)">واسط جواب نداد</b> — '+esc(res.msg||'')+
         (res.why==='http'&&res.status===403
-          ?'<br>۴۰۳ یعنی ورکر بالا آمده ولی t.me را در فهرست مجازش ندارد.'
+          ?'<br>403 یعنی ورکر بالا آمده ولی t.me را در فهرست مجازش ندارد.'
           :res.why==='blocked'
             ?'<br>یعنی آدرس اصلاً باز نشد: یا غلط نوشته شده یا روی این شبکه بسته است.'
             :'');
@@ -4074,7 +4116,7 @@ function paintLog(){
       (e.ms!=null?' <em>'+faN(e.ms)+'ms</em>':'')+
       (e.status?' <em>HTTP '+faN(e.status)+'</em>':'')+
     '</span></div>').join('')+'</div>'+
-    (LOG.length>60?'<div class="hint">۶۰ رخداد آخر نشان داده شده؛ در فایل گزارش همه‌شان هست.</div>':'');
+    (LOG.length>60?'<div class="hint">60 رخداد آخر نشان داده شده؛ در فایل گزارش همه‌شان هست.</div>':'');
 }
 
 function sheetHealth(){
@@ -4150,7 +4192,7 @@ function sheetHealth(){
 
 /* ==================== نمای سیگنال‌ها ==================== */
 let OVERRIDE={},COLLAPSED={},sigFilter='sig',query='',beforeId=null,busy=false,coinFilter=null;
-/* با ۸۰۰ پست در کش، ساختن همه‌ی کارت‌ها در هر رندر روی گوشی کند می‌شود.
+/* با 800 پست در کش، ساختن همه‌ی کارت‌ها در هر رندر روی گوشی کند می‌شود.
    فقط یک پنجره می‌سازیم و با دکمه بزرگش می‌کنیم. هر تغییر فیلتر پنجره را صفر می‌کند. */
 const PAGE=30; let shownMax=PAGE;
 /* آرشیو و نتایج فقط یک پرچم روی پست‌اند: از فهرست فعال بیرون می‌روند ولی چیزی پاک
@@ -4165,9 +4207,9 @@ function setArch(id,on){
 /* پست نتیجه: کانال بعد از هر سیگنال می‌گوید تارگت خورد یا استاپ. اینها نه سیگنال‌اند
    نه آشغال — کارنامه‌اند، پس جای خودشان را دارند. تشخیص خودکار است و با یک ضربه
    قابل نقض؛ صفر یعنی «تو گفتی نتیجه نیست» و روی تشخیص خودکار می‌چربد. */
-/* کانال‌ها معمولاً نام ارز را وسط می‌گذارند («تارگت اول #BTC زده شد»)؛ تا نسخه‌ی ۱ این
-   شکل اصلاً شناخته نمی‌شد. فاصله‌ی تا ۳۰ نویسه‌ی بی‌عدد مجاز است — بی‌عدد تا خطِ
-   «تارگت ۶۲۰۰۰» در خودِ سیگنال با فعلی که جلوتر آمده اشتباه گرفته نشود. */
+/* کانال‌ها معمولاً نام ارز را وسط می‌گذارند («تارگت اول #BTC زده شد»)؛ تا نسخه‌ی 1 این
+   شکل اصلاً شناخته نمی‌شد. فاصله‌ی تا 30 نویسه‌ی بی‌عدد مجاز است — بی‌عدد تا خطِ
+   «تارگت 62000» در خودِ سیگنال با فعلی که جلوتر آمده اشتباه گرفته نشود. */
 const RX_RESULT=new RegExp(
   'تارگت\\s*(?:اول|دوم|سوم|چهارم|پنجم|\\d)?[^\\n\\d]{0,30}?(?:زده\\s*شد|زد|خورد|فعال\\s*شد|رسید)'+
   '|به\\s*تارگت[^\\n\\d]{0,25}?رسید'+
@@ -4402,7 +4444,7 @@ function buildCard(p){
   const body=el('div','body');
   if(p.reply&&(p.reply.text||p.reply.id))body.appendChild(buildReply(p));
   const long=(p.text||'').length>320, col=long&&COLLAPSED[p.id]!==false;
-  body.appendChild(el('div','txt'+(col?' clamp':''),linkify(esc(p.text||'(بدون متن)'))));
+  body.appendChild(el('div','txt'+(col?' clamp':''),linkify(esc(faN(p.text||'(بدون متن)')))));
   if(long){
     const b=el('button','more',col?'ادامه متن':'بستن متن');
     b.onclick=()=>{COLLAPSED[p.id]=!col;rebuildCard(p);};
@@ -4426,7 +4468,7 @@ function buildCard(p){
   return card;
 }
 /* یک پست می‌تواند فقط بگوید «به نقطه ورود رسید» و معنی‌اش کاملاً به پستی باشد که
-   جوابش را داده. تا حالا فقط ۱۶۰ نویسه از آن دیده می‌شد؛ حالا خودِ پست اصلی باز می‌شود. */
+   جوابش را داده. تا حالا فقط 160 نویسه از آن دیده می‌شد؛ حالا خودِ پست اصلی باز می‌شود. */
 const REPLYOPEN=new Set();
 const findPost=id=>id?POSTS.find(x=>x.id===id||x.id.endsWith('/'+String(id).split('/').pop())):null;
 function buildReply(p){
@@ -4451,7 +4493,7 @@ function buildReply(p){
       if(sg.stop!=null)bar.appendChild(el('span','pill mut','استاپ '+fmtPrice(sg.stop)));
       full.appendChild(bar);
     }
-    full.appendChild(el('div','replytxt',linkify(esc(src.text||'(بدون متن)'))));
+    full.appendChild(el('div','replytxt',linkify(esc(faN(src.text||'(بدون متن)')))));
     if(src.img){
       const a=el('div','shot');a.setAttribute('role','button');a.tabIndex=0;
       const im=el('img');im.loading='lazy';im.decoding='async';im.alt='تصویر پست اصلی';
@@ -4648,10 +4690,10 @@ function setOv(p,k,v,isStr){
   rebuildCard(p);
 }
 /* دکمه‌های زیر هر پست دو جنس متفاوت‌اند و قبلاً هر دو یک شکل بودند:
-     ۱) «این پست را کجا بگذارم؟»  آرشیو، نتایج، آموزش — سه جای مشخص، سه کلید هم‌اندازه
+     1) «این پست را کجا بگذارم؟»  آرشیو، نتایج، آموزش — سه جای مشخص، سه کلید هم‌اندازه
         که وقتی پست آنجاست روشن می‌مانند. همیشه همان سه‌تا، همیشه همان ترتیب،
         پس با عادت پیدا می‌شوند نه با خواندن.
-     ۲) «این پست سیگنال هست یا نه؟»  یک کلید جدا، چون معنی‌اش با آن سه فرق دارد.
+     2) «این پست سیگنال هست یا نه؟»  یک کلید جدا، چون معنی‌اش با آن سه فرق دارد.
    تشخیص خودکار همیشه کار نمی‌کند، پس هر دو جنس قابل نقض دستی‌اند. */
 function fileChip(icon,label,on,hint,onClick,extra){
   const b=el('button','fchip'+(on?' on':'')+(extra?' '+extra:''));
@@ -4824,7 +4866,7 @@ function quickEnter(p,sig,ov,px){
     snap:snapOf(p,sig,entry,I.stop)};
   save();renderAll();toast(I.spot?'خرید اسپات ثبت شد':'پوزیشن ثبت شد','ok');
 }
-/* یک ورق برای هر دو بازار. اسپات همان فرم است با اهرم قفلِ ۱: نه لیکوئید دارد،
+/* یک ورق برای هر دو بازار. اسپات همان فرم است با اهرم قفلِ 1: نه لیکوئید دارد،
    نه کشویی اهرم، و به‌جای «مارجین» می‌گوید «مبلغ خرید» و مقدار ارز را نشان می‌دهد. */
 function sheetEnter(p,sig,ov,px){
   let MK=(planInputsOf(p,sig,ov,px)).market;
@@ -5090,7 +5132,7 @@ function sheetSkip(p,sig,ov,px){
 
 /* یک نگاه به وضعیت امروز، بدون رفتن به تب‌های دیگر */
 /* دو عددی که جای دیگری نوشته نمی‌شوند. قبلاً در نوار جداگانه‌ای بودند و آن نوار
-   با نوار وضعیت روی هم ۱۴۱ پیکسل می‌گرفت برای چهار عدد؛ حالا هر دو یک نوارند. */
+   با نوار وضعیت روی هم 141 پیکسل می‌گرفت برای چهار عدد؛ حالا هر دو یک نوارند. */
 function moneyNow(){
   const today=jKey(new Date());
   const open=DB.positions.filter(p=>p.status==='open');
@@ -5108,7 +5150,7 @@ function moneyNow(){
 function renderFbar(){
   const bar=$('#fbar');if(!bar)return;
   // یک پیمایش برای هر پنج شمارنده. قبلاً چهار filter پشت سر هم بود و روی
-  // ۸۰۰ پست هر بار از نو bucketOf می‌گرفت.
+  // 800 پست هر بار از نو bucketOf می‌گرفت.
   let nLive=0,nSig=0,nNew=0,nRes=0,nArch=0;
   for(const p of POSTS){
     const bk=bucketOf(p);
@@ -5166,7 +5208,8 @@ function renderSignals(){
   CARDS.clear();
   let n=0, shown=0, matched=0;
   const acc=F('accordion');
-  let firstId=null;
+  let firstId=null, lastDay=null, sepEl=null, sepN=0;
+  const closeSep=()=>{if(sepEl)sepEl.querySelector('.dsn').textContent=sepN+' پست';};
   for(const p of POSTS){
     const sig=sigOf(p), bk=bucketOf(p);
     if(bucket==='res'){if(bk!=='live'||postKind(p)!=='res')continue;}
@@ -5177,6 +5220,18 @@ function renderSignals(){
     if(q&&!((sig.ticker||'')+' '+p.text).toLowerCase().includes(q))continue;
     matched++;
     if(n>=shownMax)continue;                 // بقیه شمرده می‌شوند ولی ساخته نمی‌شوند
+    /* جداکننده‌ی روز: امروز، دیروز، چند روز پیش — تا معلوم باشد هر پست مال کِی است */
+    if(p.date){
+      const dn=dayNo(p.date);
+      if(dn!==lastDay){
+        closeSep();lastDay=dn;sepN=0;
+        const L=dayLabel(p.date);
+        sepEl=el('div','dsep'+(L.diff<=0?' today':L.diff>=(S.staleDays||7)?' old':''),
+          '<b>'+L.rel+'</b><span>'+L.wd+' · '+L.date+'</span><i class="dsn"></i>');
+        frag.appendChild(sepEl);
+      }
+      sepN++;
+    }
     const c=buildCard(p);
     /* آکاردئون: فقط یک کارت باز است؛ زدن روی کارتِ بسته بازش می‌کند و بقیه بسته می‌شوند.
        اگر هنوز چیزی باز نکرده‌ای، اولین کارت باز است تا صفحه خالی به نظر نرسد. */
@@ -5196,6 +5251,7 @@ function renderSignals(){
     if(shown<8){c.classList.add('enter');c.style.setProperty('--d',(shown*45)+'ms');shown++;}
     frag.appendChild(c);n++;
   }
+  closeSep();
   list.innerHTML='';
   renderFbar();
   if(bucket==='live'){
@@ -5309,7 +5365,11 @@ function showFetching(txt){
    دیدش بداند از کجاست، بدون اینکه لوگوی بزرگ رویش بنشیند. */
 const SHARE_FONT="'Vazirmatn','Segoe UI',Tahoma,system-ui,-apple-system,sans-serif";
 const SHKEY='signaldesk.share.v1';
-let shareOpt=Object.assign({amount:true,channel:true,ratio:'45'},lsGet(SHKEY)||{});
+let shareOpt=Object.assign({amount:true,channel:true,dates:true,ratio:'45',brand:'',chText:'',foot:''},lsGet(SHKEY)||{});
+/* متن‌های قابل ویرایشِ تصویر؛ خالی یعنی پیش‌فرض */
+const shBrand=()=>(shareOpt.brand||'').trim()||'میز سیگنال';
+const shChan=()=>(shareOpt.chText||'').trim()||('@'+S.channel);
+const shFoot=()=>(shareOpt.foot||'').trim()||'گزارش شخصی — توصیه‌ی مالی نیست';
 const shareSave=()=>lsSet(SHKEY,shareOpt);
 
 const SH={bg:'#0D0E12',card:'#16181D',card2:'#1C1E25',line:'#262A33',
@@ -5322,7 +5382,7 @@ function rr(c,x,y,w,h,r){
   else{c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);
        c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
 }
-/* نشان برنامه: همان سه کندل صعودیِ آیکون، از فضای ۵۱۲ به اندازه‌ی دلخواه */
+/* نشان برنامه: همان سه کندل صعودیِ آیکون، از فضای 512 به اندازه‌ی دلخواه */
 function drawMark(c,x,y,size){
   const k=size/512;
   c.save();c.translate(x,y);c.scale(k,k);
@@ -5367,18 +5427,18 @@ function shareDataOf(p){
   const spot=p.kind==='spot';
   return {ticker:p.ticker,spot,dir:p.dir,lev:p.lev,open,
     roi:m.roi,pnl:m.pnl,r:m.r,entry:p.entry,exit:m.exit,stop:p.stop0!=null?p.stop0:p.stop,
-    since:open?Date.now():p.closedAt,openedAt:p.openedAt,
+    since:open?Date.now():p.closedAt,openedAt:p.openedAt,closedAt:open?null:p.closedAt,
     title:open?(spot?'خرید باز':'پوزیشن باز'):(spot?'فروش انجام شد':'پوزیشن بسته شد')};
 }
 function drawShareCard(d,opt){
   const o=opt||shareOpt;
   const sq=o.ratio==='11';
   const W=1080, H=sq?1080:1350;
-  /* چیدمان با عدد ثابت نوشته می‌شود نه با «هرچه آمد»: در ۴:۵ و مربع باید هر دو
+  /* چیدمان با عدد ثابت نوشته می‌شود نه با «هرچه آمد»: در 4:5 و مربع باید هر دو
      پر و متعادل باشند، وگرنه پایین کارت یک وجب خالی می‌ماند. */
   const L=sq
-    ?{sym:250,hero:460,heroLab:520,pnl:600,lad:700,cells:780,cellH:140,fs:140}
-    :{sym:300,hero:600,heroLab:662,pnl:748,lad:900,cells:1000,cellH:152,fs:170};
+    ?{sym:236,hero:430,heroLab:486,pnl:560,lad:640,cells:712,cellH:128,fs:130,dates:890}
+    :{sym:300,hero:590,heroLab:650,pnl:734,lad:870,cells:962,cellH:150,fs:170,dates:1168};
   const cv=document.createElement('canvas');cv.width=W;cv.height=H;
   const c=cv.getContext('2d');
   const win=(d.pnl||0)>=0, acc=win?SH.up:SH.dn;
@@ -5394,7 +5454,7 @@ function drawShareCard(d,opt){
 
   // ── سربرگ ──
   drawMark(c,W-P-64,P-6,64);
-  shText(c,'میز سیگنال',W-P-84,P+46,{size:36,weight:900,color:SH.gold});
+  shText(c,shBrand(),W-P-84,P+46,{size:36,weight:900,color:SH.gold});
   shText(c,jStampFa(new Date(d.since||Date.now())).split(' ')[0],P,P+42,
     {size:26,weight:700,color:SH.tx3,align:'left'});
 
@@ -5409,7 +5469,7 @@ function drawShareCard(d,opt){
       {bg:mix(d.dir==='long'?SH.up:SH.dn,.18),fg:d.dir==='long'?SH.up:SH.dn})+12;
     shPill(c,(+d.lev)+'x',px,L.sym-46,{bg:SH.card2,fg:SH.tx2});
   }
-  shText(c,d.title,P,L.sym-8,{size:28,weight:700,color:SH.tx3,align:'left'});
+  {const tt=(d.titleOv||'').trim()||d.title;shText(c,tt,P,L.sym-8,{size:28,weight:700,color:SH.tx3,align:'left',rtl:/[\u0600-\u06FF]/.test(tt)});}
 
   // ── عدد اصلی ──
   const roiTxt=(d.roi==null||!isFinite(d.roi))?'—':
@@ -5427,7 +5487,7 @@ function drawShareCard(d,opt){
   }
 
   // ── نردبان: همان تصویری که در خود برنامه تصمیم را با آن می‌گیری ──
-  /* نوار درصدیِ ساده گمراه‌کننده بود: حرکتِ ۴٪ قیمت با اهرم ۵ یعنی ۲۱٪ بازده،
+  /* نوار درصدیِ ساده گمراه‌کننده بود: حرکتِ 4٪ قیمت با اهرم 5 یعنی 21٪ بازده،
      ولی نوار تقریباً خالی می‌ماند. اینجا به‌جای «چقدر حرکت کرد»، «کجا ایستاد
      نسبت به استاپ و ورود» را نشان می‌دهیم — همان چیزی که واقعاً معنی دارد. */
   drawShareLadder(c,d,acc,P,L.lad,W-P*2);
@@ -5447,17 +5507,35 @@ function drawShareCard(d,opt){
     c.strokeStyle=SH.line;c.lineWidth=2;rr(c,x,y,cw,L.cellH,26);c.stroke();
     shText(c,cl[0],x+cw/2,y+50,{size:24,weight:700,color:SH.tx3,align:'center'});
     c.save();shFont(c,38,900);c.fillStyle=cl[2];
-    c.direction=/[۰-۹0-9]/.test(cl[1])&&!/[آ-ی]/.test(cl[1])?'ltr':'rtl';
+    c.direction=/[0-90-9]/.test(cl[1])&&!/[آ-ی]/.test(cl[1])?'ltr':'rtl';
     c.textAlign='center';
-    c.fillText(cl[1],x+cw/2,y+108);c.restore();
+    c.fillText(cl[1],x+cw/2,y+(L.cellH>140?108:100));c.restore();
   });
+
+  // ── تاریخ باز شدن، بسته شدن و مدتِ باز بودن ──
+  if(o.dates&&d.openedAt){
+    const dy=L.dates, bw2=W-P*2;
+    c.fillStyle=mix(SH.gold,.07);rr(c,P,dy-44,bw2,64,20);c.fill();
+    c.strokeStyle=mix(SH.gold,.22);c.lineWidth=2;rr(c,P,dy-44,bw2,64,20);c.stroke();
+    const seg=[['باز شد',jStampFa(new Date(d.openedAt))]];
+    if(d.closedAt)seg.push(['بسته شد',jStampFa(new Date(d.closedAt))]);
+    seg.push([d.open?'باز از':'مدت',shDur(d.openedAt,d.closedAt||Date.now())]);
+    const sw=bw2/seg.length;
+    seg.forEach((sg,i)=>{
+      const cx=W-P-sw*i-sw/2;
+      shText(c,sg[0],cx,dy-14,{size:19,weight:700,color:SH.tx3,align:'center'});
+      c.save();shFont(c,22,800);c.fillStyle=SH.tx;c.textAlign='center';
+      c.direction=/[آ-ی]/.test(sg[1])?'rtl':'ltr';
+      c.fillText(sg[1],cx,dy+12);c.restore();
+    });
+  }
 
   // ── پاورقی ──
   const fy=H-P-4;
   c.strokeStyle=mix(SH.gold,.3);c.lineWidth=3;
   c.beginPath();c.moveTo(P,fy-56);c.lineTo(W-P,fy-56);c.stroke();
-  if(o.channel)shText(c,'@'+S.channel,W-P,fy,{size:28,weight:800,color:SH.gold,align:'right',rtl:false});
-  shText(c,'گزارش شخصی — توصیه‌ی مالی نیست',P,fy,{size:24,weight:700,color:SH.tx3,align:'left'});
+  if(o.channel)shText(c,shChan(),W-P,fy,{size:28,weight:800,color:SH.gold,align:'right',rtl:/[\u0600-\u06FF]/.test(shChan())});
+  shText(c,shFoot(),P,fy,{size:24,weight:700,color:SH.tx3,align:'left',rtl:/[\u0600-\u06FF]/.test(shFoot())});
   return cv;
 }
 /* نردبانِ کوچکِ کارت: استاپ، ورود و خروج روی یک محور.
@@ -5499,7 +5577,7 @@ function drawSummaryCard(a,label,opt){
             :{hero:580,heroLab:642,pnl:730,cells:840,cellH:150,fs:160};
   const cv=document.createElement('canvas');cv.width=W;cv.height=H;
   const c=cv.getContext('2d');
-  /* عدد اصلی مجموع R است نه نرخ برد: نرخ برد می‌تواند ۷۰٪ باشد و حساب در ضرر،
+  /* عدد اصلی مجموع R است نه نرخ برد: نرخ برد می‌تواند 70٪ باشد و حساب در ضرر،
      و آن‌وقت عددِ سبز روی کارتِ ضرر می‌نشیند. R هم مستقل از اندازه‌ی حساب است،
      پس فرستادنش چیزی از سرمایه‌ات لو نمی‌دهد. */
   const hasR=a.totalR!=null&&isFinite(a.totalR);
@@ -5512,7 +5590,7 @@ function drawSummaryCard(a,label,opt){
   c.strokeStyle='rgba(255,255,255,.07)';c.lineWidth=3;rr(c,6,6,W-12,H-12,54);c.stroke();
 
   drawMark(c,W-P-64,P-6,64);
-  shText(c,'میز سیگنال',W-P-84,P+46,{size:36,weight:900,color:SH.gold});
+  shText(c,shBrand(),W-P-84,P+46,{size:36,weight:900,color:SH.gold});
   shText(c,jStampFa(new Date()).split(' ')[0],P,P+42,{size:26,weight:700,color:SH.tx3,align:'left'});
   shText(c,label,W-P,sq?230:280,{size:46,weight:900,color:SH.tx});
   shText(c,'کارنامه',P,sq?226:276,{size:28,weight:700,color:SH.tx3,align:'left'});
@@ -5544,15 +5622,15 @@ function drawSummaryCard(a,label,opt){
     c.strokeStyle=SH.line;c.lineWidth=2;rr(c,x,cy,cw,L.cellH,26);c.stroke();
     shText(c,cl[0],x+cw/2,cy+48,{size:23,weight:700,color:SH.tx3,align:'center'});
     c.save();shFont(c,38,900);c.fillStyle=cl[2];
-    c.direction=/[آ-ی۰-۹٪]/.test(cl[1])?'rtl':'ltr';c.textAlign='center';
+    c.direction=/[آ-ی0-9٪]/.test(cl[1])?'rtl':'ltr';c.textAlign='center';
     c.fillText(cl[1],x+cw/2,cy+104);c.restore();
   });
 
   const fy=H-P-4;
   c.strokeStyle=mix(SH.gold,.3);c.lineWidth=3;
   c.beginPath();c.moveTo(P,fy-56);c.lineTo(W-P,fy-56);c.stroke();
-  if(o.channel)shText(c,'@'+S.channel,W-P,fy,{size:28,weight:800,color:SH.gold,align:'right',rtl:false});
-  shText(c,'گزارش شخصی — توصیه‌ی مالی نیست',P,fy,{size:24,weight:700,color:SH.tx3,align:'left'});
+  if(o.channel)shText(c,shChan(),W-P,fy,{size:28,weight:800,color:SH.gold,align:'right',rtl:/[\u0600-\u06FF]/.test(shChan())});
+  shText(c,shFoot(),P,fy,{size:24,weight:700,color:SH.tx3,align:'left',rtl:/[\u0600-\u06FF]/.test(shFoot())});
   return cv;
 }
 function sheetShareSummary(a,label){
@@ -5563,6 +5641,7 @@ function sheetShareSummary(a,label){
    '<div class="shopts">'+
      '<label class="shopt"><input type="checkbox" id="o_amt"><span>نمایش مبلغ خالص</span></label>'+
      '<label class="shopt"><input type="checkbox" id="o_ch"><span>نوشتن نام کانال</span></label>'+
+     shTextsHtml(false,false)+
    '</div>'+
    '<div class="mkt" id="shRatio" style="margin:10px 0"></div>'+
    '<div class="srow"><button class="btn pri" id="ok">'+ic('share')+'<span>اشتراک‌گذاری</span></button>'+
@@ -5573,7 +5652,7 @@ function sheetShareSummary(a,label){
        cv=drawSummaryCard(a,label,shareOpt);
        $('#shImg').src=cv.toDataURL('image/png');
        const rb=$('#shRatio');rb.innerHTML='';
-       for(const [k,lab] of [['45','۴:۵ — استوری و پست'],['11','مربع']]){
+       for(const [k,lab] of [['45','4:5 — استوری و پست'],['11','مربع']]){
          const b=el('button','mktb'+(shareOpt.ratio===k?' on':''),lab);
          b.setAttribute('aria-pressed',shareOpt.ratio===k?'true':'false');
          b.onclick=()=>{shareOpt.ratio=k;shareSave();paint();};
@@ -5583,7 +5662,9 @@ function sheetShareSummary(a,label){
      $('#o_amt').checked=shareOpt.amount;$('#o_ch').checked=shareOpt.channel;
      $('#o_amt').onchange=()=>{shareOpt.amount=$('#o_amt').checked;shareSave();paint();};
      $('#o_ch').onchange=()=>{shareOpt.channel=$('#o_ch').checked;shareSave();paint();};
+     shTextsWire(paint,null);
      paint();
+     if(document.fonts&&document.fonts.load)document.fonts.load("900 40px 'Vazirmatn'").then(()=>{if($('#shImg'))paint();}).catch(()=>{});
      $('#ok').onclick=async()=>{
        const r=await shareOrSave(cv,'report-'+new Date().toISOString().slice(0,10));
        if(r==='save')toast('تصویر ذخیره شد — از گالری بفرستش','ok');
@@ -5596,8 +5677,9 @@ function shDur(a,b){
   if(!a||!b)return '—';
   const mn=Math.max(0,Math.round((b-a)/60000));
   if(mn<60)return faN(mn)+' دقیقه';
-  if(mn<1440)return faN(Math.round(mn/60))+' ساعت';
-  return faN(Math.round(mn/1440))+' روز';
+  const d=Math.floor(mn/1440), h=Math.floor((mn%1440)/60), m=mn%60;
+  if(!d)return h+' ساعت'+(m?' و '+m+' دقیقه':'');
+  return d+' روز'+(h?' و '+h+' ساعت':'');
 }
 const canvasBlob=cv=>new Promise(r=>cv.toBlob(r,'image/png'));
 /* اشتراک‌گذاری بومی فقط در بستر امن و با پشتیبانی فایل کار می‌کند؛ هرجا نشد،
@@ -5618,6 +5700,23 @@ async function shareOrSave(cv,name){
   setTimeout(()=>URL.revokeObjectURL(url),4000);
   return 'save';
 }
+/* متن‌های قابل ویرایش تصویر — مشترک بین تصویر پوزیشن و تصویر کارنامه */
+function shTextsHtml(withTitle,withDates){
+  return '<details class="sec sub2 shtx"><summary>'+ic('edit')+'ویرایش متن‌های تصویر</summary><div class="grid">'+
+    (withTitle?'<div class="fld"><label>عنوان</label><input id="t_title" placeholder="خودکار"></div>':'')+
+    '<div class="fld"><label>نام بالای تصویر</label><input id="t_brand" placeholder="میز سیگنال"></div>'+
+    '<div class="fld"><label>نام کانال</label><input id="t_ch" dir="auto" placeholder="@'+esc(S.channel)+'"></div>'+
+    '<div class="fld"><label>متن پایین (کپی‌رایت)</label><input id="t_foot" placeholder="گزارش شخصی — توصیه‌ی مالی نیست"></div>'+
+    '</div><div class="hint">خالی بگذاری، متن پیش‌فرض می‌آید. نام، کانال و متن پایین برای تصویرهای بعدی هم یادش می‌ماند.</div></details>'+
+    (withDates?'<label class="shopt"><input type="checkbox" id="o_dt"><span>تاریخ باز و بسته شدن و مدت</span></label>':'');
+}
+function shTextsWire(paint,d){
+  const bind=(id,key)=>{const i=$('#'+id);if(!i)return;i.value=shareOpt[key]||'';
+    i.oninput=()=>{shareOpt[key]=i.value;shareSave();paint();};};
+  bind('t_brand','brand');bind('t_ch','chText');bind('t_foot','foot');
+  const t=$('#t_title');if(t&&d){t.value=d.titleOv||'';t.oninput=()=>{d.titleOv=t.value;paint();};}
+  const dt=$('#o_dt');if(dt){dt.checked=shareOpt.dates!==false;dt.onchange=()=>{shareOpt.dates=dt.checked;shareSave();paint();};}
+}
 function sheetShare(p){
   const d=shareDataOf(p);
   openSheet(
@@ -5628,6 +5727,7 @@ function sheetShare(p){
    '<div class="shopts">'+
      '<label class="shopt"><input type="checkbox" id="o_amt"><span>نمایش مبلغ سود/ضرر</span></label>'+
      '<label class="shopt"><input type="checkbox" id="o_ch"><span>نوشتن نام کانال</span></label>'+
+     shTextsHtml(true,true)+
    '</div>'+
    '<div class="mkt" id="shRatio" style="margin:10px 0"></div>'+
    '<div class="srow"><button class="btn pri" id="ok">'+ic('share')+'<span>اشتراک‌گذاری</span></button>'+
@@ -5639,7 +5739,7 @@ function sheetShare(p){
        cv=drawShareCard(d,shareOpt);
        $('#shImg').src=cv.toDataURL('image/png');
        const rb=$('#shRatio');rb.innerHTML='';
-       for(const [k,lab] of [['45','۴:۵ — استوری و پست'],['11','مربع']]){
+       for(const [k,lab] of [['45','4:5 — استوری و پست'],['11','مربع']]){
          const b=el('button','mktb'+(shareOpt.ratio===k?' on':''),lab);
          b.setAttribute('aria-pressed',shareOpt.ratio===k?'true':'false');
          b.onclick=()=>{shareOpt.ratio=k;shareSave();paint();};
@@ -5650,7 +5750,10 @@ function sheetShare(p){
      $('#o_ch').checked=shareOpt.channel;
      $('#o_amt').onchange=()=>{shareOpt.amount=$('#o_amt').checked;shareSave();paint();};
      $('#o_ch').onchange=()=>{shareOpt.channel=$('#o_ch').checked;shareSave();paint();};
+     shTextsWire(paint,d);
      paint();
+     // فونت وزیرمتن اگر هنوز نیامده، بعد از رسیدنش تصویر را دوباره بکش
+     if(document.fonts&&document.fonts.load)document.fonts.load("900 40px 'Vazirmatn'").then(()=>{if($('#shImg'))paint();}).catch(()=>{});
      const name=()=>'signal-'+(d.ticker||'x')+'-'+new Date().toISOString().slice(0,10);
      $('#ok').onclick=async()=>{
        const r=await shareOrSave(cv,name());
@@ -5671,7 +5774,7 @@ function sheetShare(p){
 
 
 /* ==================== کانال‌سنج ==================== */
-/* هدف برنامه سنجیدن کانال است، نه فقط معاملات خودت. تا نسخه‌ی ۱ تنها چیزی که به
+/* هدف برنامه سنجیدن کانال است، نه فقط معاملات خودت. تا نسخه‌ی 1 تنها چیزی که به
    کانال نگاه می‌کرد، گزارش «نگرفته‌ها» بود که با قیمتِ همین لحظه حساب می‌کرد: سیگنالی
    که هفته‌ی پیش تارگت زد و بعد ریخت، باخت دیده می‌شد. اینجا هر سیگنال از لحظه‌ی دقیق
    انتشار، کندل‌به‌کندل با قیمت واقعی جلو می‌رود تا معلوم شود واقعاً چه شد.
@@ -5690,7 +5793,7 @@ const AUD_WHY={
   'no-stop':'حد ضرر ندارد — بدون استاپ، برد و باخت تعریف ندارد',
   'no-date':'زمان انتشار معلوم نیست',
   'bad-stop':'استاپ با جهت معامله نمی‌خواند',
-  'px':'قیمتِ اعلامی با قیمت بازار در لحظه‌ی انتشار بیش از ۳۰٪ فاصله دارد — احتمالاً نماد اشتباه خوانده شده',
+  'px':'قیمتِ اعلامی با قیمت بازار در لحظه‌ی انتشار بیش از 30٪ فاصله دارد — احتمالاً نماد اشتباه خوانده شده',
   'nocandle':'کندلِ این نماد از هیچ منبعی نیامد'
 };
 const AUD_NONE={timeout:'قیمت در مهلت ورود به نقطه‌ی ورود نرسید',
@@ -5756,7 +5859,7 @@ function audWalk(inp,C,R){
   const A=trigAhead?inp.trig:E;
   out.mode=mode;
   /* مسیر قیمت بعد از فعال شدن، روی پله‌های «استاپ، ورود، تارگت‌ها»: هر بار که قیمت به پله‌ی
-     تازه‌ای بالا رفت (+شماره) یا تا پله‌ای پایین برگشت (−شماره−۱). با همین، هر سبک خروجی
+     تازه‌ای بالا رفت (+شماره) یا تا پله‌ای پایین برگشت (−شماره−1). با همین، هر سبک خروجی
      (پله‌ای، ریسک‌فری، استاپ دنباله‌دار) بدون گرفتن دوباره‌ی کندل شبیه‌سازی می‌شود.
      ترتیب داخل هر کندل همان قاعده‌ی بالاست: اول برگشت، بعد پیشروی (محتاطانه). */
   const Lv=[SL,E].concat(T), P=[];out.path=P;
@@ -5848,11 +5951,11 @@ function audR(r,inp,rule){
      روی پوزیشن‌ها  — نقشه‌ی خروج با عدد، هشدار سرِ هر پله و «انجام شد» با یک زدن
      در کانال‌سنج   — آزمایشگاه: هر سبک روی مسیر واقعیِ همه‌ی سیگنال‌های گذشته
    parts سهمِ هر تارگت از کل حجم است (eq یعنی مساوی بین همه‌ی تارگت‌ها)؛ be یعنی بعد از
-   چندمین تارگت استاپ به ورود برود (۰ = هیچ‌وقت)؛ trail یعنی بعد از هر تارگت، استاپ به
+   چندمین تارگت استاپ به ورود برود (0 = هیچ‌وقت)؛ trail یعنی بعد از هر تارگت، استاپ به
    تارگتِ قبلی بیاید (بعد از تارگت اول: ورود). */
 const PB={
-  s1:{n:'اسکلپ · تارگت ۱',d:'همه در تارگت اول بسته می‌شود.',parts:[1],be:0,trail:false},
-  s2:{n:'اسکلپ · تارگت ۲',d:'همه در تارگت دوم؛ استاپ سر جایش می‌ماند.',parts:[0,1],be:0,trail:false},
+  s1:{n:'اسکلپ · تارگت 1',d:'همه در تارگت اول بسته می‌شود.',parts:[1],be:0,trail:false},
+  s2:{n:'اسکلپ · تارگت 2',d:'همه در تارگت دوم؛ استاپ سر جایش می‌ماند.',parts:[0,1],be:0,trail:false},
   bal:{n:'متعادل',d:'نصف در تارگت اول و استاپ به ورود؛ باقی در تارگت دوم.',parts:[.5,.5],be:1,trail:false},
   sw:{n:'سوئینگ پله‌ای',d:'در هر تارگت سهمی مساوی؛ استاپ پله‌پله پشت قیمت می‌آید.',parts:'eq',be:1,trail:true},
   cu:{n:'دلخواه',d:'درصد هر تارگت و قانون استاپ را خودت می‌چینی.'}
@@ -5865,7 +5968,7 @@ function pbDef(id){
   return Object.assign({id},PB[id]||PB.bal);
 }
 /* سهم هر تارگت برای سیگنالی که n تارگت دارد. سهمِ تارگت‌هایی که وجود ندارند به آخرین
-   تارگت می‌رسد؛ اگر جمع کمتر از ۱۰۰٪ بود، باقی هم همان‌جا بسته می‌شود. */
+   تارگت می‌رسد؛ اگر جمع کمتر از 100٪ بود، باقی هم همان‌جا بسته می‌شود. */
 function pbParts(def,n){
   if(n<1)return [];
   const a=def.parts==='eq'?Array(n).fill(1/n):(def.parts||[1]);
@@ -5876,7 +5979,7 @@ function pbParts(def,n){
   out[n-1]+=1-sum;
   return out;
 }
-/* پله‌ی استاپ بعد از c تارگت: ۰ استاپ اولیه، ۱ ورود، ۲ تارگت اول، … */
+/* پله‌ی استاپ بعد از c تارگت: 0 استاپ اولیه، 1 ورود، 2 تارگت اول، … */
 function pbStopLevel(def,c,cur){
   let s=cur;
   if(def.trail&&c>=1)s=Math.max(s,c);
@@ -5971,9 +6074,9 @@ function buildExitLab(rows){
     '<div class="grid labg">'+[0,1,2,3].map(i=>'<div class="fld"><label>تارگت '+faN(i+1)+' (٪)</label>'+
       '<input type="number" min="0" max="100" step="5" inputmode="decimal" data-i="'+i+'" value="'+(cu.parts[i]||0)+'"></div>').join('')+
     '</div><div class="grid" style="margin-top:10px"><div class="fld"><label>استاپ به ورود</label><select id="cu_be">'+
-      '<option value="0">هیچ‌وقت</option><option value="1">بعد از تارگت ۱</option><option value="2">بعد از تارگت ۲</option></select></div>'+
+      '<option value="0">هیچ‌وقت</option><option value="1">بعد از تارگت 1</option><option value="2">بعد از تارگت 2</option></select></div>'+
     '<label class="autotog" style="align-self:end;margin:0"><input type="checkbox" id="cu_tr"'+(cu.trail?' checked':'')+'><span>'+ic('trend')+'استاپ دنباله‌دار</span></label></div>'+
-    '<div class="hint">جمع کمتر از ۱۰۰٪ باشد، باقی در آخرین تارگت بسته می‌شود. «استاپ دنباله‌دار» بعد از هر تارگت، استاپ را به تارگت قبلی می‌آورد.</div>';
+    '<div class="hint">جمع کمتر از 100٪ باشد، باقی در آخرین تارگت بسته می‌شود. «استاپ دنباله‌دار» بعد از هر تارگت، استاپ را به تارگت قبلی می‌آورد.</div>';
   c.appendChild(ed);
   setTimeout(()=>{
     const be=ed.querySelector('#cu_be');if(be)be.value=String(cu.be||0);
@@ -6151,7 +6254,7 @@ async function audOne(job,R){
   const px0=C[0].o;
   if(Math.abs(inp.entry-px0)/px0>0.3){AUD[p.id]={k,st:'bad',why:'px',px0,fin:true,at:Date.now()};return;}
   let r=audWalk(inp,C,R);
-  // ۱۰۰۰ کندل ۵ دقیقه‌ای حدود ۸۳ ساعت است؛ اگر کار تمام نشد، ادامه با کندل ساعتی
+  // 1000 کندل 5 دقیقه‌ای حدود 83 ساعت است؛ اگر کار تمام نشد، ادامه با کندل ساعتی
   const last=C[C.length-1];
   if(!r.fin&&!r.amb&&C.length>=1000&&Date.now()-last.t>IVMS['1h']){
     const from=Math.floor((last.t+IVMS['5m'])/IVMS['1h'])*IVMS['1h'];
@@ -6199,7 +6302,7 @@ function audJobs(force,needPath){
     out.push({p,inp,k});
   }
   /* سیگنال‌های تازه اول؛ مسیرِ قیمتِ سیگنال‌های قدیمی (برای آزمایشگاه خروج) بعد، و هر بار
-     حداکثر ۴۰ تا — وگرنه صدها درخواستِ کندل جلوی سنجیدنِ سیگنال‌های امروز را می‌گرفت */
+     حداکثر 40 تا — وگرنه صدها درخواستِ کندل جلوی سنجیدنِ سیگنال‌های امروز را می‌گرفت */
   out.sort((a,b)=>(b.inp.t0||0)-(a.inp.t0||0));
   paths.sort((a,b)=>(b.inp.t0||0)-(a.inp.t0||0));
   return out.concat(paths.slice(0,40));
@@ -6262,7 +6365,7 @@ function paintAudProgress(){
 
 /* ---- ادعاهای کانال ---- */
 /* پست نتیجه («تارگت دوم زد»، «استاپ خورد») به سیگنالِ اصلی‌اش ریپلای می‌زند و شناسه‌ی آن
-   ذخیره است. اگر ریپلای نبود، آخرین سیگنالِ همان نماد تا ۲۱ روز قبل — با برچسب «حدسی». */
+   ذخیره است. اگر ریپلای نبود، آخرین سیگنالِ همان نماد تا 21 روز قبل — با برچسب «حدسی». */
 const CLAIM_N={'اول':1,'دوم':2,'سوم':3,'چهارم':4,'پنجم':5};
 function claimOf(p){
   const t=faNorm(normDig(p.text||''));
@@ -6323,8 +6426,8 @@ function claimsAll(){
   const v=POSTS.length+'|'+(POSTS[0]&&POSTS[0].id)+'|'+AUDQ.at+'|'+SETVER+'|'+
     Object.keys(OVERRIDE).length+'|'+Object.keys(DB.results).length+'|'+Object.keys(DB.edits).length;
   if(CLAIMS&&v===CLAIMV)return CLAIMS;
-  /* دو نمایه به‌جای جستجوی خطی: با ۲۰۰ پست نتیجه و ۸۰۰ پست، جستجوی خطیِ ریپلای و
-     خواندنِ دوباره‌ی ورودی هر سیگنال روی گوشی ۱۰۰ میلی‌ثانیه می‌شد. */
+  /* دو نمایه به‌جای جستجوی خطی: با 200 پست نتیجه و 800 پست، جستجوی خطیِ ریپلای و
+     خواندنِ دوباره‌ی ورودی هر سیگنال روی گوشی 100 میلی‌ثانیه می‌شد. */
   const memo=new Map(), inpOf=x=>{if(!memo.has(x.id))memo.set(x.id,audInput(x));return memo.get(x.id);};
   const byNum=new Map();
   for(const x of POSTS)byNum.set(String(x.id).split('/').pop(),x);
@@ -6524,8 +6627,8 @@ function buildAudFilter(all){
   };
   row('جهت',[['all','همه'],['long','لانگ'],['short','شورت']],'dir');
   row('بازار',[['all','همه'],['futures','فیوچرز'],['spot','اسپات']],'mkt');
-  row('سود به ریسک',[[0,'همه'],[1,'۱+'],[1.5,'۱٫۵+'],[2,'۲+'],[3,'۳+']],'rr');
-  row('بازه',[[0,'همه'],[30,'۳۰ روز'],[90,'۹۰ روز']],'span');
+  row('سود به ریسک',[[0,'همه'],[1,'1+'],[1.5,'1٫5+'],[2,'2+'],[3,'3+']],'rr');
+  row('بازه',[[0,'همه'],[30,'30 روز'],[90,'90 روز']],'span');
   const syms=[...new Set(all.map(x=>x.inp.tk).filter(Boolean))].sort();
   const w=el('div','afrow');
   w.appendChild(el('span','aflab','نماد'));
@@ -6579,7 +6682,7 @@ function buildVerify(all){
       (gap>30?'کانال برای بردها خیلی بیشتر از باخت‌ها پست نتیجه می‌گذارد — تصویری که از بیرون دیده می‌شود بهتر از واقعیت است.'
       :gap>15?'کانال بردها را کمی بیشتر از باخت‌ها گزارش می‌کند.'
       :'کانال برد و باخت را تقریباً به یک اندازه گزارش می‌کند.')+'</span>'));
-  }else c.appendChild(el('div','hint','برای قضاوت درباره‌ی گزارش‌دهی گزینشی دست‌کم ۵ برد و ۵ باختِ قطعیِ قدیمی‌تر از سه روز لازم است.'));
+  }else c.appendChild(el('div','hint','برای قضاوت درباره‌ی گزارش‌دهی گزینشی دست‌کم 5 برد و 5 باختِ قطعیِ قدیمی‌تر از سه روز لازم است.'));
   if(no.length){
     c.appendChild(el('div','sechd','ادعاهای نادرست'));
     for(const x of no.slice(0,8))c.appendChild(claimRow(x));
@@ -7176,7 +7279,7 @@ function buildPosCard(p){
     const half=p.entry+(live-p.entry)*0.5;
     mk('قفل نصف سود',half,'نصف سود فعلی را قفل می‌کند');
     const q75=p.entry+(live-p.entry)*0.75;
-    mk('قفل ۷۵٪ سود',q75);
+    mk('قفل 75٪ سود',q75);
     if(p.stop0!=null&&Math.abs((p.stop||0)-p.stop0)>1e-12)mk('برگرد به استاپ اولیه',p.stop0);
     if(ch.children.length)b.appendChild(ch);
   }
@@ -7210,7 +7313,7 @@ function buildPosCard(p){
       const tg=(p.targets||[]).filter(t=>isFinite(t)&&t>0)
         .sort((x,y)=>(x-y)*sign).find(t=>sign>0?t>p.entry:t<p.entry);
       if(tg!=null){
-        const tb=el('button','btn','بستن ۵۰٪ روی '+fmtPrice(tg));
+        const tb=el('button','btn','بستن 50٪ روی '+fmtPrice(tg));
         tb.onclick=()=>closeHalfAt(p,tg);
         a.appendChild(tb);
       }
@@ -7311,7 +7414,7 @@ function sheetClose(p){
 }
 
 /* ---- ورق بستن بخشی ---- */
-/* نصف پوزیشن را روی قیمت تارگت می‌بندد — همان کاری که «بستن بخشی» با ۵۰٪ می‌کرد،
+/* نصف پوزیشن را روی قیمت تارگت می‌بندد — همان کاری که «بستن بخشی» با 50٪ می‌کرد،
    بدون پر کردن فرم. محاسبه‌اش عیناً از همان مسیر می‌رود تا دو جور حساب نشود. */
 function closeHalfAt(p,price){
   ensureBase(p);
@@ -7320,16 +7423,16 @@ function closeHalfAt(p,price){
   const gross=qty*(price-p.entry)*(p.dir==='long'?1:-1);
   const fees=(marginPart*p.lev)*(S.fee/100);
   const pnl=gross-fees;
-  if(!confirm('بستن ۵۰٪ '+p.ticker+' روی '+fmtPrice(price)+'\n\n'+
+  if(!confirm('بستن 50٪ '+p.ticker+' روی '+fmtPrice(price)+'\n\n'+
     'سود/ضرر این تکه: '+fmtUsd(pnl)+'\nمارجین آزادشده: '+fmtUsd(marginPart)+'\n\nثبت شود؟'))return;
   p.partials=partialsOf(p).concat([{at:Date.now(),price,qty,margin:marginPart,pnl,fees,part}]);
   p.margin=p.margin-marginPart;
-  logAdd(p,'partial','۵۰٪ روی '+fmtPrice(price)+' بسته شد · '+fmtUsd(pnl));
+  logAdd(p,'partial','50٪ روی '+fmtPrice(price)+' بسته شد · '+fmtUsd(pnl));
   if(p.margin<=0.0001){
     p.status='closed';p.closedAt=Date.now();p.exitPrice=price;
     logAdd(p,'close','پوزیشن کامل بسته شد');
   }
-  save();renderAll();toast('۵۰٪ بسته شد · '+fmtUsd(pnl),pnl>=0?'ok':'err');
+  save();renderAll();toast('50٪ بسته شد · '+fmtUsd(pnl),pnl>=0?'ok':'err');
 }
 function sheetPartial(p){
   const live=liveOf(p.ticker);
@@ -7338,7 +7441,7 @@ function sheetPartial(p){
    '<h3>بستن بخشی · '+esc(p.ticker)+'</h3>'+
    '<div class="sub">بخشی از پوزیشن را می‌بندی و سودش قطعی می‌شود؛ باقی‌مانده با همان اهرم و همان ورود باز می‌ماند.</div>'+
    '<div class="seg" id="pseg">'+[25,50,75].map(v=>'<button data-p="'+v+'"'+(v===50?' aria-pressed="true"':'')+'>'+faN(v)+'٪</button>').join('')+'</div>'+
-   '<div class="fld"><label>چند درصد بسته شود؟ <b id="pl">۵۰٪</b></label>'+
+   '<div class="fld"><label>چند درصد بسته شود؟ <b id="pl">50٪</b></label>'+
      '<input id="f_p" type="range" min="5" max="95" step="5" value="50"></div>'+
    '<div class="grid" style="margin-top:10px">'+
      fldHtml('v','قیمت خروج این بخش',live||'')+fldHtml('fee','کارمزد ($)','')+
@@ -7608,7 +7711,13 @@ function renderReport(){
   const onCal=repView==='cal';
   if(cal)cal.classList.toggle('hide',!onCal);
   if(body0)body0.classList.toggle('hide',onCal);
-  const cb=$('#repCal');if(cb)cb.setAttribute('aria-pressed',onCal?'true':'false');
+  const cb=$('#repCal');if(cb){cb.setAttribute('aria-pressed',onCal?'true':'false');cb.classList.toggle('on',onCal);}
+  /* فقط یک دکمه روشن: دوره‌ی انتخاب‌شده، یا «تقویم» وقتی تقویم باز است. قبلاً «ماهانه» از
+     خودِ HTML کلاس on داشت و هیچ‌وقت برداشته نمی‌شد؛ دو دکمه هم‌زمان روشن می‌ماندند. */
+  $$('#vReport .fb[data-p]').forEach(b=>{
+    const on=!onCal&&b.dataset.p===repPeriod;
+    b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');
+  });
   $$('#vReport .fseg .fb').forEach(b=>b.classList.toggle('dim',onCal));
   if(onCal){renderCalendar();return;}
   renderReportList();
@@ -7639,17 +7748,19 @@ function renderReportList(){
   }
   const keys=[...groups.keys()].sort().reverse();
 
-  const total=agg(closed);
+  // در «بازه‌ی دلخواه» تصویر کلی هم مال همان بازه است، نه همه‌ی معامله‌ها
+  const inRange=repPeriod==='range'?closed.filter(p=>p.closedAt>=repFrom&&p.closedAt<=repTo):closed;
+  const total=agg(inRange);
   const head=el('div','panel');
   const ht=el('div','panelhead');
-  ht.appendChild(el('b',null,'تصویر کلی'));
+  ht.appendChild(el('b',null,repPeriod==='range'?'تصویر این بازه':'تصویر کلی'));
   const shAll=el('button','btn xs',ic('share')+'<span>تصویر</span>');
   shAll.title='ساختن تصویر کارنامه برای فرستادن';
-  shAll.onclick=()=>sheetShareSummary(total,'همه‌ی معامله‌ها');
+  shAll.onclick=()=>sheetShareSummary(total,repPeriod==='range'?'این بازه':'همه‌ی معامله‌ها');
   ht.appendChild(shAll);
   head.appendChild(ht);
   head.appendChild(statsOf(total,true));
-  head.appendChild(equityCurve(closed));
+  head.appendChild(equityCurve(inRange));
   body.appendChild(head);
 
   for(const k of keys){
@@ -7993,8 +8104,8 @@ function go(v,noScroll){
 }
 /* scroll را فقط وقتی می‌خواهیم که کاربر خودش تبی را زده باشد. قبلاً این تابع
    بی‌قید scrollIntoView نرم صدا می‌زد و چون در راه‌اندازی دو بار اجرا می‌شد،
-   یک انیمیشن اسکرول روی نخ اصلی راه می‌انداخت: در پروفایلِ گوشی ۲۳۴ میلی‌ثانیه
-   از ۶۹۵ میلی‌ثانیه‌ی راه‌اندازی همین بود، برای نواری که اغلب اصلاً اسکرول ندارد. */
+   یک انیمیشن اسکرول روی نخ اصلی راه می‌انداخت: در پروفایلِ گوشی 234 میلی‌ثانیه
+   از 695 میلی‌ثانیه‌ی راه‌اندازی همین بود، برای نواری که اغلب اصلاً اسکرول ندارد. */
 function moveInd(scroll){
   const t=$('.tab[aria-selected="true"]'), ind=$('#tabInd');
   if(!t||!ind)return;
@@ -8099,7 +8210,7 @@ async function refresh(append,silent){
     if(pendingRefresh&&!append){pendingRefresh=false;setTimeout(()=>refresh(false,true),60);}
   }
 }
-/* ویرایش و حذف: برنامه نسخه‌ی خودش از هر پست را نگه می‌دارد. تا نسخه‌ی ۱ اگر کانال
+/* ویرایش و حذف: برنامه نسخه‌ی خودش از هر پست را نگه می‌دارد. تا نسخه‌ی 1 اگر کانال
    پستی را بعداً ویرایش می‌کرد، متن تازه بی‌صدا دور ریخته می‌شد. حالا مقایسه می‌شود:
    اگر عددی عوض شده باشد (ورود، استاپ، تارگت، نماد) ثبت می‌شود، و کانال‌سنج همیشه با
    همان عددهایی حساب می‌کند که اول منتشر شد. پستی هم که قبلاً دیده بودیم و در بازه‌ی
@@ -8239,7 +8350,7 @@ function wire(){
   $('#setDone').onclick=()=>closePanel('setVeil');
   $('#setVeil').onclick=e=>{if(e.target===$('#setVeil'))closePanel('setVeil');};
   $('#veil').onclick=e=>{if(e.target===$('#veil'))closeSheet();};
-  for(const id of ['sProxy','sChannel','sAcct','sCap','sRisk','sMaxLev','sDaily','sMode','sR','sFee','sAuto'])
+  for(const id of ['sProxy','sChannel','sAcct','sCap','sRisk','sMaxLev','sDaily','sMode','sR','sFee','sAuto','sStale','sCal','sPb'])
     $('#'+id).onchange=()=>{readSettings();renderAll();};
   wireIO();
   document.addEventListener('keydown',e=>{
@@ -8264,7 +8375,7 @@ function wire(){
 /* وقتی این فایل از داخل «فایل منیجر» باز می‌شود، آدرس صفحه content:// می‌شود و مرورگرِ داخلیِ
    آن برنامه، صفحه را بدون هویت (origin = null) اجرا می‌کند. نتیجه‌اش این است که بیشتر واسط‌ها
    درخواست را رد می‌کنند و بعضی درخواست‌ها اصلاً از گوشی بیرون نمی‌روند. چون این تنها مشکلی است
-   که کاربر خودش در ۱۰ ثانیه می‌تواند حلش کند، به‌جای یک سطر در گزارش، بالای صفحه نشانش می‌دهیم. */
+   که کاربر خودش در 10 ثانیه می‌تواند حلش کند، به‌جای یک سطر در گزارش، بالای صفحه نشانش می‌دهیم. */
 function showOriginWarn(){
   if(!LOCAL_ORIGIN)return;
   if(document.getElementById('originWarn'))return;
@@ -8279,7 +8390,7 @@ function showOriginWarn(){
     (inApp
       ?'الان از داخل فایل‌منیجر باز شده (آدرس صفحه با <code dir="ltr">content://</code> شروع می‌شود). '
       :'الان مستقیم از روی فایل باز شده (آدرس صفحه با <code dir="ltr">file://</code> شروع می‌شود). ')+
-    'در این حالت صفحه هویت اینترنتی ندارد و واسط‌ها جوابش را نمی‌دهند — دقیقاً همان «۴۰۱» و '+
+    'در این حالت صفحه هویت اینترنتی ندارد و واسط‌ها جوابش را نمی‌دهند — دقیقاً همان «401» و '+
     '«اتصال برقرار نشد»هایی که در گزارش می‌بینی.<br>'+
     '<b>راه‌حل:</b> همین فایل را روی یک آدرس <code dir="ltr">https://</code> بگذار و از مرورگر '+
     'کروم بازش کن. ساده‌ترین راهِ رایگان، GitHub Pages است (در فایل <code dir="ltr">README.md</code> '+
