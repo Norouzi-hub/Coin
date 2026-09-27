@@ -320,9 +320,66 @@ html.busy .prog{opacity:1}
 #fbar{flex-wrap:wrap;gap:6px}
 #fbar .fseg{flex:1 1 100%}
 #fbar .fside{flex:1 1 100%;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+#fbar .fday{position:relative;cursor:pointer;padding-inline:6px}
+#fbar .fday select{appearance:none;-webkit-appearance:none;background:none;border:none;color:inherit;font:inherit;
+  font-size:12px;font-weight:800;min-width:0;width:100%;text-align:center;cursor:pointer;padding:0;outline:none}
+#fbar .fday select option{background:var(--card);color:var(--tx)}
+#fbar .fday.on{color:var(--gold)}
 #fbar .fbucket{width:auto;min-height:40px;flex-direction:row;gap:7px;padding:6px 8px;border-radius:12px}
 #fbar .fbucket span{font-size:12px}
 #fbar .fbucket i{font-size:13px;line-height:1}
+/* ردیف‌های نوع/دسته و روز: چیپ‌های کوچکِ یک‌خطی که افقی می‌لغزند */
+.frow{flex:1 1 100%;display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding:1px 0;
+  -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.frow::-webkit-scrollbar{display:none}
+.fc{flex:none;display:flex;align-items:center;gap:5px;min-height:34px;padding:5px 11px;border-radius:999px;
+  background:var(--inset);border:1px solid var(--line);color:var(--tx2);font-size:12px;font-weight:800;
+  cursor:pointer;white-space:nowrap;transition:background .2s var(--ease),color .2s var(--ease)}
+.fc span{display:flex;align-items:center;gap:4px}
+.fc .ic{width:13px;height:13px;flex:none}
+.fc i{font-style:normal;font-size:11px;opacity:.7;font-variant-numeric:tabular-nums}
+.fc.on{background:color-mix(in srgb,var(--gold) 15%,transparent);color:var(--gold);
+  border-color:color-mix(in srgb,var(--gold) 38%,transparent)}
+.fc.add{border-style:dashed;color:var(--gold)}
+.fc:active{transform:scale(.96)}
+.fsep{flex:none;width:1px;margin:6px 2px;background:var(--line2)}
+.frange{flex:1 1 100%;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.frin{display:flex;flex-direction:column;gap:3px;background:var(--inset);border:1px solid var(--line);
+  border-radius:12px;padding:6px 10px;font-size:11.5px;color:var(--tx3);min-width:0}
+.frin b{font-weight:800}
+.frin input{background:none;border:none;color:var(--tx);font:inherit;font-size:13px;min-width:0;width:100%;
+  padding:0}
+.frin small{color:var(--gold);font-size:11px}
+/* ورق دسته‌ها */
+.catls{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.catrow{display:flex;gap:6px;align-items:stretch}
+.catt{flex:1;min-width:0;display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:12px;
+  background:var(--inset);border:1px solid var(--line2);color:var(--tx);font-weight:800;font-size:13px;text-align:start}
+button.catt{cursor:pointer}
+.catt b{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--line2);display:grid;place-items:center;flex:none}
+.catt b .ic{width:13px;height:13px}
+.catt span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.catt i{font-style:normal;color:var(--tx3);font-size:12px}
+.catt.on{border-color:color-mix(in srgb,var(--gold) 45%,transparent);background:color-mix(in srgb,var(--gold) 12%,transparent)}
+.catt.on b{background:var(--gold);border-color:var(--gold);color:#1a1405}
+.catrow .btn.xs{min-width:40px}
+.audiag .audgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin:10px 0}
+.audiag .ag{background:var(--inset);border:1px solid var(--line);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.audiag .ag b{font-size:11.5px;color:var(--tx3);font-weight:700}
+.audiag .ag span{font-size:18px;font-weight:900}
+.audiag .ag small{font-size:11px;color:var(--tx3)}
+.audwhy{margin:4px 0 8px;padding-inline-start:18px;font-size:12.5px;line-height:1.9;color:var(--tx2)}
+.audwhy b{color:var(--tx)}
+.audprobe{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.audprobe .apr{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:6px 10px;background:var(--inset);border-radius:10px}
+.audprobe .apr span{text-align:end;overflow-wrap:anywhere}
+.audiag .u{color:var(--up)}.audiag .d{color:var(--dn)}.audiag .w{color:var(--warn)}.audiag .m{color:var(--tx3)}
+.audfail{border-color:color-mix(in srgb,var(--dn) 45%,transparent)!important;color:var(--tx2);font-size:12.5px;line-height:1.9}
+.audfail b{color:var(--dn)}
+.catempty{color:var(--tx3);font-size:13px;padding:6px 2px}
+.catnew{display:flex;gap:6px}
+.catnew input{flex:1;min-width:0;background:var(--inset);border:1px solid var(--line2);border-radius:11px;padding:9px 11px}
+.catnew input:focus{outline:none;border-color:var(--gold)}
 .fbucket span{display:flex;align-items:center;gap:3px;font-size:11.5px}
 .fbucket .ic{width:13px;height:13px;flex:none;stroke-width:2.2}
 .fbucket.on{background:color-mix(in srgb,var(--gold) 15%,transparent);
@@ -470,7 +527,7 @@ tr.tap:hover td{background:var(--card2)}
 
 /* نوار پایین هر پست: سه کلید هم‌اندازه‌ی «کجا برود» و یک کلید جدای «سیگنال یا نه» */
 .prow{padding:0 14px 12px;display:flex;flex-direction:column;gap:8px}
-.ftray{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ftray{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .fchip{display:flex;align-items:center;justify-content:center;gap:6px;min-height:40px;
   padding:8px 6px;border-radius:12px;background:var(--inset);border:1px solid var(--line2);
   color:var(--tx2);font-size:12px;font-weight:800;cursor:pointer;min-width:0;
@@ -530,9 +587,6 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .card.tight .chead{border-bottom:0}
 .card.accopen .chead{cursor:pointer}
 .card.tight .chead{padding-bottom:12px}
-.autolev{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:13px;
-  color:var(--tx2);cursor:pointer}
-.autolev input{width:19px;height:19px;accent-color:var(--gold);flex:none}
 .rwarn{margin-top:10px;padding:10px 12px;border-radius:var(--r2);font-size:12.5px;line-height:1.9}
 .rwarn.warn{background:color-mix(in srgb,var(--warn) 13%,transparent);color:var(--warn);
   border:1px solid color-mix(in srgb,var(--warn) 32%,transparent)}
@@ -697,11 +751,6 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .gbody .markrow a.mark{text-decoration:none}
 .gmedia .shot{border-top:1px solid var(--line)}
 .gmedia video{display:block;width:100%;max-height:min(60vh,460px);background:#0B0C0F;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.gnote{margin:10px 12px 0;padding:10px 12px;border-radius:var(--r2);font-size:13px;line-height:2;color:var(--tx);
-  background:color-mix(in srgb,var(--gold) 9%,transparent);border:1px solid color-mix(in srgb,var(--gold) 30%,transparent)}
-.gnote>b{display:flex;align-items:center;gap:6px;color:var(--gold);font-size:12.5px;margin-bottom:4px}
-.gnote>b .ic{width:15px;height:15px}
-.gnote ul{margin:4px 0 0;padding-inline-start:18px}
 .mark.busy{opacity:.7;cursor:progress}
 /* دفترچه‌ی خروج */
 .pbx{margin:12px 0 2px;padding:12px;border-radius:14px;background:var(--inset);border:1px solid color-mix(in srgb,var(--gold) 26%,var(--line))}
@@ -905,8 +954,6 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .reply{font-size:12px;color:var(--tx3);border-inline-start:2px solid var(--line2);padding-inline-start:9px;margin-bottom:8px;unicode-bidi:plaintext}
 
 .plan{background:var(--inset);border-top:1px solid var(--line);padding:13px 14px}
-.inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-bottom:12px}
-.inputs .fld input,.inputs .fld select{padding:7px 9px;font-size:13.5px;background:var(--card)}
 
 /* فلکس، نه گرید: اگر ردیف آخر پر نشود خانه‌های همان ردیف کشیده می‌شوند و جای خالی نمی‌ماند */
 .kv{display:flex;flex-wrap:wrap;gap:1px;background:var(--card);
@@ -1165,29 +1212,26 @@ input[type=range]{width:100%;accent-color:var(--gold)}
    نیست — روی گوشی گران است؛ هاله‌ها خودشان نرم‌اند و فقط transform/opacity حرکت می‌کنند. */
 html.fx{--glow:233,178,74; --glowUp:70,220,150; --glowDn:236,96,110;
   --cardA:rgba(30,32,40,.84); --cardB:rgba(18,20,25,.86)}
-/* ── زمینه: سه هاله‌ی نور که خیلی آرام جابه‌جا می‌شوند ── */
+/* ── زمینه: سه هاله‌ی نور ثابت. قبلاً مدام جابه‌جا می‌شدند و چون سربرگ و منو شیشه‌ای (blur)
+   روی آن‌ها هستند، گوشی هر فریم تاری را از نو حساب می‌کرد — حتی وقتی به صفحه دست نمی‌زدی. ── */
 .bgfx .h{display:none}
 html.fx .bgfx::after{display:none}
-html.fx .bgfx .h{display:block;position:absolute;border-radius:50%;will-change:transform}
+html.fx .bgfx .h{display:block;position:absolute;border-radius:50%}
 html.fx .bgfx .h1{width:720px;height:620px;top:-300px;inset-inline-end:-260px;
-  background:radial-gradient(closest-side,rgba(var(--glow),.30),rgba(var(--glow),.08) 55%,transparent);animation:drift1 38s ease-in-out infinite alternate}
+  background:radial-gradient(closest-side,rgba(var(--glow),.30),rgba(var(--glow),.08) 55%,transparent)}
 html.fx .bgfx .h2{width:620px;height:620px;top:38%;inset-inline-start:-320px;
-  background:radial-gradient(closest-side,rgba(46,184,150,.17),transparent);animation:drift2 46s ease-in-out infinite alternate}
+  background:radial-gradient(closest-side,rgba(46,184,150,.17),transparent)}
 html.fx .bgfx .h3{width:560px;height:560px;bottom:-280px;inset-inline-end:-180px;
-  background:radial-gradient(closest-side,rgba(233,120,74,.14),transparent);animation:drift3 52s ease-in-out infinite alternate}
-@keyframes drift1{to{transform:translate3d(-60px,70px,0) scale(1.08)}}
-@keyframes drift2{to{transform:translate3d(80px,-60px,0) scale(1.12)}}
-@keyframes drift3{to{transform:translate3d(-70px,-50px,0) scale(.94)}}
+  background:radial-gradient(closest-side,rgba(233,120,74,.14),transparent)}
 html.fx .bgfx::before{opacity:.075;-webkit-mask-image:radial-gradient(ellipse 90% 70% at 50% 10%,#000 25%,transparent 80%);
   mask-image:radial-gradient(ellipse 90% 70% at 50% 10%,#000 25%,transparent 80%)}
 /* ── سربرگ: شیشه با خط نور طلایی زیرش ── */
 html.fx header::after{content:"";position:absolute;inset-inline:0;bottom:-1px;height:1px;pointer-events:none;
   background:linear-gradient(90deg,transparent,rgba(var(--glow),.55),rgba(var(--glowUp),.25),transparent)}
 html.fx .emblem{background:radial-gradient(circle at 50% 35%,#FFE3A1,#E9B24A 55%,#A8741F);border-color:rgba(255,220,150,.55);
-  box-shadow:0 0 22px rgba(var(--glow),.55),inset 0 1px 0 rgba(255,255,255,.45);animation:breathe 4.5s ease-in-out infinite}
+  box-shadow:0 0 26px rgba(var(--glow),.62),inset 0 1px 0 rgba(255,255,255,.45)}
 html.fx .emblem .star{color:#2A1A04}
 html.fx.busy .emblem{box-shadow:0 0 30px rgba(var(--glow),.85),inset 0 1px 0 rgba(255,255,255,.45)}
-@keyframes breathe{50%{box-shadow:0 0 30px rgba(var(--glow),.75),inset 0 1px 0 rgba(255,255,255,.45)}}
 html.fx .rbtn{box-shadow:0 8px 24px -6px rgba(var(--glow),.75),inset 0 1px 0 rgba(255,255,255,.45)}
 html.fx .hchip,html.fx .ibtn{background:rgba(22,24,30,.7);border-color:rgba(255,255,255,.07)}
 html.fx .hs[data-s="ok"] i{box-shadow:0 0 0 3px rgba(var(--glowUp),.2),0 0 10px rgba(var(--glowUp),.8)}
@@ -1224,15 +1268,15 @@ html.fx .card.fresh{animation:freshpulse 2.4s ease-out 2}
 @keyframes freshpulse{0%{box-shadow:0 0 0 1px rgba(var(--glow),.8),0 0 0 0 rgba(var(--glow),.55)}
   70%{box-shadow:0 0 0 1px rgba(var(--glow),.5),0 0 0 14px rgba(var(--glow),0)}100%{box-shadow:0 0 0 1px rgba(var(--glow),.45),0 0 36px -10px rgba(var(--glow),.55)}}
 html.fx .chead{border-bottom-color:rgba(255,255,255,.055)}
-html.fx .bk,html.fx .kv .k,html.fx .inputs .fld input{background:rgba(10,11,15,.5)}
+html.fx .bk,html.fx .kv .k{background:rgba(10,11,15,.5)}
 html.fx .bk{border-color:rgba(255,255,255,.055)}
 /* ── برچسب‌ها و قیمت زنده ── */
 html.fx .pill.long{box-shadow:0 0 14px -4px rgba(var(--glowUp),.8)}
 html.fx .pill.short{box-shadow:0 0 14px -4px rgba(var(--glowDn),.8)}
 html.fx .pill.gold{box-shadow:0 0 14px -5px rgba(var(--glow),.8)}
 html.fx .pill.live i{box-shadow:0 0 8px rgba(var(--glowUp),.95)}
-html.fx .fl-up{text-shadow:0 0 14px rgba(var(--glowUp),.9)}
-html.fx .fl-dn{text-shadow:0 0 14px rgba(var(--glowDn),.9)}
+html.fx .fl-u{text-shadow:0 0 14px rgba(var(--glowUp),.9)}
+html.fx .fl-d{text-shadow:0 0 14px rgba(var(--glowDn),.9)}
 html.fx .pnlhero .big.u{text-shadow:0 0 26px rgba(var(--glowUp),.6)}
 html.fx .pnlhero .big.d{text-shadow:0 0 26px rgba(var(--glowDn),.55)}
 html.fx .bk span.u,html.fx .kv span.u,html.fx .st span.u{text-shadow:0 0 12px rgba(var(--glowUp),.45)}
@@ -1240,16 +1284,16 @@ html.fx .bk span.u,html.fx .kv span.u,html.fx .st span.u{text-shadow:0 0 12px rg
 html.fx .btn.pri,html.fx .acts .btn.ok{overflow:hidden;color:#231503;
   background:linear-gradient(100deg,#B98631,#F2CE7E 46%,#E9B24A 56%,#B98631);
   box-shadow:0 10px 28px -10px rgba(var(--glow),.85),inset 0 1px 0 rgba(255,255,255,.5)}
-html.fx .btn.pri::after,html.fx .acts .btn.ok::after{content:"";position:absolute;top:0;bottom:0;width:45%;inset-inline-start:-60%;
-  background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-18deg);
+/* نوار نور با transform حرکت می‌کند نه با جابه‌جایی لبه؛ قبلی هر فریم چیدمان صفحه را دوباره حساب می‌کرد */
+html.fx .btn.pri::after,html.fx .acts .btn.ok::after{content:"";position:absolute;top:0;bottom:0;width:45%;left:0;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:translateX(-130%) skewX(-18deg);
   animation:sweep 6s var(--ease) infinite;pointer-events:none}
-@keyframes sweep{0%,70%{inset-inline-start:-60%}100%{inset-inline-start:130%}}
+@keyframes sweep{0%,70%{transform:translateX(-130%) skewX(-18deg)}100%{transform:translateX(290%) skewX(-18deg)}}
 html.fx .btn.pri:active,html.fx .acts .btn.ok:active{box-shadow:0 4px 18px -6px rgba(var(--glow),1),inset 0 1px 0 rgba(255,255,255,.5)}
 html.fx .btn:not(.pri):not(.ok):hover{box-shadow:0 0 16px -6px rgba(var(--glow),.6)}
 html.fx .mark:not(.ghost){box-shadow:0 0 14px -6px rgba(var(--glow),.8)}
-/* ── دستگیره‌ها: نبض آرام طلایی ── */
-html.fx .ladder .hs2{animation:knob 2.8s ease-in-out infinite}
-@keyframes knob{50%{box-shadow:0 0 0 1px var(--gold),0 0 22px 2px rgba(var(--glow),.75)}}
+/* ── دستگیره‌ها: هاله‌ی ثابت طلایی (نبضِ سایه هر فریم دوباره نقاشی می‌شد) ── */
+html.fx .ladder .hs2{box-shadow:0 0 0 1px var(--gold),0 0 18px 1px rgba(var(--glow),.6)}
 html.fx .sldrow input[type=range]::-webkit-slider-thumb,html.fx .levtrack input[type=range]::-webkit-slider-thumb{
   box-shadow:0 0 0 1px var(--gold),0 0 18px rgba(var(--glow),.7),0 6px 16px -4px rgba(var(--glow),.85)}
 html.fx .levbox,html.fx .pbx,html.fx .gcalc,html.fx .gclock,html.fx .grulesnow{background:rgba(10,11,15,.5)}
@@ -1278,8 +1322,7 @@ html.fx .gsteps li>i,html.fx .gnum{box-shadow:0 0 14px -3px rgba(var(--glow),.8)
 html.fx .labr.best{box-shadow:inset 3px 0 0 var(--up),0 0 30px -18px rgba(var(--glowUp),.9)}
 html.fx .status{background:rgba(20,22,28,.6)}
 html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
-@media (prefers-reduced-motion:reduce){html.fx .bgfx .h,html.fx .emblem,html.fx .ladder .hs2{animation:none}
-  html.fx .btn.pri::after,html.fx .acts .btn.ok::after{display:none}}
+@media (prefers-reduced-motion:reduce){html.fx .btn.pri::after,html.fx .acts .btn.ok::after{display:none}}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
   html.busy .prog::before{animation:none;width:100%;opacity:.6}
@@ -1370,7 +1413,7 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
       <div class="fbar">
         <div class="fseg" role="tablist" aria-label="پوزیشن‌ها">
           <button class="fb" id="pWait" aria-pressed="false"><span>منتظر</span><i id="cWait">0</i></button>
-          <button class="fb on" id="pOpen" aria-pressed="true"><span>باز</span><i id="cOpenP">0</i></button>
+          <button class="fb" id="pOpen" aria-pressed="true"><span>باز</span><i id="cOpenP">0</i></button>
           <button class="fb" id="pClosed" aria-pressed="false"><span>بسته‌شده</span><i id="cClosedP">0</i></button>
           <button class="fb" id="pAllP" aria-pressed="false"><span>همه</span><i id="cAllP">0</i></button>
         </div>
@@ -1565,7 +1608,19 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
 <script>
 "use strict";
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+/* تجزیه‌ی SVG با innerHTML گران‌ترین بخش ساختن کارت‌ها بود (هر کارت چند آیکون دارد).
+   برای رشته‌های کوتاهِ آیکون‌دار یک نمونه‌ی تجزیه‌شده نگه می‌داریم و فقط کپی‌اش می‌کنیم. */
+const ELC=new Map();
+const el=(t,c,h)=>{
+  let e;
+  if(h!=null&&h.length<700&&h.indexOf('<svg')>=0){
+    const k=t+'\u0001'+h;let tp=ELC.get(k);
+    if(!tp){tp=document.createElement(t);tp.innerHTML=h;if(ELC.size<600)ELC.set(k,tp);}
+    e=tp.cloneNode(true);
+  }else{e=document.createElement(t);if(h!=null)e.innerHTML=h;}
+  if(c)e.className=c;
+  return e;
+};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 // جدول‌ها در عرض کم باید داخل خودشان اسکرول شوند، نه اینکه صفحه را پهن کنند
 const tWrap=t=>{const d=el('div','tscroll');d.appendChild(t);return d;};
@@ -1607,6 +1662,7 @@ const ICO={
   door:'<path d="M14 3H6v18h8"/><path d="M11 12h9M17 8l4 4-4 4"/>',
   bolt:'<path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/>',
   flag:'<path d="M5 21V4M5 5h11l-1.6 3.5L16 12H5"/>',
+  tag:'<path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3a1.4 1.4 0 0 1 0 2l-6.7 6.7a1.4 1.4 0 0 1-2 0z"/><circle cx="8" cy="8" r="1.6"/>',
   share:'<circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="m8.3 10.8 7.4-4.3M8.3 13.2l7.4 4.3"/>',
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
   undo:'<path d="M4 9h11a5 5 0 0 1 0 10h-6"/><path d="M8 5 4 9l4 4"/>'
@@ -1716,10 +1772,27 @@ function dayLabel(d){
 /* ==================== ذخیره‌سازی ==================== */
 const KEY='signaldesk.v1';
 let storeOK=true;
-const DB={positions:[],decisions:{},settings:{},overrides:{},lessons:{},archived:{},results:{},pending:[],watch:[],spot:[],
-  edits:{},gone:{},revived:{}};
+/* کلیدهای داده در یک جا: ذخیره، بارگذاری، همگام‌سازی و پشتیبان همه از همین فهرست می‌خوانند،
+   پس کلید تازه فقط اینجا اضافه می‌شود (قبلاً پنج جا تکرار شده بود).
+   cats: دسته‌های ساخت کاربر [{id,n}] · pcat: پست ← فهرست شناسه‌ی دسته‌ها */
+const DB_OBJ=['decisions','overrides','lessons','archived','results','edits','gone','revived','pcat'];
+const DB_ARR=['pending','watch','spot','cats'];
+const DB={positions:[],settings:{}};
+const isObj=x=>!!x&&typeof x==='object'&&!Array.isArray(x);
+function fillDB(d){
+  for(const k of DB_OBJ)DB[k]=isObj(d[k])?d[k]:{};
+  for(const k of DB_ARR)DB[k]=Array.isArray(d[k])?d[k]:[];
+}
+fillDB({});
+function dbBlob(){
+  const o={positions:DB.positions,settings:DB.settings};
+  for(const k of DB_OBJ.concat(DB_ARR))o[k]=DB[k];
+  return o;
+}
+let KGEN=0;     // هر ذخیره نسل را جلو می‌برد تا حافظه‌ی نوعِ پست‌ها (postKind) تازه شود
 function save(){
-  try{ localStorage.setItem(KEY,JSON.stringify({positions:DB.positions,decisions:DB.decisions,settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,results:DB.results,pending:DB.pending,watch:DB.watch,spot:DB.spot,edits:DB.edits,gone:DB.gone,revived:DB.revived})); }
+  KGEN++;
+  try{ localStorage.setItem(KEY,JSON.stringify(dbBlob())); }
   catch(e){ storeOK=false; showStoreWarn(); }
   if(typeof syncSoon==='function')syncSoon();
 }
@@ -1729,19 +1802,8 @@ function load(){
     localStorage.setItem(KEY+'.probe','1'); localStorage.removeItem(KEY+'.probe');
     if(raw){const d=JSON.parse(raw);
       DB.positions=Array.isArray(d.positions)?d.positions:[];
-      DB.decisions=d.decisions&&typeof d.decisions==='object'?d.decisions:{};
-      DB.settings=d.settings&&typeof d.settings==='object'?d.settings:{};
-      // تا پیش از این، اصلاح‌های دستی فقط در حافظه بودند و با هر بار باز کردن صفحه می‌پریدند
-      DB.overrides=d.overrides&&typeof d.overrides==='object'?d.overrides:{};
-      DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
-      DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
-      DB.results=d.results&&typeof d.results==='object'?d.results:{};
-      DB.edits=d.edits&&typeof d.edits==='object'?d.edits:{};
-      DB.gone=d.gone&&typeof d.gone==='object'?d.gone:{};
-      DB.revived=d.revived&&typeof d.revived==='object'?d.revived:{};
-      DB.pending=Array.isArray(d.pending)?d.pending:[];
-      DB.watch=Array.isArray(d.watch)?d.watch:[];
-      DB.spot=Array.isArray(d.spot)?d.spot:[];
+      DB.settings=isObj(d.settings)?d.settings:{};
+      fillDB(d);
     }
   }catch(e){ storeOK=false; }
 }
@@ -1872,6 +1934,10 @@ function logIt(level,msg,extra){
 function clearLog(){LOG=[];logDirty=true;flushLog();if(typeof paintLog==='function')paintLog();}
 setInterval(flushLog,4000);
 addEventListener('beforeunload',flushLog);
+// خطای پنهانِ برنامه هم در گزارش بیاید؛ وگرنه «کار نمی‌کند» هیچ ردی نداشت
+addEventListener('error',e=>{if(e&&e.message)logIt('err','خطای برنامه: '+e.message+(e.lineno?' (سطر '+e.lineno+')':''));});
+addEventListener('unhandledrejection',e=>{const r=e&&e.reason;
+  logIt('err','خطای ناهمگام: '+String(r&&r.message||r).slice(0,160));});
 
 /* متن گزارش برای کپی کردن و فرستادن */
 function logText(){
@@ -2751,22 +2817,9 @@ const SYNCKEY='signaldesk.sync.v1';
 let syncCfg=lsGet(SYNCKEY)||{url:'',token:'',rev:0,at:0};
 let syncTimer=null, syncing=false;
 const syncOn=()=>!!(syncCfg.url&&syncCfg.token);
-const dbBlob=()=>({positions:DB.positions,decisions:DB.decisions,
-  settings:DB.settings,overrides:DB.overrides,lessons:DB.lessons,archived:DB.archived,
-  results:DB.results,pending:DB.pending,watch:DB.watch,spot:DB.spot,edits:DB.edits,gone:DB.gone,revived:DB.revived});
 function applyBlob(d){
   DB.positions=Array.isArray(d.positions)?d.positions.map(ensureBase):[];
-  DB.decisions=d.decisions&&typeof d.decisions==='object'?d.decisions:{};
-  DB.overrides=d.overrides&&typeof d.overrides==='object'?d.overrides:{};
-  DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
-  DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
-  DB.results=d.results&&typeof d.results==='object'?d.results:{};
-  DB.edits=d.edits&&typeof d.edits==='object'?d.edits:{};
-  DB.gone=d.gone&&typeof d.gone==='object'?d.gone:{};
-  DB.revived=d.revived&&typeof d.revived==='object'?d.revived:{};
-  DB.pending=Array.isArray(d.pending)?d.pending:[];
-  DB.watch=Array.isArray(d.watch)?d.watch:[];
-  DB.spot=Array.isArray(d.spot)?d.spot:[];
+  fillDB(d);
   guidePurgeOld();   // دستگاه دیگری که هنوز آموزش‌های قدیمی را دارد، برشان نگرداند
   if(d.settings&&typeof d.settings==='object'){DB.settings=d.settings;Object.assign(S,d.settings);fixFeat();}
   OVERRIDE=DB.overrides;PCACHE.clear();
@@ -3949,18 +4002,19 @@ async function runDiag(onRow){
 }
 
 /* ==================== کمکی نمایش ==================== */
+const NF2=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
 function fmtPrice(n){
   if(n==null||!isFinite(n))return '—';
   const a=Math.abs(n);
-  if(a>=1000)return n.toLocaleString('en-US',{maximumFractionDigits:2});
+  if(a>=1000)return NF2.format(n);
   if(a>=1)return (+n.toFixed(4)).toString();
   if(a>=0.01)return (+n.toFixed(5)).toString();
   return n.toPrecision(4);
 }
 /* جداکننده‌ی هزارگان: تا وقتی مبلغ‌ها کوچک بودند فرقی نداشت، ولی ارزش اسپات و حجم
    بازار چندرقمی‌اند و بدون آن خواندنشان سخت است. */
-const fmtUsd=n=>(n==null||!isFinite(n))?'—':(n<0?'−$':'$')+
-  Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const NFU=new Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtUsd=n=>(n==null||!isFinite(n))?'—':(n<0?'−$':'$')+NFU.format(Math.abs(n));
 const fmtPct=n=>(n==null||!isFinite(n))?'—':(n>0?'+':n<0?'−':'')+Math.abs(n).toFixed(2)+'٪';
 const fmtR=n=>(n==null||!isFinite(n))?'—':(n>0?'+':'−')+Math.abs(n).toFixed(2)+'R';
 const cls=n=>n==null||!isFinite(n)?'m':(n>0.0001?'u':n<-0.0001?'d':'m');
@@ -4003,13 +4057,6 @@ function closePanel(id){
 const num=id=>{const n=$('#'+id);const v=n?parseFloat(n.value):NaN;return isFinite(v)&&v>0?v:null;};
 const fldHtml=(k,l,v,extra)=>'<div class="fld"><label>'+l+'</label><input id="f_'+k+
   '" type="number" step="any" inputmode="decimal" '+(extra||'')+' value="'+(v===''||v==null?'':v)+'"></div>';
-function numField(label,val,on,step){
-  const f=el('div','fld','<label>'+esc(label)+'</label>');
-  const i=el('input');i.type='number';i.step=step||'any';i.inputMode='decimal';i.placeholder='—';
-  if(val!=null&&isFinite(val))i.value=val;
-  i.onchange=()=>on(i.value===''?null:parseFloat(i.value));
-  f.appendChild(i);return f;
-}
 
 /* ==================== وضعیت سرویس‌ها ==================== */
 /* دو نقطه‌ی رنگی در هدر خلاصه را می‌گویند؛ کلیک روی آن‌ها این پنجره را باز می‌کند
@@ -4199,6 +4246,96 @@ const PAGE=30; let shownMax=PAGE;
    نمی‌شود، و از سطل خودشان همیشه قابل برگرداندن‌اند.
    bucket جای کدام‌شان را نشان می‌دهد: live | arch | res */
 let bucket='live';
+/* فیلترهای صفحه‌ی پست‌ها روی همین دستگاه می‌مانند؛ هر بار همان‌جایی برمی‌گردی که بودی.
+   kind: نوع پست در «همه» · cat: دسته‌ی ساخت خودت · day: all|today|yest|week|range */
+const VIEWKEY='signaldesk.view.v1';
+const VIEW=Object.assign({kind:'all',cat:'',day:'all',from:'',to:''},lsGet(VIEWKEY)||{});
+if(['new','sig','all'].includes(VIEW.sf))sigFilter=VIEW.sf;
+if(['live','res','arch'].includes(VIEW.bk))bucket=VIEW.bk;
+function setView(o){
+  Object.assign(VIEW,o);VIEW.sf=sigFilter;VIEW.bk=bucket;
+  lsSet(VIEWKEY,VIEW);shownMax=PAGE;renderSignals();
+}
+/* فیلتر روز. شماره‌ی روزِ هر پست یک بار حساب می‌شود (Intl روی 800 پست کُند است). */
+const DNMEMO=new WeakMap();
+const postDay=p=>{let v=DNMEMO.get(p);if(v==null){v=dayNo(p.date);DNMEMO.set(p,v);}return v;};
+const ymdNo=v=>{const m=/^(\d{4})-(\d\d)-(\d\d)$/.exec(v||'');return m?Math.floor(Date.UTC(+m[1],m[2]-1,+m[3])/864e5):null;};
+const DAY_FA={all:'همه‌ی روزها',today:'امروز',yest:'دیروز',week:'7 روز اخیر',range:'بازه'};
+function dayPass(){
+  const d=VIEW.day;
+  if(!DAY_FA[d]||d==='all')return null;
+  const t=dayNo(new Date());
+  let a,b;
+  if(d==='today')a=b=t;else if(d==='yest')a=b=t-1;else if(d==='week'){a=t-6;b=t;}
+  else{a=ymdNo(VIEW.from);b=ymdNo(VIEW.to);if(a!=null&&b!=null&&a>b)[a,b]=[b,a];}
+  return p=>{if(!p.date)return false;const n=postDay(p);return (a==null||n>=a)&&(b==null||n<=b);};
+}
+/* دسته‌های خودت: هر پست می‌تواند در چند دسته باشد؛ پاک کردن دسته به پست‌ها دست نمی‌زند. */
+const catById=id=>DB.cats.find(c=>c.id===id);
+const catsOf=pid=>(DB.pcat[pid]||[]).filter(catById);
+const inCat=(pid,cid)=>(DB.pcat[pid]||[]).includes(cid);
+function setCat(pid,cid,on){
+  const a=new Set(DB.pcat[pid]||[]);on?a.add(cid):a.delete(cid);
+  if(a.size)DB.pcat[pid]=[...a];else delete DB.pcat[pid];
+  save();
+}
+function newCat(name){
+  name=(name||'').replace(/\s+/g,' ').trim().slice(0,24);
+  if(!name)return null;
+  const ex=DB.cats.find(c=>c.n===name);if(ex)return ex;
+  const c={id:'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),n:name};
+  DB.cats.push(c);save();return c;
+}
+function delCat(cid){
+  DB.cats=DB.cats.filter(c=>c.id!==cid);
+  for(const k of Object.keys(DB.pcat)){
+    const a=DB.pcat[k].filter(x=>x!==cid);if(a.length)DB.pcat[k]=a;else delete DB.pcat[k];}
+  if(VIEW.cat===cid)VIEW.cat='';
+  save();
+}
+/* دسته فقط در «همه» معنی دارد؛ دسته‌ای که پاک شده یا از دستگاه دیگری نیامده، نادیده گرفته می‌شود. */
+const activeCat=()=>bucket==='live'&&sigFilter==='all'&&VIEW.cat&&catById(VIEW.cat)?VIEW.cat:'';
+function sheetCats(p){
+  openSheet('<h3>'+ic('tag')+(p?'دسته‌ی این پست':'دسته‌های من')+'</h3>'+
+    '<div class="sub">'+(p
+      ?'پست را در یک یا چند دسته بگذار. دوباره بزنی، از آن دسته بیرون می‌آید.'
+      :'دسته بساز، اسمش را عوض کن یا پاکش کن. پست‌ها را با دکمه‌ی «دسته» زیر هر پست اضافه کن. پاک کردن دسته به خودِ پست‌ها دست نمی‌زند.')+'</div>'+
+    '<div class="catls" id="catls"></div>'+
+    '<div class="catnew"><input id="catN" maxlength="24" placeholder="اسم دسته‌ی تازه، مثلاً «بلندمدت»" autocomplete="off">'+
+    '<button class="btn pri sm" id="catAdd">'+ic('plus')+'<span>ساختن</span></button></div>'+
+    '<div class="srow"><button class="btn" id="cx">بستن</button></div>',
+  ()=>{
+    const ls=$('#catls');
+    const paint=()=>{
+      ls.innerHTML='';
+      if(!DB.cats.length){ls.appendChild(el('div','catempty','هنوز دسته‌ای نساخته‌ای.'));return;}
+      for(const c of DB.cats){
+        const n=Object.keys(DB.pcat).filter(k=>DB.pcat[k].includes(c.id)).length;
+        const r=el('div','catrow');
+        if(p){
+          const on=inCat(p.id,c.id);
+          const t=el('button','catt'+(on?' on':''),'<b>'+(on?ic('check'):'')+'</b><span>'+esc(c.n)+'</span><i>'+faN(n)+'</i>');
+          t.setAttribute('aria-pressed',on?'true':'false');
+          t.onclick=()=>{setCat(p.id,c.id,!on);paint();renderSignals();};
+          r.appendChild(t);
+        }else r.appendChild(el('div','catt','<b>'+ic('tag')+'</b><span>'+esc(c.n)+'</span><i>'+faN(n)+'</i>'));
+        const ed=el('button','btn xs',ic('edit'));ed.title='تغییر اسم';ed.setAttribute('aria-label','تغییر اسم');
+        ed.onclick=()=>{const v=prompt('اسم تازه‌ی دسته',c.n);if(v==null)return;
+          const nn=v.replace(/\s+/g,' ').trim().slice(0,24);if(!nn)return;c.n=nn;save();paint();renderSignals();};
+        const del=el('button','btn xs dgr',ic('trash'));del.title='پاک کردن دسته';del.setAttribute('aria-label','پاک کردن دسته');
+        del.onclick=()=>{if(!confirm('دسته‌ی «'+c.n+'» پاک شود؟ پست‌ها سر جایشان می‌مانند.'))return;
+          delCat(c.id);lsSet(VIEWKEY,VIEW);paint();renderSignals();};
+        r.appendChild(ed);r.appendChild(del);ls.appendChild(r);
+      }
+    };
+    paint();
+    const add=()=>{const c=newCat($('#catN').value);if(!c)return;$('#catN').value='';
+      if(p)setCat(p.id,c.id,true);paint();renderSignals();toast('دسته‌ی «'+esc(c.n)+'» آماده است','ok');};
+    $('#catAdd').onclick=add;
+    $('#catN').onkeydown=e=>{if(e.key==='Enter')add();};
+    $('#cx').onclick=closeSheet;
+  });
+}
 const isArch=id=>!!DB.archived[id];
 function setArch(id,on){
   if(on)DB.archived[id]=Date.now(); else delete DB.archived[id];
@@ -4256,11 +4393,21 @@ const RX_ANN=/اطلاعیه|اطلاع\s*رسانی|قابل\s*توجه|توج�
 const RX_NEWS=/خبر|اخبار|فوری|گزارش|فدرال|نرخ\s*بهره|تورم|\bcpi\b|\betf\b|بلک\s*راک|\bsec\b|ترامپ|هک\s*شد|لیست\s*شد|لیستینگ|دلیست|هاوینگ|آپگرید|آپدیت\s*شبکه|breaking|\bnews\b|بازار\s*امروز/i;
 /* نوعِ هر پست: sig سیگنال · res نتیجه · news خبر · ann اطلاع‌رسانی · note بقیه.
    علامتِ دستیِ «این سیگنال است» بر همه می‌چربد؛ پستِ نتیجه حتی اگر شکل سیگنال داشته باشد نتیجه است. */
+/* نوع هر پست در هر رندر چند بار پرسیده می‌شود (شمارنده‌ها، فیلتر، کارت) و هر بار چند
+   عبارت باقاعده روی متن اجرا می‌شد. نتیجه تا ذخیره‌ی بعدی یا تغییر متن پست معتبر است. */
+const KMEMO=new WeakMap();
 function postKind(p){
+  const s=sigOf(p), m=KMEMO.get(p);
+  if(m&&m.g===KGEN&&m.s===s)return m.k;
+  const k=postKind0(p,s);
+  KMEMO.set(p,{g:KGEN,s,k});
+  return k;
+}
+function postKind0(p,sg){
   const ov=OVERRIDE[p.id];
   if(ov&&ov.sig===true)return 'sig';
   if(isRes(p))return 'res';
-  if(sigOf(p).isSignal)return 'sig';
+  if(sg.isSignal)return 'sig';
   const t=faNorm(p.text||'');
   if(RX_ANN.test(t))return 'ann';
   if(RX_NEWS.test(t))return 'news';
@@ -4368,7 +4515,10 @@ function buildStale(p,sig){
   return w;
 }
 
-function buildCard(p){
+/* lite: کارتِ بسته در آکاردئون فقط سربرگ و خلاصه‌ی یک‌خطی دارد؛ بدنه، ماشین‌حساب و
+   دکمه‌ها وقتی ساخته می‌شوند که باز شود (باز کردن به هر حال دوباره رندر می‌کند).
+   روی 30 کارت یعنی یک کارت کامل به‌جای سی تا. */
+function buildCard(p,lite){
   const sig=sigOf(p), ov=OVERRIDE[p.id]||{}, kind=postKind(p), isSig=kind==='sig', dec=decisionOf(p.id);
   const dir=ov.dir||sig.direction;
   const card=el('div','card'+(isSig?' d-'+dir:'')+(NEWIDS.has(p.id)?' fresh':'')+
@@ -4429,6 +4579,7 @@ function buildCard(p){
     if(!sm)sm=esc(String(p.text||'').split('\n').map(x=>x.trim()).find(Boolean)||'').slice(0,90);
     card.appendChild(el('div','csum',sm+'<i class="chev"></i>'));
   }
+  if(lite){CARDS.set(p.id,card);return card;}
 
   if(p.img){
     const a=el('div','shot');a.setAttribute('role','button');a.tabIndex=0;
@@ -4525,7 +4676,10 @@ function buildReply(p){
 function rebuildCard(p){
   const old=CARDS.get(p.id);
   if(!old||!old.parentNode)return renderSignals();
-  const fresh=buildCard(p);
+  // حالت آکاردئونی کارت هم باید بماند، وگرنه کارت بازشده دیگر با زدن بسته نمی‌شد
+  const lite=old.classList.contains('tight'), acc=lite||old.classList.contains('accopen');
+  const fresh=buildCard(p,lite);
+  if(acc)accWire(fresh,p,!lite);
   old.replaceWith(fresh);
 }
 
@@ -4696,10 +4850,9 @@ function setOv(p,k,v,isStr){
      2) «این پست سیگنال هست یا نه؟»  یک کلید جدا، چون معنی‌اش با آن سه فرق دارد.
    تشخیص خودکار همیشه کار نمی‌کند، پس هر دو جنس قابل نقض دستی‌اند. */
 function fileChip(icon,label,on,hint,onClick,extra){
-  const b=el('button','fchip'+(on?' on':'')+(extra?' '+extra:''));
+  const b=el('button','fchip'+(on?' on':'')+(extra?' '+extra:''),ic(icon)+'<span>'+label+'</span>');
   b.setAttribute('aria-pressed',on?'true':'false');
   b.title=hint;
-  b.innerHTML=ic(icon)+'<span>'+label+'</span>';
   b.onclick=onClick;
   return b;
 }
@@ -4719,6 +4872,10 @@ function buildMark(p,sig,ov,isSig,dec,px){
   tray.appendChild(fileChip('book','آموزش',ls,
     ls?'برداشتن از آموزش‌ها':'نگه داشتن به‌عنوان آموزش',
     ()=>{ls?removeLesson(p.id):addLesson(p);}));
+  const cs=catsOf(p.id).map(catById);
+  tray.appendChild(fileChip('tag',cs.length?esc(cs[0].n)+(cs.length>1?' +'+(cs.length-1):''):'دسته',cs.length>0,
+    cs.length?'دسته‌ها: '+cs.map(c=>c.n).join('، '):'گذاشتن این پست در دسته‌ی خودت',
+    ()=>sheetCats(p)));
   row.appendChild(tray);
 
   // کلید «سیگنال یا نه» — بعد از تصمیم دیگر معنی ندارد، پس نمی‌آید
@@ -5151,13 +5308,18 @@ function renderFbar(){
   const bar=$('#fbar');if(!bar)return;
   // یک پیمایش برای هر پنج شمارنده. قبلاً چهار filter پشت سر هم بود و روی
   // 800 پست هر بار از نو bucketOf می‌گرفت.
+  // همه‌ی شمارنده‌ها با فیلتر روز: «امروز» که روشن است، عددها هم مال امروزند
   let nLive=0,nSig=0,nNew=0,nRes=0,nArch=0;
+  const KN={sig:0,news:0,ann:0,res:0,note:0}, CN={}, dp=dayPass();
   for(const p of POSTS){
+    if(dp&&!dp(p))continue;
+    for(const c of DB.pcat[p.id]||[])CN[c]=(CN[c]||0)+1;
     const bk=bucketOf(p);
     if(bk==='arch'){nArch++;continue;}
     if(bk==='les')continue;
     nLive++;
     const kd=postKind(p);
+    KN[kd]++;
     if(kd==='res')nRes++;
     if(kd!=='sig')continue;
     nSig++;
@@ -5176,7 +5338,7 @@ function renderFbar(){
     b.setAttribute('role','tab');b.setAttribute('aria-selected',cur===sg.k?'true':'false');
     b.title=sg.hint;
     b.innerHTML='<span>'+sg.label+'</span><i>'+faN(sg.n)+'</i>';
-    b.onclick=()=>{bucket='live';sigFilter=sg.k;shownMax=PAGE;renderSignals();
+    b.onclick=()=>{bucket='live';sigFilter=sg.k;setView({});
       window.scrollTo({top:0,behavior:'smooth'});};
     grp.appendChild(b);
   }
@@ -5188,15 +5350,76 @@ function renderFbar(){
     b.setAttribute('role','tab');b.setAttribute('aria-selected',bucket===key?'true':'false');
     b.setAttribute('aria-label',label);b.title=hint;
     b.innerHTML='<span>'+ic(icon)+label+'</span><i>'+faN(count)+'</i>';
-    b.onclick=()=>{bucket=bucket===key?'live':key;shownMax=PAGE;renderSignals();
+    b.onclick=()=>{bucket=bucket===key?'live':key;setView({});
       window.scrollTo({top:0,behavior:'smooth'});};
     side.appendChild(b);
   };
   mkSide('res','flag','نتایج',nRes,'پست‌های نتیجه: تارگت خورد، استاپ خورد، سیو سود');
   mkSide('arch','box','آرشیو',nArch,'پست‌هایی که کنار گذاشته‌ای');
+  /* فیلتر روز: کنار همان دو سطل، یک انتخاب‌گرِ جمع‌وجور — ردیف جدا صفحه را پایین می‌برد.
+     برای همه‌ی بخش‌ها، از جمله نتایج و آرشیو. */
+  const day=DAY_FA[VIEW.day]?VIEW.day:'all';
+  const dl=el('label','fb fbucket fday'+(day!=='all'?' on':''),'<span>'+ic('cal')+'</span>');
+  dl.title='نمایش پست‌های یک روز یا یک بازه';
+  const sel=document.createElement('select');sel.setAttribute('aria-label','بازه‌ی زمانی');
+  sel.innerHTML=Object.keys(DAY_FA).map(k=>'<option value="'+k+'"'+(k===day?' selected':'')+'>'+DAY_FA[k]+'</option>').join('');
+  sel.onchange=()=>{
+    const k=sel.value;
+    if(k==='range'&&!VIEW.from){
+      const iso=d=>{const g=gParts(d);return g.gy+'-'+String(g.gm).padStart(2,'0')+'-'+String(g.gd).padStart(2,'0');};
+      setView({day:k,from:iso(new Date(Date.now()-6*864e5)),to:iso(new Date())});
+    }else setView({day:k});
+  };
+  dl.appendChild(sel);side.appendChild(dl);
   bar.appendChild(side);
+  const chip=(row,label,n,on,fn,cls)=>{
+    const b=el('button','fc'+(on?' on':'')+(cls?' '+cls:''),'<span>'+label+'</span>'+(n!=null?'<i>'+faN(n)+'</i>':''));
+    b.setAttribute('aria-pressed',on?'true':'false');b.onclick=fn;row.appendChild(b);return b;
+  };
+  /* ردیف نوع و دسته فقط در «همه»: خبر، اطلاع‌رسانی، نتیجه… و دسته‌هایی که خودت ساخته‌ای */
+  if(bucket==='live'&&sigFilter==='all'){
+    const row=el('div','frow');row.setAttribute('aria-label','نوع پست');
+    const cat=activeCat(), kind=cat?'':(KN[VIEW.kind]!=null?VIEW.kind:'all');
+    chip(row,'همه',nLive,kind==='all',()=>setView({kind:'all',cat:''}));
+    for(const k of ['sig','news','ann','res','note'])
+      chip(row,k==='sig'?'سیگنال':KIND_FA[k],KN[k],kind===k,()=>setView({kind:k,cat:''}));
+    row.appendChild(el('span','fsep'));
+    for(const c of DB.cats)
+      chip(row,ic('tag')+esc(c.n),CN[c.id]||0,cat===c.id,()=>setView({cat:cat===c.id?'':c.id}),'cat');
+    chip(row,ic('plus')+(DB.cats.length?'':'دسته‌ی من'),null,false,()=>sheetCats(null),'add').title='ساختن و مدیریت دسته‌ها';
+    bar.appendChild(row);
+    // چیپ روشن ممکن است بیرون از دید افقی باشد (مثلاً دسته‌ی آخر)؛ بی‌آنکه صفحه بالا-پایین برود جلو بیاوریمش
+    const onc=row.querySelector('.fc.on');
+    if(onc)requestAnimationFrame(()=>{const r=row.getBoundingClientRect(),c=onc.getBoundingClientRect();
+      if(c.left<r.left||c.right>r.right)row.scrollLeft+=c.left<r.left?c.left-r.left-8:c.right-r.right+8;});
+  }
+  if(day==='range'){
+    const rg=el('div','frange');
+    const inp=(key,lbl)=>{
+      const w=el('label','frin','<b>'+lbl+'</b>');
+      const i=document.createElement('input');i.type='date';i.value=VIEW[key]||'';
+      i.onchange=()=>setView({[key]:i.value});
+      w.appendChild(i);
+      const n=ymdNo(VIEW[key]);
+      if(n!=null)w.appendChild(el('small',null,jShort(new Date(n*864e5+12*36e5))));
+      rg.appendChild(w);
+    };
+    inp('from','از');inp('to','تا');
+    bar.appendChild(rg);
+  }
 }
 
+function accWire(c,p,isOpen){
+  c.classList.add(isOpen?'accopen':'tight');
+  c.addEventListener('click',e=>{
+    if(e.target.closest('button,a,input,select,label,.shot,.reply,.txt a'))return;
+    if(isOpen){if(!e.target.closest('.chead'))return;ACCOPEN='';}
+    else ACCOPEN=p.id;
+    renderSignals();
+    if(ACCOPEN){const cc=CARDS.get(p.id);
+      if(cc)requestAnimationFrame(()=>cc.scrollIntoView({block:'start',behavior:'smooth'}));}
+  });
+}
 function renderSignals(){
   const list=$('#list');
   /* سطل آموزش فهرست خودش را دارد (عنوان، دسته، اسکن کانال)، پس به‌جای کارت پست
@@ -5210,11 +5433,16 @@ function renderSignals(){
   const acc=F('accordion');
   let firstId=null, lastDay=null, sepEl=null, sepN=0;
   const closeSep=()=>{if(sepEl)sepEl.querySelector('.dsn').textContent=sepN+' پست';};
+  const dp=dayPass(), cat=activeCat(), kind=!cat&&bucket==='live'&&sigFilter==='all'&&VIEW.kind!=='all'?VIEW.kind:'';
   for(const p of POSTS){
+    if(dp&&!dp(p))continue;
     const sig=sigOf(p), bk=bucketOf(p);
-    if(bucket==='res'){if(bk!=='live'||postKind(p)!=='res')continue;}
+    // دسته‌ی خودت بر سطل‌ها می‌چربد: پستِ آرشیوشده هم در دسته‌اش دیده می‌شود
+    if(cat){if(!inCat(p.id,cat))continue;}
+    else if(bucket==='res'){if(bk!=='live'||postKind(p)!=='res')continue;}
     else if(bk!==bucket)continue;
     if(coinFilter&&(sig.ticker||'')!==coinFilter)continue;
+    if(kind&&postKind(p)!==kind)continue;
     if(bucket==='live'&&sigFilter==='sig'&&!isSigPost(p))continue;
     if(bucket==='live'&&sigFilter==='new'&&!isOpenSig(p))continue;
     if(q&&!((sig.ticker||'')+' '+p.text).toLowerCase().includes(q))continue;
@@ -5222,7 +5450,7 @@ function renderSignals(){
     if(n>=shownMax)continue;                 // بقیه شمرده می‌شوند ولی ساخته نمی‌شوند
     /* جداکننده‌ی روز: امروز، دیروز، چند روز پیش — تا معلوم باشد هر پست مال کِی است */
     if(p.date){
-      const dn=dayNo(p.date);
+      const dn=postDay(p);
       if(dn!==lastDay){
         closeSep();lastDay=dn;sepN=0;
         const L=dayLabel(p.date);
@@ -5232,22 +5460,15 @@ function renderSignals(){
       }
       sepN++;
     }
-    const c=buildCard(p);
     /* آکاردئون: فقط یک کارت باز است؛ زدن روی کارتِ بسته بازش می‌کند و بقیه بسته می‌شوند.
        اگر هنوز چیزی باز نکرده‌ای، اولین کارت باز است تا صفحه خالی به نظر نرسد. */
+    let isOpen=true;
     if(acc){
       if(firstId==null)firstId=p.id;
-      const isOpen=ACCOPEN===p.id||(ACCOPEN==null&&firstId===p.id);
-      c.classList.add(isOpen?'accopen':'tight');
-      c.addEventListener('click',e=>{
-        if(e.target.closest('button,a,input,select,label,.shot,.reply,.txt a'))return;
-        if(isOpen){if(!e.target.closest('.chead'))return;ACCOPEN='';}
-        else ACCOPEN=p.id;
-        renderSignals();
-        if(ACCOPEN){const cc=CARDS.get(p.id);
-          if(cc)requestAnimationFrame(()=>cc.scrollIntoView({block:'start',behavior:'smooth'}));}
-      });
+      isOpen=ACCOPEN===p.id||(ACCOPEN==null&&firstId===p.id);
     }
+    const c=buildCard(p,acc&&!isOpen);
+    if(acc)accWire(c,p,isOpen);
     if(shown<8){c.classList.add('enter');c.style.setProperty('--d',(shown*45)+'ms');shown++;}
     frag.appendChild(c);n++;
   }
@@ -5277,6 +5498,8 @@ function renderSignals(){
       ?(bucket==='arch'?'آرشیو خالی است.<br>روی هر پستی دکمه‌ی «آرشیو» را بزن تا اینجا بیاید.'
         :bucket==='res'?'هنوز پست نتیجه‌ای نیامده.<br>پست‌هایی مثل «تارگت اول زد» یا «استاپ خورد» خودشان اینجا جمع می‌شوند؛ هر پست دیگری را هم با دکمه‌ی «نتیجه» می‌فرستی اینجا.'
         :coinFilter?'برای '+esc(coinFilter)+' چیزی نیست.<br>فیلتر ارز را بردار.'
+        :activeCat()?'این دسته هنوز خالی است'+(VIEW.day!=='all'?' (در '+DAY_FA[VIEW.day]+')':'')+'.<br>زیر هر پست دکمه‌ی «دسته» را بزن تا اینجا بیاید.'
+        :VIEW.day!=='all'?'در «'+DAY_FA[VIEW.day]+'» پستی با این فیلتر نیست.<br>«همه‌ی روزها» را بزن'+(REACHED_END?'.':' یا پست‌های قدیمی‌تر را بخوان.')
         :sigFilter==='new'?'سیگنال تازه‌ای منتظر تصمیم نیست.<br>سیگنال‌های بیش از '+faN(S.staleDays||7)+' روز قدیمی‌اند و در «سیگنال‌ها» برای مرور مانده‌اند.'
                   :'چیزی با این فیلتر نیست.<br>«همه» را بزن یا جستجو را خالی کن.')
       :'هنوز پستی نیامده.<br>دکمه بروزرسانی را بزن.')));
@@ -6218,28 +6441,53 @@ const AUD_SRC=[
   {n:'Binance فیوچرز',u:(s,iv,st,l)=>'https://fapi.binance.com/fapi/v1/klines?symbol='+s+'USDT&interval='+iv+'&startTime='+st+'&limit='+l,
    iv:{'1m':'1m','5m':'5m','1h':'1h'},max:1500},
   {n:'MEXC',u:(s,iv,st,l)=>'https://api.mexc.com/api/v3/klines?symbol='+s+'USDT&interval='+iv+'&startTime='+st+'&limit='+l,
-   iv:{'1m':'1m','5m':'5m','1h':'60m'},max:1000}
+   iv:{'1m':'1m','5m':'5m','1h':'60m'},max:1000},
+  /* سه منبع دیگر، همان‌هایی که قیمت زنده هم از آن‌ها می‌آید. وقتی بایننس و MEXC از
+     مسیرِ کاربر بسته‌اند (تحریم یا واسطِ خراب) قیمت می‌آمد ولی کندل نه، و همه‌ی سیگنال‌ها
+     «کندل نیامد» می‌شدند. قالب پاسخ هر کدام فرق دارد، پس هر منبع مبدل خودش را دارد. */
+  {n:'Gate',
+   u:(s,iv,st,l)=>{const f=Math.floor(st/1000),sec={'1m':60,'5m':300,'1h':3600}[iv];
+     return 'https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair='+s+'_USDT&interval='+iv+'&from='+f+'&to='+(f+sec*(l-1));},
+   iv:{'1m':'1m','5m':'5m','1h':'1h'},max:1000,
+   p:d=>d.map(k=>({t:+k[0]*1000,o:+k[5],h:+k[3],l:+k[4],c:+k[2]}))},
+  {n:'KuCoin',
+   u:(s,iv,st,l)=>{const f=Math.floor(st/1000),sec={'1min':60,'5min':300,'1hour':3600}[iv];
+     return 'https://api.kucoin.com/api/v1/market/candles?type='+iv+'&symbol='+s+'-USDT&startAt='+f+'&endAt='+(f+sec*l);},
+   iv:{'1m':'1min','5m':'5min','1h':'1hour'},max:1500,ok:d=>d&&Array.isArray(d.data),
+   p:d=>d.data.map(k=>({t:+k[0]*1000,o:+k[1],h:+k[3],l:+k[4],c:+k[2]}))},
+  {n:'Bitget',
+   u:(s,iv,st,l)=>{const ms={'1min':6e4,'5min':3e5,'1h':36e5}[iv];
+     return 'https://api.bitget.com/api/v2/spot/market/candles?symbol='+s+'USDT&granularity='+iv+'&startTime='+st+'&endTime='+(st+ms*l)+'&limit='+l;},
+   iv:{'1m':'1min','5m':'5min','1h':'1h'},max:1000,ok:d=>d&&Array.isArray(d.data),
+   p:d=>d.data.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]}))}
 ];
+const audParse=(src,d)=>src.p?src.p(d):d.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]}));
 async function audCandles(sym,iv,start,limit){
-  const pref=AUDSRC[sym];
+  /* اول منبعی که برای همین نماد جواب داده، بعد منبعی که آخرین بار برای هر نمادی جواب داده
+     (اگر بایننس از مسیرِ تو بسته است، برای هر سیگنال از نو امتحانش نکنیم) */
   const order=AUD_SRC.map((_,i)=>i);
-  if(pref!=null&&AUD_SRC[pref]){order.splice(order.indexOf(pref),1);order.unshift(pref);}
+  for(const pref of [AUDSRC.$,AUDSRC[sym]])
+    if(pref!=null&&AUD_SRC[pref]){order.splice(order.indexOf(pref),1);order.unshift(pref);}
   for(const i of order){
     const src=AUD_SRC[i];
     try{
       /* fetchVia برای یک قیمت، مسیرها را مسابقه‌ای می‌فرستد. برای صدها کندل این یعنی
          چند برابر درخواست روی واسط‌ها؛ پس اگر مسیرِ سالمِ قیمت معلوم است، فقط همان. */
       const good=goodFor('px'), url=src.u(sym,src.iv[iv],start,Math.min(limit,src.max));
-      const opt={json:true,timeout:12000,kind:'px',label:'کندل '+sym+' · '+src.n,validate:d=>Array.isArray(d)};
+      const opt={json:true,timeout:12000,kind:'px',label:'کندل '+sym+' · '+src.n,validate:src.ok||(d=>Array.isArray(d))};
       let got=null;
       if(good)got=await fetchVia(url,Object.assign({onlyRoutes:[good]},opt)).catch(()=>null);
       if(!got)got=await fetchVia(url,opt);         // فقط اگر مسیر سالم برای این منبع جواب نداد
-      const rows=got.data.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]}))
-        .filter(k=>isFinite(k.t)&&isFinite(k.h)&&isFinite(k.l)&&k.h>0);
+      // بعضی منبع‌ها جدید→قدیم می‌دهند؛ مرتب و فقط از لحظه‌ی خواسته‌شده به بعد
+      const rows=audParse(src,got.data)
+        .filter(k=>isFinite(k.t)&&isFinite(k.h)&&isFinite(k.l)&&k.h>0&&k.t>=start-1)
+        .sort((a,b)=>a.t-b.t);
       if(!rows.length)continue;                      // این منبع این نماد را ندارد
-      if(AUDSRC[sym]!==i){AUDSRC[sym]=i;lsSet(AUDSRCKEY,AUDSRC);}
+      AUDQ.err='';                                   // خطای منبع‌های قبلی دیگر مهم نیست
+      if(AUDSRC[sym]!==i||AUDSRC.$!==i){AUDSRC[sym]=i;AUDSRC.$=i;lsSet(AUDSRCKEY,AUDSRC);}
       return rows;
-    }catch(e){AUDQ.err=(e&&e.message||'').slice(0,80);}
+    }catch(e){const m=e&&e.message||'';
+      AUDQ.err=src.n+': '+(m==='no-route'?'از هیچ مسیری جواب نیامد':m.slice(0,80));}
   }
   throw new Error('nocandle');
 }
@@ -6281,10 +6529,10 @@ async function audOne(job,R){
 const AUDQ={on:false,n:0,done:0,fail:0,at:0,err:''};
 /* پیش از این نسخه، شکستِ گرفتنِ مسیرِ قیمت نتیجه‌ی درست را با «کندل نیامد» عوض می‌کرد و بعد
    از سه بار دیگر هرگز سنجیده نمی‌شد. یک بار شانسِ دوباره: همه‌ی «کندل نیامد»ها به صف برمی‌گردند. */
-if(!lsGet('signaldesk.audfix.v1')){
+if(!lsGet('signaldesk.audfix.v2')){
   let n=0;for(const k in AUD){const a=AUD[k];if(a&&a.st==='bad'&&a.why==='nocandle'){a.tries=0;a.at=0;n++;}}
   if(n)audSave();
-  lsSet('signaldesk.audfix.v1',1);
+  lsSet('signaldesk.audfix.v2',1);
 }
 function audJobs(force,needPath){
   const R=audRules(), now=Date.now(), out=[];
@@ -6308,10 +6556,11 @@ function audJobs(force,needPath){
   return out.concat(paths.slice(0,40));
 }
 async function audRun(force,needPath){
-  if(AUDQ.on)return;
+  if(AUDQ.on&&Date.now()-(AUDQ.t0||0)<10*60000)return;   // صفی که ده دقیقه گیر کرده، رها می‌شود
   const jobs=audJobs(force,needPath);
   if(!jobs.length){AUDQ.at=Date.now();paintAudProgress();return;}
-  Object.assign(AUDQ,{on:true,n:jobs.length,done:0,fail:0});
+  Object.assign(AUDQ,{on:true,n:jobs.length,done:0,fail:0,err:'',t0:Date.now()});
+  logIt('info','کانال‌سنج: '+jobs.length+' سیگنال در صف');
   paintAudProgress();
   const R=audRules(), failed=[];
   let idx=0, ok=0;
@@ -6319,7 +6568,9 @@ async function audRun(force,needPath){
   const worker=async()=>{
     while(idx<jobs.length){
       const job=jobs[idx++];
-      try{await audOne(job,R);ok++;}catch(e){failed.push(job);}
+      // هر سیگنال حداکثر 90 ثانیه؛ یک درخواستِ گیرکرده نباید کل صف را برای همیشه نگه دارد
+      try{await Promise.race([audOne(job,R),new Promise((_,rj)=>setTimeout(()=>rj(new Error('timeout')),90000))]);ok++;}
+      catch(e){failed.push(job);if(e&&e.message&&e.message!=='nocandle')AUDQ.err=e.message.slice(0,80);}
       AUDQ.done++;
       if(AUDQ.done%5===0){audSave();paintAudProgress();}
       if(!ok&&failed.length>=5)idx=jobs.length;          // شبکه قطع است؛ ادامه بی‌فایده
@@ -6336,6 +6587,7 @@ async function audRun(force,needPath){
     }
   }else if(failed.length)toast('کندل‌ها نیامد — اتصال یا واسط قیمت را بررسی کن'+(AUDQ.err?' ('+AUDQ.err+')':''),'err');
   Object.assign(AUDQ,{on:false,at:Date.now(),fail:failed.length});
+  logIt(failed.length&&!ok?'err':'info','کانال‌سنج: '+ok+' سنجیده، '+failed.length+' ناموفق'+(AUDQ.err?' · '+AUDQ.err:''));
   audSave();
   renderAll();
 }
@@ -6558,8 +6810,22 @@ function renderAudit(){
     (R.rule==='ladder'?'پله‌ای (⅓ در هر تارگت، بعد از تارگت اول استاپ روی ورود)':'همه در تارگت اول')));
   box.appendChild(hd);
 
+  /* هر بخش جدا ساخته می‌شود؛ خطا در یکی نباید کل تب را خالی بگذارد (قبلاً یک استثنا
+     بقیه‌ی بخش‌ها را هم از بین می‌برد و تب فقط سربرگ داشت). خطا روی صفحه نوشته می‌شود. */
+  const safe=(name,fn)=>{
+    try{const n=fn();if(n)box.appendChild(n);}
+    catch(e){
+      logIt('err','کانال‌سنج · '+name+': '+(e&&e.message||e));
+      box.appendChild(el('div','panel audfail','<b>بخش «'+esc(name)+'» ساخته نشد</b><br>'+
+        '<span dir="ltr">'+esc(String(e&&e.message||e).slice(0,160))+'</span><br>'+
+        'بقیه‌ی بخش‌ها کار می‌کنند. اگر تکرار شد، از همین قسمت عکس بفرست.'));
+    }
+  };
+  // ── وضعیت سنجش: چند تا سنجیده شد و چرا بقیه نه ──
+  safe('وضعیت سنجش',()=>buildAudDiag(all));
+
   // ── فیلتر (بک‌تست) ──
-  box.appendChild(buildAudFilter(all));
+  safe('فیلتر',()=>buildAudFilter(all));
 
   if(!all.length){
     box.appendChild(el('div','empty',STAR+'هنوز سیگنالی در حافظه نیست.<br>از تب سیگنال‌ها بروزرسانی کن.'));
@@ -6567,6 +6833,7 @@ function renderAudit(){
   }
 
   // ── کارنامه‌ی کانال ──
+  safe('کارنامه‌ی کانال',()=>{
   const sc=el('div','panel');
   sc.appendChild(el('div','panelhead','<b>کارنامه‌ی کانال</b>'+
     (rows.length!==all.length?'<span class="pill gold">فیلتر: '+faN(rows.length)+' از '+faN(all.length)+'</span>':'')));
@@ -6586,28 +6853,86 @@ function renderAudit(){
   if(st.late||st.chase)sc.appendChild(el('div','hint',
     (st.late?faN(st.late)+' سیگنال بعد از رسیدن قیمت به تارگت اول منتشر شده بود'+(AF.noLate?' (در آمار نیامده)':'')+'. ':'')+
     (st.chase?faN(st.chase)+' سیگنال وقتی منتشر شد که بیش از نیمی از راه تا تارگت طی شده بود.':'')));
-  box.appendChild(sc);
+  return sc;
+  });
 
-  // ── صحت‌سنجی ──
-  box.appendChild(buildVerify(all));
-
-  // ── شما در برابر کانال ──
-  box.appendChild(buildVsChannel(rows));
-
-  // ── آزمایشگاه خروج ──
-  box.appendChild(buildExitLab(rows));
-
-  // ── نمادها ──
-  box.appendChild(buildCoinTable(rows));
-
-  // ── فهرست سیگنال‌ها ──
-  box.appendChild(buildAudList(rows));
+  safe('صحت‌سنجی',()=>buildVerify(all));
+  safe('شما در برابر کانال',()=>buildVsChannel(rows));
+  safe('آزمایشگاه خروج',()=>buildExitLab(rows));
+  safe('نمادها',()=>buildCoinTable(rows));
+  safe('فهرست سیگنال‌ها',()=>buildAudList(rows));
 
   paintAudProgress();
   // سنجش خودکار: هر بار که تب دیده شود، ولی نه بیشتر از یک بار در دقیقه
   if(!AUDQ.on&&Date.now()-AUDQ.at>60000&&audJobs().length)audRun();
 }
 
+/* پنل «وضعیت سنجش»: جواب مستقیمِ «چرا کانال‌سنج سیگنال‌ها را نمی‌خواند؟»
+   چند پست سیگنال شناخته شد، چند تا سنجیده شد، بقیه به چه دلیل نه، و آخرین خطای شبکه.
+   دکمه‌ی آزمایش، از هر منبع کندلِ بیت‌کوین را می‌گیرد تا معلوم شود کدام از مسیرِ تو باز است. */
+function buildAudDiag(all){
+  const nSig=POSTS.filter(p=>bucketOf(p)!=='les'&&postKind(p)==='sig').length;
+  let done=0,open=0,todo=0;const why={};
+  for(const x of all){
+    const r=x.r;
+    if(!r){todo++;continue;}
+    if(r.st==='bad'){why[r.why]=(why[r.why]||0)+1;continue;}
+    if(['win','loss','exp','none','amb'].includes(r.st))done++;else open++;
+  }
+  const nBad=Object.values(why).reduce((a,b)=>a+b,0);
+  const good=all.length&&(done+open)>=all.length*0.5;
+  const d=el('details','sec audiag');
+  d.open=!good;
+  d.innerHTML='<summary>وضعیت سنجش <span class="pill '+(good?'win':'gold')+'">'+
+    faN(done+open)+' از '+faN(all.length)+' سنجیده</span></summary>';
+  const g=el('div','audgrid');
+  const cell=(l,v,c,h)=>'<div class="ag"><b>'+l+'</b><span class="'+(c||'')+'">'+v+'</span>'+(h?'<small>'+h+'</small>':'')+'</div>';
+  g.innerHTML=cell('سیگنالِ شناخته‌شده',faN(nSig),'','از '+faN(POSTS.length)+' پستِ خوانده‌شده')+
+    cell('قابل سنجش',faN(all.length),'','نماد و ورود و استاپ دارد یا منتظر بررسی است')+
+    cell('سنجیده',faN(done),done?'u':'m',faN(open)+' هنوز در جریان')+
+    cell('سنجیده نشده',faN(todo),todo?'w':'m',AUDQ.on?'در حال سنجش…':(todo?'در صف':''))+
+    cell('ناقص / خطا',faN(nBad),nBad?'d':'m','');
+  d.appendChild(g);
+  if(nBad){
+    const ul=el('ul','audwhy');
+    for(const [k,n] of Object.entries(why).sort((a,b)=>b[1]-a[1]))
+      ul.appendChild(el('li',null,'<b>'+faN(n)+'</b> '+esc(AUD_WHY[k]||k)+
+        (k==='nocandle'?' — «آزمایش اتصال» را بزن':
+         k==='no-stop'||k==='no-entry'||k==='no-ticker'?' — در فهرست پایین «اصلاح عددها» را بزن':'')));
+    d.appendChild(ul);
+  }
+  if(nSig&&!all.length)d.appendChild(el('div','hint','سیگنال‌ها شناخته شده‌اند ولی هیچ‌کدام عددِ ورود/استاپِ قابل خواندن ندارند.'));
+  const last=AUDQ.at?'آخرین سنجش '+ageTxt(AUDQ.at):'هنوز سنجشی انجام نشده';
+  d.appendChild(el('div','hint',last+(AUDQ.err?' · آخرین خطا: <span dir="ltr">'+esc(AUDQ.err)+'</span>':'')+
+    (AUDSRC.$!=null&&AUD_SRC[AUDSRC.$]?' · منبع کندل: '+esc(AUD_SRC[AUDSRC.$].n):'')));
+  const out=el('div','audprobe');
+  const bt=el('button','btn sm',ic('wifi')+'<span>آزمایش اتصال کندل</span>');
+  bt.onclick=async()=>{
+    btnBusy(bt,true,'در حال آزمایش');out.innerHTML='';
+    const st=Date.now()-3*3600e3;
+    await Promise.all(AUD_SRC.map(async(src,i)=>{
+      const row=el('div','apr','<b>'+esc(src.n)+'</b><span class="m">…</span>');out.appendChild(row);
+      const t0=performance.now();
+      try{
+        const url=src.u('BTC',src.iv['5m'],Math.floor(st/3e5)*3e5,5);
+        const got=await fetchVia(url,{json:true,timeout:12000,kind:'px',label:'آزمایش کندل · '+src.n,validate:src.ok||(x=>Array.isArray(x))});
+        const n=audParse(src,got.data).length;
+        row.lastChild.className=n?'u':'w';
+        row.lastChild.textContent=n?'باز است · '+Math.round(performance.now()-t0)+'ms · '+got.route:'جواب داد ولی کندلی نداشت';
+      }catch(e){row.lastChild.className='d';const m=String(e&&e.message||e);
+        row.lastChild.textContent='بسته · '+(m==='no-route'?'از هیچ مسیری جواب نیامد':m.slice(0,90));}
+    }));
+    btnBusy(bt,false);
+  };
+  const again=el('button','btn sm pri',ic('refresh')+'<span>سنجیدنِ سنجیده‌نشده‌ها</span>');
+  again.onclick=()=>{
+    for(const k in AUD){const a=AUD[k];if(a&&a.st==='bad'&&a.why==='nocandle'){a.tries=0;a.at=0;}}
+    audSave();AUDQ.on=false;audRun(false);toast('سنجش شروع شد','info');
+  };
+  const row=el('div','srow');row.appendChild(bt);row.appendChild(again);
+  d.appendChild(row);d.appendChild(out);
+  return d;
+}
 function buildAudFilter(all){
   const d=el('details','sec audf');
   const active=(AF.dir!=='all')+(AF.mkt!=='all')+(!!AF.rr)+(!!AF.span)+(!!AF.sym);
@@ -6984,6 +7309,8 @@ function renderPositions(){
   wrap.innerHTML='';sum.innerHTML='';
   const nWait=DB.pending.length, nAct=activePending().length;
   const cw=$('#cWait');if(cw){cw.textContent=faN(nAct);cw.classList.toggle('z',!nAct);}
+  for(const[id,v]of[['pWait','pending'],['pOpen','open'],['pClosed','closed'],['pAllP','all']]){
+    const b=$('#'+id);if(b){b.classList.toggle('on',posFilter===v);b.setAttribute('aria-pressed',posFilter===v?'true':'false');}}
   if(posFilter==='pending'){
     if(!nWait){wrap.appendChild(el('div','empty',STAR+
       'سفارش منتظری نداری.<br>روی سیگنالی که تریگر ورود دارد،<br>دکمه‌ی «منتظر …» را بزن.'));return;}
@@ -7986,22 +8313,13 @@ function dataCounts(d){
   return [['پوزیشن',n(d.positions)+n(d.spot)],['تصمیم',n(d.decisions)],['آموزش',n(d.lessons)],
           ['از این‌ها اسپات',spots],['منتظر',n(d.pending)],
           ['آرشیو',n(d.archived)],['نتایج',n(d.results)],['اصلاح دستی',n(d.overrides)],
-          ['ویرایشِ کانال',n(d.edits)],['حذفِ کانال',n(d.gone)],['برگشته از قدیمی',n(d.revived)]];
+          ['ویرایشِ کانال',n(d.edits)],['حذفِ کانال',n(d.gone)],['برگشته از قدیمی',n(d.revived)],
+          ['دسته‌ی من',n(d.cats)],['پستِ دسته‌بندی‌شده',n(d.pcat)]];
 }
 function applyBackup(d){
   DB.positions=(d.positions||[]).map(ensureBase);
-  DB.decisions=d.decisions&&typeof d.decisions==='object'?d.decisions:{};
   // پشتیبان‌های قدیمی‌تر بعضی کلیدها را ندارند؛ نبودشان یعنی خالی، نه خطا
-  DB.overrides=d.overrides&&typeof d.overrides==='object'?d.overrides:{};
-  DB.lessons=d.lessons&&typeof d.lessons==='object'?d.lessons:{};
-  DB.archived=d.archived&&typeof d.archived==='object'?d.archived:{};
-  DB.results=d.results&&typeof d.results==='object'?d.results:{};
-  DB.edits=d.edits&&typeof d.edits==='object'?d.edits:{};
-  DB.gone=d.gone&&typeof d.gone==='object'?d.gone:{};
-  DB.revived=d.revived&&typeof d.revived==='object'?d.revived:{};
-  DB.pending=Array.isArray(d.pending)?d.pending:[];
-  DB.watch=Array.isArray(d.watch)?d.watch:[];
-  DB.spot=Array.isArray(d.spot)?d.spot:[];
+  fillDB(d);
   OVERRIDE=DB.overrides; PCACHE.clear();
   if(d.settings&&typeof d.settings==='object'){Object.assign(S,d.settings);fixFeat();}
   applySettingsToForm();readSettings();
@@ -8318,8 +8636,7 @@ function wire(){
   $('#lq').oninput=e=>{lessonQ=e.target.value;runLq();};
 
 
-  const pf=(btn,val)=>{$('#'+btn).onclick=()=>{posFilter=val;
-    ['pWait','pOpen','pClosed','pAllP'].forEach(x=>$('#'+x).setAttribute('aria-pressed',x===btn?'true':'false'));renderPositions();};};
+  const pf=(btn,val)=>{$('#'+btn).onclick=()=>{posFilter=val;renderPositions();};};
   pf('pWait','pending');pf('pOpen','open');pf('pClosed','closed');pf('pAllP','all');
   $('#btnManual').onclick=()=>sheetEditPos(null);
   $$('#vReport .fb[data-p]').forEach(b=>b.onclick=()=>{
@@ -8365,9 +8682,13 @@ function wire(){
   });
   addEventListener('resize',()=>moveInd(false));
   addEventListener('orientationchange',()=>setTimeout(()=>moveInd(false),200));
+  /* شمارنده‌ی حلقه هر ثانیه؛ نوار وضعیت («۲ دقیقه پیش») هر ۵ ثانیه کافی است.
+     وقتی صفحه پنهان است هیچ‌کدام لازم نیست. */
+  let tk=0;
   setInterval(()=>{
+    if(document.hidden)return;
     paintRing();
-    if(view==='signals'&&!busy&&POSTS.length)showStatus();
+    if(++tk%5===0&&view==='signals'&&!busy&&POSTS.length)showStatus();
   },1000);
 }
 
