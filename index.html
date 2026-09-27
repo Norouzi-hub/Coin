@@ -1885,6 +1885,9 @@ const FEAT={
   fx:     {on:true, t:'افکت‌های نورانی', d:'هاله‌ها، درخشش و انیمیشن‌های «نور طلایی». روی گوشی ضعیف خاموشش کن تا سبک‌تر شود'}
 };
 const featDefaults=()=>Object.fromEntries(Object.entries(FEAT).map(([k,v])=>[k,v.on]));
+/* تنظیمات ذخیره‌شده فقط کلیدهایی را دارد که آن روز وجود داشتند. امکانی که بعداً اضافه شده
+   (مثل «افکت‌های نورانی») نباید برای کاربرِ قدیمی خاموش حساب شود — پیش‌فرض خودش را می‌گیرد. */
+const fixFeat=()=>{S.feat=Object.assign(featDefaults(),S.feat||{});};
 const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,auto:60,proxy:'',feat:featDefaults(),staleDays:7,exitPb:'bal',
   aud:{days:30,entryDays:3,tol:1,rule:'tp1'}};
 const F=k=>!!(S.feat&&S.feat[k]);
@@ -1935,7 +1938,7 @@ function readSettings(){
   S.staleDays=Math.min(60,Math.max(1,parseInt($('#sStale').value,10)||7));
   S.exitPb=$('#sPb').value||'bal';
   const prevNotify=F('notify');
-  S.feat=S.feat||featDefaults();
+  fixFeat();
   for(const k of Object.keys(FEAT)){const c=$('#feat_'+k);if(c)S.feat[k]=!!c.checked;}
   // روشن کردن اعلان بدون اجازه‌ی مرورگر بی‌معنی است، پس همان‌جا می‌پرسیم
   if(!prevNotify&&S.feat.notify)askNotify();
@@ -2697,7 +2700,7 @@ function applyBlob(d){
   DB.watch=Array.isArray(d.watch)?d.watch:[];
   DB.spot=Array.isArray(d.spot)?d.spot:[];
   guidePurgeOld();   // دستگاه دیگری که هنوز آموزش‌های قدیمی را دارد، برشان نگرداند
-  if(d.settings&&typeof d.settings==='object'){DB.settings=d.settings;Object.assign(S,d.settings);}
+  if(d.settings&&typeof d.settings==='object'){DB.settings=d.settings;Object.assign(S,d.settings);fixFeat();}
   OVERRIDE=DB.overrides;PCACHE.clear();
   save();applySettingsToForm();renderAll();
   migrateSpot();
@@ -7803,7 +7806,7 @@ function applyBackup(d){
   DB.watch=Array.isArray(d.watch)?d.watch:[];
   DB.spot=Array.isArray(d.spot)?d.spot:[];
   OVERRIDE=DB.overrides; PCACHE.clear();
-  if(d.settings&&typeof d.settings==='object')Object.assign(S,d.settings);
+  if(d.settings&&typeof d.settings==='object'){Object.assign(S,d.settings);fixFeat();}
   applySettingsToForm();readSettings();
   save();renderAll();
   migrateSpot();
@@ -8207,6 +8210,7 @@ loadLog();
 // اصلاح‌های دستی (نماد، «این سیگنال است»، ورود/استاپ) از ذخیره‌گاه برمی‌گردند
 OVERRIDE=DB.overrides||{};
 if(DB.settings&&Object.keys(DB.settings).length)Object.assign(S,DB.settings);
+fixFeat();
 DB.positions.forEach(ensureBase);
 if(migrateSpot())save();          // خریدهای اسپاتِ قدیمی به پوزیشن‌ها منتقل می‌شوند
 guideMigrate();                   // آموزش‌های قبلی یک‌بار پاک می‌شوند؛ دستورالعمل ترید جایشان می‌آید
