@@ -1128,6 +1128,128 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 .toast.ok .ti{background:var(--up);color:#062b26}
 .toast.err .ti{background:var(--dn);color:#fff}
 
+
+/* ==================== نور طلایی ==================== */
+/* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
+   برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
+   نیست — روی گوشی گران است؛ هاله‌ها خودشان نرم‌اند و فقط transform/opacity حرکت می‌کنند. */
+html.fx{--glow:233,178,74; --glowUp:70,220,150; --glowDn:236,96,110;
+  --cardA:rgba(30,32,40,.84); --cardB:rgba(18,20,25,.86)}
+/* ── زمینه: سه هاله‌ی نور که خیلی آرام جابه‌جا می‌شوند ── */
+.bgfx .h{display:none}
+html.fx .bgfx::after{display:none}
+html.fx .bgfx .h{display:block;position:absolute;border-radius:50%;will-change:transform}
+html.fx .bgfx .h1{width:720px;height:620px;top:-300px;inset-inline-end:-260px;
+  background:radial-gradient(closest-side,rgba(var(--glow),.30),rgba(var(--glow),.08) 55%,transparent);animation:drift1 38s ease-in-out infinite alternate}
+html.fx .bgfx .h2{width:620px;height:620px;top:38%;inset-inline-start:-320px;
+  background:radial-gradient(closest-side,rgba(46,184,150,.17),transparent);animation:drift2 46s ease-in-out infinite alternate}
+html.fx .bgfx .h3{width:560px;height:560px;bottom:-280px;inset-inline-end:-180px;
+  background:radial-gradient(closest-side,rgba(233,120,74,.14),transparent);animation:drift3 52s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate3d(-60px,70px,0) scale(1.08)}}
+@keyframes drift2{to{transform:translate3d(80px,-60px,0) scale(1.12)}}
+@keyframes drift3{to{transform:translate3d(-70px,-50px,0) scale(.94)}}
+html.fx .bgfx::before{opacity:.075;-webkit-mask-image:radial-gradient(ellipse 90% 70% at 50% 10%,#000 25%,transparent 80%);
+  mask-image:radial-gradient(ellipse 90% 70% at 50% 10%,#000 25%,transparent 80%)}
+/* ── سربرگ: شیشه با خط نور طلایی زیرش ── */
+html.fx header::after{content:"";position:absolute;inset-inline:0;bottom:-1px;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(var(--glow),.55),rgba(var(--glowUp),.25),transparent)}
+html.fx .emblem{background:radial-gradient(circle at 50% 35%,#FFE3A1,#E9B24A 55%,#A8741F);border-color:rgba(255,220,150,.55);
+  box-shadow:0 0 22px rgba(var(--glow),.55),inset 0 1px 0 rgba(255,255,255,.45);animation:breathe 4.5s ease-in-out infinite}
+html.fx .emblem .star{color:#2A1A04}
+html.fx.busy .emblem{box-shadow:0 0 30px rgba(var(--glow),.85),inset 0 1px 0 rgba(255,255,255,.45)}
+@keyframes breathe{50%{box-shadow:0 0 30px rgba(var(--glow),.75),inset 0 1px 0 rgba(255,255,255,.45)}}
+html.fx .rbtn{box-shadow:0 8px 24px -6px rgba(var(--glow),.75),inset 0 1px 0 rgba(255,255,255,.45)}
+html.fx .hchip,html.fx .ibtn{background:rgba(22,24,30,.7);border-color:rgba(255,255,255,.07)}
+html.fx .hs[data-s="ok"] i{box-shadow:0 0 0 3px rgba(var(--glowUp),.2),0 0 10px rgba(var(--glowUp),.8)}
+/* ── منو: شیشه‌ی شناور؛ تبِ فعال هاله‌ی طلایی از پایین و آیکونِ روشن ── */
+html.fx .tabs{border-color:rgba(255,255,255,.07)}
+html.fx .tabs .ind{background:radial-gradient(90% 130% at 50% 100%,rgba(var(--glow),.36),rgba(var(--glow),.07)),rgba(28,30,37,.9);
+  border-color:rgba(255,210,130,.45);box-shadow:0 0 22px -4px rgba(var(--glow),.7)}
+html.fx .tab[aria-selected="true"]{color:#FFE7B8}
+html.fx .tab[aria-selected="true"] .ic{color:#F6C866;filter:drop-shadow(0 0 6px rgba(var(--glow),.9))}
+html.fx .tab .cnt.g{box-shadow:0 0 12px rgba(var(--glow),.8)}
+@media (max-width:699px){html.fx .tabs{background:rgba(16,17,22,.74);box-shadow:0 20px 44px -12px #000,inset 0 1px 0 rgba(255,255,255,.06)}}
+/* ── نوار فیلتر و گروه‌دکمه‌ها ── */
+html.fx .fb.on,html.fx .fb[aria-pressed="true"]{background:linear-gradient(180deg,rgba(var(--glow),.24),rgba(var(--glow),.07));
+  box-shadow:0 0 18px -4px rgba(var(--glow),.6),inset 0 0 0 1px rgba(255,210,130,.42);color:#FFE3A6}
+html.fx .fb.on i{text-shadow:0 0 10px rgba(var(--glow),.8)}
+html.fx .mktb.on,html.fx .amtb.on,html.fx .pbc.on,html.fx .catchip.on{box-shadow:0 0 14px -4px rgba(var(--glow),.75)}
+/* ── کارت‌ها: شیشه‌ی نیمه‌شفاف با لبه‌ی نورانی؛ هاله‌ی کارت جهت را می‌گوید ── */
+html.fx .card,html.fx .panel{border-color:transparent;
+  background:linear-gradient(180deg,var(--cardA),var(--cardB) 140px) padding-box,
+    linear-gradient(150deg,rgba(255,214,140,.34),rgba(255,255,255,.07) 28%,rgba(255,255,255,.035) 62%,rgba(var(--glow),.16)) border-box;
+  box-shadow:0 24px 50px -30px #000,inset 0 1px 0 rgba(255,255,255,.06)}
+html.fx .card.d-long{background:linear-gradient(180deg,var(--cardA),var(--cardB) 140px) padding-box,
+    linear-gradient(to left,rgba(var(--glowUp),.95),rgba(var(--glowUp),.35) 6%,rgba(255,255,255,.07) 30%,rgba(255,255,255,.035) 70%,rgba(var(--glow),.14)) border-box;
+  box-shadow:14px 0 36px -24px rgba(var(--glowUp),.8),0 24px 50px -30px #000,inset 0 1px 0 rgba(255,255,255,.06)}
+html.fx .card.d-short{background:linear-gradient(180deg,var(--cardA),var(--cardB) 140px) padding-box,
+    linear-gradient(to left,rgba(var(--glowDn),.95),rgba(var(--glowDn),.35) 6%,rgba(255,255,255,.07) 30%,rgba(255,255,255,.035) 70%,rgba(var(--glow),.14)) border-box;
+  box-shadow:14px 0 36px -24px rgba(var(--glowDn),.75),0 24px 50px -30px #000,inset 0 1px 0 rgba(255,255,255,.06)}
+/* پوزیشن باز: کارت با سود/ضرر هاله‌ی سبز/قرمز از پایین می‌گیرد */
+html.fx .card.pu{box-shadow:14px 0 36px -24px rgba(var(--glowUp),.6),0 18px 44px -26px rgba(var(--glowUp),.55),inset 0 1px 0 rgba(255,255,255,.06)}
+html.fx .card.pd{box-shadow:14px 0 36px -24px rgba(var(--glowDn),.55),0 18px 44px -26px rgba(var(--glowDn),.5),inset 0 1px 0 rgba(255,255,255,.06)}
+html.fx .card.enter{animation:riseglow .6s var(--ease) both;animation-delay:var(--d,0ms)}
+@keyframes riseglow{from{opacity:0;transform:translateY(18px) scale(.98);filter:brightness(1.6)}}
+html.fx .card.fresh{animation:freshpulse 2.4s ease-out 2}
+@keyframes freshpulse{0%{box-shadow:0 0 0 1px rgba(var(--glow),.8),0 0 0 0 rgba(var(--glow),.55)}
+  70%{box-shadow:0 0 0 1px rgba(var(--glow),.5),0 0 0 14px rgba(var(--glow),0)}100%{box-shadow:0 0 0 1px rgba(var(--glow),.45),0 0 36px -10px rgba(var(--glow),.55)}}
+html.fx .chead{border-bottom-color:rgba(255,255,255,.055)}
+html.fx .bk,html.fx .kv .k,html.fx .inputs .fld input{background:rgba(10,11,15,.5)}
+html.fx .bk{border-color:rgba(255,255,255,.055)}
+/* ── برچسب‌ها و قیمت زنده ── */
+html.fx .pill.long{box-shadow:0 0 14px -4px rgba(var(--glowUp),.8)}
+html.fx .pill.short{box-shadow:0 0 14px -4px rgba(var(--glowDn),.8)}
+html.fx .pill.gold{box-shadow:0 0 14px -5px rgba(var(--glow),.8)}
+html.fx .pill.live i{box-shadow:0 0 8px rgba(var(--glowUp),.95)}
+html.fx .fl-up{text-shadow:0 0 14px rgba(var(--glowUp),.9)}
+html.fx .fl-dn{text-shadow:0 0 14px rgba(var(--glowDn),.9)}
+html.fx .pnlhero .big.u{text-shadow:0 0 26px rgba(var(--glowUp),.6)}
+html.fx .pnlhero .big.d{text-shadow:0 0 26px rgba(var(--glowDn),.55)}
+html.fx .bk span.u,html.fx .kv span.u,html.fx .st span.u{text-shadow:0 0 12px rgba(var(--glowUp),.45)}
+/* ── دکمه‌ها: طلای براق با نواری از نور که گاه‌به‌گاه از رویش رد می‌شود ── */
+html.fx .btn.pri,html.fx .acts .btn.ok{overflow:hidden;color:#231503;
+  background:linear-gradient(100deg,#B98631,#F2CE7E 46%,#E9B24A 56%,#B98631);
+  box-shadow:0 10px 28px -10px rgba(var(--glow),.85),inset 0 1px 0 rgba(255,255,255,.5)}
+html.fx .btn.pri::after,html.fx .acts .btn.ok::after{content:"";position:absolute;top:0;bottom:0;width:45%;inset-inline-start:-60%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-18deg);
+  animation:sweep 6s var(--ease) infinite;pointer-events:none}
+@keyframes sweep{0%,70%{inset-inline-start:-60%}100%{inset-inline-start:130%}}
+html.fx .btn.pri:active,html.fx .acts .btn.ok:active{box-shadow:0 4px 18px -6px rgba(var(--glow),1),inset 0 1px 0 rgba(255,255,255,.5)}
+html.fx .btn:not(.pri):not(.ok):hover{box-shadow:0 0 16px -6px rgba(var(--glow),.6)}
+html.fx .mark:not(.ghost){box-shadow:0 0 14px -6px rgba(var(--glow),.8)}
+/* ── دستگیره‌ها: نبض آرام طلایی ── */
+html.fx .ladder .hs2{animation:knob 2.8s ease-in-out infinite}
+@keyframes knob{50%{box-shadow:0 0 0 1px var(--gold),0 0 22px 2px rgba(var(--glow),.75)}}
+html.fx .sldrow input[type=range]::-webkit-slider-thumb,html.fx .levtrack input[type=range]::-webkit-slider-thumb{
+  box-shadow:0 0 0 1px var(--gold),0 0 18px rgba(var(--glow),.7),0 6px 16px -4px rgba(var(--glow),.85)}
+html.fx .levbox,html.fx .pbx,html.fx .gcalc,html.fx .gclock,html.fx .grulesnow{background:rgba(10,11,15,.5)}
+/* ── ورق‌ها: لبه‌ی بالای نورانی و دسته‌ی طلایی ── */
+html.fx .sheet{background:linear-gradient(180deg,rgba(26,28,35,.97),rgba(15,16,21,.98) 220px);border-color:rgba(255,214,140,.22);
+  box-shadow:0 -24px 70px -20px rgba(0,0,0,.8),0 -1px 0 rgba(255,214,140,.35),0 -30px 60px -40px rgba(var(--glow),.55);
+  transition:transform .46s cubic-bezier(.22,1.12,.36,1)}
+html.fx .sheet::before{background:linear-gradient(90deg,var(--gold2),#F6CE7A,var(--gold2));box-shadow:0 0 12px rgba(var(--glow),.7)}
+html.fx .veil.open{background:rgba(3,4,10,.66)}
+/* ── اعلان: شیشه‌ی تیره با لبه‌ی رنگی ── */
+html.fx .toast{background:rgba(22,24,30,.94);color:var(--tx);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:0 0 0 1px rgba(var(--glow),.4),0 14px 40px -10px rgba(var(--glow),.45)}
+html.fx .toast.ok{box-shadow:0 0 0 1px rgba(var(--glowUp),.45),0 14px 40px -10px rgba(var(--glowUp),.45)}
+html.fx .toast.err{box-shadow:0 0 0 1px rgba(var(--glowDn),.5),0 14px 40px -10px rgba(var(--glowDn),.45)}
+html.fx .toast .ti{box-shadow:0 0 12px currentColor}
+/* ── بارگذاری: درخشش طلایی روی اسکلت کارت‌ها ── */
+html.fx .skel{background:linear-gradient(180deg,var(--cardA),var(--cardB));border-color:rgba(255,255,255,.06)}
+html.fx .skel i{background:linear-gradient(90deg,rgba(255,255,255,.04) 20%,rgba(var(--glow),.22) 50%,rgba(255,255,255,.04) 80%) 0 0/300% 100%;
+  animation:skelglow 1.6s linear infinite}
+@keyframes skelglow{from{background-position:100% 0}to{background-position:-200% 0}}
+/* ── آمار و بخش‌ها ── */
+html.fx .stats{background:transparent}
+html.fx .st{background:rgba(10,11,15,.45);box-shadow:0 0 0 1px rgba(255,255,255,.05)}
+html.fx .guide,html.fx .gn{box-shadow:0 0 40px -26px rgba(var(--glow),.8)}
+html.fx .gsteps li>i,html.fx .gnum{box-shadow:0 0 14px -3px rgba(var(--glow),.8)}
+html.fx .labr.best{box-shadow:inset 3px 0 0 var(--up),0 0 30px -18px rgba(var(--glowUp),.9)}
+html.fx .status{background:rgba(20,22,28,.6)}
+html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
+@media (prefers-reduced-motion:reduce){html.fx .bgfx .h,html.fx .emblem,html.fx .ladder .hs2{animation:none}
+  html.fx .btn.pri::after,html.fx .acts .btn.ok::after{display:none}}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
   html.busy .prog::before{animation:none;width:100%;opacity:.6}
@@ -1138,7 +1260,7 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 <!-- تا وقتی اسکریپت اجرا شود صفحه سفید/خالی است. این پرده همان فاصله را پر می‌کند و
      به محض آماده شدن برنامه محو می‌شود؛ هیچ اسکریپتی لازم ندارد تا خودش دیده شود. -->
 <div id="boot" aria-hidden="true"><div class="bootmark"></div><div class="bootbar"><i></i></div></div>
-<div class="bgfx" aria-hidden="true"></div>
+<div class="bgfx" aria-hidden="true"><i class="h h1"></i><i class="h h2"></i><i class="h h3"></i></div>
 
 <div id="lb" class="hide" role="dialog" aria-label="نمایش تصویر">
   <div class="lbbar">
@@ -1759,7 +1881,8 @@ const FEAT={
   notify: {on:false,t:'اعلان سیگنال تازه', d:'وقتی سیگنال تازه بیاید، نوتیفیکیشن مرورگر'},
   alerts: {on:true, t:'هشدار استاپ و تارگت', d:'روی پوزیشن‌های باز، نزدیک شدن قیمت به استاپ یا رسیدن به تارگت'},
   tpclose:{on:true, t:'بستن روی تارگت', d:'دکمه‌ی بستن نصف پوزیشن روی تارگت، بدون پر کردن فرم'},
-  range:  {on:true, t:'بازه‌ی دلخواه کارنامه', d:'انتخاب تاریخ شروع و پایان در کارنامه'}
+  range:  {on:true, t:'بازه‌ی دلخواه کارنامه', d:'انتخاب تاریخ شروع و پایان در کارنامه'},
+  fx:     {on:true, t:'افکت‌های نورانی', d:'هاله‌ها، درخشش و انیمیشن‌های «نور طلایی». روی گوشی ضعیف خاموشش کن تا سبک‌تر شود'}
 };
 const featDefaults=()=>Object.fromEntries(Object.entries(FEAT).map(([k,v])=>[k,v.on]));
 const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,auto:60,proxy:'',feat:featDefaults(),staleDays:7,exitPb:'bal',
@@ -6644,8 +6767,27 @@ function buildPendingCard(w){
   c.appendChild(a);
   return c;
 }
+/* سود/ضرر درشت کارت‌ها: وقتی عوض می‌شود، از مقدار قبلی تا تازه روان شمرده می‌شود
+   (بار اول از صفر). فقط با «افکت‌های نورانی» و وقتی «کاهش حرکت» روشن نیست. */
+const LASTPNL=new Map();
+function countUps(){
+  if(!F('fx')||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches))return;
+  for(const n of $$('#posList .pnlhero .big[data-cu]')){
+    const id=n.dataset.cu, v=parseFloat(n.dataset.v);
+    if(!isFinite(v))continue;
+    const from=LASTPNL.has(id)?LASTPNL.get(id):0;LASTPNL.set(id,v);
+    if(Math.abs(from-v)<0.005)continue;
+    const t0=performance.now(), dur=750;
+    const step=t=>{if(!n.isConnected)return;
+      const k=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-k,3);
+      n.textContent=fmtUsd(from+(v-from)*e);
+      if(k<1)requestAnimationFrame(step);};
+    requestAnimationFrame(step);
+  }
+}
 function renderPositions(){
   if(DRAGGING)return;
+  queueMicrotask(countUps);
   const wrap=$('#posList'), sum=$('#posSummary');
   wrap.innerHTML='';sum.innerHTML='';
   const nWait=DB.pending.length, nAct=activePending().length;
@@ -6863,7 +7005,7 @@ function destack(L){
 function buildPosCard(p){
   ensureBase(p);
   const live=liveOf(p.ticker), m=posMetrics(p,live), open=p.status==='open';
-  const card=el('div','card d-'+p.dir);card.id='pos-'+p.id;
+  const card=el('div','card d-'+p.dir+(open&&m.pnl!=null&&Math.abs(m.pnl)>1e-9?(m.pnl>0?' pu':' pd'):''));card.id='pos-'+p.id;
 
   const isSpot=p.kind==='spot';     // پوزیشن‌های قدیمی kind ندارند و همه فیوچرز بوده‌اند
   const head=el('div','chead');
@@ -6886,7 +7028,7 @@ function buildPosCard(p){
   // سود/ضرر درشت بالای کارت: چیزی که اول باید ببیند
   const hero=el('div','pnlhero');
   hero.innerHTML='<div><span class="lab">'+(open?'سود/ضرر شناور':'سود/ضرر نهایی')+'</span>'+
-      '<div class="big '+cls(m.pnl)+'">'+fmtUsd(m.pnl)+'</div></div>'+
+      '<div class="big '+cls(m.pnl)+'" data-cu="'+p.id+'" data-v="'+(m.pnl!=null?m.pnl:'')+'">'+fmtUsd(m.pnl)+'</div></div>'+
     '<div><span class="lab">'+(isSpot?'بازده':'روی مارجین')+'</span><div class="lp '+cls(m.pnl)+'">'+fmtPct(m.roi)+'</div></div>'+
     (m.r!=null?'<div><span class="lab">R</span><div class="lp '+cls(m.r)+'">'+fmtR(m.r)+'</div></div>':'')+
     '<div class="side"><span class="lab">'+(open?'قیمت الان':'قیمت خروج')+'</span>'+
@@ -7779,6 +7921,7 @@ function moveInd(scroll){
   try{t.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});}catch(e){}
 }
 function renderAll(){
+  document.documentElement.classList.toggle('fx',F('fx'));
   const open=DB.positions.filter(p=>p.status==='open').length;
   const cp=$('#cPos');cp.textContent=faN(open);cp.classList.toggle('z',!open);
   const und=POSTS.filter(p=>isOpenSig(p)&&bucketOf(p)==='live').length;
