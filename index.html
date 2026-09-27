@@ -1887,7 +1887,14 @@ const FEAT={
 const featDefaults=()=>Object.fromEntries(Object.entries(FEAT).map(([k,v])=>[k,v.on]));
 /* تنظیمات ذخیره‌شده فقط کلیدهایی را دارد که آن روز وجود داشتند. امکانی که بعداً اضافه شده
    (مثل «افکت‌های نورانی») نباید برای کاربرِ قدیمی خاموش حساب شود — پیش‌فرض خودش را می‌گیرد. */
-const fixFeat=()=>{S.feat=Object.assign(featDefaults(),S.feat||{});};
+const fixFeat=()=>{S.feat=Object.assign(featDefaults(),S.feat||{});fxGuard();};
+/* «افکت‌های نورانی» را نسخه‌ی معیوبِ قبلی برای کاربران قدیمی «خاموش» ذخیره کرده بود — روی
+   این دستگاه و روی سرور همگام‌سازی. خاموش فقط وقتی پذیرفته می‌شود که خودت کلیدش را روی همین
+   دستگاه زده باشی؛ وگرنه آن مقدار، یادگارِ همان باگ است. */
+function fxGuard(){
+  if(S.feat&&S.feat.fx===false&&!lsGet('signaldesk.fxuser')){S.feat.fx=true;return true;}
+  return false;
+}
 const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,auto:60,proxy:'',feat:featDefaults(),staleDays:7,exitPb:'bal',
   aud:{days:30,entryDays:3,tol:1,rule:'tp1'}};
 const F=k=>!!(S.feat&&S.feat[k]);
@@ -1898,6 +1905,8 @@ function buildFeatList(){
   for(const [k,v] of Object.entries(FEAT)){
     const row=el('label','featrow');
     const cb=el('input');cb.type='checkbox';cb.id='feat_'+k;
+    // همان لحظه اعمال و ذخیره شود؛ قبلاً تا «بروزرسانی» زده نمی‌شد، تیک فقط ظاهری عوض می‌شد
+    cb.onchange=()=>{if(k==='fx')lsSet('signaldesk.fxuser',1);readSettings();renderAll();};
     row.appendChild(cb);
     const t=el('div','feattxt');
     t.appendChild(el('div','featttl',esc(v.t)));
@@ -8210,7 +8219,9 @@ loadLog();
 // اصلاح‌های دستی (نماد، «این سیگنال است»، ورود/استاپ) از ذخیره‌گاه برمی‌گردند
 OVERRIDE=DB.overrides||{};
 if(DB.settings&&Object.keys(DB.settings).length)Object.assign(S,DB.settings);
-fixFeat();
+if(DB.settings&&DB.settings.feat&&DB.settings.feat.fx===false&&!lsGet('signaldesk.fxuser')){
+  fixFeat();DB.settings=Object.assign({},S);save();      // خاموشیِ باگ‌خورده را روی سرور هم درست کن
+}else fixFeat();
 DB.positions.forEach(ensureBase);
 if(migrateSpot())save();          // خریدهای اسپاتِ قدیمی به پوزیشن‌ها منتقل می‌شوند
 guideMigrate();                   // آموزش‌های قبلی یک‌بار پاک می‌شوند؛ دستورالعمل ترید جایشان می‌آید
