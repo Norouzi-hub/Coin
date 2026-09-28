@@ -2318,6 +2318,27 @@ function ensureBase(p){
   if(!Array.isArray(p.log))p.log=[];
   return p;
 }
+/* مبنای درصد و R دوباره از روی اعداد فعلی: وقتی مارجین، اهرم یا ورودِ پوزیشن را ویرایش
+   می‌کنی، «مارجین اولیه» و «ریسک اولیه» باید همراهش عوض شوند. قبلاً نمی‌شدند و درصد سود
+   با مارجینِ قبلی تقسیم می‌شد: پوزیشن 10 دلاری با اهرم 5 و 85٪ سود، 20٪ نشان داده می‌شد. */
+function rebase(p){
+  p.baseMargin=(p.margin||0)+partialsOf(p).reduce((s,x)=>s+(x.margin||0),0);
+  delete p.risk0;
+  if(p.stop0==null&&p.stop!=null)p.stop0=p.stop;
+  const r=risk0Of(p);if(r)p.risk0=r;
+  return p;
+}
+/* تعمیر داده‌های قبلی: پوزیشنی که تکه‌ای از آن بسته نشده، مارجین اولیه‌اش همان مارجین فعلی است.
+   اگر فرق دارد، یعنی با باگ بالا ویرایش شده. */
+function repairBase(){
+  let n=0;
+  for(const p of DB.positions){
+    if(partialsOf(p).length||!(p.margin>0)||p.baseMargin==null)continue;
+    if(Math.abs(p.baseMargin-p.margin)>1e-9){rebase(p);n++;}
+  }
+  if(n)logIt('info','مبنای درصد سود '+n+' پوزیشنِ ویرایش‌شده درست شد');
+  return n;
+}
 function posMetrics(p,live){
   const sign=p.dir==='long'?1:-1;
   const notional=p.margin*p.lev, qty=notional/p.entry;
@@ -2830,7 +2851,7 @@ let syncTimer=null, syncing=false;
 const syncOn=()=>!!(syncCfg.url&&syncCfg.token);
 function applyBlob(d){
   DB.positions=Array.isArray(d.positions)?d.positions.map(ensureBase):[];
-  fillDB(d);
+  fillDB(d);repairBase();
   guidePurgeOld();   // دستگاه دیگری که هنوز آموزش‌های قدیمی را دارد، برشان نگرداند
   if(d.settings&&typeof d.settings==='object'){DB.settings=d.settings;Object.assign(S,d.settings);fixFeat();}
   OVERRIDE=DB.overrides;PCACHE.clear();
@@ -5812,15 +5833,31 @@ function drawShareLadder(c,d,acc,x,y,w){
     const a=at(d.entry), b=at(d.exit);
     c.fillStyle=mix(acc,.75);rr(c,Math.min(a,b),y,Math.abs(a-b),h,h/2);c.fill();
   }
-  const tick=(v,label,color,below)=>{
+  const tick=(v,label,color,below,lx)=>{
     if(v==null||!isFinite(v)||v<=0)return;
     const tx=Math.max(x+2,Math.min(x+w-2,at(v)));
     c.fillStyle=color;c.beginPath();c.arc(tx,y+h/2,11,0,Math.PI*2);c.fill();
     c.fillStyle=SH.bg;c.beginPath();c.arc(tx,y+h/2,4.5,0,Math.PI*2);c.fill();
-    shText(c,label,tx,below?y+h+40:y-24,{size:23,weight:800,color,align:'center'});
+    shText(c,label,lx!=null?lx:tx,below?y+h+40:y-24,{size:23,weight:800,color,align:'center'});
   };
-  tick(d.stop,'استاپ '+fmtPrice(d.stop),SH.dn,true);
-  tick(d.entry,'ورود',SH.tx3,true);
+  /* استاپ و ورود هر دو زیر خط‌اند؛ وقتی نزدیک هم‌اند (استاپ تنگ) برچسب‌ها روی هم می‌افتادند.
+     اگر هم‌پوشانی دارند، هر کدام نصفِ هم‌پوشانی را از دیگری دور می‌شود. */
+  const sL='استاپ '+fmtPrice(d.stop), eL='ورود';
+  let sx=null, ex=null;
+  if(d.stop>0&&d.entry>0){
+    shFont(c,23,800);
+    const ws=c.measureText(sL).width, we=c.measureText(eL).width;
+    const cl=v=>Math.max(x+2,Math.min(x+w-2,at(v)));
+    sx=cl(d.stop);ex=cl(d.entry);
+    const gap=(ws+we)/2+18-Math.abs(sx-ex);
+    if(gap>0){const dirn=sx<=ex?-1:1;sx+=dirn*gap/2;ex-=dirn*gap/2;}
+    sx=Math.max(x+ws/2,Math.min(x+w-ws/2,sx));ex=Math.max(x+we/2,Math.min(x+w-we/2,ex));
+    if(Math.abs(sx-ex)<(ws+we)/2+18){           // لبه‌ی کارت جا نگذاشت: از طرف دیگر جا باز کن
+      if(sx<=ex)ex=sx+(ws+we)/2+18;else sx=ex+(ws+we)/2+18;
+    }
+  }
+  tick(d.stop,sL,SH.dn,true,sx);
+  tick(d.entry,eL,SH.tx3,true,ex);
   tick(d.exit,d.open?'قیمت الان':'خروج',acc,false);
 }
 /* همان کارت، ولی برای یک بازه به‌جای یک پوزیشن. عمداً همان چیدمان است تا کسی
@@ -8450,7 +8487,8 @@ function sheetEditPos(p){
        const v=grab(),pv=$('#prev');pv.innerHTML='';
        if(!v.entry||!v.margin||!v.lev){pv.innerHTML='<div class="k"><b>پیش‌نمایش</b><span class="m">اعداد ناقص</span></div>';return;}
        const live=v.status==='closed'?null:liveOf(v.ticker);
-       const m=posMetrics(Object.assign({},d,v),live);
+       // پیش‌نمایش با مبنای تازه، همان چیزی که بعد از ذخیره می‌بینی
+       const m=posMetrics(rebase(Object.assign({},d,v,{partials:partialsOf(d).slice()})),live);
        const add=(l,x,c)=>pv.innerHTML+='<div class="k"><b>'+l+'</b><span class="'+(c||'')+'">'+x+'</span></div>';
        if(spot())add('مقدار '+(v.ticker||'ارز'),(+m.qty.toPrecision(6))+'');
        else{
@@ -8469,12 +8507,13 @@ function sheetEditPos(p){
        if(!v.entry)return toast('قیمت ورود را وارد کن','err');
        if(!v.margin||!v.lev)return toast((spot()?'مبلغ خرید':'مارجین و اهرم')+' را وارد کن','err');
        if(v.status==='closed'&&!v.exitPrice)return toast('قیمت خروج را وارد کن','err');
-       const wasStop=d.stop;
+       const wasStop=d.stop, wasBase=[d.margin,d.lev,d.entry].join();
        Object.assign(d,v);
        d.openedAt=$('#f_o').value?new Date($('#f_o').value).getTime():Date.now();
        d.closedAt=v.status==='closed'?($('#f_c').value?new Date($('#f_c').value).getTime():Date.now()):null;
        if(v.status==='open'){d.exitPrice=null;d.fees=null;}
        ensureBase(d);
+       if(!isNew&&wasBase!==[d.margin,d.lev,d.entry].join())rebase(d);
        if(isNew){d.baseMargin=d.margin;d.stop0=d.stop;d.risk0=risk0Of(d);
          logAdd(d,'open','دستی ثبت شد');DB.positions.push(d);}
        else if(wasStop!==d.stop)logAdd(d,'stop','حد ضرر با ویرایش روی '+(d.stop?fmtPrice(d.stop):'ندارد')+' تنظیم شد');
@@ -8834,7 +8873,7 @@ function dataCounts(d){
 function applyBackup(d){
   DB.positions=(d.positions||[]).map(ensureBase);
   // پشتیبان‌های قدیمی‌تر بعضی کلیدها را ندارند؛ نبودشان یعنی خالی، نه خطا
-  fillDB(d);
+  fillDB(d);repairBase();
   OVERRIDE=DB.overrides; PCACHE.clear();
   if(d.settings&&typeof d.settings==='object'){Object.assign(S,d.settings);fixFeat();}
   applySettingsToForm();readSettings();
@@ -9247,6 +9286,7 @@ if(DB.settings&&DB.settings.feat&&DB.settings.feat.fx===false&&!lsGet('signaldes
   fixFeat();DB.settings=Object.assign({},S);save();      // خاموشیِ باگ‌خورده را روی سرور هم درست کن
 }else fixFeat();
 DB.positions.forEach(ensureBase);
+if(repairBase())save();
 if(migrateSpot())save();          // خریدهای اسپاتِ قدیمی به پوزیشن‌ها منتقل می‌شوند
 guideMigrate();                   // آموزش‌های قبلی یک‌بار پاک می‌شوند؛ دستورالعمل ترید جایشان می‌آید
 wire();
