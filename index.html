@@ -378,6 +378,11 @@ button.catt{cursor:pointer}
 .audfail b{color:var(--dn)}
 .lxprev{max-height:52vh;overflow:auto;border-radius:14px;border:1px solid var(--line);background:var(--inset);margin:10px 0;min-height:90px;display:grid;place-items:center}
 .lxprev img{display:block;width:100%;height:auto}
+.lxedit{width:100%;justify-content:center;margin-top:10px}
+.lxedit .pill{font-style:normal;margin-inline-start:6px}
+.lefld{margin-top:10px}
+.lefld label small{color:var(--tx3);font-weight:500}
+.lefld textarea{min-height:60px;line-height:1.9;resize:vertical}
 .lxlab{font-size:12px;color:var(--tx2);font-weight:700;margin-top:8px}
 .lxbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
 .lxbtns .btn{justify-content:center}
@@ -1779,8 +1784,9 @@ const KEY='signaldesk.v1';
 let storeOK=true;
 /* کلیدهای داده در یک جا: ذخیره، بارگذاری، همگام‌سازی و پشتیبان همه از همین فهرست می‌خوانند،
    پس کلید تازه فقط اینجا اضافه می‌شود (قبلاً پنج جا تکرار شده بود).
-   cats: دسته‌های ساخت کاربر [{id,n}] · pcat: پست ← فهرست شناسه‌ی دسته‌ها */
-const DB_OBJ=['decisions','overrides','lessons','archived','results','edits','gone','revived','pcat'];
+   cats: دسته‌های ساخت کاربر [{id,n}] · pcat: پست ← فهرست شناسه‌ی دسته‌ها
+   ledit: متنِ ویرایش‌شده‌ی آموزش‌ها ('g'+شماره برای دستورالعمل، شناسه‌ی پست برای بقیه) */
+const DB_OBJ=['decisions','overrides','lessons','archived','results','edits','gone','revived','pcat','ledit'];
 const DB_ARR=['pending','watch','spot','cats'];
 const DB={positions:[],settings:{}};
 const isObj=x=>!!x&&typeof x==='object'&&!Array.isArray(x);
@@ -3600,7 +3606,7 @@ function guideRulesNow(){
   return w;
 }
 function guideNote(n){
-  const N=GUIDE_NOTES[n];if(!N)return null;
+  const N=noteOf(n);if(!N)return null;
   const w=el('div','gn');
   w.appendChild(el('div','ghead2',ic('book')+'<span>تحلیل و آموزش قدم‌به‌قدم</span>'));
   w.appendChild(el('div','gsum',N.sum));
@@ -3663,8 +3669,8 @@ function guideCard(n,title,i,q){
     c.appendChild(body);return c;
   }
   body.appendChild(mediaOf(L));
-  const long=(L.text||'').length>420, col=long&&COLLAPSED['G'+n]!==false&&!q;
-  body.appendChild(el('div','txt'+(col?' clamp':''),linkify(esc(faN(L.text||'(این پست متن ندارد)')))));
+  const gtx=lessonText(L,n), long=gtx.length>420, col=long&&COLLAPSED['G'+n]!==false&&!q;
+  body.appendChild(el('div','txt'+(col?' clamp':''),linkify(esc(faN(gtx||'(این پست متن ندارد)')))));
   if(long){
     const b=el('button','more',col?'ادامه متن':'بستن متن');
     b.onclick=()=>{COLLAPSED['G'+n]=!col;renderLessons();};
@@ -3680,6 +3686,9 @@ function guideCard(n,title,i,q){
     guideRead(n,!was);
   };
   row.appendChild(rd);
+  const ed=el('button','mark ghost',ic('edit')+'ویرایش متن');ed.title='ویرایش متن و تحلیل این درس';
+  ed.onclick=()=>sheetLessonText(L,n,title,i,null);
+  row.appendChild(ed);
   const ex=el('button','mark ghost',ic('share')+'PDF / PNG');ex.title='خروجی کامل این درس برای فرستادن یا دانلود';
   ex.onclick=()=>sheetLessonExport(L,n,title,i);
   row.appendChild(ex);
@@ -3711,7 +3720,7 @@ function buildGuide(q){
   if(have<list.length&&!GUIDE.busy)bar.appendChild(el('span','markhint',faN(list.length-have)+' درس هنوز نیامده'));
   box.appendChild(bar);
   if(GUIDE.err)box.appendChild(el('div','rwarn warn',esc(GUIDE.err)));
-  for(const [[n,t],i] of shown)box.appendChild(guideCard(n,t,i,q));
+  for(const [[n,t],i] of shown)box.appendChild(guideCard(n,lessonTitleOf(null,n,t),i,q));
   return box;
 }
 
@@ -3778,7 +3787,7 @@ function renderLessons(){
       cb.onchange=()=>{cb.checked?picked.add(L.id):picked.delete(L.id);renderLessons();};
       head.appendChild(cb);
     }
-    head.appendChild(el('span','ltitle',esc(L.title||'بدون عنوان')));
+    head.appendChild(el('span','ltitle',esc(lessonTitleOf(L,null,L.title||'بدون عنوان'))));
     if((L.cat||'').trim())head.appendChild(el('span','pill mut',esc(L.cat)));
     head.appendChild(el('div','when',L.link
       ?'<a href="'+esc(L.link)+'" target="_blank" rel="noopener">'+relTime(L.date?new Date(L.date):null)+'</a>'
@@ -3786,8 +3795,8 @@ function renderLessons(){
     c.appendChild(head);
     if(L.img||L.video)c.appendChild(mediaOf(L));
     const body=el('div','body');
-    const long=(L.text||'').length>320, col=long&&COLLAPSED['L'+L.id]!==false;
-    body.appendChild(el('div','txt'+(col?' clamp':''),linkify(esc(faN(L.text||'(بدون متن)')))));
+    const ltx=lessonText(L,null), long=ltx.length>320, col=long&&COLLAPSED['L'+L.id]!==false;
+    body.appendChild(el('div','txt'+(col?' clamp':''),linkify(esc(faN(ltx||'(بدون متن)')))));
     if(long){
       const b=el('button','more',col?'ادامه متن':'بستن متن');
       b.onclick=()=>{COLLAPSED['L'+L.id]=!col;renderLessons();};
@@ -6046,8 +6055,9 @@ const LRI='\u2066', PDI='\u2069';
 const lxIso=s=>String(s).replace(/[$@A-Za-z0-9][\w@.,:/%+\-–—~×$]*(?:\s*[–—\-~]\s*[\w@.,:/%+$]+)*/g,m=>{if(/[\u0600-\u06FF]/.test(m))return m;
   const t=m.match(/[.,:]+$/);const core=t?m.slice(0,-t[0].length):m;   // نقطه‌ی آخر جمله بیرون از جداساز
   return core?LRI+core+PDI+(t?t[0]:''):m;});
-const lxTxt=h=>{const d=document.createElement('div');d.innerHTML=String(h||'').replace(/<br\s*\/?>/gi,'\n');
-  return lxIso(faN(d.textContent.replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim()));};
+const lxPlain=h=>{const d=document.createElement('div');d.innerHTML=String(h||'').replace(/<br\s*\/?>/gi,'\n');
+  return d.textContent.replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim();};
+const lxTxt=h=>lxIso(faN(lxPlain(h)));
 const lxRtl=s=>/[؀-ۿ]/.test(s);
 function lxWrap(c,txt,maxW){
   const out=[];
@@ -6244,11 +6254,90 @@ function lxFoot(c,T,H,logoImg,pg){
 async function lxSource(L,n,title,idx){
   const urls=L?(L.imgs&&L.imgs.length?L.imgs:(L.img?[L.img]:[])):[];
   const imgs=await Promise.all(urls.map(lxLoadImg));
-  const note=n!=null?GUIDE_NOTES[n]:null;
-  const list=n!=null?guideList():null;
-  return {title,imgs,
+  const note=n!=null?noteOf(n):null, list=n!=null?guideList():null, tx=lessonText(L,n);
+  return {title:lessonTitleOf(L,n,title),imgs,
     meta:n!=null?(GUIDE_CAT+' · درس '+idx+' از '+list.length):(L&&L.cat?L.cat:''),
-    text:lxOpt.txt&&L&&L.text?lxRtlTx(faN(L.text)):'',note:lxOpt.ana?note:null};
+    text:lxOpt.txt&&tx?lxRtlTx(faN(tx)):'',note:lxOpt.ana?note:null};
+}
+/* ---- ویرایش متن آموزش‌ها ----
+   متنِ کانال و تحلیلِ آماده دست نمی‌خورند؛ ویرایش تو جدا نگه داشته می‌شود و روی هر دو
+   (نمایش در برنامه و خروجی PDF/PNG) می‌نشیند. «بازگرداندن» یعنی پاک کردن همین لایه. */
+const leKey=(L,n)=>n!=null?'g'+n:(L?L.id:'');
+const leOf=(L,n)=>DB.ledit[leKey(L,n)]||null;
+const lessonTitleOf=(L,n,t)=>{const E=leOf(L,n);return E&&E.title!=null?E.title:t;};
+const lessonText=(L,n)=>{const E=leOf(L,n);return E&&E.text!=null?E.text:(L?L.text||'':'');};
+/* متن ساده ← HTML نمایش: عددها مثل تحلیل‌های اصلی داخل <i> (چپ‌به‌راست و پررنگ) */
+const le2html=s=>esc(String(s||'').replace(/[$@A-Za-z0-9][\w@.,:/%+\-–—~×$]*(?:\s*[–—\-~]\s*[\w@.,:/%+$]+)*/g,
+  m=>/\d/.test(m)?'\u0001'+m.replace(/[.,:]+$/,'')+'\u0002'+(m.match(/[.,:]+$/)||[''])[0]:m))
+  .replace(/\u0001/g,'<i>').replace(/\u0002/g,'</i>').replace(/\n/g,'<br>');
+function noteOf(n){
+  const N=GUIDE_NOTES[n], E=DB.ledit['g'+n];
+  if(!N||!E)return N||null;
+  const o=Object.assign({},N);
+  if(E.sum!=null)o.sum=le2html(E.sum);
+  if(E.pic)o.pic=E.pic.map(le2html);
+  if(E.steps)o.steps=E.steps.map(([t,d])=>[le2html(t),le2html(d)]);
+  if(E.rules)o.rules=E.rules.map(le2html);
+  if(E.warn)o.warn=E.warn.map(le2html);
+  if(E.app!=null)o.app=le2html(E.app);
+  return o;
+}
+function sheetLessonText(L,n,title,idx,after){
+  const N=n!=null?GUIDE_NOTES[n]:null, key=leKey(L,n), E=DB.ledit[key]||{};
+  const P=lxPlain;
+  // عنوان اصلی از فهرست کانال (نه عنوانی که شاید قبلاً ویرایش شده و به اینجا رسیده)
+  const t0=n!=null?((guideList().find(x=>x[0]===n)||[])[1]||title):((L&&L.title)||title);
+  const orig={title:t0,text:L?L.text||'':'',
+    sum:N&&N.sum?P(N.sum):'',pic:N&&N.pic?N.pic.map(P).join('\n'):'',
+    steps:N&&N.steps?N.steps.map(([t,d])=>P(t)+'\n'+P(d)).join('\n\n'):'',
+    rules:N&&N.rules?N.rules.map(P).join('\n'):'',warn:N&&N.warn?N.warn.map(P).join('\n'):'',app:N&&N.app?P(N.app):''};
+  const cur={title:E.title!=null?E.title:orig.title,text:E.text!=null?E.text:orig.text,
+    sum:E.sum!=null?E.sum:orig.sum,pic:E.pic?E.pic.join('\n'):orig.pic,
+    steps:E.steps?E.steps.map(([t,d])=>t+'\n'+d).join('\n\n'):orig.steps,
+    rules:E.rules?E.rules.join('\n'):orig.rules,warn:E.warn?E.warn.join('\n'):orig.warn,app:E.app!=null?E.app:orig.app};
+  const ta=(id,label,hint,rows)=>'<div class="fld lefld"><label>'+label+(hint?' <small>'+hint+'</small>':'')+'</label>'+
+    '<textarea id="le_'+id+'" rows="'+(rows||4)+'" dir="auto">'+esc(cur[id])+'</textarea></div>';
+  openSheet('<h3>'+ic('edit')+'ویرایش متن آموزش</h3>'+
+    '<div class="sub">متن‌ها را قبل از ساختن PDF/PNG درست کن. تغییرها در خود برنامه هم دیده می‌شوند و '+
+    'متن اصلی کانال و تحلیل آماده دست نمی‌خورند؛ هر وقت خواستی برشان گردان.</div>'+
+    '<div class="fld lefld"><label>عنوان</label><input id="le_title" dir="auto" value="'+esc(cur.title)+'"></div>'+
+    ta('text','متن پست','',5)+
+    (N?ta('sum','خلاصه','',2)+
+      (N.pic?ta('pic','تحلیل تصویر','هر خط یک مورد',5):'')+
+      (N.steps?ta('steps','قدم‌به‌قدم','خط اول عنوان قدم، خط بعد توضیح؛ بین قدم‌ها یک خط خالی',10):'')+
+      (N.rules?ta('rules','قانون‌های کلیدی','هر خط یک قانون',4):'')+
+      (N.warn?ta('warn','هشدارها','هر خط یک هشدار',3):'')+
+      (N.app?ta('app','در همین برنامه','',2):''):'')+
+    (N&&(N.plan||N.cmp)?'<div class="hint">نقشه‌ی معامله و جدول مقایسه عدد و ساختارند و همان‌طور می‌مانند.</div>':'')+
+    '<div class="srow"><button class="btn pri" id="leOk">'+ic('check')+'<span>ذخیره</span></button>'+
+    '<button class="btn" id="leReset">'+ic('undo')+'<span>متن اصلی</span></button>'+
+    '<button class="btn" id="cx">انصراف</button></div>',
+  ()=>{
+    const back=()=>{if(after)after();else closeSheet();};
+    $('#cx').onclick=back;
+    $('#leReset').onclick=()=>{
+      if(!DB.ledit[key])return toast('متن همین حالا اصلی است','info');
+      if(!confirm('همه‌ی ویرایش‌های این آموزش پاک شود و متن اصلی برگردد؟'))return;
+      delete DB.ledit[key];save();renderLessons();toast('متن اصلی برگشت','ok');back();
+    };
+    $('#leOk').onclick=()=>{
+      const v=id=>{const x=$('#le_'+id);return x?x.value.replace(/\r/g,'').trim():null;};
+      const lines=t=>t.split('\n').map(x=>x.trim()).filter(Boolean);
+      const out={};
+      const t=v('title');if(t&&t!==orig.title)out.title=t;
+      const tx=v('text');if(tx!=null&&tx!==orig.text.trim())out.text=tx;
+      if(N){
+        const sm=v('sum');if(sm!=null&&sm!==orig.sum)out.sum=sm;
+        const ap=v('app');if(ap!=null&&ap!==orig.app)out.app=ap;
+        for(const k of ['pic','rules','warn']){const x=v(k);if(x!=null&&x!==orig[k])out[k]=lines(x);}
+        const st=v('steps');
+        if(st!=null&&st!==orig.steps)out.steps=st.split(/\n\s*\n/).map(b=>b.trim()).filter(Boolean)
+          .map(b=>{const ls=b.split('\n');return [ls[0].trim(),ls.slice(1).join(' ').trim()];});
+      }
+      if(Object.keys(out).length)DB.ledit[key]=out;else delete DB.ledit[key];
+      save();renderLessons();toast('ویرایش ذخیره شد','ok');back();
+    };
+  });
 }
 function lxCanvas(W,H){const cv=document.createElement('canvas');cv.width=W;cv.height=H;return cv;}
 function lxPng(src,logoImg){
@@ -6330,8 +6419,9 @@ async function lxDeliver(blob,name,share){
 function sheetLessonExport(L,n,title,idx){
   openSheet(
    '<h3>'+ic('share')+'خروجی آموزش</h3>'+
-   '<div class="sub">'+esc(title)+' — عکس پست، متن و تحلیل، با لوگو و کپی‌رایت دلخواه. '+
+   '<div class="sub">'+esc(lessonTitleOf(L,n,title))+' — عکس پست، متن و تحلیل، با لوگو و کپی‌رایت دلخواه. '+
    'PNG یک تصویر بلند است؛ PDF صفحه‌بندی A4 دارد.</div>'+
+   '<button class="btn lxedit" id="lxEdit">'+ic('edit')+'<span>ویرایش متن'+(leOf(L,n)?' <i class="pill gold">ویرایش‌شده</i>':'')+'</span></button>'+
    '<div class="lxprev" id="lxPrev"><div class="hint">در حال ساختن پیش‌نمایش…</div></div>'+
    '<div class="mkt" id="lxTheme"></div>'+
    '<div class="shopts">'+
@@ -6407,6 +6497,8 @@ function sheetLessonExport(L,n,title,idx){
       }catch(e){toast('ساخت فایل نشد'+(e&&e.name==='SecurityError'?' — تصویر پست از مسیر امن نیامد':''),'err');logIt('err','خروجی آموزش: '+(e&&e.message||e));}
       finally{btnBusy(btn,false);}
     };
+    // بعد از ذخیره‌ی متن، همین ورق با پیش‌نمایش تازه برمی‌گردد
+    $('#lxEdit').onclick=()=>sheetLessonText(L,n,title,idx,()=>sheetLessonExport(L,n,title,idx));
     $('#lxSPdf').onclick=e=>run(e.currentTarget,'pdf',true);
     $('#lxSPng').onclick=e=>run(e.currentTarget,'png',true);
     $('#lxDPdf').onclick=e=>run(e.currentTarget,'pdf',false);
