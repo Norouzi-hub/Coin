@@ -319,7 +319,7 @@ html.busy .prog{opacity:1}
    اصلی تا 29 پیکسل فشرده و بریده می‌شدند. سطل‌ها ردیفِ دومِ باریک و یک‌خطی گرفتند. */
 #fbar{flex-wrap:wrap;gap:6px}
 #fbar .fseg{flex:1 1 100%}
-#fbar .fside{flex:1 1 100%;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+#fbar .fside{flex:1 1 100%;display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
 #fbar .fday{position:relative;cursor:pointer;padding-inline:6px}
 #fbar .fday select{appearance:none;-webkit-appearance:none;background:none;border:none;color:inherit;font:inherit;
   font-size:12px;font-weight:800;min-width:0;width:100%;text-align:center;cursor:pointer;padding:0;outline:none}
@@ -4251,7 +4251,7 @@ let bucket='live';
 const VIEWKEY='signaldesk.view.v1';
 const VIEW=Object.assign({kind:'all',cat:'',day:'all',from:'',to:''},lsGet(VIEWKEY)||{});
 if(['new','sig','all'].includes(VIEW.sf))sigFilter=VIEW.sf;
-if(['live','res','arch'].includes(VIEW.bk))bucket=VIEW.bk;
+if(['live','res','arch','exp'].includes(VIEW.bk))bucket=VIEW.bk;
 function setView(o){
   Object.assign(VIEW,o);VIEW.sf=sigFilter;VIEW.bk=bucket;
   lsSet(VIEWKEY,VIEW);shownMax=PAGE;renderSignals();
@@ -4260,7 +4260,8 @@ function setView(o){
 const DNMEMO=new WeakMap();
 const postDay=p=>{let v=DNMEMO.get(p);if(v==null){v=dayNo(p.date);DNMEMO.set(p,v);}return v;};
 const ymdNo=v=>{const m=/^(\d{4})-(\d\d)-(\d\d)$/.exec(v||'');return m?Math.floor(Date.UTC(+m[1],m[2]-1,+m[3])/864e5):null;};
-const DAY_FA={all:'همه‌ی روزها',today:'امروز',yest:'دیروز',week:'7 روز اخیر',range:'بازه'};
+// برچسب‌ها کوتاه‌اند چون انتخاب‌گر یک‌چهارمِ ردیف است؛ «تاریخ» یعنی بدون فیلتر روز
+const DAY_FA={all:'تاریخ',today:'امروز',yest:'دیروز',week:'7 روز',range:'بازه'};
 function dayPass(){
   const d=VIEW.day;
   if(!DAY_FA[d]||d==='all')return null;
@@ -4388,7 +4389,13 @@ function setRes(p,on){
    می‌رود، مثل آرشیو. انتخابِ صریح تو (آرشیو، آموزش) بر تشخیص خودکار (نتیجه) می‌چربد. */
 /* فقط آرشیو و آموزش «جای دیگر»اند. نتیجه، خبر و اطلاع‌رسانی در «همه» می‌مانند و فقط از
    «سیگنال‌ها» و «در انتظار» بیرون‌اند؛ دکمه‌ی «نتایج» فیلترِ همان‌هاست، نه سطلی جدا. */
-const bucketOf=p=>isArch(p.id)?'arch':(isLesson(p.id)?'les':'live');
+/* منقضی: سیگنالی که عمرش (پیش‌فرض ۷ روز) گذشته، از «سیگنال‌ها» و «همه» و شمارنده‌هایشان
+   بیرون می‌رود و در سطل خودش می‌ماند؛ فقط با «برگرداندن» (دستی) یک عمر تازه می‌گیرد.
+   سیگنالی که پوزیشنش هنوز باز است منقضی نمی‌شود — هنوز کار داری با آن. */
+const hasOpenPos=p=>{const d=DB.decisions[p.id];
+  return !!(d&&d.action==='taken'&&d.posId&&DB.positions.some(x=>x.id===d.posId&&x.status==='open'));};
+const isExp=p=>isSigPost(p)&&isStale(p)&&!hasOpenPos(p);
+const bucketOf=p=>isArch(p.id)?'arch':(isLesson(p.id)?'les':(isExp(p)?'exp':'live'));
 const RX_ANN=/اطلاعیه|اطلاع\s*رسانی|قابل\s*توجه|توجه\s*(?:کنید|داشته)|کمپین|ثبت\s*نام|عضویت|لینک|تخفیف|وی\s*آی\s*پی|\bvip\b|پشتیبانی|ادمین|قوانین|دستورالعمل|لایو|وبینار|قرعه|جایزه|حمایت\s*کنید|رتبه|تبلیغ|پین/i;
 const RX_NEWS=/خبر|اخبار|فوری|گزارش|فدرال|نرخ\s*بهره|تورم|\bcpi\b|\betf\b|بلک\s*راک|\bsec\b|ترامپ|هک\s*شد|لیست\s*شد|لیستینگ|دلیست|هاوینگ|آپگرید|آپدیت\s*شبکه|breaking|\bnews\b|بازار\s*امروز/i;
 /* نوعِ هر پست: sig سیگنال · res نتیجه · news خبر · ann اطلاع‌رسانی · note بقیه.
@@ -4442,7 +4449,7 @@ function revive(p,hint){
 }
 function unrevive(p){
   delete DB.revived[p.id];
-  save();PCACHE.delete(p.id);renderAll();toast('دوباره قدیمی شد','info');
+  save();PCACHE.delete(p.id);renderAll();toast('دوباره منقضی شد','info');
 }
 /* کانال گاهی درباره‌ی سیگنال قدیمی می‌گوید «هنوز می‌شود وارد شد». چنین پستی را پیدا
    می‌کنیم و کنار سیگنال نشانش می‌دهیم، ولی برگرداندن با خودت است. */
@@ -4489,9 +4496,10 @@ function reentryHint(p){
 function buildStale(p,sig){
   const w=el('div','stale');
   const days=p.date?Math.floor((Date.now()-p.date.getTime())/864e5):null;
-  w.appendChild(el('div','stalehd',ic('clock')+'<span>قدیمی — فقط برای مرور</span>'));
+  w.appendChild(el('div','stalehd',ic('clock')+'<span>منقضی — فقط برای مرور</span>'));
   w.appendChild(el('div','staletx',(days!=null?faN(days)+' روز از این سیگنال گذشته. ':'')+
-    'بعد از '+faN(S.staleDays||7)+' روز دیگر گرفتنی حساب نمی‌شود: دکمه‌ی ورود ندارد و در «در انتظار» نمی‌آید.'));
+    'بعد از '+faN(S.staleDays||7)+' روز دیگر گرفتنی حساب نمی‌شود: در «منقضی» می‌ماند، دکمه‌ی ورود ندارد و در شمارنده‌ها نمی‌آید. '+
+    'اگر هنوز معتبر است، برش گردان تا '+faN(S.staleDays||7)+' روز دیگر زنده بماند.'));
   const h=reentryHint(p);
   if(h){
     const snip=(h.text||'').replace(/\s+/g,' ').trim();
@@ -4539,7 +4547,7 @@ function buildCard(p,lite){
   }else head.appendChild(el('span','pill kind k-'+kind+(kind==='res'&&!resAuto(p)?' gold':''),KIND_FA[kind]||'یادداشت'));
   if(NEWIDS.has(p.id))head.appendChild(el('span','pill gold','تازه'));
   const stale=isSig&&!dec&&isStale(p);
-  if(stale)head.appendChild(el('span','pill mut',ic('clock')+'قدیمی'));
+  if(stale)head.appendChild(el('span','pill mut',ic('clock')+'منقضی'));
   else if(isSig&&!dec&&DB.revived[p.id])head.appendChild(el('span','pill gold','برگشته'));
   const px=sig.ticker?PRICES.get(sig.ticker):null;
   if(px!=null)head.appendChild(el('span','pill live '+(flashOf(sig.ticker)?'fl-'+flashOf(sig.ticker):''),'<i></i>'+fmtPrice(px)));
@@ -4798,7 +4806,7 @@ function buildBrief(p,sig,ov,px){
     a.appendChild(b3);
   }else if(already)a.appendChild(el('span','markhint','در فهرست منتظرها'));
   if(DB.revived[p.id]){
-    const u=el('button','btn xs side','قدیمی کن');
+    const u=el('button','btn xs side','منقضی کن');
     u.title='برگرداندن را پس بگیر';
     u.onclick=()=>unrevive(p);
     a.appendChild(u);
@@ -5309,13 +5317,14 @@ function renderFbar(){
   // یک پیمایش برای هر پنج شمارنده. قبلاً چهار filter پشت سر هم بود و روی
   // 800 پست هر بار از نو bucketOf می‌گرفت.
   // همه‌ی شمارنده‌ها با فیلتر روز: «امروز» که روشن است، عددها هم مال امروزند
-  let nLive=0,nSig=0,nNew=0,nRes=0,nArch=0;
+  let nLive=0,nSig=0,nNew=0,nRes=0,nArch=0,nExp=0;
   const KN={sig:0,news:0,ann:0,res:0,note:0}, CN={}, dp=dayPass();
   for(const p of POSTS){
     if(dp&&!dp(p))continue;
     for(const c of DB.pcat[p.id]||[])CN[c]=(CN[c]||0)+1;
     const bk=bucketOf(p);
     if(bk==='arch'){nArch++;continue;}
+    if(bk==='exp'){nExp++;continue;}
     if(bk==='les')continue;
     nLive++;
     const kd=postKind(p);
@@ -5355,6 +5364,7 @@ function renderFbar(){
     side.appendChild(b);
   };
   mkSide('res','flag','نتایج',nRes,'پست‌های نتیجه: تارگت خورد، استاپ خورد، سیو سود');
+  mkSide('exp','clock','منقضی',nExp,'سیگنال‌هایی که بیش از '+faN(S.staleDays||7)+' روز از آن‌ها گذشته؛ در آمار نمی‌آیند');
   mkSide('arch','box','آرشیو',nArch,'پست‌هایی که کنار گذاشته‌ای');
   /* فیلتر روز: کنار همان دو سطل، یک انتخاب‌گرِ جمع‌وجور — ردیف جدا صفحه را پایین می‌برد.
      برای همه‌ی بخش‌ها، از جمله نتایج و آرشیو. */
@@ -5476,7 +5486,7 @@ function renderSignals(){
   list.innerHTML='';
   renderFbar();
   if(bucket==='live'){
-    const done=POSTS.filter(x=>decisionOf(x.id)&&!isArch(x.id));
+    const done=POSTS.filter(x=>decisionOf(x.id)&&bucketOf(x)==='live');
     if(done.length){
       const bulk=el('button','tidy','کنار گذاشتن '+faN(done.length)+' پستِ تصمیم‌گرفته');
       bulk.onclick=()=>{
@@ -5500,7 +5510,8 @@ function renderSignals(){
         :coinFilter?'برای '+esc(coinFilter)+' چیزی نیست.<br>فیلتر ارز را بردار.'
         :activeCat()?'این دسته هنوز خالی است'+(VIEW.day!=='all'?' (در '+DAY_FA[VIEW.day]+')':'')+'.<br>زیر هر پست دکمه‌ی «دسته» را بزن تا اینجا بیاید.'
         :VIEW.day!=='all'?'در «'+DAY_FA[VIEW.day]+'» پستی با این فیلتر نیست.<br>«همه‌ی روزها» را بزن'+(REACHED_END?'.':' یا پست‌های قدیمی‌تر را بخوان.')
-        :sigFilter==='new'?'سیگنال تازه‌ای منتظر تصمیم نیست.<br>سیگنال‌های بیش از '+faN(S.staleDays||7)+' روز قدیمی‌اند و در «سیگنال‌ها» برای مرور مانده‌اند.'
+        :bucket==='exp'?'سیگنال منقضی‌ای نیست.<br>سیگنال‌هایی که بیش از '+faN(S.staleDays||7)+' روز از آن‌ها گذشته خودشان اینجا می‌آیند.'
+        :sigFilter==='new'?'سیگنال تازه‌ای منتظر تصمیم نیست.<br>سیگنال‌های بیش از '+faN(S.staleDays||7)+' روز در «منقضی» برای مرور مانده‌اند.'
                   :'چیزی با این فیلتر نیست.<br>«همه» را بزن یا جستجو را خالی کن.')
       :'هنوز پستی نیامده.<br>دکمه بروزرسانی را بزن.')));
   }else{
