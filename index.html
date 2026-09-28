@@ -23,7 +23,7 @@
      دستِ‌کم نسبت کنتراست 4٫5 دارد (--tx3 که فقط برای نکته‌های کم‌اهمیت است، 3). */
   --bg:#0D0E12; --bg2:#121317; --card:#16181D; --card2:#1C1E25; --inset:#101115;
   --line:#23262D; --line2:#30343D;
-  --tx:#E9EBF0; --tx2:#9BA1AE; --tx3:#6C7280;
+  --tx:#E9EBF0; --tx2:#AEB4C0; --tx3:#8D94A1;
   --up:#46C08A; --dn:#E0636E; --warn:#D9A04A; --gold:#D9A441; --gold2:#B8842F; --acc:#8A9BC0;
   --onGold:#1A1206;
   --r:20px; --r2:14px;
@@ -167,7 +167,7 @@ html.busy .emblem::after{content:"";position:absolute;inset:-4px;border-radius:1
 @keyframes halo{0%{opacity:.7;transform:scale(.9)}100%{opacity:0;transform:scale(1.25)}}
 .bname{display:flex;flex-direction:column;line-height:1.25;min-width:0}
 .bname b{font-weight:900;font-size:17px;letter-spacing:-.2px}
-.bname small{font-size:11.5px;color:var(--tx3);direction:ltr;text-align:end;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bname small{font-size:12px;color:var(--tx3);direction:ltr;text-align:end;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .hchip{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:99px;
   padding:6px 12px;cursor:pointer;font-size:12px;color:var(--tx2);font-weight:600;transition:border-color .2s}
@@ -184,7 +184,7 @@ html.busy .emblem::after{content:"";position:absolute;inset:-4px;border-radius:1
 .ring circle{fill:none;stroke-width:2.4}
 .ring .rb{stroke:var(--line2)}
 .ring .rf{stroke:var(--gold);stroke-linecap:round;transition:stroke-dashoffset .95s linear}
-.ring b{font-size:9.5px;font-weight:800;color:var(--tx2);font-variant-numeric:tabular-nums}
+.ring b{font-size:11px;font-weight:800;color:var(--tx2);font-variant-numeric:tabular-nums}
 .ring.off .rf{stroke:transparent}
 
 .ibtn{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:var(--card);
@@ -214,7 +214,7 @@ html.busy .prog{opacity:1}
   padding:9px 8px;color:var(--tx2);font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;border-radius:12px;transition:color .25s}
 .tab[aria-selected="true"]{color:var(--tx)}
 .tab[aria-selected="true"] .ic{color:var(--gold)}
-.tab .cnt{font-size:10.5px;min-width:18px;height:18px;padding:0 5px;border-radius:99px;display:inline-grid;place-items:center;
+.tab .cnt{font-size:12px;min-width:18px;height:18px;padding:0 5px;border-radius:99px;display:inline-grid;place-items:center;
   background:var(--dn);color:#fff;font-weight:800;font-variant-numeric:tabular-nums}
 .tab .cnt.z{display:none}
 .tab .cnt.g{background:var(--gold);color:var(--onGold)}
@@ -223,7 +223,7 @@ html.busy .prog{opacity:1}
   .tabs{position:fixed;z-index:60;inset-inline:10px;bottom:calc(8px + env(safe-area-inset-bottom,0px));margin:0;
     background:var(--glass);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);
     box-shadow:0 18px 40px -12px rgba(0,0,0,.6);border-radius:20px}
-  .tab{flex-direction:column;gap:2px;font-size:11px;padding:7px 2px}
+  .tab{flex-direction:column;gap:2px;font-size:12px;padding:7px 2px}
   .tab .ic{width:21px;height:21px}
   .tab .cnt{position:absolute;top:3px;inset-inline-start:calc(50% + 6px)}
   .hchip .lbl{display:none}
@@ -325,6 +325,8 @@ html.busy .prog{opacity:1}
   font-size:12px;font-weight:800;min-width:0;width:100%;text-align:center;cursor:pointer;padding:0;outline:none}
 #fbar .fday select option{background:var(--card);color:var(--tx)}
 #fbar .fday.on{color:var(--gold)}
+/* گوشی باریک: چهار خانه‌ی ردیف دوم جا نمی‌شد و «منقضی» بریده می‌شد؛ آیکون‌ها کنار می‌روند */
+@media (max-width:400px){#fbar .fside{gap:4px}#fbar .fbucket{padding:6px 4px;gap:5px}#fbar .fbucket .ic{display:none}}
 #fbar .fbucket{width:auto;min-height:40px;flex-direction:row;gap:7px;padding:6px 8px;border-radius:12px}
 #fbar .fbucket span{font-size:12px}
 #fbar .fbucket i{font-size:13px;line-height:1}
@@ -337,7 +339,7 @@ html.busy .prog{opacity:1}
   cursor:pointer;white-space:nowrap;transition:background .2s var(--ease),color .2s var(--ease)}
 .fc span{display:flex;align-items:center;gap:4px}
 .fc .ic{width:13px;height:13px;flex:none}
-.fc i{font-style:normal;font-size:11px;opacity:.7;font-variant-numeric:tabular-nums}
+.fc i{font-style:normal;font-size:12px;opacity:.7;font-variant-numeric:tabular-nums}
 .fc.on{background:color-mix(in srgb,var(--gold) 15%,transparent);color:var(--gold);
   border-color:color-mix(in srgb,var(--gold) 38%,transparent)}
 .fc.add{border-style:dashed;color:var(--gold)}
@@ -345,11 +347,11 @@ html.busy .prog{opacity:1}
 .fsep{flex:none;width:1px;margin:6px 2px;background:var(--line2)}
 .frange{flex:1 1 100%;display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .frin{display:flex;flex-direction:column;gap:3px;background:var(--inset);border:1px solid var(--line);
-  border-radius:12px;padding:6px 10px;font-size:11.5px;color:var(--tx3);min-width:0}
+  border-radius:12px;padding:6px 10px;font-size:12px;color:var(--tx3);min-width:0}
 .frin b{font-weight:800}
 .frin input{background:none;border:none;color:var(--tx);font:inherit;font-size:13px;min-width:0;width:100%;
   padding:0}
-.frin small{color:var(--gold);font-size:11px}
+.frin small{color:var(--gold);font-size:12px}
 /* ورق دسته‌ها */
 .catls{display:flex;flex-direction:column;gap:6px;margin:12px 0}
 .catrow{display:flex;gap:6px;align-items:stretch}
@@ -365,9 +367,9 @@ button.catt{cursor:pointer}
 .catrow .btn.xs{min-width:40px}
 .audiag .audgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin:10px 0}
 .audiag .ag{background:var(--inset);border:1px solid var(--line);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
-.audiag .ag b{font-size:11.5px;color:var(--tx3);font-weight:700}
+.audiag .ag b{font-size:12px;color:var(--tx3);font-weight:700}
 .audiag .ag span{font-size:18px;font-weight:900}
-.audiag .ag small{font-size:11px;color:var(--tx3)}
+.audiag .ag small{font-size:12px;color:var(--tx3)}
 .audwhy{margin:4px 0 8px;padding-inline-start:18px;font-size:12.5px;line-height:1.9;color:var(--tx2)}
 .audwhy b{color:var(--tx)}
 .audprobe{display:flex;flex-direction:column;gap:4px;margin-top:8px}
@@ -396,7 +398,7 @@ button.catt{cursor:pointer}
 .catnew{display:flex;gap:6px}
 .catnew input{flex:1;min-width:0;background:var(--inset);border:1px solid var(--line2);border-radius:11px;padding:9px 11px}
 .catnew input:focus{outline:none;border-color:var(--gold)}
-.fbucket span{display:flex;align-items:center;gap:3px;font-size:11.5px}
+.fbucket span{display:flex;align-items:center;gap:3px;font-size:12px}
 .fbucket .ic{width:13px;height:13px;flex:none;stroke-width:2.2}
 .fbucket.on{background:color-mix(in srgb,var(--gold) 15%,transparent);
   border-color:color-mix(in srgb,var(--gold) 38%,transparent)}
@@ -426,7 +428,7 @@ button.catt{cursor:pointer}
 .amtin:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 18%,transparent)}
 .brief .amt{margin-top:-2px}
 .sheet .amt{margin:8px 0 0}
-.mkthint{font-size:10.5px;font-weight:800;color:var(--warn);padding-inline:7px}
+.mkthint{font-size:12px;font-weight:800;color:var(--warn);padding-inline:7px}
 /* حالت صریح: برچسب، نه کلید — ولی هنوز زدنی است */
 .mkttag{display:inline-flex;align-items:center;gap:6px;margin:10px 0;padding:6px 11px;
   border-radius:99px;background:var(--inset);border:1px solid var(--line2);
@@ -477,15 +479,21 @@ button.catt{cursor:pointer}
 .tick.tapme{background:none;border:0;padding:0 2px;color:inherit;font:inherit;font-weight:900;
   cursor:pointer;border-bottom:1px dashed var(--line2);border-radius:0}
 .tick.tapme:active{opacity:.6}
-.coinchip{display:inline-flex;align-items:center;gap:8px;margin:0 0 10px;padding:6px 12px;
-  border-radius:99px;background:color-mix(in srgb,var(--acc) 15%,transparent);color:var(--acc);
-  border:1px solid color-mix(in srgb,var(--acc) 40%,transparent);font-size:12px;font-weight:800;
-  direction:ltr;cursor:pointer}
-.coinchip i{font-style:normal;font-size:15px;line-height:1;opacity:.85}
+/* نوار «فیلتر روشن» بالای فهرست */
+.actf{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 12px;padding:8px 10px;border-radius:14px;
+  background:color-mix(in srgb,var(--acc) 8%,var(--card));border:1px solid color-mix(in srgb,var(--acc) 30%,transparent)}
+.actl{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:800;color:var(--tx2);margin-inline-end:2px}
+.actl .ic{width:15px;height:15px;color:var(--acc)}
+.actc{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:4px 11px;border-radius:99px;cursor:pointer;
+  background:color-mix(in srgb,var(--acc) 15%,transparent);color:var(--acc);font-size:12.5px;font-weight:800;
+  border:1px solid color-mix(in srgb,var(--acc) 40%,transparent);unicode-bidi:plaintext}
+.actc i{font-style:normal;font-size:16px;line-height:1;opacity:.85}
+.actall{min-height:36px;padding:4px 10px;background:none;border:0;color:var(--tx2);font-size:12.5px;font-weight:700;
+  cursor:pointer;text-decoration:underline;text-underline-offset:3px;margin-inline-start:auto}
 /* پیش‌نمایش کارت اشتراک‌گذاری: همان تصویری که فرستاده می‌شود، نه شبیهش */
 .panelhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
 /* ── کانال‌سنج ── */
-.audrules{font-size:11.5px;color:var(--tx3);margin-top:10px;line-height:1.9}
+.audrules{font-size:12px;color:var(--tx3);margin-top:10px;line-height:1.9}
 .audprog{margin-top:10px;font-size:12px;color:var(--tx2);font-weight:700}
 .audprog i{display:block;height:5px;margin-top:6px;border-radius:99px;background:var(--inset);overflow:hidden;position:relative}
 .audprog i::after{content:'';position:absolute;inset-block:0;inset-inline-start:0;width:var(--p);
@@ -495,7 +503,7 @@ button.catt{cursor:pointer}
 .audf .afopts{display:flex;gap:6px;flex-wrap:wrap}
 .audf .afopts .catchip{padding:4px 11px}
 .afsel{background:var(--inset);border:1px solid var(--line2);border-radius:10px;padding:6px 10px;min-width:120px}
-.catchip i{font-style:normal;opacity:.7;font-size:11px;margin-inline-start:2px}
+.catchip i{font-style:normal;opacity:.7;font-size:12px;margin-inline-start:2px}
 .arow{display:flex;align-items:center;gap:8px;width:100%;text-align:start;background:var(--inset);
   border:1px solid var(--line);border-radius:12px;padding:9px 11px;margin-top:7px;cursor:pointer;color:var(--tx)}
 .arow b{font-size:13px;flex:none}
@@ -505,11 +513,11 @@ button.catt{cursor:pointer}
 .arow2:first-of-type{border-top:0}
 .ar1{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .ar1 .tick{font-size:14.5px}
-.ar1 .when{margin-inline-start:auto;font-size:11px;color:var(--tx3)}
+.ar1 .when{margin-inline-start:auto;font-size:12px;color:var(--tx3)}
 .ar2{font-size:12px;color:var(--tx2);margin-top:5px;font-variant-numeric:tabular-nums}
 .ar2.bad{color:var(--warn)}
 .ar3{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
-.ar3 .pill{font-size:10.5px;padding:2px 8px}
+.ar3 .pill{font-size:12px;padding:2px 8px}
 .ar4{display:flex;gap:6px;margin-top:8px}
 .audtl{list-style:none;margin:0;padding:0;border-inline-start:2px solid var(--line2)}
 .audtl li{position:relative;padding:6px 14px 6px 0;font-size:12.5px;color:var(--tx)}
@@ -517,7 +525,7 @@ button.catt{cursor:pointer}
   border-radius:50%;background:var(--card2);border:2px solid var(--tx3)}
 .audtl li.add::before{border-color:var(--up);background:color-mix(in srgb,var(--up) 30%,var(--card))}
 .audtl li.cut::before{border-color:var(--dn);background:color-mix(in srgb,var(--dn) 30%,var(--card))}
-.audtl time{display:block;font-size:11px;color:var(--tx3);font-variant-numeric:tabular-nums}
+.audtl time{display:block;font-size:12px;color:var(--tx3);font-variant-numeric:tabular-nums}
 .audtxt,.atxt{white-space:pre-wrap;font-size:12.5px;line-height:1.9;color:var(--tx2)}
 .audtxt{background:var(--inset);border-radius:var(--r2);padding:10px 12px}
 tr.tap{cursor:pointer}
@@ -569,14 +577,14 @@ tr.tap:hover td{background:var(--card2)}
   text-underline-offset:3px;text-decoration-color:var(--line2)}
 .plink .ic{width:13px;height:13px}
 .plink:hover{color:var(--tx2)}
-.markhint{font-size:11px;color:var(--tx3)}
+.markhint{font-size:12px;color:var(--tx3)}
 .featrow{display:flex;gap:10px;align-items:flex-start;padding:10px 0;cursor:pointer;
   border-bottom:1px solid var(--line)}
 .featrow:last-child{border-bottom:0}
 .featrow input{width:20px;height:20px;accent-color:var(--gold);flex:none;margin-top:1px}
 .feattxt{min-width:0}
 .featttl{font-size:13px;font-weight:800;color:var(--tx)}
-.featdesc{font-size:11.5px;color:var(--tx3);line-height:1.8;margin-top:2px}
+.featdesc{font-size:12px;color:var(--tx3);line-height:1.8;margin-top:2px}
 .status .sc b.u{color:var(--up)}.status .sc b.d{color:var(--dn)}
 .status .sc b.w{color:var(--warn)}.status .sc b.m{color:var(--tx3)}
 /* حالت فشرده: متن و پلن پنهان، فقط سرِ کارت می‌ماند */
@@ -592,7 +600,7 @@ tr.tap:hover td{background:var(--card2)}
 .dsep.old b{color:var(--tx3)}
 .dsep::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent)}
 [dir="rtl"] .dsep::after{background:linear-gradient(270deg,var(--line2),transparent)}
-.dsep .dsn{order:3;font-style:normal;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--inset);border:1px solid var(--line)}
+.dsep .dsn{order:3;font-style:normal;font-size:12px;padding:1px 8px;border-radius:99px;background:var(--inset);border:1px solid var(--line)}
 .dsep::after{order:2}
 html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .card.tight .csum{display:flex;align-items:center;gap:8px;padding:0 14px 12px;margin-top:-4px;font-size:12.5px;color:var(--tx2);
@@ -667,7 +675,7 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .levtrack input[type=range]:disabled{cursor:default}
 .levtrack input[type=range]:disabled::-webkit-slider-thumb{cursor:default;box-shadow:0 0 0 1px var(--gold),0 0 0 6px color-mix(in srgb,var(--gold) 16%,transparent),0 6px 16px -4px color-mix(in srgb,var(--gold) 85%,transparent)}
 .levticks{position:relative;height:18px;direction:ltr;margin-top:2px}
-.levticks i{position:absolute;transform:translateX(-50%);font-style:normal;font-size:10.5px;font-weight:800;color:var(--tx3);
+.levticks i{position:absolute;transform:translateX(-50%);font-style:normal;font-size:12px;font-weight:800;color:var(--tx3);
   white-space:nowrap;font-variant-numeric:tabular-nums}
 .levticks i.safe{color:var(--up);top:0;direction:rtl;unicode-bidi:isolate}
 .levticks i.safe b{unicode-bidi:isolate;font-weight:900}
@@ -711,20 +719,20 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .briefkv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
 .bk{background:var(--inset);border:1px solid var(--line);border-radius:var(--r2);
   padding:8px 6px;text-align:center;min-width:0}
-.bk b{display:block;font-size:10.5px;font-weight:700;color:var(--tx3)}
+.bk b{display:block;font-size:12px;font-weight:700;color:var(--tx3)}
 .bk span{display:block;font-size:13.5px;font-weight:800;margin-top:3px;color:var(--tx);
   font-variant-numeric:tabular-nums}
 .bk span.u{color:var(--up)}.bk span.d{color:var(--dn)}
 .bk span.w{color:var(--warn)}.bk span.m{color:var(--tx3)}
 .cmptab{width:100%;border-collapse:collapse;font-size:12.5px}
-.cmptab th{font-size:11px;color:var(--tx3);font-weight:700;padding:6px 8px;text-align:center}
+.cmptab th{font-size:12px;color:var(--tx3);font-weight:700;padding:6px 8px;text-align:center}
 .cmptab th:first-child{text-align:start}
 .cmptab td{padding:7px 8px;border-top:1px solid var(--line);text-align:center;
   font-variant-numeric:tabular-nums;color:var(--tx2)}
 .cmptab td:first-child{text-align:start;color:var(--tx)}
 .cmptab tr.df td{color:var(--gold);font-weight:800}
 .guessrow{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
-.pxnote{font-size:11.5px;color:var(--tx3);margin-top:5px;min-height:15px}
+.pxnote{font-size:12px;color:var(--tx3);margin-top:5px;min-height:15px}
 .pxnote b{color:var(--tx);font-variant-numeric:tabular-nums}
 .pxnote .bad{color:var(--dn)}
 #entLad{margin:6px 0 4px}
@@ -740,7 +748,7 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .ghd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .gtitle{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--tx)}
 .gtitle .ic{width:20px;height:20px;color:var(--gold)}
-.gprog{display:flex;flex-direction:column;gap:5px;min-width:130px;font-size:11.5px;color:var(--tx2);font-weight:700}
+.gprog{display:flex;flex-direction:column;gap:5px;min-width:130px;font-size:12px;color:var(--tx2);font-weight:700}
 .gprog i{display:block;height:5px;border-radius:99px;background:var(--inset);overflow:hidden}
 .gprog s{display:block;height:100%;background:linear-gradient(90deg,var(--gold2),var(--gold));border-radius:99px;transition:width .4s var(--ease)}
 .gwarn{font-size:12px;color:var(--tx3);line-height:1.9;margin:8px 0 10px}
@@ -812,7 +820,7 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .labbar{height:8px;border-radius:99px;background:var(--card);margin-top:8px;overflow:hidden;direction:ltr}
 .labbar i{display:block;height:100%;border-radius:4px}
 .labbar i.u{background:var(--up)}.labbar i.d{background:var(--dn)}
-.labk{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:7px;font-size:11.5px;color:var(--tx3)}
+.labk{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:7px;font-size:12px;color:var(--tx3)}
 .labk b{color:var(--tx);font-variant-numeric:tabular-nums}
 .labr .mark{margin-top:8px}
 .labcu{margin:12px 0 0!important}
@@ -838,7 +846,7 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .gz.up{background:color-mix(in srgb,var(--up) 9%,transparent)}
 .glr{position:absolute;inset-inline:10px;height:22px;display:flex;align-items:center;gap:8px;font-size:12px}
 .glr b{flex:none;min-width:74px;font-weight:800}
-.glr b em{font-style:normal;font-size:11px;opacity:.85;margin-inline-start:3px}
+.glr b em{font-style:normal;font-size:12px;opacity:.85;margin-inline-start:3px}
 .glr s{flex:1;height:2px;border-radius:2px;text-decoration:none}
 .glr span{flex:none;min-width:58px;text-align:end;font-weight:800;font-variant-numeric:tabular-nums}
 .glr.dn b,.glr.dn span{color:var(--dn)}.glr.dn s{background:var(--dn)}
@@ -879,13 +887,13 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .gnext b{font-size:24px;color:var(--gold);font-variant-numeric:tabular-nums}
 .gnext em{font-style:normal;font-size:12px;color:var(--tx3)}
 .gslots{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:10px}
-.gslots i{font-style:normal;text-align:center;font-size:11.5px;font-weight:800;padding:6px 0;border-radius:8px;
+.gslots i{font-style:normal;text-align:center;font-size:12px;font-weight:800;padding:6px 0;border-radius:8px;
   background:var(--card);border:1px solid var(--line);color:var(--tx3);font-variant-numeric:tabular-nums}
 .gslots i.on{background:color-mix(in srgb,var(--gold) 16%,transparent);border-color:color-mix(in srgb,var(--gold) 45%,transparent);color:var(--gold)}
 .gsess{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .gses{padding:9px 10px;border-radius:10px;background:var(--card);border:1px solid var(--line)}
 .gses b{display:block;font-size:12.5px}
-.gses span{display:block;font-size:11.5px;color:var(--tx3);margin-top:3px;line-height:1.7}
+.gses span{display:block;font-size:12px;color:var(--tx3);margin-top:3px;line-height:1.7}
 .gses.on{border-color:color-mix(in srgb,var(--up) 45%,transparent)}
 .gses.on span{color:var(--up)}
 .gmeter{margin-bottom:10px}
@@ -915,12 +923,12 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .scanrow input{width:19px;height:19px;accent-color:var(--gold);flex:none;margin-top:1px}
 .scantxt{min-width:0;flex:1}
 .scanttl{font-size:13px;font-weight:700;color:var(--tx);line-height:1.6;overflow-wrap:anywhere}
-.scanmeta{font-size:11px;color:var(--tx3);margin-top:2px}
+.scanmeta{font-size:12px;color:var(--tx3);margin-top:2px}
 .cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
 .cmpbox{background:var(--inset);border:1px solid var(--line2);border-radius:var(--r2);
   padding:12px;text-align:center}
 .cmpbox b{display:block;font-size:13px;color:var(--tx);margin-bottom:6px}
-.cmpbox span{font-size:11.5px;color:var(--tx2);line-height:1.9}
+.cmpbox span{font-size:12px;color:var(--tx2);line-height:1.9}
 .showmore{display:block;width:100%;margin:12px 0 4px;padding:12px;border-radius:var(--r2);
   background:var(--card);border:1px solid var(--line2);color:var(--tx2);
   font-size:13px;font-weight:800;cursor:pointer}
@@ -932,7 +940,7 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .wsteps{margin:0 18px 10px 0;padding:0;font-size:12.5px;line-height:2;color:var(--tx2)}
 .wsteps li{margin-bottom:2px}
 .wsteps b{color:var(--tx);font-weight:700}
-.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;padding:3px 10px;border-radius:99px;
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;padding:3px 10px;border-radius:99px;
   border:1px solid transparent;white-space:nowrap}
 .pill.long{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 35%,transparent)}
 .pill.short{background:color-mix(in srgb,var(--dn) 14%,transparent);color:var(--dn);border-color:color-mix(in srgb,var(--dn) 35%,transparent)}
@@ -953,13 +961,17 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 @keyframes flu{0%{background:color-mix(in srgb,var(--up) 40%,transparent);color:var(--up)}}
 @keyframes fld{0%{background:color-mix(in srgb,var(--dn) 40%,transparent);color:var(--dn)}}
 .when{margin-inline-start:auto;font-size:12px;color:var(--tx3);white-space:nowrap}
-.when a{color:inherit;text-decoration:none;border-bottom:1px dotted var(--line2)}
+.when a{color:inherit;text-decoration:none;border-bottom:1px dotted var(--line2);display:inline-block;padding:8px 0;margin:-8px 0}
 .when a:hover{color:var(--tx2)}
 
 .shot{display:block;width:100%;border-bottom:1px solid var(--line);position:relative;min-height:170px;
   background:linear-gradient(100deg,var(--card2) 30%,color-mix(in srgb,var(--gold) 10%,var(--card2)) 50%,var(--card2) 70%);
   background-size:220% 100%;animation:sh 1.4s linear infinite}
 .shot img{display:block;width:100%;height:auto;max-height:min(58vh,440px);object-fit:contain;background:#0B0C0F;opacity:0;transition:opacity .45s}
+/* در فهرست سیگنال‌ها عکس نیمی از صفحه را می‌گرفت؛ کوتاه‌تر، و با زدن تمام‌صفحه باز می‌شود */
+.card:not(.lesson) .shot{min-height:120px}
+.card:not(.lesson) .shot img{max-height:min(34vh,260px)}
+#sheetTitle:focus{outline:none}
 .shot.loaded{animation:none;min-height:0;background:#0B0C0F}
 .shot.loaded img{opacity:1}
 .body{padding:13px 14px}
@@ -975,7 +987,7 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .kv{display:flex;flex-wrap:wrap;gap:1px;background:var(--card);
   border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;margin-bottom:10px}
 .k{flex:1 1 108px;background:var(--card);padding:9px 11px;min-width:0;box-shadow:0 0 0 1px var(--line)}
-.k b{display:block;font-size:11px;color:var(--tx2);font-weight:600;margin-bottom:2px}
+.k b{display:block;font-size:12px;color:var(--tx2);font-weight:600;margin-bottom:2px}
 .k span{font-size:14.5px;font-weight:800;font-variant-numeric:tabular-nums;direction:ltr;display:block;text-align:end;overflow-wrap:anywhere}
 .k span.u{color:var(--up)} .k span.d{color:var(--dn)} .k span.w{color:var(--warn)}
 .k span.m{color:var(--tx3);font-weight:600} .k span.a{color:var(--gold)}
@@ -983,7 +995,7 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 
 .tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:10px;border:1px solid var(--line);border-radius:var(--r2)}
 table.tp{width:100%;min-width:290px;border-collapse:collapse;font-size:13px}
-table.tp th{text-align:start;font-weight:700;color:var(--tx2);font-size:11.5px;padding:7px 9px;border-bottom:1px solid var(--line);background:var(--card2)}
+table.tp th{text-align:start;font-weight:700;color:var(--tx2);font-size:12px;padding:7px 9px;border-bottom:1px solid var(--line);background:var(--card2)}
 table.tp td{padding:7px 9px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
 table.tp td:first-child{font-weight:800}
 table.tp tr:last-child td{border-bottom:none}
@@ -996,7 +1008,7 @@ table.tp .num{direction:ltr;text-align:start}
 .flag.d{background:color-mix(in srgb,var(--dn) 12%,transparent);color:var(--dn)}
 .flag.u{background:color-mix(in srgb,var(--up) 11%,transparent);color:var(--up)}
 .flag.i{background:var(--card);color:var(--tx2);border:1px solid var(--line)}
-.flag i{font-style:normal;flex:none;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:900;
+.flag i{font-style:normal;flex:none;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:900;
   background:color-mix(in srgb,currentColor 18%,transparent)}
 
 .acts{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line);flex-wrap:wrap;background:var(--card)}
@@ -1008,7 +1020,7 @@ table.tp .num{direction:ltr;text-align:start}
              inset 0 1px 0 rgba(255,255,255,.3)}
 .acts .btn.ok:hover{border-color:transparent}
 /* میان‌برها (ورود سریع، منتظرِ قیمت) کوچک می‌مانند و عرض را نمی‌بلعند */
-.acts .btn.side{flex:0 0 auto;min-width:0;min-height:0;color:var(--tx2)}
+.acts .btn.side{flex:0 0 auto;min-width:0;min-height:38px;color:var(--tx2)}
 .acts .btn.side .ic{width:13px;height:13px}
 .acts.mini .btn{flex:none;min-width:0}
 .acts .btn.icon{flex:none;min-width:0;width:40px;padding:0}
@@ -1019,7 +1031,7 @@ table.tp .num{direction:ltr;text-align:start}
 .pnlhero .big.u{color:var(--up);text-shadow:0 0 28px color-mix(in srgb,var(--up) 35%,transparent)}
 .pnlhero .big.d{color:var(--dn);text-shadow:0 0 28px color-mix(in srgb,var(--dn) 35%,transparent)}
 .pnlhero .big.m{color:var(--tx3)}
-.pnlhero .lab{font-size:11.5px;color:var(--tx3);font-weight:600;display:block;margin-bottom:3px}
+.pnlhero .lab{font-size:12px;color:var(--tx3);font-weight:600;display:block;margin-bottom:3px}
 .pnlhero .side{margin-inline-start:auto;text-align:end}
 .pnlhero .lp{font-size:16px;font-weight:800;direction:ltr;font-variant-numeric:tabular-nums}
 
@@ -1036,7 +1048,7 @@ table.tp .num{direction:ltr;text-align:start}
 .ladder .m.ent::before{background:var(--tx);height:22px;top:53px}
 .ladder .m.liq::before{background:var(--dn)}
 .ladder .m.tgt::before{background:var(--up);height:12px;top:58px}
-.ladder .lb{position:absolute;transform:translateX(-50%);font-size:10.5px;line-height:1.3;white-space:nowrap;text-align:center;
+.ladder .lb{position:absolute;transform:translateX(-50%);font-size:12px;line-height:1.3;white-space:nowrap;text-align:center;
   color:var(--tx3);font-weight:700;font-variant-numeric:tabular-nums}
 .ladder .lb.bot{top:78px}
 .ladder .lb.top{top:0}
@@ -1050,7 +1062,7 @@ table.tp .num{direction:ltr;text-align:start}
 /* نردبان به اندازه‌ی ردیف‌های اضافه جا باز می‌کند تا چیزی بیرون نزند */
 .ladder.deep1{height:148px}.ladder.deep2{height:178px}.ladder.deep3{height:208px}
 .ladder.high1{margin-top:32px}.ladder.high2{margin-top:62px}.ladder.high3{margin-top:92px}
-.ladder .lb small{display:block;font-size:9.5px;font-weight:600;color:var(--tx3);direction:rtl}
+.ladder .lb small{display:block;font-size:11px;font-weight:600;color:var(--tx3);direction:rtl}
 .ladder .m.ent .lb{color:var(--tx)}
 .ladder .m.liq .lb{color:var(--dn)}
 .ladder .m.tgt .lb{color:var(--up)}
@@ -1065,11 +1077,11 @@ table.tp .num{direction:ltr;text-align:start}
 .ladder .hs2::before{content:"";width:8px;height:8px;border-left:2px solid var(--onGold);border-right:2px solid var(--onGold);opacity:.7}
 .ladder .hs2:hover{transform:scale(1.08)}
 .ladder.drag .hs2{cursor:grabbing;transform:scale(1.18)}
-.ladder .slb{position:absolute;top:32px;transform:translateX(-50%);font-size:11px;font-weight:900;color:var(--gold);
+.ladder .slb{position:absolute;top:32px;transform:translateX(-50%);font-size:12px;font-weight:900;color:var(--gold);
   white-space:nowrap;z-index:2;font-variant-numeric:tabular-nums}
 .ladder.ro .hs2{cursor:default;pointer-events:none;width:14px;height:14px;margin-left:-7px;top:57px}
 .ladder.ro .hs2::before{display:none}
-.ladhint{font-size:11.5px;color:var(--tx3);text-align:center;margin:0 0 10px}
+.ladhint{font-size:12px;color:var(--tx3);text-align:center;margin:0 0 10px}
 
 .stopbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border-radius:13px;margin-bottom:10px;
   background:color-mix(in srgb,var(--gold) 12%,var(--card));border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);
@@ -1089,7 +1101,7 @@ table.tp .num{direction:ltr;text-align:start}
 .hist li{position:relative;padding:3px 0;padding-inline-start:14px}
 .hist li::before{content:"";position:absolute;inset-inline-start:-5px;top:11px;width:8px;height:8px;border-radius:50%;background:var(--gold)}
 .hist li.cut::before{background:var(--up)} .hist li.add::before{background:var(--acc)}
-.hist time{color:var(--tx3);font-size:11.5px;margin-inline-end:6px}
+.hist time{color:var(--tx3);font-size:12px;margin-inline-end:6px}
 
 /* ================= ورق ================= */
 .veil{position:fixed;inset:0;z-index:100;display:flex;align-items:flex-end;justify-content:center;
@@ -1114,6 +1126,18 @@ table.tp .num{direction:ltr;text-align:start}
 .sx{position:absolute;top:14px;inset-inline-end:14px;width:34px;height:34px;border-radius:11px;border:1px solid var(--line);
   background:var(--card);color:var(--tx2);display:grid;place-items:center;cursor:pointer}
 .srow{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+/* ── اندازه‌ی لمسی: هر چیزی که با انگشت زده می‌شود دست‌کم 40 پیکسل ارتفاع دارد.
+   جاهایی که ظاهر کوچک لازم است (نماد، دستگیره‌ی استاپ) ناحیه‌ی لمس نامرئیِ بزرگ‌تری گرفته‌اند. ── */
+.btn.xs{min-height:38px;padding:6px 11px}
+.btn.sm{min-height:40px}
+.fc,.catchip,.pbc,.mark,.mkttag,.mktb,.amtb{min-height:40px}
+.catchip,.pbc,.mark{display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.sx{width:44px;height:44px}
+.tick.tapme{position:relative}
+.tick.tapme::after{content:"";position:absolute;inset:-9px -8px}
+.ladder .hs2::before{content:"";position:absolute;inset:-9px;border-radius:50%}
+.plink,.more{min-height:36px}
+.day .v{font-size:10.5px}
 .srow .btn{flex:1 1 auto;min-width:96px;text-align:center;padding:11px;white-space:normal}
 .seg{display:flex;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:13px;overflow:hidden;margin-bottom:12px;padding:3px}
 .seg button{flex:1;background:none;border:1px solid transparent;padding:8px 6px;color:var(--tx2);font-weight:700;font-size:13px;
@@ -1133,7 +1157,7 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 .hrow2[data-s="busy"] .hi::after{background:var(--gold);animation:beat .8s infinite}
 .hrow2 .hb{flex:1;min-width:0}
 .hrow2 .hn{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;flex-wrap:wrap}
-.hrow2 .hn em{font-style:normal;font-size:11.5px;font-weight:800;padding:1px 8px;border-radius:99px;background:var(--inset);color:var(--tx2)}
+.hrow2 .hn em{font-style:normal;font-size:12px;font-weight:800;padding:1px 8px;border-radius:99px;background:var(--inset);color:var(--tx2)}
 .hrow2[data-s="ok"] .hn em{color:var(--up);background:color-mix(in srgb,var(--up) 13%,transparent)}
 .hrow2[data-s="stale"] .hn em,.hrow2[data-s="warn"] .hn em{color:var(--warn);background:color-mix(in srgb,var(--warn) 13%,transparent)}
 .hrow2[data-s="err"] .hn em{color:var(--dn);background:color-mix(in srgb,var(--dn) 13%,transparent)}
@@ -1146,19 +1170,22 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 .logr{display:flex;gap:8px;align-items:flex-start;padding:6px 10px;border-bottom:1px solid var(--line);font-size:12px;line-height:1.7}
 .logr:last-child{border-bottom:none}
 .logr i{width:7px;height:7px;border-radius:50%;flex:none;margin-top:7px}
-.logr time{color:var(--tx3);font-size:11px;flex:none;font-variant-numeric:tabular-nums;direction:ltr;min-width:36px}
+.logr time{color:var(--tx3);font-size:12px;flex:none;font-variant-numeric:tabular-nums;direction:ltr;min-width:36px}
 .logr span{min-width:0;color:var(--tx2);overflow-wrap:anywhere}
-.logr em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--tx3);background:var(--inset);
+.logr em{font-style:normal;font-size:12px;font-weight:700;color:var(--tx3);background:var(--inset);
   padding:0 5px;border-radius:5px;direction:ltr;display:inline-block;white-space:nowrap}
 
 /* ================= گزارش و تقویم ================= */
 .stats{display:flex;flex-wrap:wrap;gap:1px;background:var(--card);
   border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;margin:12px 0}
 .st{flex:1 1 112px;background:var(--card);padding:11px 12px;min-width:0;box-shadow:0 0 0 1px var(--line)}
-.st b{display:block;font-size:11px;color:var(--tx2);font-weight:600;margin-bottom:3px}
+.stnote{flex:1 1 100%;display:flex;gap:8px;align-items:flex-start;padding:10px 12px;font-size:12.5px;line-height:1.8;
+  color:var(--tx2);background:color-mix(in srgb,var(--gold) 7%,var(--card));box-shadow:0 0 0 1px var(--line)}
+.stnote .ic{width:16px;height:16px;flex:none;color:var(--gold);margin-top:3px}
+.st b{display:block;font-size:12px;color:var(--tx2);font-weight:600;margin-bottom:3px}
 .st span{font-size:19px;font-weight:900;font-variant-numeric:tabular-nums;direction:ltr;display:block;text-align:end}
 .st span.u{color:var(--up)} .st span.d{color:var(--dn)} .st span.m{color:var(--tx3)}
-.st small{font-size:11px;color:var(--tx3);display:block;text-align:end;overflow-wrap:anywhere}
+.st small{font-size:12px;color:var(--tx3);display:block;text-align:end;overflow-wrap:anywhere}
 .eq{width:100%;height:140px;display:block}
 .eq .ln{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 1.4s var(--ease) .15s forwards}
 @keyframes draw{to{stroke-dashoffset:0}}
@@ -1167,7 +1194,7 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 .calhead{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .calhead .t{font-weight:900;font-size:17px;margin-inline-end:auto}
 .calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
-.dow{text-align:center;font-size:11px;color:var(--tx3);font-weight:800;padding:3px 0;min-width:0}
+.dow{text-align:center;font-size:12px;color:var(--tx3);font-weight:800;padding:3px 0;min-width:0}
 .day{aspect-ratio:1;border-radius:11px;border:1px solid var(--line);background:var(--inset);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
   cursor:pointer;padding:1px;position:relative;min-width:0;min-height:36px;overflow:hidden;transition:transform .15s,border-color .2s}
@@ -1179,7 +1206,7 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 .day.today{outline:2px solid var(--gold);outline-offset:-2px}
 .day.sel{border-color:var(--gold);border-width:2px}
 .day .mk{position:absolute;top:4px;inset-inline-end:5px;width:5px;height:5px;border-radius:50%;background:var(--tx3)}
-.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--tx3);margin-top:12px;align-items:center}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--tx3);margin-top:12px;align-items:center}
 .sw{width:11px;height:11px;border-radius:3px;display:inline-block;vertical-align:-1px;margin-inline-end:4px}
 
 .empty{text-align:center;padding:40px 16px;color:var(--tx3);font-size:13.5px;line-height:2}
@@ -1460,8 +1487,8 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
           <button class="fb" data-p="all" aria-pressed="false"><span>کل</span></button>
         </div>
         <div class="fside">
-          <button class="fb fbucket wide hide" id="pRange" data-p="range" aria-pressed="false">
-            <span>بازه‌ی دلخواه</span></button>
+          <button class="fb fbucket wide hide" id="pRange" data-p="range" aria-pressed="false" title="بازه‌ی دلخواه">
+            <span>بازه</span></button>
           <button class="fb fbucket wide" id="repCal" aria-pressed="false"><span>تقویم</span></button>
         </div>
       </div>
@@ -3493,7 +3520,7 @@ function mediaOf(L){
   }
   const imgs=L.video?[]:(L.imgs&&L.imgs.length?L.imgs:(L.img?[L.img]:[]));
   for(const src of imgs){
-    const a=el('div','shot');a.setAttribute('role','button');a.tabIndex=0;
+    const a=el('div','shot');a.setAttribute('role','button');a.setAttribute('aria-label','بزرگ‌نمایی تصویر');a.tabIndex=0;
     const im=el('img');im.loading='lazy';im.decoding='async';im.alt='تصویر آموزش';
     a.onclick=()=>openLightbox(im);
     a.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openLightbox(im);}};
@@ -4080,22 +4107,53 @@ const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"
 const linkify=s=>s.replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>');
 
 /* ==================== ورق (sheet) ==================== */
-let sheetEsc=null;
+let sheetEsc=null, sheetRet=null;
+/* هر برچسبِ .fld به فیلد خودش وصل می‌شود تا صفحه‌خوان بگوید این کادر چیست و زدن روی برچسب فیلد را فعال کند */
+let fldSeq=0;
+function linkLabels(root){
+  for(const f of root.querySelectorAll('.fld')){
+    const l=f.querySelector('label'), i=f.querySelector('input,select,textarea');
+    if(!l||!i||l.htmlFor||l.contains(i))continue;
+    if(!i.id)i.id='fld'+(++fldSeq);
+    l.htmlFor=i.id;
+  }
+}
+const FOCUSABLE='button:not([disabled]),[href],input:not([disabled]):not([type=hidden]),select,textarea,[tabindex]:not([tabindex="-1"]),summary';
 function openSheet(html,onReady){
-  const v=$('#veil');
-  $('#sheet').innerHTML='<button class="sx" aria-label="بستن">'+ic('x')+'</button>'+html;
+  const v=$('#veil'), sh=$('#sheet');
+  // فوکوس قبلی نگه داشته می‌شود تا بعد از بستن، کاربر صفحه‌کلید همان‌جا برگردد
+  if(v.classList.contains('hide'))sheetRet=document.activeElement;
+  sh.innerHTML='<button class="sx" aria-label="بستن">'+ic('x')+'</button>'+html;
+  sh.setAttribute('aria-modal','true');
+  const h=sh.querySelector('h3');
+  if(h){h.id='sheetTitle';h.tabIndex=-1;sh.setAttribute('aria-labelledby','sheetTitle');}
   v.classList.remove('hide');
   requestAnimationFrame(()=>v.classList.add('open'));
-  $('#sheet').querySelector('.sx').onclick=closeSheet;
-  $('#sheet').scrollTop=0;
-  if(onReady)onReady($('#sheet'));
+  sh.querySelector('.sx').onclick=closeSheet;
+  sh.scrollTop=0;
+  if(onReady)onReady(sh);
+  linkLabels(sh);
+  // فوکوس به عنوان ورق (نه اولین فیلد: کیبورد گوشی بی‌دلیل باز نشود)
+  (h||sh.querySelector('.sx')).focus({preventScroll:true});
 }
+/* Tab داخل ورق می‌چرخد و بیرون نمی‌زند */
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Tab'||$('#veil').classList.contains('hide'))return;
+  const f=[...$('#sheet').querySelectorAll(FOCUSABLE)].filter(x=>x.getClientRects().length);
+  if(!f.length)return;
+  const a=f[0], z=f[f.length-1], cur=document.activeElement;
+  if(!$('#sheet').contains(cur)){e.preventDefault();a.focus();}
+  else if(e.shiftKey&&(cur===a||cur.id==='sheetTitle')){e.preventDefault();z.focus();}
+  else if(!e.shiftKey&&cur===z){e.preventDefault();a.focus();}
+});
 function closeSheet(){
   const v=$('#veil');
   if(v.classList.contains('hide'))return;
   v.classList.remove('open');
   setTimeout(()=>{if(!v.classList.contains('open')){v.classList.add('hide');$('#sheet').innerHTML='';}},380);
   if(sheetEsc){sheetEsc();sheetEsc=null;}
+  const r=sheetRet;sheetRet=null;
+  if(r&&r.isConnected&&r.focus)try{r.focus({preventScroll:true});}catch(e){}
 }
 /* پنل‌های هم‌شکل: تنظیمات هم همین رفتار باز/بسته شدن را دارد */
 function openPanel(id){const v=$('#'+id);v.classList.remove('hide');requestAnimationFrame(()=>v.classList.add('open'));}
@@ -4104,7 +4162,7 @@ function closePanel(id){
   setTimeout(()=>{if(!v.classList.contains('open'))v.classList.add('hide');},380);
 }
 const num=id=>{const n=$('#'+id);const v=n?parseFloat(n.value):NaN;return isFinite(v)&&v>0?v:null;};
-const fldHtml=(k,l,v,extra)=>'<div class="fld"><label>'+l+'</label><input id="f_'+k+
+const fldHtml=(k,l,v,extra)=>'<div class="fld"><label for="f_'+k+'">'+l+'</label><input id="f_'+k+
   '" type="number" step="any" inputmode="decimal" '+(extra||'')+' value="'+(v===''||v==null?'':v)+'"></div>';
 
 /* ==================== وضعیت سرویس‌ها ==================== */
@@ -4173,7 +4231,7 @@ function diagRowHTML(r){
   return '<tr><td>'+esc(r.name)+'</td>'+
     '<td class="num" style="color:'+c+';font-weight:900">'+st+'</td>'+
     '<td class="num">'+(r.ms!=null&&!r.busy?faN(r.ms)+'ms':'—')+'</td>'+
-    '<td style="font-size:11.5px;color:var(--tx2)">'+esc(r.busy?'در حال امتحان…':(r.msg||''))+'</td></tr>';
+    '<td style="font-size:12px;color:var(--tx2)">'+esc(r.busy?'در حال امتحان…':(r.msg||''))+'</td></tr>';
 }
 function paintDiag(rows,done){
   const box=$('#diagBox');
@@ -4236,7 +4294,7 @@ function sheetHealth(){
     '</div>'+
     '<div id="logDump" class="hide" style="margin-top:10px"><textarea rows="6" readonly '+
       'style="width:100%;background:var(--inset);border:1px solid var(--line2);border-radius:11px;padding:9px;'+
-      'font-size:11px;direction:ltr;text-align:left"></textarea></div>'+
+      'font-size:12px;direction:ltr;text-align:left"></textarea></div>'+
     '<div class="sechd">پست‌های ذخیره‌شده</div>'+
     '<div class="srow" style="margin-top:0"><button class="btn sm dgr" id="hClr">پاک کردن پست‌های ذخیره‌شده</button></div>'+
     '<div class="hint">پاک کردن پست‌های ذخیره‌شده به پوزیشن‌ها و کارنامه‌ات کاری ندارد؛ فقط باعث می‌شود پست‌ها از اول از تلگرام خوانده شوند.</div>',
@@ -4379,7 +4437,9 @@ function sheetCats(p){
       }
     };
     paint();
-    const add=()=>{const c=newCat($('#catN').value);if(!c)return;$('#catN').value='';
+    const add=()=>{const c=newCat($('#catN').value);
+      if(!c){toast('اول اسم دسته را بنویس','info');$('#catN').focus();return;}   // قبلاً بی‌صدا هیچ کاری نمی‌کرد
+      $('#catN').value='';
       if(p)setCat(p.id,c.id,true);paint();renderSignals();toast('دسته‌ی «'+esc(c.n)+'» آماده است','ok');};
     $('#catAdd').onclick=add;
     $('#catN').onkeydown=e=>{if(e.key==='Enter')add();};
@@ -4639,7 +4699,7 @@ function buildCard(p,lite){
   if(lite){CARDS.set(p.id,card);return card;}
 
   if(p.img){
-    const a=el('div','shot');a.setAttribute('role','button');a.tabIndex=0;
+    const a=el('div','shot');a.setAttribute('role','button');a.setAttribute('aria-label','بزرگ‌نمایی تصویر');a.tabIndex=0;
     const im=el('img');im.loading='lazy';im.decoding='async';im.alt='تصویر سیگنال';
     a.onclick=()=>openLightbox(im);
     a.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openLightbox(im);}};
@@ -4703,7 +4763,7 @@ function buildReply(p){
     }
     full.appendChild(el('div','replytxt',linkify(esc(faN(src.text||'(بدون متن)')))));
     if(src.img){
-      const a=el('div','shot');a.setAttribute('role','button');a.tabIndex=0;
+      const a=el('div','shot');a.setAttribute('role','button');a.setAttribute('aria-label','بزرگ‌نمایی تصویر');a.tabIndex=0;
       const im=el('img');im.loading='lazy';im.decoding='async';im.alt='تصویر پست اصلی';
       im.onload=()=>a.classList.add('loaded');im.onerror=()=>a.remove();im.src=src.img;
       a.onclick=()=>openLightbox(im);
@@ -5099,8 +5159,8 @@ function sheetEnter(p,sig,ov,px){
    '<div class="grid">'+
      fldHtml('e','قیمت ورود واقعی',entry0)+fldHtml('s','حد ضرر',stop0)+
    '</div>'+
-   '<div class="sldrow"><label id="lbl_m">مارجین ($)</label>'+
-     '<input type="range" id="r_m" min="1" max="'+maxMargin+'" step="1" value="'+amt0+'">'+
+   '<div class="sldrow"><label id="lbl_m" for="f_m">مارجین ($)</label>'+
+     '<input type="range" id="r_m" min="1" max="'+maxMargin+'" step="1" value="'+amt0+'" aria-labelledby="lbl_m">'+
      '<input type="number" id="f_m" step="any" inputmode="decimal" value="'+amt0+'"></div>'+
    '<div id="amtBox"></div>'+
    /* اهرم: دستگیره‌ی طلایی مثل دستگیره‌ی استاپ، روی نواری که ناحیه‌ی امن (استاپ قبل از
@@ -5546,13 +5606,35 @@ function renderSignals(){
       list.appendChild(bulk);
     }
   }
-  if(coinFilter){
-    const chip=el('button','coinchip','فقط '+esc(coinFilter)+' <i>×</i>');
-    chip.title='برداشتن فیلتر';
-    chip.onclick=()=>{coinFilter=null;shownMax=PAGE;renderSignals();};
-    list.appendChild(chip);
+  /* نوار «فیلترهای روشن»: فیلترها ذخیره می‌شوند، پس وقتی برمی‌گردی باید معلوم باشد چرا فهرست
+     کوتاه یا خالی است. هر برچسب با × خودش برداشته می‌شود و «همه را بردار» به حالت پیش‌فرض می‌برد. */
+  {
+    const tags=[];
+    const BK={res:'نتایج',exp:'منقضی',arch:'آرشیو'};
+    // بخش‌های بالا (در انتظار/سیگنال‌ها/همه) خودشان روشن دیده می‌شوند؛ اینجا فقط چیزهایی که از چشم می‌افتند
+    if(bucket!=='live'&&BK[bucket])tags.push([BK[bucket],()=>{bucket='live';}]);
+    const ac=activeCat();
+    if(ac)tags.push(['دسته: '+esc(catById(ac).n),()=>{VIEW.cat='';}]);
+    else if(bucket==='live'&&sigFilter==='all'&&VIEW.kind&&VIEW.kind!=='all')
+      tags.push([VIEW.kind==='sig'?'سیگنال':(KIND_FA[VIEW.kind]||VIEW.kind),()=>{VIEW.kind='all';}]);
+    if(DAY_FA[VIEW.day]&&VIEW.day!=='all')tags.push(['روز: '+DAY_FA[VIEW.day],()=>{VIEW.day='all';}]);
+    if(coinFilter)tags.push(['فقط '+esc(coinFilter),()=>{coinFilter=null;}]);
+    if(q)tags.push(['جستجو: '+esc(query.trim().slice(0,16)),()=>{query='';$('#q').value='';}]);
+    if(tags.length){
+      const bar=el('div','actf');bar.setAttribute('aria-label','فیلترهای روشن');
+      bar.appendChild(el('span','actl',ic('sliders')+'<span>فیلتر روشن</span>'));
+      for(const [t,off] of tags){
+        const b=el('button','actc',t+' <i aria-hidden="true">×</i>');b.title='برداشتن این فیلتر';
+        b.onclick=()=>{off();setView({});};bar.appendChild(b);
+      }
+      if(tags.length>1){const all=el('button','actall','همه را بردار');
+        all.onclick=()=>{bucket='live';sigFilter='sig';coinFilter=null;query='';$('#q').value='';
+          setView({kind:'all',cat:'',day:'all'});};bar.appendChild(all);}
+      list.appendChild(bar);
+    }
   }
-  if(!n){
+  if(!n&&!POSTS.length&&H.tg.err){/* خطا و راه‌حلش در نوار وضعیت بالاست؛ پیغام «هنوز پستی نیامده» اینجا تکرار نمی‌شود */}
+  else if(!n){
     list.appendChild(el('div','empty',STAR+(POSTS.length
       ?(bucket==='arch'?'آرشیو خالی است.<br>روی هر پستی دکمه‌ی «آرشیو» را بزن تا اینجا بیاید.'
         :bucket==='res'?'هنوز پست نتیجه‌ای نیامده.<br>پست‌هایی مثل «تارگت اول زد» یا «استاپ خورد» خودشان اینجا جمع می‌شوند؛ هر پست دیگری را هم با دکمه‌ی «نتیجه» می‌فرستی اینجا.'
@@ -5593,9 +5675,12 @@ function showStatus(){
     st.className='status bad';
     st.innerHTML='<div><b>کانال خوانده نشد.</b><br>'+esc(H.tg.err)+'<br>'+
       'اتصال یا فیلترشکن را عوض کن و چند لحظه بعد دوباره بزن. پوزیشن‌ها و کارنامه‌ات بدون اینترنت هم کار می‌کنند.</div>';
+    const row=el('div','srow');row.style.marginTop='10px';
     const b=el('button','btn sm','تلاش دوباره');
     b.onclick=async()=>{btnBusy(b,true,'در حال تلاش');await refresh(false);btnBusy(b,false);};
-    st.appendChild(b);
+    // پیغام خطا به «تست اتصال» اشاره می‌کند؛ همان دکمه همین‌جاست، نه فقط پشت نقطه‌های سربرگ
+    const t=el('button','btn sm',ic('wifi')+'<span>تست اتصال</span>');t.onclick=sheetHealth;
+    row.appendChild(b);row.appendChild(t);st.appendChild(row);
     return;
   }
   /* شمارنده‌های «پست/سیگنال/تصمیم‌نگرفته» از اینجا برداشته شدند: همین سه عدد
@@ -5964,7 +6049,7 @@ function drawSummaryCard(a,label,opt){
     ['معامله',faN(a.n),SH.tx],['برد',faN(a.wins),SH.up],['باخت',faN(a.losses),SH.dn],
     ['نرخ برد',a.winRate==null?'—':faN(a.winRate.toFixed(0))+'٪',
       a.winRate==null?SH.tx3:(a.winRate>=50?SH.up:SH.dn)],
-    ['ضریب سود',a.pf==null?'—':(a.pf===Infinity?'∞':a.pf.toFixed(2)),
+    ['ضریب سود',pfTxt(a.pf),
       a.pf!=null&&a.pf>=1?SH.up:SH.tx],
     ['میانگین R',a.avgR!=null?fmtR(a.avgR):'—',a.avgR!=null?(a.avgR>=0?SH.up:SH.dn):SH.tx3]
   ];
@@ -7418,7 +7503,7 @@ function rCurve(pts,dd){
   const zero=Y(0), last=pts[pts.length-1], col=last>=0?'var(--up)':'var(--dn)';
   const area=d+'L'+X(pts.length-1).toFixed(1)+' '+zero.toFixed(1)+' L'+X(0).toFixed(1)+' '+zero.toFixed(1)+' Z';
   const w=el('div');
-  w.innerHTML='<div style="font-size:11.5px;color:var(--tx2);font-weight:700;margin:12px 0 4px">'+
+  w.innerHTML='<div style="font-size:12px;color:var(--tx2);font-weight:700;margin:12px 0 4px">'+
     'اگر همه‌ی این سیگنال‌ها را با ریسک ثابت گرفته بودی · بیشترین افت از سقف: '+
     '<span style="color:var(--dn);direction:ltr;display:inline-block">'+fmtR(-dd)+'</span></div>'+
     '<svg class="eq" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="--len:'+Math.ceil(len)+'">'+
@@ -7479,18 +7564,21 @@ function renderAudit(){
   safe('کارنامه‌ی کانال',()=>{
   const sc=el('div','panel');
   sc.appendChild(el('div','panelhead','<b>کارنامه‌ی کانال</b>'+
-    (rows.length!==all.length?'<span class="pill gold">فیلتر: '+faN(rows.length)+' از '+faN(all.length)+'</span>':'')));
+    (rows.length!==all.length?audFilterPill(all,rows):'')));
   const g=el('div','stats');
   g.innerHTML=
     stHtml('سنجیده',faN(st.win+st.loss+st.exp),'',faN(st.win)+' برد · '+faN(st.loss)+' باخت · '+faN(st.exp)+' منقضی')+
     stHtml('نرخ برد',st.winRate==null?'—':faN(st.winRate.toFixed(0))+'٪',st.winRate==null?'m':(st.winRate>=50?'u':'d'))+
     stHtml('مجموع R',st.cnt?fmtR(st.sumR):'—',st.cnt?cls(st.sumR):'m','اگر همه را گرفته بودی')+
     stHtml('میانگین R',st.avgR==null?'—':fmtR(st.avgR),st.avgR==null?'m':cls(st.avgR),'امید ریاضی هر سیگنال')+
-    stHtml('ضریب سود',st.pf==null?'—':(st.pf===Infinity?'∞':st.pf.toFixed(2)),st.pf==null?'m':(st.pf>=1?'u':'d'))+
+    stHtml('ضریب سود',pfTxt(st.pf),st.pf==null||st.pf===Infinity?'m':(st.pf>=1?'u':'d'),st.pf===Infinity?'هنوز باختی نبوده':'')+
     stHtml('باخت پیاپی',faN(st.maxStreak),st.maxStreak>=4?'d':'','بیشترین')+
     stHtml('فعال نشد',st.noneRate==null?'—':faN(st.noneRate.toFixed(0))+'٪','m',faN(st.none)+' سیگنال')+
     stHtml('در جریان',faN(st.open+st.wait),'m',faN(st.wait)+' منتظر ورود')+
     stHtml('نیاز به بررسی',faN(st.bad+st.amb),st.bad?'d':'m',st.todo?faN(st.todo)+' سنجیده نشده':'');
+  {const nd=st.win+st.loss+st.exp;
+   if(nd>0&&nd<SMALL_N)g.insertAdjacentHTML('beforeend','<div class="stnote">'+ic('info')+'<span>فقط '+faN(nd)+
+     ' سیگنال به نتیجه رسیده — برای قضاوت درباره‌ی کانال دست‌کم '+faN(SMALL_N)+' لازم است.</span></div>');}
   sc.appendChild(g);
   sc.appendChild(rCurve(st.curve,st.dd));
   if(st.late||st.chase)sc.appendChild(el('div','hint',
@@ -7600,7 +7688,7 @@ function buildAudFilter(all){
   const syms=[...new Set(all.map(x=>x.inp.tk).filter(Boolean))].sort();
   const w=el('div','afrow');
   w.appendChild(el('span','aflab','نماد'));
-  const sel=el('select','afsel');
+  const sel=el('select','afsel');sel.setAttribute('aria-label','فیلتر نماد');
   sel.innerHTML='<option value="">همه</option>'+syms.map(x=>'<option'+(AF.sym===x?' selected':'')+'>'+esc(x)+'</option>').join('');
   sel.onchange=()=>{AF.sym=sel.value;afSave();audShown=40;renderAudit();};
   w.appendChild(sel);d.appendChild(w);
@@ -8769,6 +8857,17 @@ function renderReportList(){
   }
   body.appendChild(repVsChannel());
 }
+/* ضریب سود بدون هیچ باختی بی‌نهایت است؛ «∞» روی یک معامله گمراه‌کننده بود */
+const pfTxt=pf=>pf==null||pf===Infinity?'—':pf.toFixed(2);
+const SMALL_N=10;
+/* برچسب «فیلتر» کانال‌سنج باید بگوید چه چیزی کنار رفته؛ «دیرهنگام‌ها» پیش‌فرض کنار می‌روند و
+   قبلاً بی‌توضیح «8 از 9» دیده می‌شد */
+function audFilterPill(all,rows){
+  const user=(AF.dir!=='all')+(AF.mkt!=='all')+(!!AF.rr)+(!!AF.span)+(!!AF.sym);
+  const late=AF.noLate?all.filter(x=>x.r&&x.r.late).length:0;
+  const t=user?'فیلتر: '+faN(rows.length)+' از '+faN(all.length):faN(late)+' دیرهنگام در آمار نیامد';
+  return '<span class="pill gold" title="از بخش «فیلتر» عوضش کن">'+t+'</span>';
+}
 function statsOf(a,big){
   const st=el('div','stats');
   let h='';
@@ -8776,18 +8875,22 @@ function statsOf(a,big){
   add('خالص',fmtUsd(a.pnl),cls(a.pnl),a.fees?'کارمزد '+fmtUsd(a.fees):'');
   add('معامله',faN(a.n),'',faN(a.wins)+' برد / '+faN(a.losses)+' باخت');
   add('نرخ برد',a.winRate==null?'—':faN(a.winRate.toFixed(0))+'٪',a.winRate==null?'m':(a.winRate>=50?'u':'d'));
-  add('ضریب سود',a.pf==null?'—':(a.pf===Infinity?'∞':a.pf.toFixed(2)),a.pf==null?'m':(a.pf>=1?'u':'d'),'سود÷ضرر');
+  add('ضریب سود',pfTxt(a.pf),a.pf==null||a.pf===Infinity?'m':(a.pf>=1?'u':'d'),a.pf===Infinity?'هنوز باختی نبوده':'سود÷ضرر');
   add('میانگین R',a.avgR==null?'—':fmtR(a.avgR).replace('R',''),a.avgR==null?'m':cls(a.avgR),
     a.totalR!=null?'مجموع '+fmtR(a.totalR):'');
   add('میانگین هر معامله',a.expectancy==null?'—':fmtUsd(a.expectancy),a.expectancy==null?'m':cls(a.expectancy));
   if(big){
     add('میانگین برد',a.wins?fmtUsd(a.avgWin):'—',a.wins?'u':'m');
     add('میانگین باخت',a.losses?fmtUsd(-a.avgLoss):'—',a.losses?'d':'m');
-    // بهترین و بدترین با رنگ خودشان: اگر همه معامله‌ها ضرر بوده‌اند، «بهترین» هم سبز نمی‌شود
-    if(a.best)add('بهترین',fmtUsd(a.best.v),cls(a.best.v),esc(a.best.p.ticker));
-    if(a.worst)add('بدترین',fmtUsd(a.worst.v),cls(a.worst.v),esc(a.worst.p.ticker));
+    // بهترین و بدترین با رنگ خودشان: اگر همه معامله‌ها ضرر بوده‌اند، «بهترین» هم سبز نمی‌شود.
+    // با یکی دو معامله «بهترین» و «بدترین» همان یک معامله‌اند و فقط شلوغ می‌کنند.
+    if(a.n>=3&&a.best)add('بهترین',fmtUsd(a.best.v),cls(a.best.v),esc(a.best.p.ticker));
+    if(a.n>=3&&a.worst)add('بدترین',fmtUsd(a.worst.v),cls(a.worst.v),esc(a.worst.p.ticker));
     add('بازده حساب',fmtPct((a.pnl/S.acct)*100),cls(a.pnl),'روی $'+faN(S.acct));
   }
+  // صداقت آماری: نرخ برد و ضریب سود با چند معامله تقریباً هیچ چیز نمی‌گویند
+  if(a.n>0&&a.n<SMALL_N)h+='<div class="stnote">'+ic('info')+'<span>فقط '+faN(a.n)+' معامله — '+
+    'این عددها با دست‌کم '+faN(SMALL_N)+' معامله معنی پیدا می‌کنند.</span></div>';
   st.innerHTML=h;return st;
 }
 function equityCurve(closed){
@@ -8811,7 +8914,7 @@ function equityCurve(closed){
   const col=last>=0?'var(--up)':'var(--dn)';
   const area=d+'L'+X(pts.length-1).toFixed(1)+' '+zero.toFixed(1)+' L'+X(0).toFixed(1)+' '+zero.toFixed(1)+' Z';
   const wrap=el('div');
-  wrap.innerHTML='<div style="font-size:11.5px;color:var(--tx2);font-weight:700;margin:12px 0 4px">'+
+  wrap.innerHTML='<div style="font-size:12px;color:var(--tx2);font-weight:700;margin:12px 0 4px">'+
     'رشد سرمایه · بیشترین افت از سقف: <span style="color:var(--dn);direction:ltr;display:inline-block">'+fmtUsd(-maxDD)+'</span></div>'+
     '<svg class="eq" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="--len:'+Math.ceil(len)+'">'+
     '<path d="'+area+'" fill="'+col+'" opacity=".10"/>'+
@@ -9163,6 +9266,8 @@ async function refresh(append,silent){
     }else{
       $('#incoming').classList.add('hide');
     }
+    // پیش از رندر: وگرنه فهرست خالی هنوز «در حال خواندن» حساب می‌شد و اسکلت بارگذاری زیر خطا می‌ماند
+    busy=false;
     renderAll();
     return okAny;
   }finally{
@@ -9315,6 +9420,7 @@ function wire(){
   for(const id of ['sProxy','sChannel','sAcct','sCap','sRisk','sMaxLev','sDaily','sMode','sR','sFee','sAuto','sStale','sCal','sPb'])
     $('#'+id).onchange=()=>{readSettings();renderAll();};
   wireIO();
+  linkLabels(document.getElementById('setVeil'));
   document.addEventListener('keydown',e=>{
     if(e.key!=='Escape')return;
     if(!$('#veil').classList.contains('hide'))closeSheet();
