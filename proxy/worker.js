@@ -17,6 +17,8 @@
 /* فقط این میزبان‌ها؛ وگرنه ورکرِ تو تبدیل می‌شود به پروکسی باز برای همه‌ی اینترنت */
 const ALLOW = [
   't.me',
+  'telesco.pe',          // عکس پست‌ها (خروجی PDF/PNG آموزش)
+  'cdn-telegram.org',
   'api.binance.com',
   'fapi.binance.com',   // کندلِ کوین‌هایی که فقط فیوچرز دارند (کانال‌سنج)
   'api.mexc.com',
