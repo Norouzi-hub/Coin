@@ -1944,8 +1944,10 @@ let storeOK=true;
 /* کلیدهای داده در یک جا: ذخیره، بارگذاری، همگام‌سازی و پشتیبان همه از همین فهرست می‌خوانند،
    پس کلید تازه فقط اینجا اضافه می‌شود (قبلاً پنج جا تکرار شده بود).
    cats: دسته‌های ساخت کاربر [{id,n}] · pcat: پست ← فهرست شناسه‌ی دسته‌ها
-   ledit: متنِ ویرایش‌شده‌ی آموزش‌ها ('g'+شماره برای دستورالعمل، شناسه‌ی پست برای بقیه) */
-const DB_OBJ=['decisions','overrides','lessons','archived','results','edits','gone','revived','pcat','ledit'];
+   ledit: متنِ ویرایش‌شده‌ی آموزش‌ها ('g'+شماره برای دستورالعمل، شناسه‌ی پست برای بقیه)
+   tomb: «سنگ قبر» چیزهای پاک‌شده {'positions:id'|'<مجموعه>:<کلید>': زمان} — تا همگام‌سازی
+         چیزی را که روی یک دستگاه پاک کرده‌ای از دستگاه دیگر زنده نکند */
+const DB_OBJ=['decisions','overrides','lessons','archived','results','edits','gone','revived','pcat','ledit','tomb'];
 const DB_ARR=['pending','watch','spot','cats'];
 const DB={positions:[],settings:{}};
 const isObj=x=>!!x&&typeof x==='object'&&!Array.isArray(x);
@@ -1960,8 +1962,73 @@ function dbBlob(){
   return o;
 }
 let KGEN=0;     // هر ذخیره نسل را جلو می‌برد تا حافظه‌ی نوعِ پست‌ها (postKind) تازه شود
+/* ---- ردگیری تغییرها برای ادغام همگام‌سازی ----
+   هر پوزیشنی که از ذخیره‌ی قبلی عوض شده، زمان تغییر (upd) می‌گیرد؛ هر چیزی که پاک شده سنگ قبر.
+   به این ترتیب دو دستگاه که هم‌زمان کار کرده‌اند، رکوردبه‌رکورد ادغام می‌شوند نه کل‌به‌کل. */
+let TRACK=null;
+const itemId=x=>x&&typeof x==='object'&&x.id!=null?String(x.id):JSON.stringify(x);
+const posSig=p=>JSON.stringify(p,(k,v)=>k==='upd'?undefined:v);
+function collKeys(k){const v=DB[k];return Array.isArray(v)?v.map(itemId):Object.keys(v||{});}
+function trackReset(){
+  TRACK={pos:new Map(DB.positions.map(p=>[p.id,posSig(p)])),keys:{}};
+  for(const k of DB_OBJ.concat(DB_ARR))if(k!=='tomb')TRACK.keys[k]=new Set(collKeys(k));
+}
+function trackStamp(){
+  if(!TRACK){trackReset();return;}
+  const now=Date.now(), T=DB.tomb, seen=new Set();
+  for(const p of DB.positions){
+    if(p.id==null)continue;
+    const sg=posSig(p);seen.add(p.id);
+    if(TRACK.pos.get(p.id)!==sg){p.upd=now;delete T['positions:'+p.id];}
+    TRACK.pos.set(p.id,sg);
+  }
+  for(const id of [...TRACK.pos.keys()])if(!seen.has(id)){T['positions:'+id]=now;TRACK.pos.delete(id);}
+  for(const k of DB_OBJ.concat(DB_ARR)){
+    if(k==='tomb')continue;
+    const cur=new Set(collKeys(k)), old=TRACK.keys[k]||new Set();
+    for(const x of old)if(!cur.has(x))T[k+':'+x]=now;
+    for(const x of cur)if(!old.has(x))delete T[k+':'+x];
+    TRACK.keys[k]=cur;
+  }
+  // سنگ قبرهای خیلی قدیمی لازم نیست؛ هر دستگاهی تا الان همگام شده
+  for(const [x,t] of Object.entries(T))if(now-t>120*864e5)delete T[x];
+}
+/* ادغام داده‌ی این دستگاه (mine) با سرور (srv). lastAt: آخرین همگام‌سازیِ موفقِ این دستگاه.
+   پوزیشن: هر طرف که upd تازه‌تری دارد. پاک‌شده: اگر سنگ قبرش از آخرین تغییرِ رکورد تازه‌تر است.
+   بقیه‌ی مجموعه‌ها: اجتماع دو طرف، در کلیدِ مشترک این دستگاه؛ تنظیمات: این دستگاه. */
+function syncMerge(mine,srv,lastAt){
+  mine=mine||{};srv=srv||{};lastAt=lastAt||0;
+  const mt=isObj(mine.tomb)?mine.tomb:{}, st=isObj(srv.tomb)?srv.tomb:{};
+  const tomb=Object.assign({},st);
+  for(const [x,t] of Object.entries(mt))if(!(tomb[x]>=t))tomb[x]=t;
+  const out={settings:Object.assign({},isObj(srv.settings)?srv.settings:{},isObj(mine.settings)?mine.settings:{}),tomb};
+  const P=new Map();
+  for(const p of srv.positions||[])if(p&&p.id!=null)P.set(p.id,p);
+  for(const p of mine.positions||[]){if(!p||p.id==null)continue;const o=P.get(p.id);if(!o||(p.upd||0)>=(o.upd||0))P.set(p.id,p);}
+  out.positions=[...P.values()].filter(p=>!(tomb['positions:'+p.id]>(p.upd||0)));
+  const gone=(k,x,inMine)=>{
+    const tk=k+':'+x;
+    if(!inMine)return !!mt[tk];                 // اینجا پاک شده و سرور هنوز دارد
+    return (st[tk]||0)>lastAt;                  // آنجا بعد از آخرین همگام‌سازیِ ما پاک شده
+  };
+  for(const k of DB_OBJ){
+    if(k==='tomb')continue;
+    const a=isObj(srv[k])?srv[k]:{}, b=isObj(mine[k])?mine[k]:{}, o=Object.assign({},a,b);
+    for(const x of Object.keys(o))if(tomb[k+':'+x]&&gone(k,x,x in b))delete o[x];
+    out[k]=o;
+  }
+  for(const k of DB_ARR){
+    const a=Array.isArray(srv[k])?srv[k]:[], b=Array.isArray(mine[k])?mine[k]:[];
+    const m=new Map(), bi=new Set(b.map(itemId));
+    for(const x of a)m.set(itemId(x),x);
+    for(const x of b)m.set(itemId(x),x);
+    out[k]=[...m].filter(([x])=>!(tomb[k+':'+x]&&gone(k,x,bi.has(x)))).map(([,v])=>v);
+  }
+  return out;
+}
 function save(){
   KGEN++;
+  try{trackStamp();}catch(e){}
   try{ localStorage.setItem(KEY,JSON.stringify(dbBlob())); }
   catch(e){ storeOK=false; showStoreWarn(); }
   if(typeof syncSoon==='function')syncSoon();
@@ -1976,6 +2043,7 @@ function load(){
       fillDB(d);
     }
   }catch(e){ storeOK=false; }
+  trackReset();
 }
 /* ---- ماندگاری داده ---- */
 /* سافاری (و گاهی کروم وقتی حافظه‌ی گوشی پر است) داده‌ی سایت‌هایی را که مدتی باز نشده‌اند خودش
@@ -3073,8 +3141,8 @@ function checkAlerts(){
 
 /* ==================== همگام‌سازی بین دستگاه‌ها ==================== */
 /* داده روی ورکر خودت نگه داشته می‌شود، نه جای دیگر. هر نوشتن یک شماره‌ی نسخه جلو می‌برد؛
-   اگر دستگاه دیگری وسط کار نوشته باشد سرور 409 می‌دهد و ما به‌جای بازنویسی، از کاربر
-   می‌پرسیم — چون سوابق معامله چیزی نیست که بی‌صدا رویش بنویسیم. */
+   اگر دستگاه دیگری وسط کار نوشته باشد سرور 409 می‌دهد. آن وقت دو طرف رکوردبه‌رکورد ادغام
+   می‌شوند (syncMerge) و دوباره فرستاده می‌شود؛ فقط اگر ادغام هم نشد، از کاربر می‌پرسیم. */
 const SYNCKEY='signaldesk.sync.v1';
 let syncCfg=lsGet(SYNCKEY)||{url:'',token:'',rev:0,at:0};
 let syncTimer=null, syncing=false;
@@ -3085,6 +3153,7 @@ function applyBlob(d){
   guidePurgeOld();   // دستگاه دیگری که هنوز آموزش‌های قدیمی را دارد، برشان نگرداند
   if(d.settings&&typeof d.settings==='object'){DB.settings=d.settings;Object.assign(S,d.settings);fixFeat();}
   OVERRIDE=DB.overrides;PCACHE.clear();
+  trackReset();
   save();applySettingsToForm();renderAll();
   migrateSpot();
 }
@@ -3115,8 +3184,13 @@ async function syncPull(silent){
   }
   const {rev,at,data}=res.j||{};
   if(!data){syncNote('سرور هنوز داده‌ای ندارد. «ارسال الان» را بزن.','');syncCfg.rev=rev||0;syncSave();return false;}
-  applyBlob(data);
+  /* شروع برنامه (silent): ادغام، تا کاری که روی این دستگاه بی‌اینترنت کرده‌ای گم نشود.
+     دکمه‌ی «دریافت از سرور»: همان داده‌ی سرور، چون خودت خواسته‌ای. */
+  const merged=silent?syncMerge(dbBlob(),data,syncCfg.at):data;
+  const diff=silent&&JSON.stringify(merged.positions)!==JSON.stringify(data.positions||[]);
+  applyBlob(merged);
   syncCfg.rev=rev||0;syncCfg.at=at||0;syncSave();
+  if(diff)syncSoon();
   if(!silent)syncNote('دریافت شد · '+blobCount(data),'good');
   return true;
 }
@@ -3126,6 +3200,16 @@ async function syncPush(silent){
   syncing=true;
   try{
     let res=await syncReq('PUT',{rev:syncCfg.rev,data:dbBlob()});
+    /* دستگاه دیگری وسط کار نوشته: رکوردبه‌رکورد ادغام و دوباره ارسال. پنجره‌ی انتخاب فقط
+       وقتی می‌آید که ادغام هم نشد (مثلاً سرور داده‌اش را نفرستاد یا باز هم هم‌زمان نوشته شد) */
+    for(let tries=0;res.status===409&&tries<2;tries++){
+      const server=(res.j&&res.j.server)||null;
+      if(!server||!server.data)break;
+      applyBlob(syncMerge(dbBlob(),server.data,syncCfg.at));
+      syncCfg.rev=server.rev||0;
+      res=await syncReq('PUT',{rev:syncCfg.rev,data:dbBlob()});
+      if(res.ok)logIt('info','همگام‌سازی: داده‌ی دستگاه دیگر ادغام شد');
+    }
     if(res.status===409){
       const server=(res.j&&res.j.server)||null;
       syncing=false;
