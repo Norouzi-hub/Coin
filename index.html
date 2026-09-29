@@ -231,8 +231,11 @@ html.busy .prog{opacity:1}
   .tabs{position:fixed;z-index:60;inset-inline:10px;bottom:calc(8px + env(safe-area-inset-bottom,0px));margin:0;
     background:var(--glass);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);
     box-shadow:0 18px 40px -12px rgba(0,0,0,.6);border-radius:20px}
-  .tab{flex-direction:column;gap:2px;font-size:12px;padding:7px 2px}
-  .tab .ic{width:21px;height:21px}
+  .tab{flex-direction:column;gap:2px;font-size:12.5px;padding:7px 2px}
+  .tab .ic{width:22px;height:22px}
+  /* منوی پایین موقع اسکرول به پایین کنار می‌رود و با اسکرول به بالا برمی‌گردد */
+  .tabs{transition:transform .3s var(--ease),opacity .3s var(--ease)}
+  html.navhide .tabs{transform:translateY(calc(100% + 20px));opacity:0;pointer-events:none}
   .tab .cnt{position:absolute;top:3px;inset-inline-start:calc(50% + 6px)}
   .hchip .lbl{display:none}
   .hchip{padding:6px 10px;gap:8px}
@@ -242,6 +245,18 @@ html.busy .prog{opacity:1}
   .rbtn{padding:0;width:40px;height:40px;border-radius:13px}
   header{padding-bottom:10px}
   html{scroll-padding-top:120px}
+}
+/* گوشی‌های خیلی باریک (تا 350 پیکسل، مثل 320): منوی پایین پنج تب را بدون اسکرول جا می‌دهد،
+   زیرعنوان سربرگ و متن وضعیت کنار می‌روند (نقطه‌ی رنگی وضعیت می‌ماند) */
+@media (max-width:350px){
+  .tab{min-width:0;flex:1 1 0;padding:7px 0;font-size:12px}
+  .tabs{inset-inline:6px;padding:3px}
+  #bchan{display:none}
+  .hst em{display:none}
+  .hchip{padding:6px 8px;gap:6px}
+  .bname b{white-space:nowrap;font-size:15px}
+  .fchip .ic{display:none}
+  .fchip{padding:8px 4px}
 }
 
 /* ================= دکمه ================= */
@@ -445,9 +460,10 @@ button.catt{cursor:pointer}
   color:var(--tx2);font-size:12px;font-weight:800;cursor:pointer}
 .mkttag .ic{width:14px;height:14px;flex:none}
 .mkttag:active{transform:scale(.97)}
-.tidy{display:block;width:100%;margin:0 0 12px;padding:9px;border-radius:var(--r2);
-  background:none;border:1px dashed var(--line2);color:var(--tx3);font-size:12.5px;
+.tidy{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin:14px 0 4px;padding:9px;min-height:44px;
+  border-radius:var(--r2);background:none;border:1px dashed var(--line2);color:var(--tx2);font-size:12.5px;
   font-weight:700;cursor:pointer}
+.tidy .ic{width:15px;height:15px}
 .tidy:active{background:var(--inset)}
 
 .status{font-size:12.5px;color:var(--tx2);padding:9px 12px;background:var(--card);
@@ -667,7 +683,7 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .sldrow input[type=range]:active::-webkit-slider-thumb,.levtrack input[type=range]:active::-webkit-slider-thumb{transform:scale(1.15);cursor:grabbing}
 .sldrow input[type=range]:disabled{opacity:1}
 .levbox{margin-top:14px;padding:12px 12px 6px;border-radius:14px;background:var(--inset);border:1px solid var(--line)}
-.levhd{display:flex;align-items:center;gap:10px}
+.levhd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:8px}
 .levt{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:var(--tx2)}
 .levt .ic{width:16px;height:16px;color:var(--gold)}
 .levv{display:inline-flex;flex-direction:row;align-items:baseline;gap:1px;direction:ltr;unicode-bidi:isolate;padding:2px 10px;border-radius:10px;
@@ -723,6 +739,10 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .rdr s{display:block;height:100%;border-radius:6px}
 .rdr s.u{background:var(--up)}.rdr s.d{background:var(--dn)}
 .rdr b{text-align:center;color:var(--tx);font-variant-numeric:tabular-nums}
+/* مرتب‌سازی پوزیشن‌ها */
+.psort{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px;font-size:12.5px;color:var(--tx2);font-weight:700}
+.psort select{min-height:38px;padding:4px 10px;border-radius:10px;background:var(--inset);border:1px solid var(--line2);
+  color:var(--tx);font:inherit;font-size:12.5px;font-weight:800}
 /* منوی «⋯» */
 .pmbtn.on{border-color:var(--gold);color:var(--gold)}
 .pmore{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 14px}
@@ -1548,13 +1568,19 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
         <div class="fseg" role="tablist" aria-label="پوزیشن‌ها">
           <button class="fb" id="pWait" aria-pressed="false"><span>منتظر</span><i id="cWait">0</i></button>
           <button class="fb" id="pOpen" aria-pressed="true"><span>باز</span><i id="cOpenP">0</i></button>
-          <button class="fb" id="pClosed" aria-pressed="false"><span>بسته‌شده</span><i id="cClosedP">0</i></button>
+          <button class="fb" id="pClosed" aria-pressed="false" title="بسته‌شده"><span>بسته</span><i id="cClosedP">0</i></button>
           <button class="fb" id="pAllP" aria-pressed="false"><span>همه</span><i id="cAllP">0</i></button>
         </div>
         <div class="fside">
           <button class="fb fbucket" id="btnManual"><span>افزودن</span><i>+</i></button>
         </div>
       </div>
+      <label class="psort"><span>مرتب‌سازی</span>
+        <select id="posSort" aria-label="مرتب‌سازی پوزیشن‌ها">
+          <option value="new">جدیدترین</option><option value="old">قدیمی‌ترین</option>
+          <option value="pnlD">بیشترین سود</option><option value="pnlA">بیشترین ضرر</option>
+          <option value="rD">بیشترین R</option><option value="tk">نماد (الفبا)</option>
+        </select></label>
     </div>
     <div id="posSummary"></div>
     <div id="posList"></div>
@@ -5888,14 +5914,16 @@ function renderSignals(){
   closeSep();
   list.innerHTML='';
   renderFbar();
+  /* «کنار گذاشتن پست‌های تصمیم‌گرفته» ته فهرست می‌آید، نه بالایش: کار گاه‌به‌گاهی است و
+     همیشه اولین چیز زیر فیلترها بود */
+  let bulk=null;
   if(bucket==='live'){
     const done=POSTS.filter(x=>decisionOf(x.id)&&bucketOf(x)==='live');
     if(done.length){
-      const bulk=el('button','tidy','کنار گذاشتن '+faN(done.length)+' پستِ تصمیم‌گرفته');
+      bulk=el('button','tidy',ic('box')+'<span>کنار گذاشتن '+faN(done.length)+' پستِ تصمیم‌گرفته</span>');
       bulk.onclick=()=>{
         undoable(faN(done.length)+' پست به آرشیو رفت',()=>{for(const x of done)DB.archived[x.id]=Date.now();});
       };
-      list.appendChild(bulk);
     }
   }
   /* نوار «فیلترهای روشن»: فیلترها ذخیره می‌شوند، پس وقتی برمی‌گردی باید معلوم باشد چرا فهرست
@@ -5945,6 +5973,7 @@ function renderSignals(){
       more.onclick=()=>{shownMax+=PAGE;renderSignals();};
       list.appendChild(more);
     }
+    if(bulk)list.appendChild(bulk);
   }
   renderMore();
   showStatus();
@@ -8343,6 +8372,7 @@ function renderPositions(){
   for(const[id,v]of[['pWait','pending'],['pOpen','open'],['pClosed','closed'],['pAllP','all']]){
     const b=$('#'+id);if(b){b.classList.toggle('on',posFilter===v);b.setAttribute('aria-pressed',posFilter===v?'true':'false');}}
   if(posFilter==='pending'){
+    {const ps=$('#posSort');if(ps)ps.parentElement.classList.add('hide');}
     if(!nWait){wrap.appendChild(el('div','empty',STAR+
       'سفارش منتظری نداری.<br>روی سیگنالی که تریگر ورود دارد،<br>دکمه‌ی «منتظر …» را بزن.'));return;}
     for(const w of [...DB.pending].sort((x,y)=>(y.hit||0)-(x.hit||0)||y.at-x.at))
@@ -8377,6 +8407,14 @@ function renderPositions(){
   }
 
   const show=all.filter(p=>posFilter==='all'||p.status===posFilter);
+  /* مرتب‌سازی انتخابی (روی دستگاه می‌ماند). سود/ضرر پوزیشن باز با قیمت الان حساب می‌شود. */
+  const so=POSSORT, mv=new Map(show.map(p=>[p.id,posMetrics(p,p.status==='open'?liveOf(p.ticker):undefined)]));
+  const t0=p=>p.closedAt||p.openedAt, pn=p=>mv.get(p.id).pnl??-Infinity, rr=p=>mv.get(p.id).r??-Infinity;
+  const cmp={new:(a,b)=>t0(b)-t0(a),old:(a,b)=>t0(a)-t0(b),pnlD:(a,b)=>pn(b)-pn(a),
+    pnlA:(a,b)=>(mv.get(a.id).pnl??Infinity)-(mv.get(b.id).pnl??Infinity),rD:(a,b)=>rr(b)-rr(a),
+    tk:(a,b)=>String(a.ticker).localeCompare(String(b.ticker))||t0(b)-t0(a)}[so]||null;
+  if(cmp)show.sort(cmp);
+  const ps=$('#posSort');if(ps){ps.value=so;ps.parentElement.classList.toggle('hide',show.length<2);}
   if(!show.length){
     wrap.appendChild(el('div','empty',STAR+(all.length?'در این دسته چیزی نیست.':
       'هنوز پوزیشنی ثبت نکرده‌ای.<br>از تب سیگنال‌ها «وارد شدم» را بزن، یا اینجا دستی اضافه کن.')));
@@ -8556,6 +8594,7 @@ function destack(L){
    سود/ضرر درشت را نشان می‌دهد؛ با زدن باز می‌شود (نردبان، عددها، نقشه‌ی خروج، دکمه‌ها).
    پوزیشنی که نوار تأیید استاپش باز است همیشه باز می‌ماند. */
 const POSOPEN=new Set(), POSMENU=new Set();
+let POSSORT=lsGet('signaldesk.possort.v1')||'new';
 function buildPosCard(p,opt){
   ensureBase(p);
   const live=liveOf(p.ticker), m=posMetrics(p,live), open=p.status==='open';
@@ -9510,6 +9549,7 @@ let view='signals';
 function go(v,noScroll){
   if(view===v&&noScroll)return;
   view=v;
+  document.documentElement.classList.remove('navhide');   // با عوض کردن تب، منو همیشه پیداست
   $$('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.v===v?'true':'false'));
   for(const [id,name] of [['vSignals','signals'],['vPositions','positions'],['vReport','report'],['vAudit','audit'],['vLearn','learn']]){
     const n=$('#'+id), on=name===v;
@@ -9741,6 +9781,7 @@ function wire(){
 
   const pf=(btn,val)=>{$('#'+btn).onclick=()=>{posFilter=val;renderPositions();};};
   pf('pWait','pending');pf('pOpen','open');pf('pClosed','closed');pf('pAllP','all');
+  $('#posSort').onchange=e=>{POSSORT=e.target.value;lsSet('signaldesk.possort.v1',POSSORT);renderPositions();};
   $('#btnManual').onclick=()=>sheetEditPos(null);
   $$('#vReport .fb[data-p]').forEach(b=>b.onclick=()=>{
     if(b.dataset.p==='range')return sheetRange();
@@ -9775,6 +9816,13 @@ function wire(){
   wireIO();
   linkLabels(document.getElementById('setVeil'));
   wirePTR();setHdrH();addEventListener('resize',setHdrH);
+  // منوی پایین: پایین رفتن پنهانش می‌کند، بالا آمدن یا رسیدن به ته صفحه نشانش می‌دهد
+  {let lastY=scrollY;
+   addEventListener('scroll',()=>{
+     const y=scrollY, d=y-lastY;if(Math.abs(d)<8)return;
+     const atEnd=y+innerHeight>=document.documentElement.scrollHeight-40;
+     document.documentElement.classList.toggle('navhide',d>0&&y>180&&!atEnd);
+     lastY=y;},{passive:true});}
   moneyInput($('#sAcct'));moneyInput($('#sCap'));
   document.addEventListener('keydown',e=>{
     if(e.key!=='Escape')return;
