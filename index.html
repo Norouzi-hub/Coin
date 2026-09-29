@@ -475,6 +475,10 @@ button.catt{cursor:pointer}
 .status.bad{border-color:color-mix(in srgb,var(--dn) 45%,var(--line));color:var(--dn);display:block;background:color-mix(in srgb,var(--dn) 7%,var(--card))}
 .status.warn{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));color:var(--warn);display:block;background:color-mix(in srgb,var(--warn) 7%,var(--card))}
 .status.bad .btn,.status.warn .btn{margin-top:8px}
+.status.upd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-color:color-mix(in srgb,var(--gold) 45%,var(--line));color:var(--tx)}
+.status.upd.hide{display:none}
+.status.upd>span{flex:1;min-width:150px}
+.status.upd .ic{width:15px;height:15px;vertical-align:-3px;color:var(--gold)}
 
 .incoming{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 14px;margin:10px 0;border-radius:14px;
   font-size:13px;font-weight:700;color:var(--tx2);border:1px dashed var(--line2);
@@ -1589,6 +1593,7 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
 
   <div id="storeWarn" class="status warn hide"></div>
   <div id="bkWarn" class="status warn hide"></div>
+  <div id="updBar" class="status upd hide"></div>
 
   <!-- سیگنال‌ها -->
   <section id="vSignals" class="view">
@@ -4698,7 +4703,8 @@ function fillHealth(box){
          'بعضی واسط‌ها چنین درخواستی را رد می‌کنند و ممکن است حافظه‌ی مرورگر هم پاک شود. '+
          'اگر می‌شود فایل را در مرورگر خودت یا روی هاست خودت باز کن.</span>'
         :'آدرس وب معمولی؛ بهترین حالت.',
-      LOCAL_ORIGIN?'در این حالت اتصال مستقیم به تلگرام ممکن است کار کند — برنامه اول همان را امتحان می‌کند.':null
+      LOCAL_ORIGIN?'در این حالت اتصال مستقیم به تلگرام ممکن است کار کند — برنامه اول همان را امتحان می‌کند.':null,
+      SW_ON?'کار بی‌اینترنت: <b>فعال</b> — برنامه از حافظه باز می‌شود':null
     ],LOCAL_ORIGIN?'محلی':'وب')+
     hrow('بروزرسانی خودکار',S.auto?'ok':'idle','refresh',[
       S.auto?'هر <b>'+faN(S.auto/60)+'</b> دقیقه، و هر بار که به این صفحه برگردی':'خاموش است؛ خودت باید «بروزرسانی» را بزنی',
@@ -10579,6 +10585,33 @@ function showOriginWarn(){
   logIt('warn','صفحه از '+location.protocol+' باز شده؛ واسط‌ها به صفحه‌ی بی‌هویت جواب نمی‌دهند');
 }
 
+/* ==================== کار بی‌اینترنت ==================== */
+/* سرویس‌ورکر (sw.js) فایل‌های خود برنامه را نگه می‌دارد: دفعه‌ی بعد صفحه بدون دانلود ۶۰۰ کیلوبایت
+   همان لحظه باز می‌شود و بی‌اینترنت هم باز می‌شود. داده‌ی کانال و صرافی‌ها از آن رد نمی‌شود.
+   در تست خودکار (webdriver) ثبت نمی‌شود تا مسیرهای ساختگیِ تست را دور نزند. */
+let SW_ON=false;
+function wireSW(){
+  try{
+    if(!('serviceWorker' in navigator)||LOCAL_ORIGIN)return;
+    if(navigator.webdriver&&!window.__SD_SW)return;
+    if(!(location.protocol==='https:'||/^(localhost|127\.0\.0\.1)$/.test(location.hostname)))return;
+    // این صفحه از حافظه باز شده و نسخه‌ی تازه پشت صحنه رسیده؟ (چند بار، چون گرفتنش زمان می‌برد)
+    const ask=()=>{const c=navigator.serviceWorker.controller;if(c)c.postMessage({type:'sd-check',since:performance.timeOrigin});};
+    navigator.serviceWorker.register('sw.js').then(r=>{SW_ON=true;
+      ask();setTimeout(ask,4000);setTimeout(ask,15000);
+      document.addEventListener('visibilitychange',()=>{if(!document.hidden){r.update().catch(()=>{});ask();}});
+    }).catch(e=>logIt('warn','سرویس‌ورکر ثبت نشد: '+(e&&e.message||e)));
+    navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.type==='sd-update')showUpdateBar();});
+  }catch(e){}
+}
+function showUpdateBar(){
+  const w=$('#updBar');if(!w)return;
+  w.innerHTML='<span>'+ic('refresh')+' نسخه‌ی تازه‌ی برنامه آمده است.</span>';
+  const b=el('button','btn sm pri','بارگذاری دوباره');b.onclick=()=>location.reload();
+  const x=el('button','btn sm','بعداً');x.onclick=()=>w.classList.add('hide');
+  w.appendChild(b);w.appendChild(x);w.classList.remove('hide');
+}
+
 /* ==================== شروع ==================== */
 load();
 loadLog();
@@ -10608,6 +10641,7 @@ lockGate();                       // اگر رمز گذاشته شده، قبل 
 showOriginWarn();
 renderAll();
 persistStore().finally(()=>setTimeout(showBackupWarn,1500));
+wireSW();
 {const bt=document.getElementById('boot');
  if(bt){bt.classList.add('gone');setTimeout(()=>bt.remove(),400);}}
 moveInd(false);
