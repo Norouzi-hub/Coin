@@ -880,6 +880,12 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .pbh b{color:var(--tx)}
 .pbh .mark,.pbh .markhint{margin-inline-start:auto}
 .pbx>.hint{margin-top:6px}
+.autorow{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:9px;border-top:1px dashed var(--line);font-size:12px;color:var(--tx3);line-height:1.7}
+.autorow>span{flex:1;min-width:0}
+.autorow .ic{width:14px;height:14px;vertical-align:-2px;margin-inline-end:4px}
+.autorow b{color:var(--tx2)}
+.autorow.on .ic,.autorow.on b{color:var(--up)}
+.autorow .mark{flex:none}
 .pbpick{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}
 .pbc{padding:6px 11px;border-radius:99px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;
   background:var(--card);border:1px solid var(--line2);color:var(--tx2)}
@@ -2002,9 +2008,7 @@ function undoable(msg,act){
   act();
   save();renderAll();
   toastUndo(msg,()=>{
-    const d=JSON.parse(snap);
-    DB.positions=d.positions;fillDB(d);
-    OVERRIDE=DB.overrides;PCACHE.clear();
+    restoreSnap(snap);
     save();renderAll();toast('برگشت','info');
   });
 }
@@ -2186,6 +2190,7 @@ const FEAT={
   quick:  {on:true, t:'ورود سریع',  d:'دکمه‌ی ورود با مبلغ پیش‌فرض، بدون باز کردن فرم'},
   notify: {on:false,t:'اعلان سیگنال تازه', d:'وقتی سیگنال تازه بیاید، نوتیفیکیشن مرورگر'},
   alerts: {on:true, t:'هشدار استاپ و تارگت', d:'روی پوزیشن‌های باز، نزدیک شدن قیمت به استاپ یا رسیدن به تارگت'},
+  autoexec:{on:true,t:'اجرای خودکار استاپ و نقشه', d:'استاپ بخورد، پوزیشن خودش بسته می‌شود؛ تارگت برسد، پله‌ی نقشه‌ی خروج (بستن سهم و جابه‌جایی استاپ) خودش ثبت می‌شود. به صرافی سفارش نمی‌فرستد'},
   tpclose:{on:true, t:'بستن روی تارگت', d:'دکمه‌ی بستن نصف پوزیشن روی تارگت، بدون پر کردن فرم'},
   range:  {on:true, t:'بازه‌ی دلخواه کارنامه', d:'انتخاب تاریخ شروع و پایان در کارنامه'},
   fx:     {on:true, t:'افکت‌های نورانی', d:'هاله‌ها، درخشش و انیمیشن‌های «نور طلایی». روی گوشی ضعیف خاموشش کن تا سبک‌تر شود'}
@@ -2560,7 +2565,7 @@ const exitFromRoi=(p,roi)=>p.entry*(1+(p.dir==='long'?1:-1)*(roi/100)/p.lev);
 // از مبلغ سود/ضرر به قیمت خروج (روی حجم باقی‌مانده)
 const exitFromPnl=(p,pnl)=>{const qty=(p.margin*p.lev)/p.entry;return p.entry+(p.dir==='long'?1:-1)*(pnl/qty);};
 const roundP=v=>v>0?+v.toPrecision(8):v;
-function logAdd(p,kind,text){ensureBase(p);p.log.push({at:Date.now(),k:kind,t:text});}
+function logAdd(p,kind,text,at){ensureBase(p);p.log.push({at:at||Date.now(),k:kind,t:text});}
 
 /* ==================== شبکه ==================== */
 /* درس گرفته از لاگ واقعی:
@@ -2753,7 +2758,9 @@ function applyPrices(m,srcName,route,ms){
   if(symChanged)SYMVER++;
   Object.assign(H.px,{state:'ok',src:srcName,route,ms,at:PX_AT,n:m.size,err:null});
   savePxCache();
-  try{checkAlerts();checkPending();}catch(e){}
+  let did=false;
+  try{did=checkAutoExec();}catch(e){logIt('err','اجرای خودکار: '+e.message);}
+  try{if(!did)checkAlerts();checkPending();}catch(e){}
 }
 function rowsToMap(rows){
   const m=new Map();
@@ -7399,35 +7406,41 @@ function pbStepText(p,i){
   if(sp!=null&&sp!==prev)bits.push('استاپ ← '+(sp===p.entry?'ورود':fmtPrice(sp)));
   return bits.join(' · ')||'فقط رد شو';
 }
-/* «انجام شد»: همان پله را با قیمت تارگت اجرا می‌کند — بستن سهمِ این پله و جابه‌جایی استاپ */
-function pbDo(p,i){
+/* اجرای یک پله‌ی نقشه با قیمت تارگت: بستن سهمِ این پله و جابه‌جایی استاپ. هم دکمه‌ی «انجام شد»
+   از این می‌رود، هم اجرای خودکار — تا دو جور حساب نشود. */
+function pbApply(p,i,at,pre){
   ensureBase(p);
   const pb=p.pb, tp=pb.tps[i];
   const before=pb.parts.slice(0,i).reduce((a,b)=>a+b,0), remain=1-before;
   const frac=remain<=pb.parts[i]+1e-9?1:pb.parts[i]/remain;
   let pnl=0;
-  if(pb.parts[i]>0)pnl=closePartAt(p,tp,frac,'پله‌ی '+faN(i+1)+' نقشه: '+faN(Math.round(pb.parts[i]*100))+'٪ روی '+fmtPrice(tp));
+  if(pb.parts[i]>0)pnl=closePartAt(p,tp,frac,(pre||'')+'پله‌ی '+faN(i+1)+' نقشه: '+faN(Math.round(pb.parts[i]*100))+'٪ روی '+fmtPrice(tp),at);
   const sp=pbStopPrice(p,i+1), sign=p.dir==='long'?1:-1;
   if(p.status==='open'&&sp!=null&&(p.stop==null||(sp-p.stop)*sign>0)){
-    const old=p.stop;p.stop=sp;
-    logAdd(p,'stop','طبق نقشه، حد ضرر '+(old?'از '+fmtPrice(old)+' ':'')+'روی '+(sp===p.entry?'ورود ('+fmtPrice(sp)+')':fmtPrice(sp)));
+    const old=p.stop;p.stop=sp;PENDING.delete(p.id);
+    logAdd(p,'stop',(pre||'')+'طبق نقشه، حد ضرر '+(old?'از '+fmtPrice(old)+' ':'')+'روی '+(sp===p.entry?'ورود ('+fmtPrice(sp)+')':fmtPrice(sp)),at);
   }
   p.pbc=i+1;
-  save();renderAll();
-  toast('پله‌ی '+faN(i+1)+' انجام شد'+(pb.parts[i]>0?' · '+fmtUsd(pnl):''),'ok');
+  return pnl;
 }
-function closePartAt(p,price,frac,label){
-  ensureBase(p);
+/* «انجام شد»: همان پله را با قیمت تارگت اجرا می‌کند */
+function pbDo(p,i){
+  const pnl=pbApply(p,i);
+  save();renderAll();
+  toast('پله‌ی '+faN(i+1)+' انجام شد'+(p.pb.parts[i]>0?' · '+fmtUsd(pnl):''),'ok');
+}
+function closePartAt(p,price,frac,label,at){
+  ensureBase(p);at=at||Date.now();
   const m=posMetrics(p,price);
   const part=Math.min(1,Math.max(0,frac)), qty=m.qty*part, marginPart=p.margin*part;
   const gross=qty*(price-p.entry)*(p.dir==='long'?1:-1);
   const fees=(marginPart*p.lev)*(S.fee/100), pnl=gross-fees;
-  p.partials=partialsOf(p).concat([{at:Date.now(),price,qty,margin:marginPart,pnl,fees,part}]);
+  p.partials=partialsOf(p).concat([{at,price,qty,margin:marginPart,pnl,fees,part}]);
   p.margin=p.margin-marginPart;
-  logAdd(p,'partial',label+' · '+fmtUsd(pnl));
+  logAdd(p,'partial',label+' · '+fmtUsd(pnl),at);
   if(p.margin<=0.0001){
-    p.margin=0;p.status='closed';p.closedAt=Date.now();p.exitPrice=price;
-    logAdd(p,'close','پوزیشن کامل بسته شد');
+    p.margin=0;p.status='closed';p.closedAt=at;p.exitPrice=price;
+    logAdd(p,'close','پوزیشن کامل بسته شد',at);
   }
   return pnl;
 }
@@ -7442,12 +7455,30 @@ function pbPicker(cur,onPick){
   return w;
 }
 const PBEDIT=new Set();
+/* وضعیت اجرای خودکار روی همین پوزیشن، با کلید خاموش/روشن */
+function autoRow(p){
+  const on=!p.autoOff;
+  const r=el('div','autorow'+(on?' on':''),'<span>'+ic(on?'check':'clock')+'<b>'+(on?'اجرای خودکار روشن':'اجرای خودکار خاموش')+'</b> · '+
+    (on?(p.pb?'استاپ بخورد می‌بندم؛ تارگت برسد، پله‌ی نقشه را ثبت می‌کنم':'استاپ بخورد می‌بندم')+'. به صرافی سفارش نمی‌فرستم؛ استاپ و تارگت را آنجا هم بگذار.'
+       :'سرِ استاپ و تارگت فقط خبر می‌دهم؛ ثبت با خودت.')+'</span>');
+  const b=el('button','mark ghost',on?'خاموش کن':'روشن کن');b.type='button';
+  b.onclick=()=>{
+    if(on)p.autoOff=true;else{delete p.autoOff;AUTOSEEN[p.id]=Date.now();autoSeenSave();}
+    logAdd(p,'plan','اجرای خودکار '+(on?'خاموش':'روشن')+' شد');
+    save();renderAll();
+    if(!on)checkAutoExec();
+  };
+  r.appendChild(b);
+  return r;
+}
 function buildPbBox(p,live){
   const w=el('div','pbx');
+  const auto=F('autoexec')&&p.status==='open';
   if(!p.pb){
     w.appendChild(el('div','pbh',ic('flag')+'<b>نقشه‌ی خروج</b><span class="markhint">ندارد</span>'));
-    w.appendChild(el('div','hint','یک سبک انتخاب کن تا پله‌های خروج با عدد ساخته شوند و سرِ هر پله خبر بدهم.'));
+    w.appendChild(el('div','hint','یک سبک انتخاب کن تا پله‌های خروج با عدد ساخته شوند و سرِ هر پله '+(auto&&!p.autoOff?'خودم اجرایشان کنم.':'خبر بدهم.')));
     w.appendChild(pbPicker(null,id=>{if(pbAttach(p,id)){logAdd(p,'plan','نقشه‌ی خروج: '+pbDef(id).n);save();renderAll();}}));
+    if(auto)w.appendChild(autoRow(p));
     return w;
   }
   const pb=p.pb, done=p.pbc||0, n=pb.tps.length;
@@ -7481,7 +7512,142 @@ function buildPbBox(p,live){
   }
   w.appendChild(ol);
   if(done>=n&&p.status==='open')w.appendChild(el('div','hint','همه‌ی پله‌های نقشه انجام شد؛ باقی‌مانده با استاپ فعلی مدیریت می‌شود.'));
+  if(auto)w.appendChild(autoRow(p));
   return w;
+}
+
+/* ==================== اجرای خودکار استاپ و نقشه ==================== */
+/* برنامه به صرافی سفارش نمی‌فرستد؛ ثبتِ پوزیشن را همان‌طور که نقشه گفته جلو می‌برد:
+   - استاپ بخورد (یا قیمت از لیکوئید رد شود): کل باقی‌مانده روی همان قیمت بسته می‌شود.
+   - تارگتِ پله‌ی بعدی برسد: سهمِ آن پله بسته و استاپ طبق نقشه جابه‌جا می‌شود (چند پله با هم هم می‌شود).
+   وقتی برنامه بسته بوده، قیمت زنده فقط «الان» را می‌گوید؛ فاصله با کندل پر می‌شود. اگر در یک
+   کندل هم استاپ ممکن بوده هم تارگت، استاپ اول حساب می‌شود (بدبینانه، مثل آزمون کانال). */
+const AUTOKEY='signaldesk.autoseen.v1';
+const AUTOSEEN=lsGet(AUTOKEY)||{};           // آخرین لحظه‌ای که قیمتِ هر پوزیشن روی این دستگاه سنجیده شد
+function autoSeenSave(){
+  const live=new Set(DB.positions.filter(p=>p.status==='open').map(p=>p.id));
+  for(const k of Object.keys(AUTOSEEN))if(!live.has(k))delete AUTOSEEN[k];
+  lsSet(AUTOKEY,AUTOSEEN);
+}
+const autoOn=p=>F('autoexec')&&p.status==='open'&&!p.autoOff&&p.entry>0&&p.margin>0;
+/* از کِی باید دوباره نگاه کرد: آخرین سنجش، ولی نه قبل از باز شدن یا آخرین دست‌کاریِ خودت
+   (اگر استاپ را جابه‌جا کرده‌ای، قیمت‌های قبلش با استاپِ تازه سنجیده نمی‌شوند) */
+function autoSince(p){
+  const lg=(p.log||[]).reduce((a,l)=>Math.max(a,l.at||0),0);
+  return Math.max(AUTOSEEN[p.id]||0,p.openedAt||0,lg);
+}
+const autoGap=()=>Math.max(4*60e3,(S.auto||0)*2500);
+/* hi/lo: بالاترین و پایین‌ترین قیمتِ یک بازه؛ برای قیمت زنده هر دو یکی است */
+function autoHit(p,hi,lo){
+  const sign=p.dir==='long'?1:-1, bad=sign>0?lo:hi, good=sign>0?hi:lo;
+  const liq=posMetrics(p).liqPrice;
+  const st=p.stop>0&&(bad-p.stop)*sign<=0, lq=liq!=null&&(bad-liq)*sign<=0;
+  // هر دو رد شده‌اند: آنکه به ورود نزدیک‌تر است اول خورده
+  if(st||lq)return st&&(!lq||(p.stop-liq)*sign>=0)?{k:'stop',px:p.stop}:{k:'liq',px:liq};
+  const i=p.pbc||0;
+  if(p.pb&&i<p.pb.tps.length&&(good-p.pb.tps[i])*sign>=0)return {k:'tp',i};
+  return null;
+}
+function autoClose(p,px,at,kind){
+  ensureBase(p);
+  p.status='closed';p.exitPrice=px;p.closedAt=at;
+  p.fees=p.margin*p.lev*(S.fee/100);p.autoBy=kind;
+  PENDING.delete(p.id);
+  const m=posMetrics(p);
+  logAdd(p,'close',(kind==='liq'?'خودکار: قیمت از لیکوئید رد شد؛ بسته شد روی ':'خودکار: استاپ خورد؛ بسته شد روی ')+
+    fmtPrice(px)+' — '+fmtUsd(m.pnl)+(m.r!=null?' ('+fmtR(m.r)+')':''),at);
+  return m.pnl;
+}
+/* یک بازه‌ی قیمت را روی پوزیشن اجرا می‌کند و رویدادها را به ev اضافه می‌کند */
+function autoFeed(p,hi,lo,at,ev){
+  for(let g=0;g<12&&p.status==='open';g++){
+    const h=autoHit(p,hi,lo);
+    if(!h)return;
+    if(h.k!=='tp'){ev.push({p,k:h.k,pnl:autoClose(p,h.px,at,h.k)});return;}
+    const pnl=pbApply(p,h.i,at,'خودکار: ');
+    if(p.status==='closed')p.autoBy='tp';
+    ev.push({p,k:'tp',i:h.i,pnl,stop:p.stop});
+    // استاپِ تازه در همین کندل سنجیده نمی‌شود: معلوم نیست قیمت بعد از تارگت برگشته یا نه
+    const f=p.dir==='long'?hi:lo;hi=lo=f;
+  }
+}
+function restoreSnap(snap){
+  const d=JSON.parse(snap);
+  DB.positions=d.positions;fillDB(d);
+  OVERRIDE=DB.overrides;PCACHE.clear();
+}
+function autoReport(ev,snap){
+  save();renderAll();
+  const one=e=>e.p.ticker+' '+(e.k==='tp'?'پله‌ی '+faN(e.i+1)+' نقشه اجرا شد':e.k==='liq'?'لیکوئید حساب شد':'استاپ خورد و بسته شد')+
+    (e.pnl?' · '+fmtUsd(e.pnl):'')+(e.k==='tp'&&e.p.status==='open'&&e.stop?' · استاپ '+(e.stop===e.p.entry?'روی ورود':fmtPrice(e.stop)):'');
+  const msg=ev.length===1?one(ev[0]):'اجرای خودکار: '+ev.map(one).join('؛ ');
+  const ids=[...new Set(ev.map(e=>e.p.id))];
+  logIt('info','اجرای خودکار — '+msg);
+  toastUndo(esc(msg),()=>{
+    restoreSnap(snap);
+    // وگرنه با قیمت بعدی دوباره اجرا می‌شود
+    for(const id of ids){const q=DB.positions.find(x=>x.id===id);
+      if(q){q.autoOff=true;logAdd(q,'plan','اجرای خودکار برگردانده شد؛ برای این پوزیشن خاموش ماند');}}
+    save();renderAll();toast('برگشت؛ اجرای خودکار این پوزیشن خاموش شد','info');
+  });
+  const bad=ev.some(e=>e.k!=='tp');
+  try{if(navigator.vibrate)navigator.vibrate(bad?[200,80,200]:[120,60,120]);}catch(e){}
+  if(F('notify'))notify('میز سیگنال',msg,'auto'+ids.join(','));
+}
+/* با هر قیمت تازه: پوزیشن‌هایی که تازه سنجیده شده‌اند با قیمت زنده، بقیه (فاصله‌ی طولانی) با کندل.
+   خروجی: آیا کاری انجام شد (تا هشدارهای همین لحظه روی پیغامِ «برگرداندن» ننشینند) */
+function checkAutoExec(){
+  if(!F('autoexec'))return false;
+  const now=Date.now(), gap=autoGap(), ev=[], late=[];
+  let snap=null;
+  for(const p of DB.positions){
+    if(!autoOn(p))continue;
+    const px=PRICES.get(p.ticker);
+    if(px==null)continue;
+    if(now-autoSince(p)>gap){late.push(p);continue;}
+    if(!snap&&autoHit(p,px,px))snap=JSON.stringify(dbBlob());
+    autoFeed(p,px,px,now,ev);
+    AUTOSEEN[p.id]=now;
+  }
+  autoSeenSave();
+  if(ev.length)autoReport(ev,snap);
+  if(late.length)autoCatchUp(late);
+  return ev.length>0;
+}
+const AUTOBUSY=new Set();
+async function autoCatchUp(list){
+  for(const p0 of list){
+    if(AUTOBUSY.has(p0.id))continue;
+    AUTOBUSY.add(p0.id);
+    try{
+      const since=autoSince(p0), now=Date.now();
+      const iv=now-since<=3*864e5?'5m':'1h', ms=IVMS[iv];
+      const t0=Math.ceil(since/ms)*ms;
+      let cs=[], ok=true;
+      if(now>t0){
+        try{cs=(await audCandles(p0.ticker,iv,t0,Math.min(1000,Math.ceil((now-t0)/ms)+1))).filter(c=>c.t>=t0);}
+        catch(e){ok=false;logIt('warn','اجرای خودکار: کندل '+p0.ticker+' نیامد؛ فقط قیمت فعلی سنجیده شد');}
+      }
+      // در این فاصله ممکن است پوزیشن عوض شده باشد (ویرایش، بستن، همگام‌سازی)
+      const p=DB.positions.find(x=>x.id===p0.id);
+      if(!p||!autoOn(p)||autoSince(p)!==since)continue;
+      const snap=JSON.stringify(dbBlob()), ev=[];
+      let seen=since;
+      for(const c of cs){
+        if(p.status!=='open')break;
+        const end=Math.min(Date.now(),c.t+ms);
+        autoFeed(p,c.h,c.l,end,ev);
+        seen=end;
+      }
+      // کندل‌ها تا الان رسیده‌اند (یا نیامدند): قیمت زنده هم سنجیده می‌شود
+      const px=PRICES.get(p.ticker), done=!ok||!cs.length||seen>=Date.now()-ms;
+      if(done&&p.status==='open'&&px!=null)autoFeed(p,px,px,Date.now(),ev);
+      AUTOSEEN[p.id]=done?Date.now():seen;
+      autoSeenSave();
+      if(ev.length)autoReport(ev,snap);
+    }catch(e){logIt('err','اجرای خودکار '+p0.ticker+': '+e.message);}
+    finally{AUTOBUSY.delete(p0.id);}
+  }
 }
 
 /* ---- گرفتن کندل ---- */
@@ -8623,7 +8789,10 @@ function buildPosCard(p,opt){
     if(m.liquidated)head.appendChild(el('span','pill lose','در محدوده لیکوئید'));
     // برچسب هشدار روی خود کارت، نه فقط یک پیغام گذرا
     else{const as=F('alerts')?alertState(p,live):null;if(as)head.appendChild(el('span','pill '+as.c+' alrt',as.t));}
-  }else head.appendChild(el('span','pill '+((m.pnl||0)>=0?'win':'lose'),(m.pnl||0)>=0?'برد':'باخت'));
+  }else{
+    head.appendChild(el('span','pill '+((m.pnl||0)>=0?'win':'lose'),(m.pnl||0)>=0?'برد':'باخت'));
+    if(p.autoBy)head.appendChild(el('span','pill mut',p.autoBy==='liq'?'لیکوئید خودکار':p.autoBy==='tp'?'بسته با نقشه':'استاپ خودکار'));
+  }
   if(acc)head.appendChild(el('i','pchev'));
   head.appendChild(el('div','when',(!open&&p.closedAt?'بسته: '+jStampFa(new Date(p.closedAt)):'باز: '+jStampFa(new Date(p.openedAt)))));
   card.appendChild(head);
@@ -8734,6 +8903,8 @@ function buildPosCard(p,opt){
   }else{
     const r=el('button','btn','باز کردن دوباره');
     r.onclick=()=>{p.status='open';p.exitPrice=null;p.closedAt=null;p.fees=null;
+      // بسته‌شدنِ خودکار را قبول نداری: وگرنه با قیمت بعدی دوباره بسته می‌شود
+      if(p.autoBy){delete p.autoBy;p.autoOff=true;}
       logAdd(p,'open','دوباره باز شد');save();renderAll();toast('دوباره باز شد','ok');};
     a.appendChild(r);
   }
