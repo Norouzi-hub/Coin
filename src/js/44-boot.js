@@ -20,6 +20,7 @@ loadPostCache();
 pruneCaches();          // کلیدهای مرده‌ی نشست‌های قبلی همین‌جا برداشته می‌شوند
 BOOTED=true;
 wireSync();
+wireFeed();
 // اول از سرور می‌گیریم تا این دستگاه با آخرین وضعیت شروع کند، نه با نسخه‌ی کهنه‌ی خودش
 if(syncOn())syncPull(true).catch(()=>{});
 wireLock();

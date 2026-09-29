@@ -1248,6 +1248,14 @@ table.tp .num{direction:ltr;text-align:start}
   background:var(--card);color:var(--tx2);display:grid;place-items:center;cursor:pointer}
 .srow{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
 .tgbox{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
+#feedBox .autotog{margin:12px 0 4px}
+#feedBox a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+#feedState[data-k=ok]{color:var(--up);font-weight:700}
+.flink{margin-top:10px}
+.flh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:13px}
+.flh span{font-size:12px;color:var(--tx3)}
+.flr{display:flex;gap:6px;margin-top:5px}
+.flr input{flex:1;min-width:0;font-size:12px;padding:8px 10px}
 .tgh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px}
 .tgh .markhint{margin-inline-start:auto}
 .tgbox .srow{margin-top:10px}

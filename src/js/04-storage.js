@@ -113,6 +113,7 @@ function save(){
   try{ localStorage.setItem(KEY,JSON.stringify(dbBlob())); }
   catch(e){ storeOK=false; showStoreWarn(); }
   if(typeof syncSoon==='function')syncSoon();
+  if(typeof feedSoon==='function')feedSoon();
 }
 function load(){
   try{

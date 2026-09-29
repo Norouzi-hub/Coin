@@ -104,6 +104,8 @@ export default {
     const path = new URL(request.url).pathname;
     if (path === '/db') return handleDb(request, env);
     if (path.startsWith('/tg/')) return handleTg(request, env, path.slice(4));
+    if (path === '/feed' || path.startsWith('/feed/')) return handleFeed(request, env, path.slice(6));
+    if (path.startsWith('/f/')) return serveFeed(request, env, path.slice(3));
 
     if (request.method !== 'GET') return text('فقط GET', 405);
 
@@ -316,4 +318,63 @@ async function tgCheck(env) {
     await env.STORE.put(ALKEY, JSON.stringify(done));
   }
   return { open: open.length, sent, pending: msgs.length };
+}
+
+/* ==================== لینک خروجی سیگنال‌ها ====================
+ * برنامه قالب‌های ICS/RSS/CSV/JSON را می‌سازد و اینجا می‌گذارد (PUT /feed با رمز همگام‌سازی).
+ * برنامه‌ی دیگر (تقویم، برنامه‌ریز، گوگل‌شیت…) بدون رمز از لینک /f/<کلید>/signals.<قالب> می‌خواند.
+ * کلید یک رشته‌ی تصادفی جداست، نه SYNC_TOKEN: لینک فقط سیگنال‌ها را نشان می‌دهد و با
+ * «لینک تازه» (POST /feed/rotate) باطل می‌شود.
+ */
+const FEEDKEY = 'signaldesk:feed';       // {at, n, files:{ics,rss,csv,json}}
+const FEEDKEYK = 'signaldesk:feedkey';   // کلید لینک
+const FEED_TYPES = { ics: 'text/calendar; charset=utf-8', rss: 'application/rss+xml; charset=utf-8',
+  csv: 'text/csv; charset=utf-8', json: 'application/json; charset=utf-8' };
+const newKey = () => { const a = new Uint8Array(18); crypto.getRandomValues(a);
+  return btoa(String.fromCharCode(...a)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+
+async function handleFeed(request, env, action) {
+  if (!env || !env.STORE || !env.SYNC_TOKEN) return json({ error: 'sync-missing',
+    message: 'اول همگام‌سازی را راه بینداز (STORE و SYNC_TOKEN).' }, 500);
+  if (!authed(request, env)) return json({ error: 'unauthorized', message: 'رمز همگام‌سازی درست نیست' }, 401);
+  let key = await env.STORE.get(FEEDKEYK);
+  if (action === 'rotate' && request.method === 'POST') {
+    key = newKey(); await env.STORE.put(FEEDKEYK, key);
+    return json({ key });
+  }
+  if (action === '' && request.method === 'PUT') {
+    let body; try { body = await request.json(); } catch { return json({ error: 'bad-json' }, 400); }
+    const files = body && body.files;
+    if (!files || typeof files !== 'object' || !Object.keys(FEED_TYPES).every(k => typeof files[k] === 'string'))
+      return json({ error: 'bad-body', message: 'files با چهار قالب لازم است' }, 400);
+    if (!key) { key = newKey(); await env.STORE.put(FEEDKEYK, key); }
+    const at = Date.now();
+    await env.STORE.put(FEEDKEY, JSON.stringify({ at, n: Number(body.n) || 0, files }));
+    return json({ key, at });
+  }
+  if (action === 'info') {
+    const cur = JSON.parse((await env.STORE.get(FEEDKEY)) || 'null');
+    return json({ key: key || null, at: cur ? cur.at : 0, n: cur ? cur.n : 0 });
+  }
+  return json({ error: 'action' }, 404);
+}
+
+async function serveFeed(request, env, rest) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return text('فقط GET', 405);
+  const m = rest.match(/^([A-Za-z0-9_-]{16,64})\/signals\.(ics|rss|csv|json)$/);
+  if (!m || !env || !env.STORE) return text('پیدا نشد', 404);
+  const key = await env.STORE.get(FEEDKEYK);
+  // مقایسه‌ی طول‌ثابت، مثل رمز همگام‌سازی
+  let diff = !key || key.length !== m[1].length ? 1 : 0;
+  if (!diff) for (let i = 0; i < key.length; i++) diff |= key.charCodeAt(i) ^ m[1].charCodeAt(i);
+  if (diff) return text('این لینک معتبر نیست یا عوض شده', 404);
+  const cur = JSON.parse((await env.STORE.get(FEEDKEY)) || 'null');
+  if (!cur || !cur.files) return text('هنوز چیزی منتشر نشده', 404);
+  const headers = Object.assign({}, CORS, {
+    'Content-Type': FEED_TYPES[m[2]],
+    'Cache-Control': 'public, max-age=300',
+    'Last-Modified': new Date(cur.at).toUTCString(),
+    'Content-Disposition': 'inline; filename="signals.' + m[2] + '"'
+  });
+  return new Response(request.method === 'HEAD' ? null : cur.files[m[2]], { status: 200, headers });
 }

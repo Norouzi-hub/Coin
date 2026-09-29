@@ -23,7 +23,7 @@ function fxGuard(){
   if(S.feat&&S.feat.fx===false&&!lsGet('signaldesk.fxuser')){S.feat.fx=true;return true;}
   return false;
 }
-const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,slip:0.05,fund:0,openRisk:15,auto:60,proxy:'',feat:featDefaults(),staleDays:7,exitPb:'bal',cal:'j',
+const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,slip:0.05,fund:0,openRisk:15,feedOn:false,auto:60,proxy:'',feat:featDefaults(),staleDays:7,exitPb:'bal',cal:'j',
   aud:{days:30,entryDays:3,tol:1,rule:'tp1'}};
 const F=k=>!!(S.feat&&S.feat[k]);
 let BOOTED=false;
