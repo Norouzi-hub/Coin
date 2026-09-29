@@ -2862,6 +2862,55 @@ function applyPrices(m,srcName,route,ms){
   try{did=checkAutoExec();}catch(e){logIt('err','اجرای خودکار: '+e.message);}
   try{if(!did)checkAlerts();checkPending();}catch(e){}
 }
+/* ---- مارک پرایس فیوچرز ---- */
+/* قیمت اصلی از بازار اسپات می‌آید، ولی صرافی استاپ فیوچرز را با «مارک پرایس» اجرا می‌کند؛ در
+   نوسان تند این دو چند دهم درصد فرق دارند. فقط وقتی پوزیشن فیوچرز باز داری گرفته می‌شود. */
+let MARK=new Map(), MARK_AT=0, MARK_LOADING=null;
+const MARK_SRC=[
+  {n:'Binance فیوچرز',u:'https://fapi.binance.com/fapi/v1/premiumIndex',
+   p:d=>Array.isArray(d)?d.map(x=>[x.symbol,parseFloat(x.markPrice)]):[]},
+  {n:'OKX سواپ',u:'https://www.okx.com/api/v5/public/mark-price?instType=SWAP',
+   p:d=>((d&&d.data)||[]).filter(x=>/-USDT-SWAP$/.test(x.instId)).map(x=>[x.instId.replace('-USDT-SWAP','USDT'),parseFloat(x.markPx)])}
+];
+function markRows(rows){
+  const m=new Map();
+  for(const [sym,px] of rows){
+    if(!sym||!isFinite(px)||px<=0||!sym.endsWith('USDT'))continue;
+    let b=sym.slice(0,-4), k=1;
+    // 1000PEPE روی فیوچرز = هزار تا PEPE
+    const mm=b.match(/^(1000000|100000|10000|1000|1M)([A-Z0-9]+)$/);
+    if(mm){k=mm[1]==='1M'?1e6:+mm[1];b=mm[2];}
+    if(!m.has(b)||k===1)m.set(b,px/k);
+  }
+  return m;
+}
+const needMark=()=>DB.positions.some(p=>p.status==='open'&&p.kind!=='spot');
+async function loadMarks(){
+  if(!needMark())return false;
+  if(MARK_LOADING)return MARK_LOADING;
+  if(MARK_AT&&Date.now()-MARK_AT<PX_TTL)return true;
+  MARK_LOADING=(async()=>{
+    for(const s of MARK_SRC){
+      try{
+        const got=await fetchVia(s.u,{json:true,timeout:7000,kind:'px',label:'مارک پرایس از '+s.n,
+          validate:d=>s.p(d).length>20});
+        const m=markRows(s.p(got.data));
+        if(m.size<20)continue;
+        MARK=m;MARK_AT=Date.now();H.px.mark=s.n;
+        return true;
+      }catch(e){}
+    }
+    H.px.mark=null;return false;
+  })();
+  try{return await MARK_LOADING;}finally{MARK_LOADING=null;}
+}
+/* مارک دیرتر از قیمت اسپات رسید: همان بررسی‌ها دوباره با قیمت درست */
+function onMarks(){
+  let did=false;
+  try{did=checkAutoExec();}catch(e){}
+  try{if(!did)checkAlerts();}catch(e){}
+  if(!did&&!$('#vPositions').classList.contains('hide'))renderPositions();
+}
 function rowsToMap(rows){
   const m=new Map();
   for(const [sym,px] of rows){
@@ -2875,6 +2924,7 @@ async function loadPrices(force){
   if(PX_LOADING)return PX_LOADING;
   PX_LOADING=(async()=>{
     H.px.state='busy';renderHealth();
+    const markP=loadMarks().catch(()=>false);
     // مرحله‌ی اول بدون واسط: صرافی‌ها خودشان CORS می‌دهند، پس واسط الکی شلوغ نمی‌شود
     for(const only of [['custom','direct'],null]){
       // مرحله‌ی دوم (با واسط) فقط روی چند صرافی اول، وگرنه انتظار طولانی می‌شود
@@ -2884,7 +2934,11 @@ async function loadPrices(force){
             label:'قیمت از '+s.n,onlyRoutes:only,kind:'px'});
           const m=rowsToMap(s.p(got.data)||[]);
           if(m.size<30){logIt('warn','قیمت از '+s.n+' کم بود ('+faN(m.size)+' نماد)',{route:got.route});continue;}
+          // مارک همان موقع شروع شده؛ اگر زود رسید با قیمت اسپات یک‌جا بررسی می‌شود
+          await Promise.race([markP,new Promise(r=>setTimeout(r,1500))]);
+          const late=!MARK_AT||Date.now()-MARK_AT>PX_TTL;
           applyPrices(m,s.n,got.route,got.ms);
+          if(late)markP.then(ok=>{if(ok)onMarks();});
           return true;
         }catch(e){}
       }
@@ -3111,7 +3165,7 @@ function checkAlerts(){
   if(!F('alerts'))return;
   for(const p of DB.positions){
     if(p.status!=='open')continue;
-    const px=PRICES.get(p.ticker);
+    const px=pxOf(p);
     if(px==null)continue;
     const sign=p.dir==='long'?1:-1;
     if(p.stop){
@@ -4496,6 +4550,8 @@ function fillHealth(box){
     hrow('قیمت لحظه‌ای',px.state,'coin',[
       px.src?'منبع: <b>'+esc(px.src)+'</b> · <b>'+faN(px.n)+'</b> نماد':'هنوز قیمتی گرفته نشده',
       px.route?'مسیر: <b>'+esc(px.route)+'</b>'+(px.ms!=null?' · <b>'+faN(px.ms)+'</b> میلی‌ثانیه':''):null,
+      needMark()?(px.mark?'پوزیشن‌های فیوچرز با <b>مارک پرایس</b> ('+esc(px.mark)+') سنجیده می‌شوند'
+        :'<span style="color:var(--warn)">مارک پرایس فیوچرز نیامد؛ پوزیشن‌های فیوچرز با قیمت اسپات سنجیده می‌شوند.</span>'):null,
       px.at?'تازه‌شده: <b>'+ageTxt(px.at)+'</b>':null,
       px.state==='stale'&&px.at?'<span style="color:var(--warn)">این قیمت‌ها از حافظه‌اند و ممکن است عقب باشند.</span>':null,
       px.err?'<span style="color:var(--dn)">'+esc(px.err)+'</span>':null
@@ -5793,7 +5849,7 @@ function moneyNow(){
   const today=jKey(new Date());
   const open=DB.positions.filter(p=>p.status==='open');
   let openPnl=0, hasPx=false;
-  for(const p of open){const px=PRICES.get(p.ticker);if(px!=null){hasPx=true;openPnl+=posMetrics(p,px).pnl||0;}}
+  for(const p of open){const px=pxOf(p);if(px!=null){hasPx=true;openPnl+=posMetrics(p,px).pnl||0;}}
   // ضرر امروز فقط از معاملات بسته‌شده‌ی امروز؛ سود به حد ضرر روزانه ربطی ندارد
   const realToday=DB.positions.filter(p=>p.status==='closed'&&p.closedAt&&jKey(new Date(p.closedAt))===today)
     .reduce((s,p)=>s+(posMetrics(p).pnl||0),0);
@@ -6300,7 +6356,7 @@ const mix=(hex,pct)=>{
 
 /* ورودیِ کارت را از پوزیشن می‌سازیم تا همان اعدادی برود روی تصویر که در برنامه دیده‌ای */
 function shareDataOf(p){
-  const live=liveOf(p.ticker), m=posMetrics(p,live), open=p.status==='open';
+  const live=pxOf(p), m=posMetrics(p,live), open=p.status==='open';
   const spot=p.kind==='spot';
   return {ticker:p.ticker,spot,dir:p.dir,lev:p.lev,open,
     roi:m.roi,pnl:m.pnl,r:m.r,entry:p.entry,exit:m.exit,stop:p.stop0!=null?p.stop0:p.stop,
@@ -7721,7 +7777,7 @@ function checkAutoExec(){
   let snap=null;
   for(const p of DB.positions){
     if(!autoOn(p))continue;
-    const px=PRICES.get(p.ticker);
+    const px=pxOf(p);
     if(px==null)continue;
     if(now-autoSince(p)>gap){late.push(p);continue;}
     if(!snap&&autoHit(p,px,px))snap=JSON.stringify(dbBlob());
@@ -7759,7 +7815,7 @@ async function autoCatchUp(list){
         seen=end;
       }
       // کندل‌ها تا الان رسیده‌اند (یا نیامدند): قیمت زنده هم سنجیده می‌شود
-      const px=PRICES.get(p.ticker), done=!ok||!cs.length||seen>=Date.now()-ms;
+      const px=pxOf(p), done=!ok||!cs.length||seen>=Date.now()-ms;
       if(done&&p.status==='open'&&px!=null)autoFeed(p,px,px,Date.now(),ev);
       AUTOSEEN[p.id]=done?Date.now():seen;
       autoSeenSave();
@@ -8592,7 +8648,10 @@ function sheetAudRules(){
 let posFilter='open';
 let DRAGGING=false;               // وقتی دستگیره استاپ زیر انگشت است، رندر دوباره نباید بپرد
 const PENDING=new Map();          // استاپ جابجاشده و هنوز تأیید نشده، برای هر پوزیشن
-const liveOf=t=>PRICES.get(t)||null;
+/* قیمتِ یک پوزیشن: فیوچرز با مارک پرایس (همانی که صرافی استاپ و لیکوئید را با آن می‌سنجد)،
+   اسپات یا وقتی مارک در دسترس نیست با قیمت لحظه‌ای بازار اسپات */
+const markOf=p=>p&&p.kind!=='spot'&&MARK_AT&&Date.now()-MARK_AT<5*60e3&&MARK.get(p.ticker)||null;
+const pxOf=p=>markOf(p)||PRICES.get(p.ticker)||null;
 
 function buildPendingCard(w){
   const px=PRICES.get(w.ticker);
@@ -8668,7 +8727,7 @@ function renderPositions(){
   const open=all.filter(p=>p.status==='open');
 
   let unreal=0,hasLive=false;
-  for(const p of open){const l=liveOf(p.ticker);if(l){const m=posMetrics(p,l);if(m.pnl!=null){unreal+=m.pnl;hasLive=true;}}}
+  for(const p of open){const l=pxOf(p);if(l){const m=posMetrics(p,l);if(m.pnl!=null){unreal+=m.pnl;hasLive=true;}}}
   const todayKey=jKey(new Date());
   const todayPnl=all.filter(p=>p.status==='closed'&&p.closedAt&&jKey(new Date(p.closedAt))===todayKey)
     .reduce((s,p)=>s+(posMetrics(p).pnl||0),0);
@@ -8693,7 +8752,7 @@ function renderPositions(){
 
   const show=all.filter(p=>posFilter==='all'||p.status===posFilter);
   /* مرتب‌سازی انتخابی (روی دستگاه می‌ماند). سود/ضرر پوزیشن باز با قیمت الان حساب می‌شود. */
-  const so=POSSORT, mv=new Map(show.map(p=>[p.id,posMetrics(p,p.status==='open'?liveOf(p.ticker):undefined)]));
+  const so=POSSORT, mv=new Map(show.map(p=>[p.id,posMetrics(p,p.status==='open'?pxOf(p):undefined)]));
   const t0=p=>p.closedAt||p.openedAt, pn=p=>mv.get(p.id).pnl??-Infinity, rr=p=>mv.get(p.id).r??-Infinity;
   const cmp={new:(a,b)=>t0(b)-t0(a),old:(a,b)=>t0(a)-t0(b),pnlD:(a,b)=>pn(b)-pn(a),
     pnlA:(a,b)=>(mv.get(a.id).pnl??Infinity)-(mv.get(b.id).pnl??Infinity),rD:(a,b)=>rr(b)-rr(a),
@@ -8772,7 +8831,7 @@ function buildLadder(p,live,m,opts){
 function attachDrag(L,p,d,opts){
   const hs=L.querySelector('.hs2'), slb=L.querySelector('.slb'), zone=L.querySelector('.zone');
   let w=0,box=null;
-  const live=liveOf(p.ticker);
+  const live=pxOf(p);
   const move=e=>{
     const x=(e.clientX-box.left)/w;
     let v=priceAt(d,x);
@@ -8882,7 +8941,7 @@ const POSOPEN=new Set(), POSMENU=new Set();
 let POSSORT=lsGet('signaldesk.possort.v1')||'new';
 function buildPosCard(p,opt){
   ensureBase(p);
-  const live=liveOf(p.ticker), m=posMetrics(p,live), open=p.status==='open';
+  const live=pxOf(p), m=posMetrics(p,live), open=p.status==='open';
   const acc=!!(opt&&opt.acc), tight=acc&&!POSOPEN.has(p.id)&&!PENDING.has(p.id);
   const card=el('div','card d-'+p.dir+(open&&m.pnl!=null&&Math.abs(m.pnl)>1e-9?(m.pnl>0?' pu':' pd'):'')+
     (acc?(tight?' pct':' pcopen'):''));card.id='pos-'+p.id;
@@ -8924,7 +8983,7 @@ function buildPosCard(p,opt){
       '<div class="big '+cls(m.pnl)+'" data-cu="'+p.id+'" data-v="'+(m.pnl!=null?m.pnl:'')+'">'+fmtUsd(m.pnl)+'</div></div>'+
     '<div><span class="lab">'+(isSpot?'بازده':'روی مارجین')+'</span><div class="lp '+cls(m.pnl)+'">'+fmtPct(m.roi)+'</div></div>'+
     (m.r!=null?'<div><span class="lab">R</span><div class="lp '+cls(m.r)+'">'+fmtR(m.r)+'</div></div>':'')+
-    '<div class="side"><span class="lab">'+(open?'قیمت الان':'قیمت خروج')+'</span>'+
+    '<div class="side"><span class="lab">'+(open?(markOf(p)?'مارک پرایس':'قیمت الان'):'قیمت خروج')+'</span>'+
       '<div class="lp'+(open&&flashOf(p.ticker)?' fl-'+flashOf(p.ticker):'')+'">'+
       (m.exit!=null?fmtPrice(m.exit):'—')+'</div></div>';
   b.appendChild(hero);
@@ -9053,7 +9112,7 @@ function buildPosCard(p,opt){
 
 /* ---- ورق بستن کامل ---- */
 function sheetClose(p){
-  const live=liveOf(p.ticker);
+  const live=pxOf(p);
   let mode='price';
   openSheet(
    '<h3>بستن پوزیشن · '+esc(p.ticker)+'</h3>'+
@@ -9143,7 +9202,7 @@ function closeHalfAt(p,price){
   save();renderAll();toast('50٪ بسته شد · '+fmtUsd(pnl),pnl>=0?'ok':'err');
 }
 function sheetPartial(p){
-  const live=liveOf(p.ticker);
+  const live=pxOf(p);
   let pct=50;
   openSheet(
    '<h3>بستن بخشی · '+esc(p.ticker)+'</h3>'+
@@ -9212,7 +9271,7 @@ function sheetPartial(p){
 
 /* ---- ورق افزودن حجم ---- */
 function sheetAdd(p){
-  const live=liveOf(p.ticker);
+  const live=pxOf(p);
   openSheet(
    '<h3>افزودن حجم · '+esc(p.ticker)+'</h3>'+
    '<div class="sub">مارجین تازه با همان اهرم اضافه می‌شود و قیمت ورودت میانگین می‌گیرد. اهرم و استاپ دست نمی‌خورند.</div>'+
@@ -9315,7 +9374,7 @@ function sheetEditPos(p){
        syncBox();
        const v=grab(),pv=$('#prev');pv.innerHTML='';
        if(!v.entry||!v.margin||!v.lev){pv.innerHTML='<div class="k"><b>پیش‌نمایش</b><span class="m">اعداد ناقص</span></div>';return;}
-       const live=v.status==='closed'?null:liveOf(v.ticker);
+       const live=v.status==='closed'?null:pxOf(v);
        // پیش‌نمایش با مبنای تازه، همان چیزی که بعد از ذخیره می‌بینی
        const m=posMetrics(rebase(Object.assign({},d,v,{partials:partialsOf(d).slice()})),live);
        const add=(l,x,c)=>pv.innerHTML+='<div class="k"><b>'+l+'</b><span class="'+(c||'')+'">'+x+'</span></div>';
