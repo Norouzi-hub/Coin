@@ -909,6 +909,10 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 @keyframes pbping{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--gold) 60%,transparent)}100%{box-shadow:0 0 0 10px transparent}}
 .pbact{display:flex;gap:8px;align-items:center;flex:0 0 100%;padding-inline-start:34px}
 .pbact .btn{padding:7px 14px}
+.gatebox{display:flex;gap:9px;align-items:flex-start;margin-top:12px;padding:10px 12px;border-radius:12px;font-size:12.5px;line-height:1.8;
+  color:var(--dn);background:color-mix(in srgb,var(--dn) 8%,var(--card));border:1px solid color-mix(in srgb,var(--dn) 40%,var(--line))}
+.gatebox .ic{width:16px;height:16px;flex:none;margin-top:3px}
+.status .sc i.rcap{font-style:normal;color:var(--tx3);font-size:11px}
 .fwx{margin:12px 0 2px;padding:12px;border-radius:14px;background:color-mix(in srgb,var(--gold) 6%,var(--inset));border:1px solid color-mix(in srgb,var(--gold) 40%,var(--line))}
 .fwx .pbh .ic{color:var(--gold)}
 .fwi{padding:9px 0 2px;border-top:1px dashed var(--line)}
@@ -5585,6 +5589,8 @@ function quickEnter(p,sig,ov,px){
     return sheetEnter(p,sig,ov,px);
   }
   const lev=+r.leverage.toFixed(2);
+  const gate=entryGate(r.actualRisk);
+  if(gate.length&&!confirm('⚠️ '+gate.join('\n\n')+'\n\nباز هم وارد می‌شوی؟'))return;
   /* بیشتر پست‌های کانال نمی‌گویند فیوچرز است یا اسپات. جلوی ورود سریع را نمی‌گیریم،
      ولی حدس را توی همان پنجره‌ی تأیید صریح می‌نویسیم تا کسی ندانسته فیوچرز نگیرد. */
   if(!confirm((I.spot?'خرید اسپات ':'ورود ')+(sig.ticker||'')+
@@ -5679,6 +5685,7 @@ function sheetEnter(p,sig,ov,px){
      '<div class="fld"><label>یادداشت</label><input id="f_n" placeholder="چرا وارد شدی؟"></div>'+
    '</div>'+
    '<div id="riskBox"></div>'+
+   '<div id="gateBox" class="gatebox hide"></div>'+
    '<div id="prev" class="kv" style="margin-top:12px"></div>'+
    '<div id="pbBox" class="pbx pbsheet"></div>'+
    '<div class="srow"><button class="btn pri" id="ok">ثبت پوزیشن</button>'+
@@ -5856,7 +5863,9 @@ function sheetEnter(p,sig,ov,px){
        if(sp!=null)h+=at(sp,'امن تا <b dir="ltr">'+(+safe.toFixed(safe<10?1:0))+'x</b>','safe'+(sp>85?' end':sp<15?' start':''));
        tk.innerHTML=h;
      };
-     const upd=()=>{updNums();drawLad();paintAmt();};
+     const paintGate=()=>{const g=entryGate(riskOfPlan(grab())), b=$('#gateBox');if(!b)return;
+       b.classList.toggle('hide',!g.length);b.innerHTML=g.length?ic('alert')+'<div>'+g.map(esc).join('<br>')+'</div>':'';};
+     const upd=()=>{updNums();drawLad();paintAmt();paintGate();};
      moneyInput($('#f_m'));
      paintMkt();
 
@@ -5882,6 +5891,8 @@ function sheetEnter(p,sig,ov,px){
        if(!v.lev||v.lev<=0)return toast('اهرم را وارد کن','err');
        if(v.stop&&((v.dir==='long'&&v.stop>=v.entry)||(v.dir==='short'&&v.stop<=v.entry)))
          return toast('استاپ با جهت معامله نمی‌خواند','err');
+       const gate=entryGate(riskOfPlan(v));
+       if(gate.length&&!confirm('⚠️ '+gate.join('\n\n')+'\n\nباز هم ثبت شود؟'))return;
        // تنها جایی که هنوز «مطمئنی؟» می‌پرسیم: لیکوئید پیش از استاپ یعنی حد ضرر عملاً وجود ندارد
        if(!sp&&v.stop&&v.lev>1.05){const ld=1/v.lev-MMR, sd=Math.abs(v.entry-v.stop)/v.entry;
          if(ld>0&&sd>=ld&&!confirm('با اهرم '+(+v.lev)+'x قیمت لیکوئید ('+(ld*100).toFixed(1)+'٪) قبل از حد ضرر ('+(sd*100).toFixed(1)+
@@ -5924,6 +5935,30 @@ function sheetSkip(p,sig,ov,px){
    });
 }
 
+/* ---- ریسک باز و قفل روزانه ---- */
+/* ریسک باز یک پوزیشن: اگر همین الان استاپش بخورد، چقدر از حساب می‌رود (استاپِ در سود = صفر).
+   بدون استاپ: کل مارجینِ باقی‌مانده، چون عملاً سقفی ندارد. */
+function openRiskOf(p){
+  if(p.status!=='open'||!(p.margin>0)||!(p.entry>0))return 0;
+  if(!p.stop)return p.margin;
+  const qty=p.margin*p.lev/p.entry, sign=p.dir==='long'?1:-1;
+  return Math.max(0,qty*(p.entry-p.stop)*sign+p.margin*p.lev*(S.fee/100));
+}
+const riskOfPlan=v=>!(v&&v.entry>0&&v.margin>0)?0:!v.stop?v.margin
+  :(v.margin*(v.lev||1)/v.entry)*Math.abs(v.entry-v.stop)+v.margin*(v.lev||1)*(S.fee/100);
+function riskNow(){
+  const used=DB.positions.reduce((a,p)=>a+openRiskOf(p),0);
+  return {used,pct:S.acct>0?used/S.acct*100:0,cap:+S.openRisk||15};
+}
+/* پیش از هر ورود تازه: حد ضرر روزانه پر شده؟ ریسک باز کل از سقف رد می‌شود؟ خروجی: فهرست هشدارها */
+function entryGate(newRisk){
+  const m=moneyNow(), r=riskNow(), out=[];
+  if(m.left<=0)out.push('امروز به حد ضرر روزانه ('+faN(S.daily)+'٪ حساب) رسیده‌ای؛ قانون خودت می‌گوید ورود تازه نه.');
+  const pct=S.acct>0?(r.used+(newRisk||0))/S.acct*100:0;
+  if(newRisk>0&&pct>r.cap)out.push('با این ورود ریسک باز کل به '+pct.toFixed(1)+'٪ حساب می‌رسد؛ سقفت '+faN(r.cap)+'٪ است'+
+    (r.used>0?' (الان '+r.pct.toFixed(1)+'٪ باز داری)':'')+'.');
+  return out;
+}
 /* یک نگاه به وضعیت امروز، بدون رفتن به تب‌های دیگر */
 /* دو عددی که جای دیگری نوشته نمی‌شوند. قبلاً در نوار جداگانه‌ای بودند و آن نوار
    با نوار وضعیت روی هم 141 پیکسل می‌گرفت برای چهار عدد؛ حالا هر دو یک نوارند. */
@@ -5936,7 +5971,9 @@ function moneyNow(){
   const realToday=DB.positions.filter(p=>p.status==='closed'&&p.closedAt&&jKey(new Date(p.closedAt))===today)
     .reduce((s,p)=>s+(posMetrics(p).pnl||0),0);
   const cap=S.acct*(S.daily/100), used=Math.max(0,-realToday), left=Math.max(0,cap-used);
-  return {openPnl,hasPx,left,hot:used>=cap?'d':(used>cap*.6?'w':'u')};
+  const r=riskNow();
+  return {openPnl,hasPx,left,hot:used>=cap?'d':(used>cap*.6?'w':'u'),
+    risk:r.pct,riskHot:r.pct>r.cap?'d':r.pct>r.cap*.7?'w':'u',nOpen:open.length};
 }
 
 /* یک نوار به‌جای سه دکمه‌ی بی‌عدد به‌علاوه‌ی چیپ‌های آرشیو: هر بخش می‌گوید چند تا
@@ -6280,7 +6317,9 @@ function showStatus(){
     const m=moneyNow();
     money='<span class="sc">سود/ضرر باز <b class="'+(m.hasPx?cls(m.openPnl):'m')+'">'+
         (m.hasPx?fmtUsd(m.openPnl):'—')+'</b></span>'+
-      '<span class="sc">تا حد ضرر روزانه <b class="'+m.hot+'">'+fmtUsd(m.left)+'</b></span>';
+      '<span class="sc">تا حد ضرر روزانه <b class="'+m.hot+'">'+fmtUsd(m.left)+'</b></span>'+
+      (m.nOpen?'<span class="sc" title="اگر استاپ همه‌ی پوزیشن‌های باز همین الان بخورد، این درصد از حساب می‌رود">ریسک باز <b class="'+m.riskHot+'">'+
+        m.risk.toFixed(1)+'٪</b><i class="rcap">/'+faN(+S.openRisk||15)+'٪</i></span>':'');
   }
   st.innerHTML='<span class="sc">مارجین <b>$'+faN(S.cap)+'</b> · ریسک <b>'+faN(S.risk)+'٪</b></span>'+
     money+'<span class="sc grow" style="color:var(--tx3)">'+px+'</span>';
@@ -7758,9 +7797,13 @@ const followDone=(p,f)=>{
 };
 /* پیگیری‌های باز یک پوزیشن: بعد از ورود تو، هنوز انجام یا رد نشده */
 function followsFor(p){
-  if(p.status!=='open'||!p.postId||!POSTS.length)return [];
+  if(p.status!=='open'||!POSTS.length)return [];
+  // پوزیشن‌های ثبت‌شده از سیگنال sigId دارند؛ قدیمی‌ترها فقط از روی «تصمیم» به پست وصل‌اند
+  let sid=p.sigId||p.postId;
+  if(!sid)for(const [k,d] of Object.entries(DB.decisions))if(d&&d.posId===p.id){sid=k;break;}
+  if(!sid)return [];
   const since=(p.openedAt||0)-10*60e3, fd=p.fdone||{};
-  return (followIndex().get(p.postId)||[]).filter(x=>+x.q.date>=since&&!fd[x.q.id]&&!followDone(p,x.f));
+  return (followIndex().get(sid)||[]).filter(x=>+x.q.date>=since&&!fd[x.q.id]&&!followDone(p,x.f));
 }
 const FOLLOW_FA={be:'ریسک‌فری',stop:'جابه‌جایی استاپ',tp:'سیو سود',sl:'استاپ خورد',close:'خروج'};
 function followTag(f){return f.kind==='tp'?'تارگت '+faN(f.n||1)+' / سیو سود':f.kind==='stop'?'استاپ روی '+fmtPrice(f.v):FOLLOW_FA[f.kind];}
