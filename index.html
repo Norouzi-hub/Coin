@@ -912,6 +912,24 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .gatebox{display:flex;gap:9px;align-items:flex-start;margin-top:12px;padding:10px 12px;border-radius:12px;font-size:12.5px;line-height:1.8;
   color:var(--dn);background:color-mix(in srgb,var(--dn) 8%,var(--card));border:1px solid color-mix(in srgb,var(--dn) 40%,var(--line))}
 .gatebox .ic{width:16px;height:16px;flex:none;margin-top:3px}
+.tagpick{margin-top:12px}
+.tagpick summary .ic{width:15px;height:15px;vertical-align:-2px;margin-inline-end:5px;color:var(--gold)}
+.tagpick .tgl{font-size:12px;color:var(--tx3);margin-top:10px}
+.tagpick .pbpick{margin-top:6px}
+.pbc.add{border-style:dashed}
+.jr .jsec{margin-top:10px}
+.jr table.tp{min-width:0;font-size:12.5px}
+.jr table.tp th,.jr table.tp td{padding:7px 6px}
+.jr table.tp td.num{white-space:nowrap;direction:ltr;text-align:end}
+.jr .tscroll{margin:8px 0 0}
+.jr .jsec .hint{margin-top:8px}
+.jr .panelhead .markhint{margin-inline-start:auto}
+.tagrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px;font-size:12px;color:var(--tx3)}
+.tagrow{cursor:pointer}
+.tagrow .ic{width:14px;height:14px;color:var(--tx3)}
+.violrow{margin-top:10px;padding:8px 10px;border-radius:10px;font-size:12px;line-height:1.8;color:var(--warn);
+  background:color-mix(in srgb,var(--warn) 7%,var(--card));border:1px solid color-mix(in srgb,var(--warn) 35%,var(--line))}
+.violrow .mark{margin-inline-start:6px}
 .status .sc i.rcap{font-style:normal;color:var(--tx3);font-size:11px}
 .fwx{margin:12px 0 2px;padding:12px;border-radius:14px;background:color-mix(in srgb,var(--gold) 6%,var(--inset));border:1px solid color-mix(in srgb,var(--gold) 40%,var(--line))}
 .fwx .pbh .ic{color:var(--gold)}
@@ -2008,7 +2026,23 @@ let KGEN=0;     // هر ذخیره نسل را جلو می‌برد تا حاف�
 /* ---- ردگیری تغییرها برای ادغام همگام‌سازی ----
    هر پوزیشنی که از ذخیره‌ی قبلی عوض شده، زمان تغییر (upd) می‌گیرد؛ هر چیزی که پاک شده سنگ قبر.
    به این ترتیب دو دستگاه که هم‌زمان کار کرده‌اند، رکوردبه‌رکورد ادغام می‌شوند نه کل‌به‌کل. */
-let TRACK=null;
+let TRACK=null, NOJUDGE=false;
+/* ---- تخلف از نقشه ----
+   بی‌آنکه هر جای برنامه را که استاپ یا بستن را عوض می‌کند دست بزنیم، همین‌جا تغییر هر پوزیشن
+   را با حالت قبلش می‌سنجیم: استاپ دورتر رفت؟ بی‌استاپ وارد شد؟ پیش از رسیدن به پله‌ی بعدیِ نقشه
+   دستی بسته شد؟ (ورود با وجود قفل روزانه/سقف ریسک در خود فرم ورود ثبت می‌شود) */
+const VIOL_FA={stopaway:'استاپ را دورتر بردی',nostop:'بدون استاپ وارد شدی',early:'زودتر از نقشه بستی',gate:'با وجود قفل روزانه یا سقف ریسک وارد شدی'};
+function addViol(p,k,x){p.viol=(p.viol||[]).concat([Object.assign({k,at:Date.now()},x||{})]);}
+function judge(p,old){
+  const has=k=>(p.viol||[]).some(v=>v.k===k), sign=p.dir==='long'?1:-1;
+  if(!old){if(p.status==='open'&&!p.stop&&p.kind!=='spot'&&!has('nostop'))addViol(p,'nostop');return;}
+  if(old.status==='open'&&p.status==='open'&&old.stop&&p.stop&&(p.stop-old.stop)*sign<-1e-12)
+    addViol(p,'stopaway',{from:old.stop,to:p.stop});
+  if(old.status==='open'&&p.status==='closed'&&!p.autoBy&&p.pb&&(p.pbc||0)<p.pb.tps.length&&!has('early')){
+    const ex=p.exitPrice, nx=p.pb.tps[p.pbc||0], atStop=p.stop&&ex&&Math.abs(ex-p.stop)/p.stop<0.003;
+    if(ex>0&&!atStop&&(nx-ex)*sign>0)addViol(p,'early',{px:ex,next:nx});
+  }
+}
 const itemId=x=>x&&typeof x==='object'&&x.id!=null?String(x.id):JSON.stringify(x);
 const posSig=p=>JSON.stringify(p,(k,v)=>k==='upd'?undefined:v);
 function collKeys(k){const v=DB[k];return Array.isArray(v)?v.map(itemId):Object.keys(v||{});}
@@ -2021,8 +2055,12 @@ function trackStamp(){
   const now=Date.now(), T=DB.tomb, seen=new Set();
   for(const p of DB.positions){
     if(p.id==null)continue;
-    const sg=posSig(p);seen.add(p.id);
-    if(TRACK.pos.get(p.id)!==sg){p.upd=now;delete T['positions:'+p.id];}
+    let sg=posSig(p);seen.add(p.id);
+    const prev=TRACK.pos.get(p.id);
+    if(prev!==sg){
+      p.upd=now;delete T['positions:'+p.id];
+      if(!NOJUDGE){try{judge(p,prev?JSON.parse(prev):null);sg=posSig(p);}catch(e){}}
+    }
     TRACK.pos.set(p.id,sg);
   }
   for(const id of [...TRACK.pos.keys()])if(!seen.has(id)){T['positions:'+id]=now;TRACK.pos.delete(id);}
@@ -2033,6 +2071,7 @@ function trackStamp(){
     for(const x of cur)if(!old.has(x))delete T[k+':'+x];
     TRACK.keys[k]=cur;
   }
+  NOJUDGE=false;
   // سنگ قبرهای خیلی قدیمی لازم نیست؛ هر دستگاهی تا الان همگام شده
   for(const [x,t] of Object.entries(T))if(now-t>120*864e5)delete T[x];
 }
@@ -5591,6 +5630,7 @@ function quickEnter(p,sig,ov,px){
   const lev=+r.leverage.toFixed(2);
   const gate=entryGate(r.actualRisk);
   if(gate.length&&!confirm('⚠️ '+gate.join('\n\n')+'\n\nباز هم وارد می‌شوی؟'))return;
+  const gateV=gate.length?[{k:'gate',at:Date.now(),t:gate.join(' ')}]:undefined;
   /* بیشتر پست‌های کانال نمی‌گویند فیوچرز است یا اسپات. جلوی ورود سریع را نمی‌گیریم،
      ولی حدس را توی همان پنجره‌ی تأیید صریح می‌نویسیم تا کسی ندانسته فیوچرز نگیرد. */
   if(!confirm((I.spot?'خرید اسپات ':'ورود ')+(sig.ticker||'')+
@@ -5605,7 +5645,7 @@ function quickEnter(p,sig,ov,px){
     dir:I.dir,entry,
     stop:I.stop,stop0:I.stop,margin:I.amt,baseMargin:I.amt,lev,
     targets:sig.targets||[],openedAt:Date.now(),status:'open',
-    exitPrice:null,closedAt:null,fees:null,note:'ورود سریع',partials:[],log:[],
+    exitPrice:null,closedAt:null,fees:null,note:'ورود سریع',partials:[],log:[],viol:gateV,
     src:{link:p.link,text:(p.text||'').slice(0,400),img:p.img||null,at:p.date?p.date.getTime():null}});
   logAdd(pos,'open',I.spot?('خرید سریع اسپات '+fmtUsd(I.amt)+' روی '+fmtPrice(entry))
                           :('ورود سریع با '+fmtUsd(I.amt)+' مارجین و اهرم '+lev+'x روی '+fmtPrice(entry)));
@@ -5684,6 +5724,7 @@ function sheetEnter(p,sig,ov,px){
        '<option value="short"'+(I0.dir==='short'?' selected':'')+'>شورت</option></select></div>'+
      '<div class="fld"><label>یادداشت</label><input id="f_n" placeholder="چرا وارد شدی؟"></div>'+
    '</div>'+
+   tagPickHtml()+
    '<div id="riskBox"></div>'+
    '<div id="gateBox" class="gatebox hide"></div>'+
    '<div id="prev" class="kv" style="margin-top:12px"></div>'+
@@ -5863,6 +5904,7 @@ function sheetEnter(p,sig,ov,px){
        if(sp!=null)h+=at(sp,'امن تا <b dir="ltr">'+(+safe.toFixed(safe<10?1:0))+'x</b>','safe'+(sp>85?' end':sp<15?' start':''));
        tk.innerHTML=h;
      };
+     TAGSEL={setup:'',mood:''};wireTagPick(sh,TAGSEL);
      const paintGate=()=>{const g=entryGate(riskOfPlan(grab())), b=$('#gateBox');if(!b)return;
        b.classList.toggle('hide',!g.length);b.innerHTML=g.length?ic('alert')+'<div>'+g.map(esc).join('<br>')+'</div>':'';};
      const upd=()=>{updNums();drawLad();paintAmt();paintGate();};
@@ -5893,6 +5935,7 @@ function sheetEnter(p,sig,ov,px){
          return toast('استاپ با جهت معامله نمی‌خواند','err');
        const gate=entryGate(riskOfPlan(v));
        if(gate.length&&!confirm('⚠️ '+gate.join('\n\n')+'\n\nباز هم ثبت شود؟'))return;
+       const gateV=gate.length?[{k:'gate',at:Date.now(),t:gate.join(' ')}]:undefined;
        // تنها جایی که هنوز «مطمئنی؟» می‌پرسیم: لیکوئید پیش از استاپ یعنی حد ضرر عملاً وجود ندارد
        if(!sp&&v.stop&&v.lev>1.05){const ld=1/v.lev-MMR, sd=Math.abs(v.entry-v.stop)/v.entry;
          if(ld>0&&sd>=ld&&!confirm('با اهرم '+(+v.lev)+'x قیمت لیکوئید ('+(ld*100).toFixed(1)+'٪) قبل از حد ضرر ('+(sd*100).toFixed(1)+
@@ -5901,7 +5944,8 @@ function sheetEnter(p,sig,ov,px){
          dir:v.dir,entry:v.entry,
          stop:v.stop||null,stop0:v.stop||null,margin:v.margin,baseMargin:v.margin,lev:v.lev,
          targets:sig.targets||[],openedAt:Date.now(),status:'open',
-         exitPrice:null,closedAt:null,fees:null,note:v.note,partials:[],log:[],
+         exitPrice:null,closedAt:null,fees:null,note:v.note,partials:[],log:[],viol:gateV,
+         setup:TAGSEL.setup||undefined,mood:TAGSEL.mood||undefined,
          src:{link:p.link,text:(p.text||'').slice(0,400),img:p.img||null,at:p.date?p.date.getTime():null}});
        logAdd(pos,'open',sp
          ?('خرید اسپات '+fmtUsd(v.margin)+' روی '+fmtPrice(v.entry))
@@ -7967,6 +8011,7 @@ function autoFeed(p,hi,lo,at,ev){
   }
 }
 function restoreSnap(snap){
+  NOJUDGE=true;             // برگرداندن، خودش تخلف نیست (مثلاً استاپ به جای قبلش برمی‌گردد)
   const d=JSON.parse(snap);
   DB.positions=d.positions;fillDB(d);
   OVERRIDE=DB.overrides;PCACHE.clear();
@@ -9192,6 +9237,7 @@ function buildPosCard(p,opt){
   }else{
     head.appendChild(el('span','pill '+((m.pnl||0)>=0?'win':'lose'),(m.pnl||0)>=0?'برد':'باخت'));
     if(p.autoBy)head.appendChild(el('span','pill mut',p.autoBy==='liq'?'لیکوئید خودکار':p.autoBy==='tp'?'بسته با نقشه':'استاپ خودکار'));
+    if(p.viol&&p.viol.length)head.appendChild(el('span','pill lose','خلاف نقشه'));
   }
   if(acc)head.appendChild(el('i','pchev'));
   head.appendChild(el('div','when',(!open&&p.closedAt?'بسته: '+jStampFa(new Date(p.closedAt)):'باز: '+jStampFa(new Date(p.openedAt)))));
@@ -9238,6 +9284,18 @@ function buildPosCard(p,opt){
   kv.innerHTML=kh;b.appendChild(kv);
   if(fw.length)b.appendChild(buildFollowBox(p,fw));
   if(open||p.pb)b.appendChild(buildPbBox(p,live));
+  // برچسب ستاپ و حال؛ زدن رویش ویرایش می‌کند
+  {const tr=el('div','tagrow',ic('tag'));
+   tr.appendChild(el('span','pill '+(p.setup?'gold':'mut'),p.setup?esc(p.setup):'ستاپ؟'));
+   tr.appendChild(el('span','pill '+(p.mood?(p.mood==='plan'?'win':'lose'):'mut'),p.mood?esc(MOOD_FA[p.mood]||p.mood):'حال؟'));
+   tr.onclick=()=>sheetTags(p);tr.title='برچسب ستاپ و حال موقع ورود';
+   b.appendChild(tr);}
+  if(p.viol&&p.viol.length){
+    const vr=el('div','violrow',ic('alert')+' '+[...new Set(p.viol.map(v=>VIOL_FA[v.k]||v.k))].join(' · '));
+    const cl=el('button','mark ghost','اشتباه است، پاک کن');cl.type='button';
+    cl.onclick=()=>undoable('تخلف پاک شد',()=>{delete p.viol;logAdd(p,'plan','برچسب تخلف پاک شد');});
+    vr.appendChild(cl);b.appendChild(vr);
+  }
 
   if(open&&live&&p.stop){
     const fl=el('div','flags');
@@ -9757,6 +9815,7 @@ function renderReportList(){
   head.appendChild(equityCurve(inRange));
   head.appendChild(rDist(inRange));
   body.appendChild(head);
+  body.appendChild(journalPanel(inRange));
 
   for(const k of keys){
     const list=groups.get(k).sort((a,b)=>b.closedAt-a.closedAt);
@@ -9791,6 +9850,75 @@ function renderReportList(){
     c.appendChild(bd);body.appendChild(c);
   }
   body.appendChild(repVsChannel());
+}
+/* ==================== دفتر معامله ==================== */
+/* برچسب ستاپ و حال روحیِ هر معامله؛ بعداً در کارنامه معلوم می‌شود کدام ستاپ و کدام حال
+   برایت پول ساخته و کدام برده. هر دو اختیاری‌اند. */
+const SETUPS0=['بریک‌اوت','پولبک','حمایت/مقاومت','ترند','اسکلپ','سیگنال کانال'];
+const MOODS=[['plan','طبق برنامه'],['fomo','عجله / جا نمونم'],['fear','ترس'],['revenge','جبران ضرر'],['bored','بی‌حوصلگی']];
+const MOOD_FA=Object.fromEntries(MOODS);
+let TAGSEL={setup:'',mood:''};
+const setupList=()=>{const l=Array.isArray(S.setups)&&S.setups.length?S.setups:SETUPS0;
+  return [...new Set(l.concat(DB.positions.map(p=>p.setup).filter(Boolean)))].slice(0,14);};
+function tagPickHtml(cur){
+  cur=cur||{};
+  const chip=(g,v,t)=>'<button type="button" class="pbc'+(cur[g]===v?' on':'')+'" data-g="'+g+'" data-v="'+esc(v)+'" aria-pressed="'+(cur[g]===v)+'">'+esc(t)+'</button>';
+  return '<details class="sec sub2 tagpick"'+(cur.setup||cur.mood?' open':'')+'><summary>'+ic('tag')+'ستاپ و حال موقع ورود <span class="markhint">اختیاری</span></summary>'+
+    '<div class="tgl">ستاپ</div><div class="pbpick">'+setupList().map(x=>chip('setup',x,x)).join('')+
+      '<button type="button" class="pbc add" data-g="setup" data-new="1">+ تازه</button></div>'+
+    '<div class="tgl">حال</div><div class="pbpick">'+MOODS.map(([k,t])=>chip('mood',k,t)).join('')+'</div></details>';
+}
+function wireTagPick(root,sel){
+  root.querySelectorAll('.tagpick .pbc').forEach(b=>b.onclick=()=>{
+    const g=b.dataset.g;
+    if(b.dataset.new){
+      const v=(prompt('نام ستاپ تازه:')||'').trim().slice(0,30);if(!v)return;
+      S.setups=[...new Set(setupList().concat([v]))];DB.settings=Object.assign({},S);save();
+      const nb=el('button','pbc',esc(v));nb.type='button';nb.dataset.g='setup';nb.dataset.v=v;b.before(nb);
+      wireTagPick(root,sel);nb.click();return;
+    }
+    const v=sel[g]===b.dataset.v?'':b.dataset.v;sel[g]=v;
+    root.querySelectorAll('.tagpick .pbc[data-g="'+g+'"]').forEach(x=>{const on=x.dataset.v===v&&!!v;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on);});
+  });
+}
+function sheetTags(p){
+  const sel={setup:p.setup||'',mood:p.mood||''};
+  openSheet('<h3>برچسب معامله · '+esc(p.ticker)+'</h3><div class="sub">در کارنامه، بخش «دفتر معامله»، نتیجه‌ی هر ستاپ و هر حال جدا حساب می‌شود.</div>'+
+    tagPickHtml(sel).replace('<details class="sec sub2 tagpick"','<details open class="sec sub2 tagpick"')+
+    '<div class="srow"><button class="btn pri" id="ok">ذخیره</button><button class="btn" id="cx">انصراف</button></div>',
+   sh=>{wireTagPick(sh,sel);$('#cx').onclick=closeSheet;
+     $('#ok').onclick=()=>{p.setup=sel.setup||undefined;p.mood=sel.mood||undefined;save();closeSheet();renderAll();toast('برچسب ثبت شد','ok');};});
+}
+const WEEK_FA=['یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه','شنبه'];
+const cleanTrade=p=>!(p.viol&&p.viol.length);
+function journalPanel(list){
+  const w=el('div','panel jr');
+  w.appendChild(el('div','panelhead','<b>دفتر معامله</b><span class="markhint">از روی '+faN(list.length)+' معامله‌ی بسته</span>'));
+  const table=groups=>{
+    const rows=groups.filter(g=>g[1].length);
+    if(!rows.length)return '<div class="hint">هنوز داده‌ای نیست.</div>';
+    return '<div class="tscroll"><table class="tp"><thead><tr><th></th><th>تعداد</th><th>برد</th><th>خالص</th><th>میانگین R</th></tr></thead><tbody>'+
+      rows.map(([l,a])=>{const s=agg(a);return '<tr><td>'+esc(l)+'</td><td class="num">'+faN(s.n)+'</td><td class="num">'+
+        (s.winRate==null?'—':faN(s.winRate.toFixed(0))+'٪')+'</td><td class="num" style="color:var(--'+(s.pnl>=0?'up':'dn')+')">'+
+        fmtUsd(s.pnl)+'</td><td class="num">'+(s.avgR==null?'—':fmtR(s.avgR))+'</td></tr>';}).join('')+'</tbody></table></div>';
+  };
+  const by=(fn,order)=>{const m=new Map();for(const p of list){const k=fn(p);if(k==null)continue;(m.get(k)||m.set(k,[]).get(k)).push(p);}
+    return (order||[...m.keys()]).filter(k=>m.has(k)).map(k=>[k,m.get(k)]);};
+  const sec=(title,body,open)=>{const d=el('details','sec sub2 jsec');if(open)d.open=true;d.innerHTML='<summary>'+title+'</summary>'+body;w.appendChild(d);};
+  // طبق نقشه در برابر بقیه
+  const plan=list.filter(p=>p.pb&&cleanTrade(p)), viol=list.filter(p=>!cleanTrade(p)), nopb=list.filter(p=>!p.pb&&cleanTrade(p));
+  const vs=agg(viol), cost=viol.length?vs.pnl-(agg(list.filter(cleanTrade)).expectancy||0)*viol.length:0;
+  sec('طبق نقشه یا دستی',table([['طبق نقشه',plan],['بدون نقشه',nopb],['خلاف نقشه',viol]])+
+    (viol.length?'<div class="hint">'+faN(viol.length)+' معامله با تخلف: جمعاً '+fmtUsd(vs.pnl)+
+      (cost<0?'؛ اگر مثل بقیه‌ی معامله‌هایت بودند حدود <b>'+fmtUsd(-cost)+'</b> بیشتر داشتی':'')+'.</div>':''),true);
+  if(viol.length)sec('تخلف‌ها',table(Object.keys(VIOL_FA).map(k=>[VIOL_FA[k],viol.filter(p=>p.viol.some(v=>v.k===k))])));
+  sec('ستاپ',table(by(p=>p.setup||'بدون برچسب')));
+  sec('حال موقع ورود',table(by(p=>p.mood?MOOD_FA[p.mood]||p.mood:'بدون برچسب')));
+  sec('روز هفته (روز ورود)',table(by(p=>p.openedAt?WEEK_FA[new Date(p.openedAt).getDay()]:null,[6,0,1,2,3,4,5].map(i=>WEEK_FA[i]))));
+  const hb=h=>String(h).padStart(2,'0');
+  sec('ساعت ورود',table(by(p=>{if(!p.openedAt)return null;const h=Math.floor(new Date(p.openedAt).getHours()/4)*4;return hb(h)+' تا '+hb(h+4);},
+    [0,4,8,12,16,20].map(h=>hb(h)+' تا '+hb(h+4)))));
+  return w;
 }
 /* ضریب سود بدون هیچ باختی بی‌نهایت است؛ «∞» روی یک معامله گمراه‌کننده بود */
 const pfTxt=pf=>pf==null||pf===Infinity?'—':pf.toFixed(2);
