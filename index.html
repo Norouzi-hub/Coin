@@ -1781,6 +1781,9 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
         <select id="sMode"><option value="margin">کل مارجین وارد شود</option><option value="risk">ریسک ثابت</option></select></div>
       <div class="fld"><label>تارگت‌ها (R)</label><input id="sR" value="1.5, 3, 5" dir="ltr"></div>
       <div class="fld"><label>کارمزد رفت‌وبرگشت (٪)</label><input id="sFee" type="number" value="0.1" min="0" max="2" step="0.01"></div>
+      <div class="fld"><label>لغزش روی استاپ (٪)</label><input id="sSlip" type="number" value="0.05" min="0" max="2" step="0.01"></div>
+      <div class="fld"><label>فاندینگ تخمینی (٪ هر ۸ ساعت)</label><input id="sFund" type="number" value="0" min="-1" max="1" step="0.005"></div>
+      <div class="fld"><label>سقف ریسک باز هم‌زمان (٪ حساب)</label><input id="sOpenRisk" type="number" value="15" min="1" max="100" step="1"></div>
       <div class="fld"><label>سبک خروج پیش‌فرض</label><select id="sPb">
         <option value="s1">اسکلپ · تارگت 1</option><option value="s2">اسکلپ · تارگت 2</option>
         <option value="bal">متعادل</option><option value="sw">سوئینگ پله‌ای</option><option value="cu">دلخواه</option></select></div>
@@ -2342,7 +2345,7 @@ function fxGuard(){
   if(S.feat&&S.feat.fx===false&&!lsGet('signaldesk.fxuser')){S.feat.fx=true;return true;}
   return false;
 }
-const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,auto:60,proxy:'',feat:featDefaults(),staleDays:7,exitPb:'bal',cal:'j',
+const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,slip:0.05,fund:0,openRisk:15,auto:60,proxy:'',feat:featDefaults(),staleDays:7,exitPb:'bal',cal:'j',
   aud:{days:30,entryDays:3,tol:1,rule:'tp1'}};
 const F=k=>!!(S.feat&&S.feat[k]);
 let BOOTED=false;
@@ -2370,6 +2373,7 @@ function applySettingsToForm(){
   $('#sAmts').value=amtPresets().join(', ');
   $('#sRisk').value=S.risk; $('#sMaxLev').value=S.maxLev; $('#sDaily').value=S.daily;
   $('#sMode').value=S.mode; $('#sStale').value=S.staleDays||7; $('#sCal').value=calMode(); $('#sPb').value=pbDefault(); $('#sR').value=S.rMul.join(', '); $('#sFee').value=S.fee; $('#sAuto').value=S.auto;
+  $('#sSlip').value=S.slip; $('#sFund').value=S.fund; $('#sOpenRisk').value=S.openRisk;
 }
 function readSettings(){
   const prevCh=S.channel, prevAuto=S.auto, prevProxy=S.proxy;
@@ -2393,6 +2397,9 @@ function readSettings(){
   S.maxLev=Math.min(125,Math.max(1,parseFloat($('#sMaxLev').value)||10));
   S.daily=Math.min(100,Math.max(1,parseFloat($('#sDaily').value)||10));
   S.mode=$('#sMode').value; S.fee=Math.max(0,parseFloat($('#sFee').value)||0);
+  S.slip=Math.min(2,Math.max(0,parseFloat($('#sSlip').value)||0));
+  S.fund=Math.min(1,Math.max(-1,parseFloat($('#sFund').value)||0));
+  S.openRisk=Math.min(100,Math.max(1,parseFloat($('#sOpenRisk').value)||15));
   S.auto=parseInt($('#sAuto').value)||0;
   S.staleDays=Math.min(60,Math.max(1,parseInt($('#sStale').value,10)||7));
   S.exitPb=$('#sPb').value||'bal';
@@ -2679,6 +2686,8 @@ function posMetrics(p,live){
   const ownFee=closed?(p.fees||0):notional*(S.fee/100);
   m.fees=ownFee+partFees;
   m.unreal=m.gross-ownFee;
+  m.funding=fundingOf(p,closed?(p.closedAt||Date.now()):Date.now());
+  if(m.funding)m.unreal-=m.funding;
   m.pnl=m.unreal+realized;
   m.roi=base>0?(m.pnl/base)*100:null;   // درصد روی مارجین — اثر اهرم اینجاست
   m.acctPct=(m.pnl/S.acct)*100;
@@ -2686,6 +2695,17 @@ function posMetrics(p,live){
   m.r=r0?m.pnl/r0:null;
   m.liquidated=m.liqPrice!=null&&((p.dir==='long'&&exit<=m.liqPrice)||(p.dir==='short'&&exit>=m.liqPrice));
   return m;
+}
+/* فاندینگ تخمینی فیوچرز: نرخ ثابتِ تنظیمات در هر ۸ ساعتِ نگه‌داری، روی حجمی که آن مدت باز بوده.
+   لانگ با نرخ مثبت می‌پردازد، شورت می‌گیرد. خروجی: هزینه (منفی یعنی درآمد). نرخ صفر = حساب نمی‌شود. */
+function fundingOf(p,end){
+  const r=+S.fund||0;
+  if(!r||p.kind==='spot'||!p.openedAt||!(p.lev>0))return 0;
+  const per=t=>Math.max(0,Math.floor((t-p.openedAt)/(8*36e5)));
+  const sign=p.dir==='long'?1:-1;
+  let c=(p.margin||0)*p.lev*per(end);
+  for(const x of partialsOf(p))c+=(x.margin||0)*p.lev*per(x.at||end);
+  return sign*c*r/100;
 }
 /* اگر استاپ فعلی بخورد، نتیجه کل پوزیشن (با احتساب تکه‌های بسته‌شده) چه می‌شود */
 function stopOutcome(p,stop){
@@ -7876,8 +7896,12 @@ function autoHit(p,hi,lo){
   if(p.pb&&i<p.pb.tps.length&&(good-p.pb.tps[i])*sign>=0)return {k:'tp',i};
   return null;
 }
+/* استاپ در صرافی «مارکت» اجرا می‌شود و معمولاً کمی بدتر از عددش پر می‌شود؛ بدون این،
+   کارنامه‌ی بسته‌شده‌های خودکار خوش‌بینانه است */
+const slipPx=(p,px)=>px*(1-(p.dir==='long'?1:-1)*(Math.max(0,+S.slip||0)/100));
 function autoClose(p,px,at,kind){
   ensureBase(p);
+  px=slipPx(p,px);
   p.status='closed';p.exitPrice=px;p.closedAt=at;
   p.fees=p.margin*p.lev*(S.fee/100);p.autoBy=kind;
   PENDING.delete(p.id);
@@ -9167,6 +9191,7 @@ function buildPosCard(p,opt){
   if(p.stop0!=null&&p.stop!=null&&Math.abs(p.stop0-p.stop)>1e-12)add('استاپ اولیه',fmtPrice(p.stop0),'m');
   if(!isSpot)add('لیکوئید',m.liqPrice==null?'ندارد':fmtPrice(m.liqPrice),m.liqPrice==null?'m':'d');
   if(!open&&p.fees!=null)add('کارمزد',fmtUsd(-(m.fees||0)),'m');
+  if(m.funding)add('فاندینگ تخمینی',fmtUsd(-m.funding),cls(-m.funding));
   kv.innerHTML=kh;b.appendChild(kv);
   if(fw.length)b.appendChild(buildFollowBox(p,fw));
   if(open||p.pb)b.appendChild(buildPbBox(p,live));
@@ -10317,7 +10342,7 @@ function wire(){
   $('#setDone').onclick=()=>closePanel('setVeil');
   $('#setVeil').onclick=e=>{if(e.target===$('#setVeil'))closePanel('setVeil');};
   $('#veil').onclick=e=>{if(e.target===$('#veil'))closeSheet();};
-  for(const id of ['sProxy','sChannel','sAcct','sCap','sAmts','sRisk','sMaxLev','sDaily','sMode','sR','sFee','sAuto','sStale','sCal','sPb'])
+  for(const id of ['sProxy','sChannel','sAcct','sCap','sAmts','sRisk','sMaxLev','sDaily','sMode','sR','sFee','sSlip','sFund','sOpenRisk','sAuto','sStale','sCal','sPb'])
     $('#'+id).onchange=()=>{readSettings();renderAll();};
   wireIO();
   linkLabels(document.getElementById('setVeil'));
