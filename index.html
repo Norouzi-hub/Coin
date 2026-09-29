@@ -1550,6 +1550,7 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
 <main class="wrap" id="main">
 
   <div id="storeWarn" class="status warn hide"></div>
+  <div id="bkWarn" class="status warn hide"></div>
 
   <!-- سیگنال‌ها -->
   <section id="vSignals" class="view">
@@ -1975,6 +1976,37 @@ function load(){
       fillDB(d);
     }
   }catch(e){ storeOK=false; }
+}
+/* ---- ماندگاری داده ---- */
+/* سافاری (و گاهی کروم وقتی حافظه‌ی گوشی پر است) داده‌ی سایت‌هایی را که مدتی باز نشده‌اند خودش
+   پاک می‌کند. «حافظه‌ی ماندگار» از مرورگر می‌خواهد این کار را نکند؛ اگر نداد، تنها راه پشتیبان است. */
+const BKKEY='signaldesk.backupat.v1', BKSNOOZE='signaldesk.bksnooze.v1', BK_DAYS=7;
+let PERSIST=null;                 // true | false | null (مرورگر پشتیبانی نمی‌کند)
+async function persistStore(){
+  try{
+    if(!navigator.storage||!navigator.storage.persist)return;
+    PERSIST=await navigator.storage.persisted();
+    if(!PERSIST)PERSIST=await navigator.storage.persist();
+  }catch(e){}
+}
+const bkMark=()=>{lsSet(BKKEY,Date.now());const w=$('#bkWarn');if(w)w.classList.add('hide');};
+function showBackupWarn(){
+  const w=$('#bkWarn');if(!w)return;
+  w.classList.add('hide');
+  if(!storeOK||syncOn()||!DB.positions.length)return;
+  const now=Date.now();
+  let at=lsGet(BKKEY);
+  if(!at){at=now;lsSet(BKKEY,at);}            // از اولین اجرا شمرده می‌شود، نه از همان روز اول
+  if(now-at<BK_DAYS*864e5||now<(lsGet(BKSNOOZE)||0))return;
+  const days=Math.floor((now-at)/864e5);
+  w.innerHTML='<b>'+faN(days)+' روز است پشتیبان نگرفته‌ای.</b> داده‌ها فقط روی همین مرورگرند'+
+    (PERSIST===false?' و مرورگر ماندگاری‌شان را تضمین نکرده':'')+
+    '؛ اگر پاک شوند، سوابق معامله‌ها برنمی‌گردد. همگام‌سازی با ورکر هم این نگرانی را برمی‌دارد.<div class="srow"></div>';
+  const row=w.querySelector('.srow');
+  const b1=el('button','btn sm pri','پشتیبان بگیر');b1.onclick=()=>$('#btnExport').click();
+  const b2=el('button','btn sm','بعداً');b2.onclick=()=>{lsSet(BKSNOOZE,now+3*864e5);w.classList.add('hide');};
+  row.appendChild(b1);row.appendChild(b2);
+  w.classList.remove('hide');
 }
 function showStoreWarn(){
   if(storeOK)return;
@@ -3104,7 +3136,7 @@ async function syncPush(silent){
       syncNote('ارسال نشد: '+((res.j&&res.j.message)||('HTTP '+res.status)),'bad');
       return false;
     }
-    syncCfg.rev=res.j.rev;syncCfg.at=res.j.at;syncSave();
+    syncCfg.rev=res.j.rev;syncCfg.at=res.j.at;syncSave();bkMark();
     if(!silent)syncNote('ارسال شد · نسخه '+faN(syncCfg.rev),'good');
     return true;
   }finally{syncing=false;}
@@ -4389,7 +4421,10 @@ function fillHealth(box){
       storeOK?'<b>'+faN(c.n)+'</b> پست در حافظه مرورگر'+(c.kb?' (حدود <b>'+faN(c.kb)+'</b> کیلوبایت)':''):null,
       c.at?'آخرین ذخیره: <b>'+ageTxt(c.at)+'</b>':null,
       REACHED_END?'تا اولین پست کانال خوانده شده است.':null,
-      'پوزیشن‌ها: <b>'+faN(DB.positions.length)+'</b> · تصمیم‌ها: <b>'+faN(Object.keys(DB.decisions).length)+'</b>'
+      'پوزیشن‌ها: <b>'+faN(DB.positions.length)+'</b> · تصمیم‌ها: <b>'+faN(Object.keys(DB.decisions).length)+'</b>',
+      PERSIST===true?'حافظه‌ی ماندگار: <b>بله</b> — مرورگر داده‌ها را خودش پاک نمی‌کند'
+        :PERSIST===false?'<span style="color:var(--warn)">حافظه‌ی ماندگار: نه — مرورگر ممکن است بعد از مدتی داده‌ها را پاک کند؛ پشتیبان یا همگام‌سازی لازم است.</span>':null,
+      storeOK?'آخرین پشتیبان: <b>'+(syncOn()&&syncCfg.at?ageTxt(syncCfg.at)+' (همگام‌سازی)':lsGet(BKKEY)?ageTxt(lsGet(BKKEY)):'هیچ‌وقت')+'</b>':null
     ])+
     hrow('محیط اجرا',LOCAL_ORIGIN?'warn':'ok','shield',[
       'صفحه از <b>'+esc(location.protocol+(location.host?'//'+location.host:''))+'</b> باز شده',
@@ -9681,6 +9716,7 @@ function wireIO(){
           mm=String(now.getMinutes()).padStart(2,'0');
     dl('signal-desk-'+jKey(now)+'-'+hh+mm+'.json',
       JSON.stringify(Object.assign({v:5,exportedAt:Date.now()},dbBlob(),{settings:S}),null,2));
+    bkMark();
     toast('پشتیبان گرفته شد','ok');
   };
   $('#btnCsv').onclick=()=>{
@@ -10076,6 +10112,7 @@ wireLock();
 lockGate();                       // اگر رمز گذاشته شده، قبل از دیده شدن محتوا می‌پرسد
 showOriginWarn();
 renderAll();
+persistStore().finally(()=>setTimeout(showBackupWarn,1500));
 {const bt=document.getElementById('boot');
  if(bt){bt.classList.add('gone');setTimeout(()=>bt.remove(),400);}}
 moveInd(false);
