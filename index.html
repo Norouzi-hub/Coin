@@ -909,6 +909,14 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 @keyframes pbping{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--gold) 60%,transparent)}100%{box-shadow:0 0 0 10px transparent}}
 .pbact{display:flex;gap:8px;align-items:center;flex:0 0 100%;padding-inline-start:34px}
 .pbact .btn{padding:7px 14px}
+.fwx{margin:12px 0 2px;padding:12px;border-radius:14px;background:color-mix(in srgb,var(--gold) 6%,var(--inset));border:1px solid color-mix(in srgb,var(--gold) 40%,var(--line))}
+.fwx .pbh .ic{color:var(--gold)}
+.fwi{padding:9px 0 2px;border-top:1px dashed var(--line)}
+.fwi:first-of-type{border-top:0}
+.fwt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--tx3)}
+.fwq{margin:6px 0 8px;font-size:12.5px;color:var(--tx2);line-height:1.8;unicode-bidi:plaintext;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fwi .pbact{padding-inline-start:0;flex-wrap:wrap}
 .pbsheet{margin-top:12px}
 /* آزمایشگاه خروج */
 .lab .panelhead b{display:inline-flex;align-items:center;gap:7px}
@@ -1230,6 +1238,14 @@ table.tp .num{direction:ltr;text-align:start}
 .sx{position:absolute;top:14px;inset-inline-end:14px;width:34px;height:34px;border-radius:11px;border:1px solid var(--line);
   background:var(--card);color:var(--tx2);display:grid;place-items:center;cursor:pointer}
 .srow{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.tgbox{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
+.tgh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px}
+.tgh .markhint{margin-inline-start:auto}
+.tgbox .srow{margin-top:10px}
+.tghelp{margin-top:10px}
+#tgState[data-k=ok]{color:var(--up);font-weight:700}
+.tghelp summary{cursor:pointer;font-weight:700;color:var(--tx2)}
+.tghelp ol{margin:8px 0;padding-inline-start:20px;line-height:1.9}
 /* ── اندازه‌ی لمسی: هر چیزی که با انگشت زده می‌شود دست‌کم 40 پیکسل ارتفاع دارد.
    جاهایی که ظاهر کوچک لازم است (نماد، دستگیره‌ی استاپ) ناحیه‌ی لمس نامرئیِ بزرگ‌تری گرفته‌اند. ── */
 .btn.xs{min-height:38px;padding:6px 11px}
@@ -1709,6 +1725,26 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
         فقط ریشه‌ی ورکر.<br>
         در ورکر دو چیز لازم است: یک <b dir="ltr">KV namespace</b> با نام
         <b dir="ltr">STORE</b>، و یک Secret به نام <b dir="ltr">SYNC_TOKEN</b> که همان رمز بالاست.
+      </div>
+      <div class="tgbox" id="tgBox">
+        <div class="tgh"><b>هشدار تلگرام وقتی برنامه بسته است</b><span class="markhint" id="tgState">—</span></div>
+        <div class="srow">
+          <button class="btn" id="btnTgLink">وصل کردن تلگرام</button>
+          <button class="btn" id="btnTgTest">پیام آزمایشی</button>
+          <button class="btn" id="btnTgOff">قطع</button>
+        </div>
+        <details class="hint tghelp"><summary>راه‌اندازی (یک بار، ۵ دقیقه)</summary>
+          <ol>
+            <li>همگام‌سازی بالا باید روشن باشد.</li>
+            <li>در تلگرام به <b dir="ltr">@BotFather</b> پیام بده، <b dir="ltr">/newbot</b> بزن و توکنی که می‌دهد را بردار.</li>
+            <li>در ورکر: <b dir="ltr">Settings → Variables and Secrets</b> → یک Secret به نام <b dir="ltr">TG_BOT_TOKEN</b> با همان توکن.</li>
+            <li>در ورکر: <b dir="ltr">Settings → Triggers → Cron Triggers</b> → <b dir="ltr">* * * * *</b> (هر دقیقه).</li>
+            <li>کد تازه‌ی <b dir="ltr">proxy/worker.js</b> را در ورکر بگذار و Deploy بزن.</li>
+            <li>به ربات خودت در تلگرام یک پیام بده (مثلاً <b dir="ltr">/start</b>)، بعد همین‌جا «وصل کردن تلگرام».</li>
+          </ol>
+          ورکر هر دقیقه پوزیشن‌های باز را با مارک پرایس می‌سنجد و سر استاپ، نزدیکِ استاپ، لیکوئید و تارگتِ
+          پله‌ی بعدیِ نقشه پیام می‌دهد. پوزیشن را عوض نمی‌کند؛ بسته شدن را خود برنامه دفعه‌ی بعد ثبت می‌کند.
+        </details>
       </div>
     </div>
     </details>
@@ -3335,6 +3371,32 @@ function wireSync(){
     readFields();if(!syncOn())return toast('آدرس و رمز را بنویس','err');
     btnBusy(e.currentTarget,true);await syncPush();btnBusy(e.currentTarget,false);paint();
   };
+  /* ---- هشدار تلگرام از ورکر ---- */
+  const tgPaint=(t,kind)=>{const e=$('#tgState');if(!e)return;e.textContent=t;e.dataset.k=kind||'';};
+  const tgReq=async(action,btn)=>{
+    readFields();if(!syncOn()){toast('اول همگام‌سازی را روشن کن','err');return null;}
+    if(btn)btnBusy(btn,true);
+    try{
+      const r=await fetch(String(syncCfg.url).replace(/\/+$/,'')+'/tg/'+action,
+        {method:'POST',cache:'no-store',headers:{'Authorization':'Bearer '+syncCfg.token}});
+      let j=null;try{j=await r.json();}catch(e){}
+      if(r.status===404&&(!j||j.error!=='no-chat'))throw new Error('ورکر قدیمی است؛ کد تازه‌ی proxy/worker.js را Deploy کن');
+      if(!r.ok)throw new Error((j&&j.message)||('HTTP '+r.status));
+      return j||{};
+    }catch(e){toast(e.message||'به ورکر نرسید','err');tgPaint('وصل نیست');return null;}
+    finally{if(btn)btnBusy(btn,false);}
+  };
+  const tgStatus=async()=>{
+    if(!syncOn()){tgPaint('اول همگام‌سازی');return;}
+    const j=await tgReq('status');
+    if(j)tgPaint(j.linked?'وصل'+(j.name?' · '+j.name:''):'وصل نیست',j.linked?'ok':'');
+  };
+  $('#btnTgLink').onclick=async e=>{const j=await tgReq('link',e.currentTarget);
+    if(j&&j.linked){tgPaint('وصل'+(j.name?' · '+j.name:''),'ok');toast('تلگرام وصل شد؛ پیامش را ببین','ok');}};
+  $('#btnTgTest').onclick=async e=>{const j=await tgReq('test',e.currentTarget);if(j&&j.ok)toast('پیام آزمایشی رفت','ok');};
+  $('#btnTgOff').onclick=async e=>{const j=await tgReq('unlink',e.currentTarget);if(j){tgPaint('وصل نیست');toast('هشدار تلگرام قطع شد','info');}};
+  const tgSec=$('#tgBox')&&$('#tgBox').closest('details');
+  if(tgSec)tgSec.addEventListener('toggle',()=>{if(tgSec.open)tgStatus();});
   $('#btnSyncOff').onclick=()=>{
     syncCfg={url:'',token:'',rev:0,at:0};syncSave();paint();
     syncNote('همگام‌سازی خاموش شد. داده‌ی روی این دستگاه دست‌نخورده است.','');
@@ -7629,6 +7691,97 @@ function pbPicker(cur,onPick){
   }
   return w;
 }
+/* ---- پیگیری کانال روی پوزیشن ---- */
+/* وقتی کانال درباره‌ی سیگنالی که گرفته‌ای پست بعدی می‌گذارد (ریسک‌فری، سیو سود، استاپ خورد،
+   ببندید، استاپ را بیارید روی X)، زیر همان پوزیشن با یک دکمه برای انجامش می‌آید.
+   خودکار کاری نمی‌شود — تصمیم با خودت؛ «نادیده بگیر» هم هست. */
+const RX_FCLOSE=/ببندید|ببندین|ببندیدش|کلوز\s*کنید|خارج\s*(?:بشید|شید|شوید)|خروج\s*(?:بزنید|کنید|بگیرید)|(?:پوزیشن|معامله)\s*(?:رو|را)\s*ببند/;
+const RX_FSTOP=/(?:استاپ|حد\s*ضرر)\s*(?:رو|را)?\s*(?:ببرید|بیارید|بذارید|بگذارید|منتقل\s*کنید|جا\s*به\s*جا\s*کنید)\s*(?:روی|رو|به|تا)\s*(?:قیمت\s*)?([\d.,]+)/;
+const RX_FBE=/(?:استاپ|حد\s*ضرر)[^\n\d]{0,25}?(?:نقطه\s*(?:ی\s*)?)?ورود/;
+function followOf(q){
+  const t=faNorm(normDig(q.text||''));
+  const ms=t.match(RX_FSTOP);
+  if(ms){const v=parseFloat(ms[1].replace(/,/g,''));if(v>0)return {kind:'stop',v};}
+  if(RX_FBE.test(t))return {kind:'be'};
+  const c=claimOf(q);
+  if(c)return c;
+  if(RX_FCLOSE.test(t))return {kind:'close'};
+  return null;
+}
+let FIDX=null, FKEY='';
+function followIndex(){
+  const key=POSTS.length+':'+(POSTS[0]&&POSTS[0].id)+':'+(POSTS.length&&POSTS[POSTS.length-1].id);
+  if(FIDX&&FKEY===key)return FIDX;
+  const sigIdx=new Map();
+  for(const s of POSTS.filter(x=>x.date&&isSigPost(x)).sort((a,b)=>a.date-b.date)){
+    const tk=sigOf(s).ticker;if(tk)(sigIdx.get(tk)||sigIdx.set(tk,[]).get(tk)).push(s);
+  }
+  const m=new Map();
+  for(const q of POSTS){
+    if(!q.date)continue;
+    const f=followOf(q);if(!f)continue;
+    const g=sigOf(q);
+    if(g.isSignal&&g.entry!=null&&g.stop!=null)continue;      // سیگنال تازه است، نه پیگیری
+    const tg=claimTarget(q,sigIdx);if(!tg||tg.p.id===q.id)continue;
+    (m.get(tg.p.id)||m.set(tg.p.id,[]).get(tg.p.id)).push({q,f,how:tg.how});
+  }
+  for(const l of m.values())l.sort((a,b)=>a.q.date-b.q.date);
+  FKEY=key;FIDX=m;
+  return m;
+}
+const followDone=(p,f)=>{
+  const sign=p.dir==='long'?1:-1;
+  if(f.kind==='be')return p.stop!=null&&(p.stop-p.entry)*sign>=-1e-12;
+  if(f.kind==='stop')return p.stop!=null&&Math.abs(p.stop-f.v)<=Math.abs(f.v)*1e-9;
+  if(f.kind==='tp')return !!p.pb&&(p.pbc||0)>=f.n;
+  return false;
+};
+/* پیگیری‌های باز یک پوزیشن: بعد از ورود تو، هنوز انجام یا رد نشده */
+function followsFor(p){
+  if(p.status!=='open'||!p.postId||!POSTS.length)return [];
+  const since=(p.openedAt||0)-10*60e3, fd=p.fdone||{};
+  return (followIndex().get(p.postId)||[]).filter(x=>+x.q.date>=since&&!fd[x.q.id]&&!followDone(p,x.f));
+}
+const FOLLOW_FA={be:'ریسک‌فری',stop:'جابه‌جایی استاپ',tp:'سیو سود',sl:'استاپ خورد',close:'خروج'};
+function followTag(f){return f.kind==='tp'?'تارگت '+faN(f.n||1)+' / سیو سود':f.kind==='stop'?'استاپ روی '+fmtPrice(f.v):FOLLOW_FA[f.kind];}
+function followMark(p,q,how){p.fdone=Object.assign({},p.fdone,{[q.id]:how});}
+function buildFollowBox(p,list){
+  const w=el('div','fwx');
+  w.appendChild(el('div','pbh',ic('info')+'<b>کانال درباره‌ی این پوزیشن</b>'));
+  for(const {q,f,how} of list){
+    const it=el('div','fwi');
+    it.innerHTML='<div class="fwt"><span class="pill gold">'+esc(followTag(f))+'</span><time>'+jStampFa(q.date)+'</time>'+
+      (how==='guess'?'<span class="markhint">حدسی (ریپلای نبود)</span>':'')+'</div>'+
+      '<div class="fwq">'+esc((q.text||'').replace(/\s+/g,' ').slice(0,180))+'</div>';
+    const acts=el('div','pbact');
+    const act=(label,fn,pri)=>{const b=el('button','btn xs'+(pri?' pri':''),label);b.type='button';b.onclick=fn;acts.appendChild(b);};
+    const sign=p.dir==='long'?1:-1;
+    if(f.kind==='be')act(ic('shield')+'<span>استاپ روی ورود</span>',()=>undoable('استاپ روی ورود آمد',()=>{
+      ensureBase(p);const o=p.stop;p.stop=p.entry;PENDING.delete(p.id);followMark(p,q,'done');
+      logAdd(p,'stop','طبق پست کانال (ریسک‌فری): حد ضرر '+(o?'از '+fmtPrice(o)+' ':'')+'روی ورود');}),true);
+    if(f.kind==='stop'){
+      const live=pxOf(p), okSide=live==null||(live-f.v)*sign>0;
+      act(ic('shield')+'<span>استاپ روی '+fmtPrice(f.v)+'</span>',()=>{
+        if(!okSide)return toast('قیمت الان از '+fmtPrice(f.v)+' رد شده؛ این استاپ همان لحظه می‌خورد','err');
+        undoable('استاپ جابه‌جا شد',()=>{ensureBase(p);const o=p.stop;p.stop=f.v;PENDING.delete(p.id);followMark(p,q,'done');
+          logAdd(p,'stop','طبق پست کانال: حد ضرر '+(o?'از '+fmtPrice(o)+' ':'')+'روی '+fmtPrice(f.v));});
+      },true);
+    }
+    if(f.kind==='tp'){
+      if(p.pb&&(p.pbc||0)<Math.min(f.n||1,p.pb.tps.length)){
+        const upto=Math.min(f.n||1,p.pb.tps.length);
+        act(ic('check')+'<span>اجرای نقشه تا پله‌ی '+faN(upto)+'</span>',()=>undoable('نقشه تا پله‌ی '+faN(upto)+' اجرا شد',()=>{
+          for(let i=p.pbc||0;i<upto&&p.status==='open';i++)pbApply(p,i,Date.now(),'طبق پست کانال: ');
+          followMark(p,q,'done');}),true);
+      }else act(ic('scissors')+'<span>بستن بخشی…</span>',()=>{followMark(p,q,'done');save();sheetPartial(p);},true);
+    }
+    if(f.kind==='sl'||f.kind==='close')act(ic('door')+'<span>بستن پوزیشن…</span>',()=>{followMark(p,q,'done');save();sheetClose(p);},true);
+    act('نادیده بگیر',()=>{followMark(p,q,'skip');save();renderAll();});
+    it.appendChild(acts);
+    w.appendChild(it);
+  }
+  return w;
+}
 const PBEDIT=new Set();
 /* وضعیت اجرای خودکار روی همین پوزیشن، با کلید خاموش/روشن */
 function autoRow(p){
@@ -8954,6 +9107,7 @@ function buildPosCard(p,opt){
   }
 
   const isSpot=p.kind==='spot';     // پوزیشن‌های قدیمی kind ندارند و همه فیوچرز بوده‌اند
+  const fw=open?followsFor(p):[];
   const head=el('div','chead');
   head.appendChild(el('span','tick',p.ticker));
   if(isSpot)head.appendChild(el('span','pill gold','اسپات'));
@@ -8967,6 +9121,7 @@ function buildPosCard(p,opt){
     if(m.liquidated)head.appendChild(el('span','pill lose','در محدوده لیکوئید'));
     // برچسب هشدار روی خود کارت، نه فقط یک پیغام گذرا
     else{const as=F('alerts')?alertState(p,live):null;if(as)head.appendChild(el('span','pill '+as.c+' alrt',as.t));}
+    if(fw.length)head.appendChild(el('span','pill gold alrt','کانال: '+esc(FOLLOW_FA[fw[fw.length-1].f.kind])));
   }else{
     head.appendChild(el('span','pill '+((m.pnl||0)>=0?'win':'lose'),(m.pnl||0)>=0?'برد':'باخت'));
     if(p.autoBy)head.appendChild(el('span','pill mut',p.autoBy==='liq'?'لیکوئید خودکار':p.autoBy==='tp'?'بسته با نقشه':'استاپ خودکار'));
@@ -9013,6 +9168,7 @@ function buildPosCard(p,opt){
   if(!isSpot)add('لیکوئید',m.liqPrice==null?'ندارد':fmtPrice(m.liqPrice),m.liqPrice==null?'m':'d');
   if(!open&&p.fees!=null)add('کارمزد',fmtUsd(-(m.fees||0)),'m');
   kv.innerHTML=kh;b.appendChild(kv);
+  if(fw.length)b.appendChild(buildFollowBox(p,fw));
   if(open||p.pb)b.appendChild(buildPbBox(p,live));
 
   if(open&&live&&p.stop){
