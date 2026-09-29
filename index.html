@@ -129,7 +129,11 @@
    فایل متغیر است: همه‌ی وزن‌ها (۱۰۰ تا ۹۰۰) در یک فایل. ارقام لاتین همان شکل انگلیسی‌اند. */
 @font-face{font-family:'Vazirmatn';src:url('fonts/Vazirmatn.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0;overflow-x:hidden}
+/* overflow-x روی body با clip، نه hidden: hidden روی هر دو، body را ظرف اسکرول می‌کرد و
+   سربرگِ sticky هیچ‌وقت نمی‌چسبید (با اسکرول بیرون می‌رفت) */
+html,body{margin:0;padding:0}
+html{overflow-x:hidden}
+body{overflow-x:clip}
 html{scroll-padding-top:150px}
 body{
   background:var(--bg);color:var(--tx);min-height:100vh;
@@ -178,6 +182,10 @@ html.busy .emblem::after{content:"";position:absolute;inset:-4px;border-radius:1
 .hs[data-s="stale"] i,.hs[data-s="warn"] i{background:var(--warn)}
 .hs[data-s="err"] i{background:var(--dn);box-shadow:0 0 0 3px color-mix(in srgb,var(--dn) 25%,transparent)}
 .hs[data-s="busy"] i{background:var(--gold)}
+/* برچسب متنی وضعیت: روی گوشی جای دو نقطه را می‌گیرد؛ روی دسکتاپ برچسب‌های کامل خودشان هستند */
+.hst{display:none}
+.hst em{font-style:normal;font-size:12px;font-weight:700;color:var(--tx2);font-variant-numeric:tabular-nums}
+.hst[data-s="err"] em{color:var(--dn)}.hst[data-s="warn"] em{color:var(--warn)}.hst[data-s="ok"] em{color:var(--tx)}
 .hs[data-s="busy"] i::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--gold);border-top-color:transparent;animation:spin .8s linear infinite}
 .ring{position:relative;width:26px;height:26px;display:grid;place-items:center;flex:none}
 .ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
@@ -228,6 +236,8 @@ html.busy .prog{opacity:1}
   .tab .cnt{position:absolute;top:3px;inset-inline-start:calc(50% + 6px)}
   .hchip .lbl{display:none}
   .hchip{padding:6px 10px;gap:8px}
+  .hchip #hsTg,.hchip #hsPx{display:none}
+  .hchip .hst{display:flex}
   .rbtn span{display:none}
   .rbtn{padding:0;width:40px;height:40px;border-radius:13px}
   header{padding-bottom:10px}
@@ -454,6 +464,22 @@ button.catt{cursor:pointer}
   font-size:13px;font-weight:700;color:var(--tx2);border:1px dashed var(--line2);
   background:color-mix(in srgb,var(--card) 70%,transparent);animation:drop .35s var(--ease) both;cursor:default}
 .incoming .star{width:20px;height:20px;color:var(--gold);animation:spin 1.8s linear infinite}
+/* وقتی پایین صفحه‌ای، خبر پست تازه شناور بالای صفحه می‌آید و با زدن به بالا می‌برد */
+.incoming.float{position:fixed;top:calc(var(--hdrH,64px) + 8px);inset-inline:0;margin-inline:auto;width:max-content;
+  max-width:calc(100vw - 32px);z-index:45;border-radius:99px;padding:9px 16px;box-shadow:0 12px 30px -8px rgba(0,0,0,.6)}
+/* کشیدن به پایین برای بروزرسانی */
+html{overscroll-behavior-y:contain}
+.ptr{height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--tx2);
+  font-size:12.5px;font-weight:700;transition:height .2s var(--ease)}
+.ptr .ic{width:18px;height:18px;transition:transform .2s}
+.ptr.ready{color:var(--gold)}.ptr.ready .ic{transform:rotate(180deg)}
+.ptr.busy .ic{animation:spin 1s linear infinite;color:var(--gold)}
+/* کشیدن کارت به کنار: راست آرشیو، چپ «وارد نشدم» */
+.card[data-sw="arch"]{box-shadow:inset 0 0 0 2px var(--gold)!important}
+.card[data-sw="skip"]{box-shadow:inset 0 0 0 2px var(--dn)!important}
+.swhint{position:fixed;top:calc(var(--hdrH,64px) + 10px);inset-inline:0;margin-inline:auto;width:max-content;z-index:46;
+  padding:7px 14px;border-radius:99px;font-size:12.5px;font-weight:800;background:var(--card2);color:var(--tx);
+  border:1px solid var(--line2);pointer-events:none}
 .incoming.done{border-style:solid;border-color:color-mix(in srgb,var(--up) 50%,transparent);color:var(--up);
   background:color-mix(in srgb,var(--up) 9%,var(--card));cursor:pointer}
 @keyframes drop{from{opacity:0;transform:translateY(-8px)}}
@@ -594,7 +620,9 @@ tr.tap:hover td{background:var(--card2)}
 /* خلاصه‌ی یک‌خطیِ کارتِ بسته در آکاردئون */
 .csum{display:none}
 /* جداکننده‌ی روز در فهرست پست‌ها */
-.dsep{display:flex;align-items:center;gap:8px;margin:22px 4px 2px;font-size:12.5px;color:var(--tx3)}
+.dsep{display:flex;align-items:center;gap:8px;margin:14px 0 2px;padding:8px 4px;font-size:12.5px;color:var(--tx3);
+  /* سربرگ روز موقع اسکرول زیر سربرگ برنامه می‌چسبد تا همیشه معلوم باشد این پست‌ها مال کِی‌اند */
+  position:sticky;top:var(--hdrH,64px);z-index:4;background:linear-gradient(var(--bg) 72%,transparent)}
 .dsep b{font-size:13.5px;font-weight:900;color:var(--tx2)}
 .dsep.today b{color:var(--gold)}
 .dsep.old b{color:var(--tx3)}
@@ -651,6 +679,54 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .levv:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 18%,transparent)}
 .levv input{order:1}
 .levv em{order:2;font-style:normal;font-size:15px;font-weight:900;color:var(--gold);opacity:.8}
+/* + و − اهرم */
+.levv{align-items:center;padding:2px 4px}
+.levst{order:0;width:38px;height:38px;border-radius:9px;border:1px solid var(--line2);background:var(--inset);color:var(--tx);
+  font:inherit;font-size:20px;font-weight:900;line-height:1;cursor:pointer;display:grid;place-items:center}
+.levst[data-d="1"]{order:3}
+.levst:active{transform:scale(.94)}
+/* نوار استاپ در برابر لیکوئید */
+.lsb{margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--inset);border:1px solid var(--line)}
+.lsbt{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--tx2)}
+.lsbt b{color:var(--tx)}
+.lsbb{position:relative;height:10px;border-radius:99px;background:color-mix(in srgb,var(--dn) 22%,var(--card));margin:8px 0 6px}
+.lsbs{position:absolute;right:0;top:0;bottom:0;border-radius:99px;background:var(--up)}
+.lsbl{position:absolute;top:-4px;bottom:-4px;width:3px;margin-right:-1.5px;border-radius:2px;background:var(--dn)}
+.lsb.warn .lsbs{background:var(--warn)}.lsb.bad .lsbs{background:var(--dn)}
+.lsbm{font-size:12px;font-weight:700;color:var(--up)}
+.lsb.warn .lsbm{color:var(--warn)}.lsb.bad .lsbm{color:var(--dn)}
+.rwarn.info{background:var(--inset);color:var(--tx2);border:1px solid var(--line2)}
+/* کارت پوزیشن جمع‌شده: سربرگ + سود/ضرر درشت */
+.card.pct{cursor:pointer}
+.card.pct .body>*:not(.pnlhero),.card.pct .acts,.card.pct .pmore{display:none}
+.card.pct .body{padding-bottom:12px}
+.card.pcopen .chead{cursor:pointer}
+.pchev{flex:none;width:8px;height:8px;border-right:2px solid var(--tx3);border-bottom:2px solid var(--tx3);
+  transform:rotate(45deg);margin-inline-start:6px;margin-top:-4px;transition:transform .25s var(--ease)}
+.card.pcopen .pchev{transform:rotate(-135deg);margin-top:4px}
+.pill.alrt{animation:none}
+/* دکمه‌ی «؟» و متن توضیحش */
+.infob{flex:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--line2);background:var(--inset);
+  color:var(--tx2);font:inherit;font-size:16px;font-weight:900;cursor:pointer;display:grid;place-items:center}
+.infob.on{border-color:var(--gold);color:var(--gold)}
+.infop{margin-top:6px;padding:10px 12px;border-radius:12px;background:var(--inset);border:1px solid var(--line)}
+/* نمودار رشد سرمایه و پراکندگی R */
+.eqw svg{touch-action:pan-y;cursor:crosshair}
+.eqax{display:flex;justify-content:space-between;direction:ltr;font-size:12px;color:var(--tx3);margin-top:2px}
+.eqcap{font-size:12.5px;color:var(--tx2);margin-top:6px;min-height:22px}
+.eqcap .u{color:var(--up)}.eqcap .d{color:var(--dn)}
+.rdist{margin-top:14px}
+.rdt{font-size:12px;color:var(--tx2);font-weight:700;margin-bottom:6px}
+.rdr{display:grid;grid-template-columns:104px 1fr 26px;align-items:center;gap:8px;font-size:12px;color:var(--tx2);margin:4px 0}
+.rdr span{text-align:right;font-variant-numeric:tabular-nums}
+.rdr i{height:12px;border-radius:6px;background:var(--inset);overflow:hidden;display:block}
+.rdr s{display:block;height:100%;border-radius:6px}
+.rdr s.u{background:var(--up)}.rdr s.d{background:var(--dn)}
+.rdr b{text-align:center;color:var(--tx);font-variant-numeric:tabular-nums}
+/* منوی «⋯» */
+.pmbtn.on{border-color:var(--gold);color:var(--gold)}
+.pmore{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 14px}
+.pmore .btn{flex:1 1 100px;min-height:40px}
 .autotog{position:relative;display:inline-flex;margin-inline-start:auto;cursor:pointer}
 .autotog input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
 .autotog span{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:99px;font-size:12px;font-weight:800;
@@ -682,8 +758,9 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .levticks i.safe.end{transform:translateX(-82%)}.levticks i.safe.end::before{left:82%}
 .levticks i.safe.start{transform:translateX(-18%)}.levticks i.safe.start::before{left:18%}
 .levticks i.safe::before{content:'';position:absolute;left:50%;top:-6px;width:2px;height:6px;margin-left:-1px;background:var(--up);border-radius:2px}
-.sldrow input[type=number]{width:100%;text-align:center;font-size:17px;font-weight:900;color:var(--gold);
+.sldrow input[type=number],.sldrow input[data-money]{width:100%;text-align:center;font-size:17px;font-weight:900;color:var(--gold);
   background:var(--card);border-radius:10px;font-variant-numeric:tabular-nums}
+.fld input[data-money]{direction:ltr;text-align:start}
 .replyhead{display:flex;align-items:center;gap:7px;width:100%;background:none;border:0;
   padding:0;color:inherit;font:inherit;text-align:start;cursor:pointer}
 .replyhead span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -978,6 +1055,7 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .txt{white-space:pre-wrap;word-break:break-word;font-size:14.5px;line-height:2;unicode-bidi:plaintext;text-align:start}
 .txt a{color:var(--acc)}
 .clamp{max-height:9.5em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent)}
+.clamp2{max-height:4em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 45%,transparent);mask-image:linear-gradient(#000 45%,transparent)}
 .more{background:none;border:none;color:var(--gold);font-size:12.5px;cursor:pointer;padding:4px 0;font-weight:700}
 .reply{font-size:12px;color:var(--tx3);border-inline-start:2px solid var(--line2);padding-inline-start:9px;margin-bottom:8px;unicode-bidi:plaintext}
 
@@ -1137,6 +1215,15 @@ table.tp .num{direction:ltr;text-align:start}
 .tick.tapme::after{content:"";position:absolute;inset:-9px -8px}
 .ladder .hs2::before{content:"";position:absolute;inset:-9px;border-radius:50%}
 .plink,.more{min-height:36px}
+/* ── یک خانواده‌ی چیپ، دو اندازه ──
+   قرصی (40): چیپ‌های فیلتر، دسته، نقشه‌ی خروج، برچسب بازار — یک ارتفاع، یک گردی، یک حالت «روشن».
+   فشرده (38): دکمه‌های داخل گروه‌های تقسیم‌شده (بازار، مبلغ) و دکمه‌های کوچک. */
+.fc,.catchip,.pbc,.mkttag{min-height:40px;padding:6px 13px;border-radius:999px;font-size:12.5px;font-weight:800;
+  background:var(--inset);border:1px solid var(--line2);color:var(--tx2)}
+.fc.on,.catchip.on,.pbc.on{background:color-mix(in srgb,var(--gold) 15%,transparent);color:var(--gold);
+  border-color:color-mix(in srgb,var(--gold) 45%,transparent)}
+.mktb,.amtb{min-height:38px;border-radius:10px;font-size:12.5px;font-weight:800}
+.btn.xs,.actc,.actall{min-height:38px}
 .day .v{font-size:10.5px}
 .srow .btn{flex:1 1 auto;min-width:96px;text-align:center;padding:11px;white-space:normal}
 .seg{display:flex;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:13px;overflow:hidden;margin-bottom:12px;padding:3px}
@@ -1243,6 +1330,9 @@ input[type=range]{width:100%;accent-color:var(--gold)}
   font-weight:700;z-index:200;opacity:0;transition:.3s var(--ease);pointer-events:none;
   box-shadow:0 14px 36px -10px rgba(0,0,0,.55);transform:translateY(20px)}
 .toast.on{opacity:1;transform:translateY(0)}
+.toast.undo.on{pointer-events:auto;padding-inline-end:6px}
+.tundo{min-height:36px;padding:4px 14px;border-radius:99px;border:0;cursor:pointer;font:inherit;font-weight:900;
+  background:var(--bg);color:var(--gold);margin-inline-start:4px}
 .toast .ti{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--gold);color:var(--onGold)}
 .toast .ti .ic{width:13px;height:13px;stroke-width:2.6}
 .toast.ok .ti{background:var(--up);color:#062b26}
@@ -1410,6 +1500,7 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
       <button class="hchip" id="hchip" aria-label="وضعیت سرویس‌ها">
         <span class="hs" id="hsTg" data-s="idle"><i></i><span class="lbl">تلگرام</span></span>
         <span class="hs" id="hsPx" data-s="idle"><i></i><span class="lbl">قیمت</span></span>
+        <span class="hs hst" id="hsTxt" data-s="idle"><i></i><em>آماده</em></span>
         <span class="ring off" id="ring" title="تا بروزرسانی خودکار بعدی">
           <svg viewBox="0 0 26 26" aria-hidden="true"><circle class="rb" cx="13" cy="13" r="11"/><circle class="rf" id="ringF" cx="13" cy="13" r="11" stroke-dasharray="69.1" stroke-dashoffset="0"/></svg>
           <b id="ringT"></b>
@@ -1611,8 +1702,9 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
 
     <details class="sec" data-sec="risk" open><summary>اندازه و ریسک</summary>
     <div class="grid">
-      <div class="fld"><label>موجودی حساب ($)</label><input id="sAcct" type="number" value="100" min="1" step="1"></div>
-      <div class="fld"><label>مارجین هر معامله ($)</label><input id="sCap" type="number" value="10" min="1" step="1"></div>
+      <div class="fld"><label>موجودی حساب ($)</label><input id="sAcct" class="money" value="100"></div>
+      <div class="fld"><label>مارجین هر معامله ($)</label><input id="sCap" class="money" value="10"></div>
+      <div class="fld"><label>مبلغ‌های آماده ($)</label><input id="sAmts" value="10, 25, 50, 100" dir="ltr" placeholder="10, 25, 50, 100"></div>
       <div class="fld"><label>ریسک هدف (٪ مارجین)</label><input id="sRisk" type="number" value="5" min="0.5" max="100" step="0.5"></div>
       <div class="fld"><label>سقف اهرم</label><input id="sMaxLev" type="number" value="10" min="1" max="125" step="1"></div>
       <div class="fld"><label>حد ضرر روزانه (٪ حساب)</label><input id="sDaily" type="number" value="10" min="1" max="100" step="1"></div>
@@ -1708,7 +1800,8 @@ const ICO={
   tag:'<path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3a1.4 1.4 0 0 1 0 2l-6.7 6.7a1.4 1.4 0 0 1-2 0z"/><circle cx="8" cy="8" r="1.6"/>',
   share:'<circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="m8.3 10.8 7.4-4.3M8.3 13.2l7.4 4.3"/>',
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
-  undo:'<path d="M4 9h11a5 5 0 0 1 0 10h-6"/><path d="M8 5 4 9l4 4"/>'
+  undo:'<path d="M4 9h11a5 5 0 0 1 0 10h-6"/><path d="M8 5 4 9l4 4"/>',
+  more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
 };
 const ic=(n,c)=>'<svg class="ic'+(c?' '+c:'')+'" viewBox="0 0 24 24" aria-hidden="true">'+(ICO[n]||'')+'</svg>';
 // شمسه هشت‌پر: هم نشان برنامه است، هم وقتی کاری در جریان است می‌چرخد
@@ -1865,6 +1958,29 @@ function toast(m,kind){
   t.innerHTML='<span class="ti">'+ic(k==='ok'?'check':k==='err'?'alert':'info')+'</span><span>'+m+'</span>';
   requestAnimationFrame(()=>t.classList.add('on'));
   clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),k==='err'?4000:2400);
+}
+/* به‌جای پنجره‌ی «مطمئنی؟»: کار همان لحظه انجام می‌شود و چند ثانیه دکمه‌ی «برگرداندن» هست.
+   برگرداندن از یک عکسِ کامل از داده‌ها پیش از کار است، پس هر کاری با هر پیچیدگی دقیق برمی‌گردد. */
+function toastUndo(m,undo){
+  const t=$('#toast');
+  t.className='toast ok undo';
+  t.innerHTML='<span class="ti">'+ic('check')+'</span><span>'+m+'</span>';
+  const b=el('button','tundo','برگرداندن');
+  b.onclick=()=>{clearTimeout(toastT);t.classList.remove('on');undo();};
+  t.appendChild(b);
+  requestAnimationFrame(()=>t.classList.add('on'));
+  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),6500);
+}
+function undoable(msg,act){
+  const snap=JSON.stringify(dbBlob());
+  act();
+  save();renderAll();
+  toastUndo(msg,()=>{
+    const d=JSON.parse(snap);
+    DB.positions=d.positions;fillDB(d);
+    OVERRIDE=DB.overrides;PCACHE.clear();
+    save();renderAll();toast('برگشت','info');
+  });
 }
 
 /* ==================== ذخیره پست‌ها و قیمت‌ها ==================== */
@@ -2083,7 +2199,8 @@ function applySettingsToForm(){
   if(!$('#feat_summary'))buildFeatList();
   for(const k of Object.keys(FEAT)){const c=$('#feat_'+k);if(c)c.checked=F(k);}
   $('#sProxy').value=S.proxy||'';
-  $('#sChannel').value=S.channel; $('#sAcct').value=S.acct; $('#sCap').value=S.cap;
+  $('#sChannel').value=S.channel; $('#sAcct').value=fmtMoneyIn(S.acct); $('#sCap').value=fmtMoneyIn(S.cap);
+  $('#sAmts').value=amtPresets().join(', ');
   $('#sRisk').value=S.risk; $('#sMaxLev').value=S.maxLev; $('#sDaily').value=S.daily;
   $('#sMode').value=S.mode; $('#sStale').value=S.staleDays||7; $('#sCal').value=calMode(); $('#sPb').value=pbDefault(); $('#sR').value=S.rMul.join(', '); $('#sFee').value=S.fee; $('#sAuto').value=S.auto;
 }
@@ -2101,8 +2218,10 @@ function readSettings(){
     toast('آدرس واسط احتمالاً ناقص است — آخرش /?url={url} لازم دارد','info');
   S.channel=($('#sChannel').value||'ccoineres').trim().replace(/^@/,'')
     .replace(/^.*t\.me\//,'').replace(/^s\//,'').replace(/[/?#].*$/,'')||'ccoineres';
-  S.acct=Math.max(1,parseFloat($('#sAcct').value)||100);
-  S.cap=Math.max(1,parseFloat($('#sCap').value)||10);
+  S.acct=Math.max(1,moneyVal($('#sAcct'))||100);
+  S.cap=Math.max(1,moneyVal($('#sCap'))||10);
+  {const a=[...new Set(normDig($('#sAmts').value||'').split(/[^\d.]+/).map(Number).filter(x=>x>0&&x<1e7))].sort((a,b)=>a-b).slice(0,6);
+   S.amtChips=a.length?a:null;}
   S.risk=Math.min(100,Math.max(.1,parseFloat($('#sRisk').value)||5));
   S.maxLev=Math.min(125,Math.max(1,parseFloat($('#sMaxLev').value)||10));
   S.daily=Math.min(100,Math.max(1,parseFloat($('#sDaily').value)||10));
@@ -2826,8 +2945,35 @@ function notify(title,body,tag){
   try{new Notification(title,{body,tag,icon:'icons/icon-192.png',badge:'icons/favicon-32.png'});return true;}
   catch(e){return false;}
 }
-/* هر هشدار فقط یک بار: کلیدش در همین نشست نگه داشته می‌شود */
-const ALERTED=new Set();
+/* هر هشدار فقط یک بار — حالا روی دستگاه می‌ماند، پس با هر بار باز کردن برنامه تکرار نمی‌شود.
+   کلیدِ استاپ شامل عدد استاپ است: اگر استاپ را جابجا کنی، هشدار تازه دوباره فعال می‌شود. */
+const ALKEY='signaldesk.alerted.v1';
+const ALERTED=new Set(lsGet(ALKEY)||[]);
+const alSave=()=>{const live=new Set(DB.positions.filter(p=>p.status==='open').map(p=>p.id));
+  lsSet(ALKEY,[...ALERTED].filter(k=>live.has(k.split(':')[0])).slice(-300));};
+/* وضعیت هشدارِ هر پوزیشن برای برچسب روی کارت: near | stop | tpN (رسیده) | ntpN (نزدیک) */
+function alertState(p,px){
+  if(px==null||p.status!=='open')return null;
+  const sign=p.dir==='long'?1:-1;
+  if(p.stop){
+    if((sign>0&&px<=p.stop)||(sign<0&&px>=p.stop))return {k:'stop',t:'به استاپ رسید',c:'lose'};
+    if(Math.abs(px-p.stop)/Math.abs(p.entry-p.stop)<0.25)return {k:'near',t:'نزدیک استاپ',c:'lose'};
+  }
+  const tg=(p.targets||[]).filter(t=>isFinite(t)&&(t-p.entry)*sign>0).sort((x,y)=>(x-y)*sign);
+  let hit=-1;tg.forEach((t,i)=>{if((px-t)*sign>=0)hit=i;});
+  const nx=tg[hit+1];
+  if(nx!=null){const from=hit>=0?tg[hit]:p.entry, left=(nx-px)*sign/Math.abs(nx-from);
+    if(left>0&&left<0.15)return {k:'ntp'+(hit+1),t:'نزدیک تارگت '+faN(hit+2),c:'win'};}
+  if(hit>=0)return {k:'tp'+hit,t:'تارگت '+faN(hit+1)+' رسید',c:'win'};
+  return null;
+}
+function fireAlert(key,msg,kind){
+  if(ALERTED.has(key))return;
+  ALERTED.add(key);alSave();
+  toast(msg,kind);
+  try{if(navigator.vibrate)navigator.vibrate(kind==='err'?[200,80,200]:120);}catch(e){}
+  if(F('notify'))notify('میز سیگنال',msg,key);
+}
 function checkAlerts(){
   if(!F('alerts'))return;
   for(const p of DB.positions){
@@ -2838,25 +2984,16 @@ function checkAlerts(){
     if(p.stop){
       const hit=(p.dir==='long'&&px<=p.stop)||(p.dir==='short'&&px>=p.stop);
       const near=Math.abs(px-p.stop)/Math.abs(p.entry-p.stop)<0.25;
-      const key=p.id+(hit?':stop':':near');
-      if((hit||near)&&!ALERTED.has(key)){
-        ALERTED.add(key);
-        const msg=hit?p.ticker+' به حد ضرر رسید ('+fmtPrice(px)+')'
-                     :p.ticker+' نزدیک حد ضرر است ('+fmtPrice(px)+')';
-        toast(msg,hit?'err':'info');
-        if(F('notify'))notify('میز سیگنال',msg,key);
-      }
+      if(hit||near)fireAlert(p.id+(hit?':stop:':':near:')+p.stop,
+        hit?p.ticker+' به حد ضرر رسید ('+fmtPrice(px)+')':p.ticker+' نزدیک حد ضرر است ('+fmtPrice(px)+')',hit?'err':'info');
     }
+    // نزدیک شدن به تارگت بعدی (کمتر از 15٪ راه مانده): وقت فکر کردن به سیو سود
+    const as=alertState(p,px);
+    if(as&&as.k.startsWith('ntp'))fireAlert(p.id+':'+as.k,p.ticker+' '+as.t+' است ('+fmtPrice(px)+')','info');
     if(p.pb){
       const i=p.pbc||0;
       if(i<p.pb.tps.length&&pbReached(p,i,px)){
-        const key=p.id+':pb'+i;
-        if(!ALERTED.has(key)){
-          ALERTED.add(key);
-          const msg=p.ticker+' به تارگت '+faN(i+1)+' رسید — طبق نقشه: '+pbStepText(p,i);
-          toast(msg,'ok');
-          if(F('notify'))notify('میز سیگنال',msg,key);
-        }
+        fireAlert(p.id+':pb'+i,p.ticker+' به تارگت '+faN(i+1)+' رسید — طبق نقشه: '+pbStepText(p,i),'ok');
       }
       continue;
     }
@@ -2864,12 +3001,7 @@ function checkAlerts(){
     for(let i=0;i<tg.length;i++){
       const reached=sign>0?px>=tg[i]:px<=tg[i];
       const key=p.id+':tp'+i;
-      if(reached&&!ALERTED.has(key)){
-        ALERTED.add(key);
-        const msg=p.ticker+' به تارگت '+faN(i+1)+' رسید ('+fmtPrice(tg[i])+')';
-        toast(msg,'ok');
-        if(F('notify'))notify('میز سیگنال',msg,key);
-      }
+      if(reached)fireAlert(key,p.ticker+' به تارگت '+faN(i+1)+' رسید ('+fmtPrice(tg[i])+')','ok');
     }
   }
 }
@@ -3802,9 +3934,8 @@ function renderLessons(){
       const del=el('button','mark ghost','حذف '+faN(picked.size));
       del.onclick=()=>{
         if(!picked.size)return toast('چیزی انتخاب نشده','err');
-        if(!confirm(faN(picked.size)+' آموزش حذف شود؟'))return;
-        for(const id of picked)delete DB.lessons[id];
-        picked.clear();pickMode=false;save();renderAll();toast('حذف شد','info');
+        const ids=[...picked];picked.clear();pickMode=false;
+        undoable(faN(ids.length)+' آموزش حذف شد',()=>{for(const id of ids)delete DB.lessons[id];});
       };
       bar.appendChild(del);
     }
@@ -3863,7 +3994,7 @@ function renderLessons(){
     row.appendChild(ex);
     const rn=el('button','mark ghost','ویرایش');rn.onclick=()=>sheetEditLesson(L.id);
     const rm=el('button','mark ghost','حذف');
-    rm.onclick=()=>{if(confirm('«'+(L.title||'')+'» از آموزش‌ها حذف شود؟'))removeLesson(L.id);};
+    rm.onclick=()=>undoable('«'+esc(L.title||'آموزش')+'» حذف شد',()=>{delete DB.lessons[L.id];});
     row.appendChild(rn);row.appendChild(rm);
     c.appendChild(row);
     box.appendChild(c);
@@ -4161,7 +4292,8 @@ function closePanel(id){
   const v=$('#'+id);v.classList.remove('open');
   setTimeout(()=>{if(!v.classList.contains('open'))v.classList.add('hide');},380);
 }
-const num=id=>{const n=$('#'+id);const v=n?parseFloat(n.value):NaN;return isFinite(v)&&v>0?v:null;};
+// جداکننده‌ی هزارگان و رقم فارسی را هم می‌فهمد (کادرهای مبلغ با ویرگول نوشته می‌شوند)
+const num=id=>{const n=$('#'+id);const v=n?moneyVal(n):NaN;return isFinite(v)&&v>0?v:null;};
 const fldHtml=(k,l,v,extra)=>'<div class="fld"><label for="f_'+k+'">'+l+'</label><input id="f_'+k+
   '" type="number" step="any" inputmode="decimal" '+(extra||'')+' value="'+(v===''||v==null?'':v)+'"></div>';
 
@@ -4175,6 +4307,23 @@ function renderHealth(){
   p.dataset.s=H.px.state;
   t.title='تلگرام: '+({ok:'سالم',err:'قطع',busy:'در حال خواندن',stale:'از حافظه',idle:'آماده'}[t.dataset.s]||'');
   p.title='قیمت: '+({ok:'زنده',err:'قطع',busy:'در حال گرفتن',stale:'قدیمی',idle:'آماده'}[p.dataset.s]||'');
+  paintHsTxt();
+}
+/* برچسب خوانای وضعیت به‌جای دو نقطه‌ی رنگی: «آنلاین · 2د» یا «قطع · 17:09» (زمان آخرین داده) */
+function paintHsTxt(){
+  const x=$('#hsTxt');if(!x)return;
+  const ts=$('#hsTg').dataset.s, ps=$('#hsPx').dataset.s;
+  const last=Math.max(H.tg.at||0,PX_AT||0);
+  const hm=d=>{const t=new Date(d);return String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');};
+  const age=()=>{const s=(Date.now()-last)/1000;return s<60?'الان':s<3600?Math.round(s/60)+'د':s<86400?Math.round(s/3600)+'س':hm(last);};
+  let s,t;
+  if(ts==='busy'||ps==='busy'){s='busy';t='در حال بروزرسانی';}
+  else if(ts==='err'&&ps==='err'){s='err';t=last?'قطع · '+hm(last):'قطع';}
+  else if(ts==='err'||ps==='err'){s='warn';t='ناقص'+(last?' · '+age():'');}
+  else if(ts==='ok'||ps==='ok'){s='ok';t='آنلاین'+(last?' · '+age():'');}
+  else{s='idle';t=last?'از حافظه · '+hm(last):'آماده';}
+  x.dataset.s=s;x.querySelector('em').textContent=t;
+  $('#hchip').setAttribute('aria-label','وضعیت اتصال: '+t);
   const sh=$('#sheet');
   if(sh&&sh.dataset.kind==='health')fillHealth(sh.querySelector('.hlist'));
 }
@@ -4711,10 +4860,13 @@ function buildCard(p,lite){
   }
   const body=el('div','body');
   if(p.reply&&(p.reply.text||p.reply.id))body.appendChild(buildReply(p));
-  const long=(p.text||'').length>320, col=long&&COLLAPSED[p.id]!==false;
-  body.appendChild(el('div','txt'+(col?' clamp':''),linkify(esc(faN(p.text||'(بدون متن)')))));
+  /* سیگنالی که ورود و استاپش خوانده شده، عددهایش همین پایین در خانه‌ها هست؛ متن خام پیش‌فرض
+     دو خط می‌ماند تا کارت کوتاه شود. «متن کامل» همیشه در دسترس است. */
+  const parsed=isSig&&sig.entry!=null&&sig.stop!=null&&(p.text||'').split('\n').length>2;
+  const long=parsed||(p.text||'').length>320, col=long&&COLLAPSED[p.id]!==false;
+  body.appendChild(el('div','txt'+(col?(parsed?' clamp2':' clamp'):''),linkify(esc(faN(p.text||'(بدون متن)')))));
   if(long){
-    const b=el('button','more',col?'ادامه متن':'بستن متن');
+    const b=el('button','more',col?(parsed?'متن کامل':'ادامه متن'):'بستن متن');
     b.onclick=()=>{COLLAPSED[p.id]=!col;rebuildCard(p);};
     body.appendChild(b);
   }
@@ -4818,7 +4970,33 @@ const MKT_LABEL={futures:'فیوچرز',spot:'اسپات'};
    می‌تواند مبلغ خودش را داشته باشد؛ حجم، ضرر در استاپ، سود تارگت‌ها، ورود سریع و
    فرم ورود همه از همین عدد حساب می‌شوند. */
 const AMT_CHIPS=[10,25,50,100];
-const amtChips=()=>[...new Set([...AMT_CHIPS,+(+S.cap).toFixed(2)])].sort((a,b)=>a-b);
+// مبلغ‌های آماده از تنظیمات («مبلغ‌های آماده»)؛ نبودش یعنی همان چهار عدد پیش‌فرض
+const amtPresets=()=>Array.isArray(S.amtChips)&&S.amtChips.length?S.amtChips.map(Number).filter(x=>x>0):AMT_CHIPS;
+const amtChips=()=>[...new Set([...amtPresets(),+(+S.cap).toFixed(2)])].sort((a,b)=>a-b);
+/* ---- کادر مبلغ با جداکننده‌ی هزارگان ----
+   type=number جداکننده نمی‌پذیرد، پس این کادرها متنی‌اند با صفحه‌کلید عددی؛ موقع تایپ
+   «1250.5» می‌شود «1,250.5» و مکان‌نما سر جایش می‌ماند. خواندنش همیشه با moneyVal. */
+const moneyVal=i=>{const v=parseFloat(normDig(String(i&&i.value!=null?i.value:i)).replace(/[^\d.]/g,''));return isFinite(v)?v:NaN;};
+const fmtMoneyIn=v=>{if(v==null||v===''||!isFinite(+v))return '';const [a,b]=String(+(+v).toFixed(8)).split('.');
+  return a.replace(/\B(?=(\d{3})+(?!\d))/g,',')+(b?'.'+b:'');};
+function moneyInput(i){
+  if(!i||i.dataset.money)return;i.dataset.money='1';
+  i.type='text';i.inputMode='decimal';i.autocomplete='off';i.dir='ltr';
+  const re=()=>{
+    const v=normDig(i.value), c=i.selectionStart==null?v.length:i.selectionStart;
+    const keep=v.slice(0,c).replace(/[^\d.]/g,'').length;          // چند رقم/نقطه قبل از مکان‌نما بود
+    let raw=v.replace(/[^\d.]/g,'');const d=raw.indexOf('.');
+    if(d>=0)raw=raw.slice(0,d+1)+raw.slice(d+1).replace(/\./g,'');
+    const [a,b]=raw.split('.');
+    const out=(a||'').replace(/^0+(?=\d)/,'').replace(/\B(?=(\d{3})+(?!\d))/g,',')+(b!=null?'.'+b:'');
+    if(out===i.value)return;
+    i.value=out;
+    let n=0,pos=out.length;for(let k=0;k<out.length;k++){if(n>=keep){pos=k;break;}if(/[\d.]/.test(out[k]))n++;}
+    try{i.setSelectionRange(pos,pos);}catch(e){}
+  };
+  i.addEventListener('input',re);
+  if(i.value)i.value=fmtMoneyIn(moneyVal(i));
+}
 const amtEq=(a,b)=>Math.abs(a-b)<1e-9;
 function amtRow(cur,onPick,spot,bare){
   const w=el('div','amt');
@@ -4834,11 +5012,11 @@ function amtRow(cur,onPick,spot,bare){
   w.appendChild(ch);
   if(bare)return w;   // در فرم ورود، کادر عدد و کشویی خودشان کنار همین‌اند
   const i=el('input','amtin'+(list.some(v=>amtEq(v,cur))?'':' on'));
-  i.type='number';i.step='any';i.min='0';i.inputMode='decimal';
-  i.placeholder='دستی $';i.value=+(+cur).toFixed(2);
+  i.placeholder='دستی $';i.value=fmtMoneyIn(+(+cur).toFixed(2));
   i.setAttribute('aria-label','مبلغ دلخواه به دلار');
-  i.onchange=()=>{const v=parseFloat(i.value);
-    if(v>0){if(!amtEq(v,cur))onPick(v);}else i.value=+(+cur).toFixed(2);};
+  moneyInput(i);
+  i.onchange=()=>{const v=moneyVal(i);
+    if(v>0){if(!amtEq(v,cur))onPick(v);}else i.value=fmtMoneyIn(+(+cur).toFixed(2));};
   i.onkeydown=e=>{if(e.key==='Enter')i.blur();};
   w.appendChild(i);
   return w;
@@ -4941,10 +5119,10 @@ function buildActions(p,sig,ov,px,dec){
     const u=el('button','btn xs dgr','لغو تصمیم');
     u.onclick=()=>{
       if(dec.action==='taken'&&dec.posId&&DB.positions.some(x=>x.id===dec.posId)){
-        if(!confirm('پوزیشن ثبت‌شده هم حذف شود؟'))return;
-        DB.positions=DB.positions.filter(x=>x.id!==dec.posId);
+        return undoable('تصمیم و پوزیشنش لغو شد',()=>{
+          DB.positions=DB.positions.filter(x=>x.id!==dec.posId);delete DB.decisions[p.id];});
       }
-      delete DB.decisions[p.id];save();renderAll();toast('تصمیم لغو شد','ok');
+      undoable('تصمیم لغو شد',()=>{delete DB.decisions[p.id];});
     };
     a.appendChild(u);
   }
@@ -4981,7 +5159,8 @@ function buildMark(p,sig,ov,isSig,dec,px){
   const ar=bk==='arch', rs=isRes(p), au=rs&&resAuto(p), ls=isLesson(p.id);
   tray.appendChild(fileChip('box','آرشیو',ar,
     ar?'برگرداندن از آرشیو':'کنار گذاشتن این پست',
-    ()=>{setArch(p.id,!ar);toast(ar?'برگشت به فعال':'به آرشیو رفت','info');}));
+    ()=>{if(ar){setArch(p.id,false);toast('برگشت به فعال','info');}
+      else undoable('به آرشیو رفت',()=>{DB.archived[p.id]=Date.now();});}));
   tray.appendChild(fileChip('flag','نتیجه',rs,
     au?'خودش نتیجه تشخیص داده شد — بزن تا برگردد':(rs?'برگرداندن از نتایج':'فرستادن به نتایج'),
     ()=>{setRes(p,!rs);toast(rs?'از نتایج برداشته شد':'به نتایج رفت','info');},
@@ -5142,6 +5321,33 @@ function quickEnter(p,sig,ov,px){
 }
 /* یک ورق برای هر دو بازار. اسپات همان فرم است با اهرم قفلِ 1: نه لیکوئید دارد،
    نه کشویی اهرم، و به‌جای «مارجین» می‌گوید «مبلغ خرید» و مقدار ارز را نشان می‌دهد. */
+/* نوسان معمول: میانگین دامنه‌ی واقعی 14 کندل یک‌ساعته‌ی اخیر (ATR) به درصد قیمت؛ نیم ساعت در حافظه */
+const VOLC=new Map();
+async function volOf(tk){
+  if(!tk)return null;
+  const c=VOLC.get(tk);if(c&&Date.now()-c.at<30*60000)return c;
+  try{
+    const H1=3600000, C=await audCandles(tk,'1h',Math.floor((Date.now()-30*H1)/H1)*H1,30);
+    if(!C||C.length<15)return null;
+    const n=14;let s=0;
+    for(let i=C.length-n;i<C.length;i++){const k=C[i],pc=C[i-1].c;s+=Math.max(k.h-k.l,Math.abs(k.h-pc),Math.abs(k.l-pc));}
+    const r={at:Date.now(),atr:s/n,pct:(s/n)/C[C.length-1].c*100};
+    VOLC.set(tk,r);return r;
+  }catch(e){return null;}
+}
+/* نوار «استاپ در برابر لیکوئید»: از ورود تا لیکوئید، استاپ کجای آن است. سبز یعنی جای نفس کشیدن هست. */
+function liqStopBar(sd,ld){
+  const mx=Math.max(sd,ld)*1.12, pct=x=>Math.min(100,x/mx*100);
+  const k=sd>=ld?'bad':(sd>ld*.75?'warn':'ok');
+  const w=el('div','lsb '+k);
+  w.innerHTML='<div class="lsbt"><span>ورود</span><span>استاپ <b dir="ltr">'+(sd*100).toFixed(1)+'%</b></span>'+
+    '<span>لیکوئید <b dir="ltr">'+(ld*100).toFixed(1)+'%</b></span></div>'+
+    '<div class="lsbb"><i class="lsbs" style="width:'+pct(sd)+'%"></i><i class="lsbl" style="right:'+pct(ld)+'%"></i></div>'+
+    '<div class="lsbm">'+(k==='bad'?'لیکوئید پیش از استاپ است — اهرم را کم کن'
+      :k==='warn'?'استاپ نزدیک لیکوئید است'
+      :'بین استاپ و لیکوئید '+((ld-sd)*100).toFixed(1)+'٪ فاصله هست')+'</div>';
+  return w;
+}
 function sheetEnter(p,sig,ov,px){
   let MK=(planInputsOf(p,sig,ov,px)).market;
   const I0=planInputsOf(p,sig,ov,px);
@@ -5151,6 +5357,7 @@ function sheetEnter(p,sig,ov,px){
   let pbSel=pbDefault();          // سبک خروجِ همین پوزیشن؛ پیش‌فرض از تنظیمات
   const maxMargin=Math.ceil(Math.max(amt0*2,S.cap*4,...AMT_CHIPS,Math.min(S.acct,1000)));
   const spot=()=>MK==='spot';
+  let VOL=null;
   openSheet(
    '<h3>ثبت ورود'+(sig.ticker?' · '+esc(sig.ticker):'')+'</h3>'+
    '<div id="mktBox"></div>'+
@@ -5167,7 +5374,9 @@ function sheetEnter(p,sig,ov,px){
       لیکوئید) را سبز و بقیه را قرمز نشان می‌دهد */
    '<div class="levbox" id="levRow">'+
      '<div class="levhd"><span class="levt">'+ic('bolt')+'اهرم</span>'+
-       '<span class="levv"><input type="number" id="f_l" step="any" inputmode="decimal" aria-label="اهرم" value="'+(lev0||'')+'"><em>x</em></span>'+
+       '<span class="levv"><button type="button" class="levst" data-d="-1" aria-label="اهرم کمتر">−</button>'+
+         '<input type="number" id="f_l" step="any" inputmode="decimal" aria-label="اهرم" value="'+(lev0||'')+'"><em>x</em>'+
+         '<button type="button" class="levst" data-d="1" aria-label="اهرم بیشتر">+</button></span>'+
        '<label class="autotog" id="autoRow" title="اهرمی که ضررِ خوردنِ استاپ را دقیقاً به ریسک هدف می‌رساند">'+
          '<input type="checkbox" id="f_auto"'+(lev0?'':' checked')+'><span>'+ic('bolt')+'خودکار</span></label></div>'+
      '<div class="levtrack"><input type="range" id="r_l" min="1" max="'+S.maxLev+'" step="0.5" value="'+(lev0||1)+'"></div>'+
@@ -5266,6 +5475,16 @@ function sheetEnter(p,sig,ov,px){
          const risk=m.qty*Math.abs(v.entry-v.stop), pct=(risk/v.margin)*100;
          add('ضرر در استاپ',fmtUsd(-risk)+' ('+pct.toFixed(1)+'٪)','d');
          const ld=1/v.lev-MMR, sd=Math.abs(v.entry-v.stop)/v.entry;
+         if(!sp&&v.lev>1.05&&ld>0)rb.appendChild(liqStopBar(sd,ld));
+         // استاپ تنگ‌تر از نوسان معمول: همان چیزی که یک سایه‌ی عادی را به استاپ‌خوردن تبدیل می‌کند
+         if(VOL&&VOL.pct>0){
+           const sdp=sd*100;
+           if(sdp<VOL.pct*1.2)note('<b>استاپ تنگ است:</b> فاصله‌ی استاپ '+sdp.toFixed(2)+'٪ است، ولی هر کندل یک‌ساعته‌ی '+
+             esc(sig.ticker||'این ارز')+' به‌طور میانگین '+VOL.pct.toFixed(2)+'٪ نوسان دارد. یک سایه‌ی عادی کافی است. '+
+             'استاپ را پشت ساختار چارت ببر و به‌جایش مبلغ یا اهرم را کم کن تا ریسک دلاری همان بماند.','warn');
+           else if(sdp<VOL.pct*2)note('فاصله‌ی استاپ ('+sdp.toFixed(2)+'٪) کمتر از دو برابر نوسان یک‌ساعته‌ی معمول ('+
+             VOL.pct.toFixed(2)+'٪) است؛ در بازار پرنوسان ممکن است زود بخورد.','info');
+         }
          if(!sp&&v.lev>1.05&&ld>0&&sd>=ld)
            note('<b>استاپ بعد از لیکوئید می‌افتد.</b> با این اهرم قبل از رسیدن به حد ضرر، کل مارجین از بین می‌رود. اهرم را کم کن.','bad');
          else if(!sp&&v.lev>1.05&&ld>0&&sd>ld*.75)
@@ -5348,14 +5567,21 @@ function sheetEnter(p,sig,ov,px){
        tk.innerHTML=h;
      };
      const upd=()=>{updNums();drawLad();paintAmt();};
+     moneyInput($('#f_m'));
      paintMkt();
 
      // کشویی و کادر عدد دو نمای یک مقدارند
      const pair=(r,f)=>{
-       $('#'+r).oninput=()=>{$('#'+f).value=$('#'+r).value;upd();};
-       $('#'+f).oninput=()=>{const v=num(f);if(v!=null)$('#'+r).value=v;upd();};
+       $('#'+r).oninput=()=>{$('#'+f).value=f==='f_m'?fmtMoneyIn($('#'+r).value):$('#'+r).value;upd();};
+       $('#'+f).addEventListener('input',()=>{const v=num(f);if(v!=null)$('#'+r).value=v;upd();});
      };
      pair('r_m','f_m'); pair('r_l','f_l');
+     // + و − اهرم: یک واحد، و اهرم را دستی می‌کند
+     sh.querySelectorAll('.levst').forEach(b=>b.onclick=()=>{
+       const cur=num('f_l')||1, nv=clamp(Math.round(cur)+(+b.dataset.d),1,+S.maxLev||10);
+       $('#f_auto').checked=false;$('#f_l').value=nv;$('#r_l').value=nv;upd();});
+     // نوسان یک‌ساعته‌ی همین ارز، برای هشدار استاپ تنگ (بی‌صدا؛ اگر نیامد هشداری هم نیست)
+     volOf(sig.ticker).then(r=>{VOL=r;if(r&&$('#riskBox'))updNums();});
      sh.querySelectorAll('#f_e,#f_s,#f_d,#f_auto,#f_n').forEach(i=>{i.oninput=upd;i.onchange=upd;});
      upd();
      $('#cx').onclick=closeSheet;
@@ -5366,6 +5592,10 @@ function sheetEnter(p,sig,ov,px){
        if(!v.lev||v.lev<=0)return toast('اهرم را وارد کن','err');
        if(v.stop&&((v.dir==='long'&&v.stop>=v.entry)||(v.dir==='short'&&v.stop<=v.entry)))
          return toast('استاپ با جهت معامله نمی‌خواند','err');
+       // تنها جایی که هنوز «مطمئنی؟» می‌پرسیم: لیکوئید پیش از استاپ یعنی حد ضرر عملاً وجود ندارد
+       if(!sp&&v.stop&&v.lev>1.05){const ld=1/v.lev-MMR, sd=Math.abs(v.entry-v.stop)/v.entry;
+         if(ld>0&&sd>=ld&&!confirm('با اهرم '+(+v.lev)+'x قیمت لیکوئید ('+(ld*100).toFixed(1)+'٪) قبل از حد ضرر ('+(sd*100).toFixed(1)+
+           '٪) است؛ یعنی کل مارجین پیش از رسیدن به استاپ از بین می‌رود.\n\nبا همین اهرم ثبت شود؟'))return;}
        const pos=ensureBase({id:uid(),sigId:p.id,ticker:sig.ticker||'—',kind:sp?'spot':'futures',
          dir:v.dir,entry:v.entry,
          stop:v.stop||null,stop0:v.stop||null,margin:v.margin,baseMargin:v.margin,lev:v.lev,
@@ -5528,6 +5758,69 @@ function renderFbar(){
   }
 }
 
+/* ---- کشیدن کارت به کنار ----
+   راست: آرشیو · چپ: «وارد نشدم» (فقط سیگنالی که هنوز تصمیمش را نگرفته‌ای). هر دو با «برگرداندن».
+   فقط وقتی حرکت آشکارا افقی است؛ اسکرول عادی، اسلایدرها و نردبان دست نمی‌خورند. */
+function swipeAct(p,dx){
+  if(dx>0)return isArch(p.id)?null:{k:'arch',t:'رها کن: آرشیو',
+    run:()=>undoable('به آرشیو رفت',()=>{DB.archived[p.id]=Date.now();})};
+  if(dx<0&&isSigPost(p)&&!decisionOf(p.id))return {k:'skip',t:'رها کن: وارد نشدم',
+    run:()=>undoable('ثبت شد: وارد نشدم',()=>{
+      const sg=sigOf(p), I=planInputsOf(p,sg,OVERRIDE[p.id]||{},null);
+      DB.decisions[p.id]={action:'skipped',at:Date.now(),reason:'رد سریع (کشیدن کارت)',snap:snapOf(p,sg,I.entry,I.stop)};})};
+  return null;
+}
+let swHint=null;
+function swipeWire(c,p){
+  let x0=null,y0=null,dx=0,horiz=null;
+  const hint=t=>{if(!t){if(swHint){swHint.remove();swHint=null;}return;}
+    if(!swHint){swHint=el('div','swhint');document.body.appendChild(swHint);}swHint.textContent=t;};
+  c.addEventListener('touchstart',e=>{
+    if(e.touches.length!==1||e.target.closest('input,select,textarea,.ladder,.levtrack,.sldrow,.frow,.shot'))return;
+    x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=0;horiz=null;},{passive:true});
+  c.addEventListener('touchmove',e=>{
+    if(x0==null)return;
+    const t=e.touches[0], mx=t.clientX-x0, my=t.clientY-y0;
+    if(horiz==null&&(Math.abs(mx)>14||Math.abs(my)>14))horiz=Math.abs(mx)>Math.abs(my)*1.5;
+    if(!horiz)return;
+    dx=mx;c.style.transition='none';c.style.transform='translateX('+dx+'px)';
+    const a=swipeAct(p,dx), far=Math.abs(dx)>c.offsetWidth*0.3;
+    c.dataset.sw=a&&far?a.k:'';hint(a&&far?a.t:null);
+  },{passive:true});
+  const end=()=>{
+    if(x0==null)return;x0=null;hint(null);
+    const a=horiz?swipeAct(p,dx):null, done=a&&Math.abs(dx)>c.offsetWidth*0.3;
+    c.style.transition='transform .25s var(--ease),opacity .25s';
+    delete c.dataset.sw;
+    if(done){c.style.transform='translateX('+(dx>0?'':'-')+'110%)';c.style.opacity='0';setTimeout(a.run,180);}
+    else c.style.transform='';
+  };
+  c.addEventListener('touchend',end);c.addEventListener('touchcancel',end);
+}
+/* ---- کشیدن به پایین برای بروزرسانی (فقط وقتی بالای فهرست سیگنال‌هایی) ---- */
+function wirePTR(){
+  const v=$('#vSignals');if(!v||$('#ptr'))return;
+  const ind=el('div','ptr',ic('down')+'<span>بکش برای بروزرسانی</span>');ind.id='ptr';v.prepend(ind);
+  const lab=ind.querySelector('span');
+  let y0=null;
+  v.addEventListener('touchstart',e=>{
+    y0=(window.scrollY<=2&&!busy&&$('#veil').classList.contains('hide')&&e.touches.length===1)?e.touches[0].clientY:null;},{passive:true});
+  v.addEventListener('touchmove',e=>{
+    if(y0==null)return;
+    const d=e.touches[0].clientY-y0;
+    if(d<=0||window.scrollY>2){ind.style.height='0';return;}
+    const h=Math.min(84,d*.5);ind.style.height=h+'px';
+    const ready=h>=62;ind.classList.toggle('ready',ready);lab.textContent=ready?'رها کن تا بروز شود':'بکش برای بروزرسانی';
+  },{passive:true});
+  v.addEventListener('touchend',()=>{
+    if(y0==null)return;y0=null;
+    if(!ind.classList.contains('ready')){ind.style.height='0';return;}
+    ind.classList.remove('ready');ind.classList.add('busy');lab.textContent='در حال بروزرسانی…';ind.style.height='52px';
+    Promise.resolve(refresh(false)).finally(()=>{ind.classList.remove('busy');ind.style.height='0';});
+  });
+}
+/* ارتفاع سربرگ برای چسباندن سربرگ روزها زیر آن */
+function setHdrH(){const h=document.querySelector('header');if(h)document.documentElement.style.setProperty('--hdrH',h.offsetHeight+'px');}
 function accWire(c,p,isOpen){
   c.classList.add(isOpen?'accopen':'tight');
   c.addEventListener('click',e=>{
@@ -5588,6 +5881,7 @@ function renderSignals(){
     }
     const c=buildCard(p,acc&&!isOpen);
     if(acc)accWire(c,p,isOpen);
+    swipeWire(c,p);
     if(shown<8){c.classList.add('enter');c.style.setProperty('--d',(shown*45)+'ms');shown++;}
     frag.appendChild(c);n++;
   }
@@ -5599,9 +5893,7 @@ function renderSignals(){
     if(done.length){
       const bulk=el('button','tidy','کنار گذاشتن '+faN(done.length)+' پستِ تصمیم‌گرفته');
       bulk.onclick=()=>{
-        if(!confirm(faN(done.length)+' پست که تصمیمشان را گرفته‌ای به آرشیو برود؟'))return;
-        for(const x of done)DB.archived[x.id]=Date.now();
-        save();renderAll();toast('به آرشیو رفت','ok');
+        undoable(faN(done.length)+' پست به آرشیو رفت',()=>{for(const x of done)DB.archived[x.id]=Date.now();});
       };
       list.appendChild(bulk);
     }
@@ -5712,8 +6004,9 @@ function showIncoming(nNew,nSig){
   const b=$('#incoming');
   clearTimeout(incT);
   if(!nNew){b.classList.add('hide');return;}
-  b.className='incoming done';
-  b.innerHTML=ic('check')+'<span>'+faN(nNew)+' پست تازه'+(nSig?'، '+faN(nSig)+' سیگنال':'')+' رسید — برای دیدن بزن</span>';
+  b.className='incoming done'+(window.scrollY>240?' float':'');
+  b.innerHTML=ic('check')+'<span>'+faN(nNew)+' پست تازه'+(nSig?'، '+faN(nSig)+' سیگنال':'')+
+    (window.scrollY>240?' ↑':' رسید — برای دیدن بزن')+'</span>';
   b.onclick=()=>{b.classList.add('hide');window.scrollTo({top:0,behavior:'smooth'});};
   incT=setTimeout(()=>b.classList.add('hide'),12000);
 }
@@ -7522,10 +7815,14 @@ function renderAudit(){
 
   // ── سربرگ ──
   const hd=el('div','panel audhead');
-  hd.innerHTML='<div class="panelhead"><b>کانال‌سنج · <bdi dir="ltr">@'+esc(S.channel)+'</bdi></b></div>'+
-    '<div class="hint" style="margin-top:4px">هر سیگنال از لحظه‌ی دقیق انتشار با کندل واقعی جلو می‌رود. '+
-    'پُر شدن همیشه با عددِ اعلامیِ کانال حساب می‌شود — یعنی به نفع کانال، نه علیهش.</div>'+
+  /* توضیح‌ها پشت «؟»: سربرگ کوتاه می‌ماند و هر وقت خواستی باز می‌شود */
+  hd.innerHTML='<div class="panelhead"><b>کانال‌سنج · <bdi dir="ltr">@'+esc(S.channel)+'</bdi></b>'+
+    '<button class="infob" id="audInfoB" aria-expanded="false" aria-controls="audInfo" title="این بخش چطور کار می‌کند؟">؟</button></div>'+
+    '<div class="infop hide" id="audInfo"><div class="hint" style="margin-top:0">هر سیگنال از لحظه‌ی دقیق انتشار با کندل واقعی جلو می‌رود. '+
+    'پُر شدن همیشه با عددِ اعلامیِ کانال حساب می‌شود — یعنی به نفع کانال، نه علیهش.</div></div>'+
     '<div class="audprog hide" id="audProg"></div>';
+  {const b=hd.querySelector('#audInfoB'), pn=hd.querySelector('#audInfo');
+   b.onclick=()=>{const o=pn.classList.toggle('hide');b.setAttribute('aria-expanded',o?'false':'true');b.classList.toggle('on',!o);};}
   const bar=el('div','srow');bar.style.marginTop='10px';
   const run=el('button','btn sm',ic('refresh')+'<span>سنجش دوباره</span>');
   run.onclick=()=>{if(AUDQ.on)return;audRun(true);};
@@ -7533,7 +7830,7 @@ function renderAudit(){
   rules.onclick=sheetAudRules;
   bar.appendChild(run);bar.appendChild(rules);
   hd.appendChild(bar);
-  hd.appendChild(el('div','audrules',
+  hd.querySelector('#audInfo').appendChild(el('div','audrules',
     'مهلت ورود '+faN(R.entryDays)+' روز · مهلت نتیجه '+faN(R.days)+' روز · تحمل ورود '+faN(R.tol)+'٪ · '+
     (R.rule==='ladder'?'پله‌ای (⅓ در هر تارگت، بعد از تارگت اول استاپ روی ورود)':'همه در تارگت اول')));
   box.appendChild(hd);
@@ -7666,10 +7963,13 @@ function buildAudDiag(all){
 }
 function buildAudFilter(all){
   const d=el('details','sec audf');
-  const active=(AF.dir!=='all')+(AF.mkt!=='all')+(!!AF.rr)+(!!AF.span)+(!!AF.sym);
-  d.open=!!active;
+  // «دیرهنگام‌ها در آمار نیایند» پیش‌فرض روشن است؛ شمرده می‌شود تا معلوم باشد چیزی کنار رفته،
+  // ولی به‌خاطر آن بخش خودبه‌خود باز نمی‌شود
+  const user=(AF.dir!=='all')+(AF.mkt!=='all')+(!!AF.rr)+(!!AF.span)+(!!AF.sym);
+  const active=user+(AF.noLate?1:0);
+  d.open=!!user;
   d.innerHTML='<summary>فیلتر — «اگر فقط این‌ها را گرفته بودم؟»'+
-    (active?' <span class="pill gold">'+faN(active)+' فیلتر</span>':'')+'</summary>';
+    (active?' <span class="pill '+(user?'gold':'mut')+'">'+faN(active)+' فیلتر'+(!user&&AF.noLate?' (دیرهنگام)':'')+'</span>':'')+'</summary>';
   const row=(label,opts,key)=>{
     const w=el('div','afrow');
     w.appendChild(el('span','aflab',label));
@@ -8010,7 +8310,7 @@ function buildPendingCard(w){
   b1.onclick=()=>fillPending(w);
   if(old)b1.classList.add('hide');
   const b2=el('button','btn dgr xs','برداشتن');
-  b2.onclick=()=>{if(confirm('این سفارش منتظر برداشته شود؟'))dropPending(w.id);};
+  b2.onclick=()=>undoable('سفارش منتظر برداشته شد',()=>{DB.pending=DB.pending.filter(x=>x.id!==w.id);});
   a.appendChild(b1);a.appendChild(b2);
   c.appendChild(a);
   return c;
@@ -8084,7 +8384,7 @@ function renderPositions(){
   }
   let i=0;
   for(const p of show){
-    const c=buildPosCard(p);
+    const c=buildPosCard(p,{acc:show.length>1});
     if(i<6){c.classList.add('enter');c.style.setProperty('--d',(i*45)+'ms');}
     i++;wrap.appendChild(c);
   }
@@ -8252,10 +8552,23 @@ function destack(L){
     if(deepest)L.classList.add(dir==='down'?'deep'+deepest:'high'+deepest);
   }
 }
-function buildPosCard(p){
+/* کارت پوزیشن آکاردئونی: وقتی چند پوزیشن در فهرست است، هر کارت پیش‌فرض فقط سربرگ و
+   سود/ضرر درشت را نشان می‌دهد؛ با زدن باز می‌شود (نردبان، عددها، نقشه‌ی خروج، دکمه‌ها).
+   پوزیشنی که نوار تأیید استاپش باز است همیشه باز می‌ماند. */
+const POSOPEN=new Set(), POSMENU=new Set();
+function buildPosCard(p,opt){
   ensureBase(p);
   const live=liveOf(p.ticker), m=posMetrics(p,live), open=p.status==='open';
-  const card=el('div','card d-'+p.dir+(open&&m.pnl!=null&&Math.abs(m.pnl)>1e-9?(m.pnl>0?' pu':' pd'):''));card.id='pos-'+p.id;
+  const acc=!!(opt&&opt.acc), tight=acc&&!POSOPEN.has(p.id)&&!PENDING.has(p.id);
+  const card=el('div','card d-'+p.dir+(open&&m.pnl!=null&&Math.abs(m.pnl)>1e-9?(m.pnl>0?' pu':' pd'):'')+
+    (acc?(tight?' pct':' pcopen'):''));card.id='pos-'+p.id;
+  if(acc){
+    card.addEventListener('click',e=>{
+      if(e.target.closest('button,a,input,select,label,summary,.ladder,.stopwrap,.pmore'))return;
+      if(!tight&&!e.target.closest('.chead'))return;           // کارت باز فقط با سربرگش بسته می‌شود
+      tight?POSOPEN.add(p.id):POSOPEN.delete(p.id);renderPositions();
+    });
+  }
 
   const isSpot=p.kind==='spot';     // پوزیشن‌های قدیمی kind ندارند و همه فیوچرز بوده‌اند
   const head=el('div','chead');
@@ -8269,7 +8582,10 @@ function buildPosCard(p){
     head.appendChild(el('span','pill open','باز'));
     if(m.parts)head.appendChild(el('span','pill gold','پله‌ای'));
     if(m.liquidated)head.appendChild(el('span','pill lose','در محدوده لیکوئید'));
+    // برچسب هشدار روی خود کارت، نه فقط یک پیغام گذرا
+    else{const as=F('alerts')?alertState(p,live):null;if(as)head.appendChild(el('span','pill '+as.c+' alrt',as.t));}
   }else head.appendChild(el('span','pill '+((m.pnl||0)>=0?'win':'lose'),(m.pnl||0)>=0?'برد':'باخت'));
+  if(acc)head.appendChild(el('i','pchev'));
   head.appendChild(el('div','when',(!open&&p.closedAt?'بسته: '+jStampFa(new Date(p.closedAt)):'باز: '+jStampFa(new Date(p.openedAt)))));
   card.appendChild(head);
 
@@ -8382,20 +8698,25 @@ function buildPosCard(p){
       logAdd(p,'open','دوباره باز شد');save();renderAll();toast('دوباره باز شد','ok');};
     a.appendChild(r);
   }
-  const e=el('button','btn icon',ic('edit'));e.title='ویرایش';e.onclick=()=>sheetEditPos(p);
-  const d=el('button','btn dgr icon',ic('trash'));d.title='حذف';
-  d.onclick=()=>{
-    if(!confirm('این پوزیشن حذف شود؟'))return;
-    DB.positions=DB.positions.filter(x=>x.id!==p.id);
-    for(const k in DB.decisions)if(DB.decisions[k].posId===p.id)delete DB.decisions[k];
-    save();renderAll();toast('حذف شد','ok');
-  };
-  const sh=el('button','btn xs side',ic('share')+'<span>تصویر</span>');
-  sh.title='ساختن تصویر نتیجه برای فرستادن';
-  sh.onclick=()=>sheetShare(p);
-  a.appendChild(sh);
-  a.appendChild(e);a.appendChild(d);
+  /* کارهای فرعی (تصویر، ویرایش، حذف) پشت «⋯»: دکمه‌ی حذف دیگر یک ردیف کامل نمی‌گیرد */
+  const mo=POSMENU.has(p.id);
+  const more=el('button','btn icon pmbtn'+(mo?' on':''),ic('more'));
+  more.title='کارهای بیشتر';more.setAttribute('aria-label','کارهای بیشتر');more.setAttribute('aria-expanded',mo?'true':'false');
+  more.onclick=()=>{mo?POSMENU.delete(p.id):POSMENU.add(p.id);renderPositions();};
+  a.appendChild(more);
   card.appendChild(a);
+  if(mo){
+    const pm=el('div','pmore');
+    const sh=el('button','btn',ic('share')+'<span>تصویر نتیجه</span>');sh.onclick=()=>sheetShare(p);
+    const e=el('button','btn',ic('edit')+'<span>ویرایش</span>');e.onclick=()=>sheetEditPos(p);
+    const d=el('button','btn dgr',ic('trash')+'<span>حذف</span>');
+    d.onclick=()=>{POSMENU.delete(p.id);
+      undoable('پوزیشن '+esc(p.ticker||'')+' حذف شد',()=>{
+        DB.positions=DB.positions.filter(x=>x.id!==p.id);
+        for(const k in DB.decisions)if(DB.decisions[k].posId===p.id)delete DB.decisions[k];});
+    };
+    pm.appendChild(sh);pm.appendChild(e);pm.appendChild(d);card.appendChild(pm);
+  }
 
   if(PENDING.has(p.id))setTimeout(()=>paintStopBar(p),0);
   return card;
@@ -8677,6 +8998,7 @@ function sheetEditPos(p){
        if(m.pnl!=null){add('سود/ضرر',fmtUsd(m.pnl),cls(m.pnl));
          add(spot()?'بازده':'٪ مارجین',fmtPct(m.roi),cls(m.pnl));}
      };
+     moneyInput($('#f_m'));
      sh.querySelectorAll('input,select').forEach(i=>{i.oninput=upd;i.onchange=upd;});
      paintMkt();upd();
      $('#cx').onclick=closeSheet;
@@ -8821,6 +9143,7 @@ function renderReportList(){
   head.appendChild(ht);
   head.appendChild(statsOf(total,true));
   head.appendChild(equityCurve(inRange));
+  head.appendChild(rDist(inRange));
   body.appendChild(head);
 
   for(const k of keys){
@@ -8913,15 +9236,45 @@ function equityCurve(closed){
   const zero=Y(0), last=pts[pts.length-1];
   const col=last>=0?'var(--up)':'var(--dn)';
   const area=d+'L'+X(pts.length-1).toFixed(1)+' '+zero.toFixed(1)+' L'+X(0).toFixed(1)+' '+zero.toFixed(1)+' Z';
-  const wrap=el('div');
+  const wrap=el('div','eqw');
+  const dt=p=>jShort(new Date(p.closedAt));
   wrap.innerHTML='<div style="font-size:12px;color:var(--tx2);font-weight:700;margin:12px 0 4px">'+
     'رشد سرمایه · بیشترین افت از سقف: <span style="color:var(--dn);direction:ltr;display:inline-block">'+fmtUsd(-maxDD)+'</span></div>'+
-    '<svg class="eq" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="--len:'+Math.ceil(len)+'">'+
+    '<svg class="eq" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="--len:'+Math.ceil(len)+'" role="img" '+
+      'aria-label="نمودار رشد سرمایه؛ برای جزئیات هر معامله رویش بزن">'+
     '<path d="'+area+'" fill="'+col+'" opacity=".10"/>'+
     '<line x1="0" y1="'+zero.toFixed(1)+'" x2="'+W+'" y2="'+zero.toFixed(1)+
     '" stroke="var(--line2)" stroke-width="1" stroke-dasharray="3 3"/>'+
-    '<path class="ln" d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round"/></svg>';
+    '<path class="ln" d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round"/>'+
+    '<line class="eqm" x1="0" x2="0" y1="0" y2="'+H+'" stroke="var(--gold)" stroke-width="1.5" vector-effect="non-scaling-stroke" opacity="0"/></svg>'+
+    // محور زمان: زمان همیشه چپ‌به‌راست است، مثل خود نمودار
+    '<div class="eqax"><span>'+dt(list[0])+'</span><span>'+dt(list[list.length-1])+'</span></div>'+
+    '<div class="eqcap" dir="rtl">روی نمودار بزن تا هر معامله را ببینی</div>';
+  /* لمس یا حرکت روی نمودار: نزدیک‌ترین معامله، تاریخش، نتیجه‌اش و جمع تا آن لحظه */
+  const svg=wrap.querySelector('svg'), mk=wrap.querySelector('.eqm'), cap=wrap.querySelector('.eqcap');
+  const show=e=>{
+    const r=svg.getBoundingClientRect(), fr=clamp((e.clientX-r.left)/r.width,0,1);
+    const i=Math.round(fr*(pts.length-1)), p=list[i], pn=posMetrics(p).pnl||0, x=X(i);
+    mk.setAttribute('x1',x);mk.setAttribute('x2',x);mk.setAttribute('opacity','1');
+    cap.innerHTML='<bdi dir="ltr"><b>'+esc(p.ticker||'')+'</b></bdi> · '+dt(p)+' · <bdi class="'+cls(pn)+'" dir="ltr">'+fmtUsd(pn)+'</bdi>'+
+      ' · جمع <bdi class="'+cls(pts[i])+'" dir="ltr">'+fmtUsd(pts[i])+'</bdi>';
+  };
+  svg.addEventListener('pointermove',show);svg.addEventListener('pointerdown',show);
   return wrap;
+}
+/* پراکندگی نتیجه‌ها بر حسب R: چند معامله کمتر از یک ریسک باختند، چندتا بالای 2R بردند.
+   بدون R (استاپ نداشته) در این نمودار نمی‌آید. */
+function rDist(closed){
+  const rs=closed.map(p=>posMetrics(p).r).filter(v=>v!=null&&isFinite(v));
+  if(rs.length<3)return el('div','hint','برای پراکندگی R دست‌کم سه معامله‌ی بسته‌شده با حد ضرر لازم است.');
+  // بازه‌ها فقط با نماد، بدون کلمه‌ی فارسی وسطشان، تا جهت متن به هم نریزد
+  const B=[['< −1R',-Infinity,-1,'d'],['−1R … −0.5R',-1,-.5,'d'],['−0.5R … 0',-.5,0,'d'],
+    ['0 … 1R',0,1,'u'],['1R … 2R',1,2,'u'],['2R … 3R',2,3,'u'],['≥ 3R',3,Infinity,'u']];
+  const n=B.map(([,a,b])=>rs.filter(v=>v>=a&&v<b).length), mx=Math.max(...n)||1;
+  const w=el('div','rdist');
+  w.innerHTML='<div class="rdt">پراکندگی نتیجه‌ها (R) · '+faN(rs.length)+' معامله</div>'+
+    B.map(([l,,,c],i)=>'<div class="rdr"><span dir="ltr">'+l+'</span><i><s class="'+c+'" style="width:'+(n[i]/mx*100)+'%"></s></i><b>'+faN(n[i])+'</b></div>').join('');
+  return w;
 }
 /* جای گزارش قدیمیِ «نگرفته‌ها» که با قیمت همین لحظه حساب می‌کرد: همان مقایسه، ولی با
    نتیجه‌ی واقعیِ کانال‌سنج. اگر هنوز سنجیده نشده، سنجش همین‌جا شروع می‌شود. */
@@ -9417,10 +9770,12 @@ function wire(){
   $('#setDone').onclick=()=>closePanel('setVeil');
   $('#setVeil').onclick=e=>{if(e.target===$('#setVeil'))closePanel('setVeil');};
   $('#veil').onclick=e=>{if(e.target===$('#veil'))closeSheet();};
-  for(const id of ['sProxy','sChannel','sAcct','sCap','sRisk','sMaxLev','sDaily','sMode','sR','sFee','sAuto','sStale','sCal','sPb'])
+  for(const id of ['sProxy','sChannel','sAcct','sCap','sAmts','sRisk','sMaxLev','sDaily','sMode','sR','sFee','sAuto','sStale','sCal','sPb'])
     $('#'+id).onchange=()=>{readSettings();renderAll();};
   wireIO();
   linkLabels(document.getElementById('setVeil'));
+  wirePTR();setHdrH();addEventListener('resize',setHdrH);
+  moneyInput($('#sAcct'));moneyInput($('#sCap'));
   document.addEventListener('keydown',e=>{
     if(e.key!=='Escape')return;
     if(!$('#veil').classList.contains('hide'))closeSheet();
@@ -9440,6 +9795,7 @@ function wire(){
     if(document.hidden)return;
     paintRing();
     if(++tk%5===0&&view==='signals'&&!busy&&POSTS.length)showStatus();
+    if(tk%5===0)paintHsTxt();
   },1000);
 }
 
