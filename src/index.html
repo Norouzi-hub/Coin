@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0D0E12">
+<title>میز سیگنال</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preload" href="fonts/Vazirmatn.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="میز سیگنال">
+<style>
+/*@css*/
+</style>
+</head>
+<body>
+<!-- تا وقتی اسکریپت اجرا شود صفحه سفید/خالی است. این پرده همان فاصله را پر می‌کند و
+     به محض آماده شدن برنامه محو می‌شود؛ هیچ اسکریپتی لازم ندارد تا خودش دیده شود. -->
+<div id="boot" aria-hidden="true"><div class="bootmark"></div><div class="bootbar"><i></i></div></div>
+<div class="bgfx" aria-hidden="true"><i class="h h1"></i><i class="h h2"></i><i class="h h3"></i></div>
+
+<div id="lb" class="hide" role="dialog" aria-label="نمایش تصویر">
+  <div class="lbbar">
+    <button class="lbx" id="lbClose" aria-label="بستن"></button>
+    <span class="lbnum" id="lbNum"></span>
+  </div>
+  <button class="lbnav prev" id="lbPrev" aria-label="قبلی"></button>
+  <button class="lbnav next" id="lbNext" aria-label="بعدی"></button>
+  <div class="lbwrap" id="lbWrap"><img id="lbImg" alt=""></div>
+  <div class="lbhint" id="lbHint">دوبار بزن برای بزرگ‌نمایی</div>
+</div>
+
+<div id="lockv" class="hide" role="dialog" aria-label="قفل برنامه">
+  <div class="lockbox">
+    <div class="lockmark"></div>
+    <h3 id="lockTitle">رمز را وارد کن</h3>
+    <div class="lockdots" id="lockDots"></div>
+    <div class="lockmsg" id="lockMsg"></div>
+    <div class="pad" id="lockPad"></div>
+    <button class="lockforgot" id="lockForgot">رمز را فراموش کرده‌ام</button>
+  </div>
+</div>
+
+<header id="hdr">
+  <div class="wrap">
+    <div class="hrow">
+      <div class="brand">
+        <span class="emblem" id="emblem"></span>
+        <span class="bname"><b>میز سیگنال</b><small id="bchan">@ccoineres</small></span>
+      </div>
+      <button class="hchip" id="hchip" aria-label="وضعیت سرویس‌ها">
+        <span class="hs" id="hsTg" data-s="idle"><i></i><span class="lbl">تلگرام</span></span>
+        <span class="hs" id="hsPx" data-s="idle"><i></i><span class="lbl">قیمت</span></span>
+        <span class="hs hst" id="hsTxt" data-s="idle"><i></i><em>آماده</em></span>
+        <span class="ring off" id="ring" title="تا بروزرسانی خودکار بعدی">
+          <svg viewBox="0 0 26 26" aria-hidden="true"><circle class="rb" cx="13" cy="13" r="11"/><circle class="rf" id="ringF" cx="13" cy="13" r="11" stroke-dasharray="69.1" stroke-dashoffset="0"/></svg>
+          <b id="ringT"></b>
+        </span>
+      </button>
+      <button class="ibtn" id="btnSet" aria-label="تنظیمات"></button>
+      <button class="btn pri rbtn" id="btnRef"></button>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs">
+      <span class="ind" id="tabInd"></span>
+      <button class="tab" data-v="signals" role="tab" aria-selected="true" data-ic="trend"><span>سیگنال‌ها</span><span class="cnt g z" id="cSig">0</span></button>
+      <button class="tab" data-v="positions" role="tab" aria-selected="false" data-ic="wallet"><span>پوزیشن‌ها</span><span class="cnt z" id="cPos">0</span></button>
+      <button class="tab" data-v="audit" role="tab" aria-selected="false" data-ic="shield"><span>کانال‌سنج</span><span class="cnt z" id="cAud">0</span></button>
+      <button class="tab" data-v="report" role="tab" aria-selected="false" data-ic="bars"><span>کارنامه</span></button>
+      <button class="tab" data-v="learn" role="tab" aria-selected="false" data-ic="book"><span>آموزش</span><span class="cnt g z" id="cLearn">0</span></button>
+    </nav>
+  </div>
+  <div class="prog" id="prog"></div>
+</header>
+
+<main class="wrap" id="main">
+
+  <div id="storeWarn" class="status warn hide"></div>
+  <div id="bkWarn" class="status warn hide"></div>
+  <div id="updBar" class="status upd hide"></div>
+
+  <!-- سیگنال‌ها -->
+  <section id="vSignals" class="view">
+    <div class="tools">
+      <label class="search"><span id="qIc"></span><input id="q" placeholder="جستجو در نماد یا متن…" autocomplete="off"></label>
+      <div class="fbar" id="fbar" role="tablist" aria-label="نمایش پست‌ها"></div>
+    </div>
+    <div class="status" id="status"></div>
+    <div id="incoming" class="incoming hide"></div>
+    <div id="list"></div>
+    <div id="moreSkel" class="hide"></div>
+    <div class="morebox">
+      <button class="btn hide" id="btnMore"></button>
+      <div class="moreinfo" id="moreInfo" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- پوزیشن‌ها -->
+  <section id="vPositions" class="view hide">
+    <div class="tools">
+      <div class="fbar">
+        <div class="fseg" role="tablist" aria-label="پوزیشن‌ها">
+          <button class="fb" id="pWait" aria-pressed="false"><span>منتظر</span><i id="cWait">0</i></button>
+          <button class="fb" id="pOpen" aria-pressed="true"><span>باز</span><i id="cOpenP">0</i></button>
+          <button class="fb" id="pClosed" aria-pressed="false" title="بسته‌شده"><span>بسته</span><i id="cClosedP">0</i></button>
+          <button class="fb" id="pAllP" aria-pressed="false"><span>همه</span><i id="cAllP">0</i></button>
+        </div>
+        <div class="fside">
+          <button class="fb fbucket" id="btnManual"><span>افزودن</span><i>+</i></button>
+        </div>
+      </div>
+      <label class="psort"><span>مرتب‌سازی</span>
+        <select id="posSort" aria-label="مرتب‌سازی پوزیشن‌ها">
+          <option value="new">جدیدترین</option><option value="old">قدیمی‌ترین</option>
+          <option value="pnlD">بیشترین سود</option><option value="pnlA">بیشترین ضرر</option>
+          <option value="rD">بیشترین R</option><option value="tk">نماد (الفبا)</option>
+        </select></label>
+    </div>
+    <div id="posSummary"></div>
+    <div id="posList"></div>
+  </section>
+
+  <!-- کارنامه -->
+  <!-- آموزش -->
+  <section id="vLearn" class="view hide">
+    <div class="tools">
+      <label class="search"><span id="lqIc"></span><input id="lq" placeholder="جستجو در آموزش‌ها…" autocomplete="off"></label>
+    </div>
+    <div id="lessonList"></div>
+  </section>
+
+  <section id="vReport" class="view hide">
+    <div class="tools">
+      <div class="fbar">
+        <div class="fseg" role="tablist" aria-label="دوره‌ی کارنامه">
+          <button class="fb" data-p="day" aria-pressed="false"><span>روزانه</span></button>
+          <button class="fb on" data-p="month" aria-pressed="true"><span>ماهانه</span></button>
+          <button class="fb" data-p="all" aria-pressed="false"><span>کل</span></button>
+        </div>
+        <div class="fside">
+          <button class="fb fbucket wide hide" id="pRange" data-p="range" aria-pressed="false" title="بازه‌ی دلخواه">
+            <span>بازه</span></button>
+          <button class="fb fbucket wide" id="repCal" aria-pressed="false"><span>تقویم</span></button>
+        </div>
+      </div>
+    </div>
+    <div id="repBody"></div>
+    <div id="calBody" class="hide"></div>
+  </section>
+
+  <!-- بازار: واچ‌لیست و اسپات -->
+
+  <!-- آموزش -->
+  <!-- کانال‌سنج: نتیجه‌ی واقعیِ همه‌ی سیگنال‌های کانال -->
+  <section id="vAudit" class="view hide">
+    <div id="audBody"></div>
+  </section>
+
+
+  <div class="disc" id="disc">
+    <b>حواست باشه:</b> اعداد سیگنال‌ها از روی متن فارسی کانال خودکار استخراج می‌شود و ممکن است اشتباه باشد؛
+    قبل از هر معامله با متن اصلی تطبیق بده. قیمت لیکوئید تقریبی است و فاندینگ در آن نیست.
+    داده‌های ژورنال فقط داخل همین مرورگر و همین دستگاه ذخیره می‌شود؛ اگر حافظه مرورگر را پاک کنی از بین می‌رود،
+    پس هر چند وقت از «پشتیبان JSON» در تنظیمات خروجی بگیر.
+    این ابزار محاسبه‌گر و دفترچه ثبت است، نه توصیه مالی؛ تصمیم و مسئولیت معامله با خودت است.
+  </div>
+  <div class="foot">میز سیگنال — بدون سرور، همه محاسبات و داده‌ها داخل همین مرورگر</div>
+</main>
+
+<!-- تنظیمات -->
+<div class="veil hide" id="setVeil">
+  <div class="sheet" role="dialog" aria-label="تنظیمات">
+    <button class="sx" id="setX" aria-label="بستن"></button>
+    <h3>تنظیمات</h3>
+    <div class="sub">هر تغییری همان لحظه ذخیره و روی محاسبه‌ها اعمال می‌شود.</div>
+    <details class="sec" data-sec="conn"><summary>اتصال به کانال</summary>
+    <div class="grid">
+      <div class="fld"><label>کانال تلگرام</label><input id="sChannel" value="ccoineres" dir="ltr"></div>
+      <div class="fld"><label>بروزرسانی خودکار</label>
+        <select id="sAuto"><option value="0">خاموش</option><option value="60" selected>هر 1 دقیقه</option>
+        <option value="180">هر 3 دقیقه</option><option value="600">هر 10 دقیقه</option></select></div>
+      <div class="fld"><label>عمر سیگنال (روز)</label><input id="sStale" type="number" value="7" min="1" max="60" step="1"></div>
+      <div class="fld"><label>تقویم</label><select id="sCal"><option value="j">شمسی</option><option value="g">میلادی</option><option value="jg">هر دو</option></select></div>
+    </div>
+    <div class="hint">سیگنالی که از این بیشتر گذشته «قدیمی» است: فقط برای مرور می‌ماند، دکمه‌ی ورود ندارد و
+      در «در انتظار» و شمارنده‌ها نمی‌آید. اگر کانال گفت هنوز می‌شود گرفت، روی خودِ کارت برش می‌گردانی.</div>
+    <div class="fld" style="margin-top:10px"><label>واسط شخصی — هر خط یک آدرس</label>
+      <textarea id="sProxy" rows="2" dir="ltr" spellcheck="false"
+        placeholder="https://example.ir/tg.php?url={url}"></textarea></div>
+    <div class="hint">
+      واسط‌های عمومی مجانی‌اند ولی زود شلوغ یا فیلتر می‌شوند، و از شبکه‌ای به شبکه‌ی دیگر فرق می‌کنند.
+      واسط خودت این وابستگی را برمی‌دارد. جای آدرس مقصد را با <b>{url}</b> مشخص کن؛
+      اگر نگذاری، آخر آدرس اضافه می‌شود. تا 6 خط قبول است و همه با هم امتحان می‌شوند.
+    </div>
+    <div class="srow" style="margin-top:10px">
+      <button class="btn" id="btnWCopy">کپی کد ورکر</button>
+      <button class="btn" id="btnWTest">تست همین واسط</button>
+    </div>
+    <div class="hint" id="wNote">
+      اگر <b dir="ltr">workers.dev</b> روی شبکه‌ات باز نشد، در همان ورکر
+      <b dir="ltr">Settings → Domains &amp; Routes</b> یک دامنه‌ی خودت را وصل کن و آدرس آن را بگذار.
+    </div>
+    <details class="sec sub2" id="wSetup"><summary>راهنمای ساخت واسط روی Cloudflare — یک‌بار، حدود 5 دقیقه</summary>
+      <ol class="wsteps">
+        <li>دکمه‌ی پایین را بزن تا کد ورکر کپی شود.</li>
+        <li>در <b dir="ltr">dash.cloudflare.com</b> وارد شو (ثبت‌نام رایگان است).</li>
+        <li><b dir="ltr">Workers &amp; Pages</b> → <b dir="ltr">Create</b> → <b dir="ltr">Start with Hello World!</b> → <b dir="ltr">Deploy</b></li>
+        <li><b dir="ltr">Edit code</b> را بزن، همه‌ی کد پیش‌فرض را پاک کن، کد کپی‌شده را بچسبان، دوباره <b dir="ltr">Deploy</b>.</li>
+        <li>آدرسی که می‌دهد را بردار و اینجا در کادر بالا بنویس، با <b dir="ltr">/?url={url}</b> آخرش.</li>
+      </ol>
+    </details>
+    </details>
+
+    <details class="sec" data-sec="feat"><summary>امکانات</summary>
+    <div class="wsetup">
+      <div id="featList"></div>
+      <div class="hint">هر کدام را نخواستی خاموش کن — برنامه دقیقاً به حالت بدون آن برمی‌گردد.
+        این تنظیم هم بین دستگاه‌ها همگام می‌شود.</div>
+    </div>
+    </details>
+
+    <details class="sec" data-sec="sync"><summary>همگام‌سازی بین دستگاه‌ها</summary>
+    <div class="wsetup">
+      <div class="wtitle">وضعیت: <span id="syncState">خاموش</span></div>
+      <div class="fld"><label>آدرس ورکر</label>
+        <input id="sSyncUrl" dir="ltr" spellcheck="false" placeholder="https://your-worker.workers.dev"></div>
+      <div class="fld" style="margin-top:10px"><label>رمز همگام‌سازی</label>
+        <input id="sSyncTok" dir="ltr" spellcheck="false" placeholder="همان SYNC_TOKEN ورکر"></div>
+      <div class="srow">
+        <button class="btn" id="btnSyncPull">دریافت از سرور</button>
+        <button class="btn" id="btnSyncPush">ارسال به سرور</button>
+        <button class="btn" id="btnSyncOff">خاموش</button>
+      </div>
+      <div class="hint" id="syncNote">
+        داده روی ورکر خودت می‌ماند، نه جای دیگر. آدرس را بدون <code dir="ltr">?url=</code> بنویس —
+        فقط ریشه‌ی ورکر.<br>
+        در ورکر دو چیز لازم است: یک <b dir="ltr">KV namespace</b> با نام
+        <b dir="ltr">STORE</b>، و یک Secret به نام <b dir="ltr">SYNC_TOKEN</b> که همان رمز بالاست.
+      </div>
+      <div class="tgbox" id="tgBox">
+        <div class="tgh"><b>هشدار تلگرام وقتی برنامه بسته است</b><span class="markhint" id="tgState">—</span></div>
+        <div class="srow">
+          <button class="btn" id="btnTgLink">وصل کردن تلگرام</button>
+          <button class="btn" id="btnTgTest">پیام آزمایشی</button>
+          <button class="btn" id="btnTgOff">قطع</button>
+        </div>
+        <details class="hint tghelp"><summary>راه‌اندازی (یک بار، ۵ دقیقه)</summary>
+          <ol>
+            <li>همگام‌سازی بالا باید روشن باشد.</li>
+            <li>در تلگرام به <b dir="ltr">@BotFather</b> پیام بده، <b dir="ltr">/newbot</b> بزن و توکنی که می‌دهد را بردار.</li>
+            <li>در ورکر: <b dir="ltr">Settings → Variables and Secrets</b> → یک Secret به نام <b dir="ltr">TG_BOT_TOKEN</b> با همان توکن.</li>
+            <li>در ورکر: <b dir="ltr">Settings → Triggers → Cron Triggers</b> → <b dir="ltr">* * * * *</b> (هر دقیقه).</li>
+            <li>کد تازه‌ی <b dir="ltr">proxy/worker.js</b> را در ورکر بگذار و Deploy بزن.</li>
+            <li>به ربات خودت در تلگرام یک پیام بده (مثلاً <b dir="ltr">/start</b>)، بعد همین‌جا «وصل کردن تلگرام».</li>
+          </ol>
+          ورکر هر دقیقه پوزیشن‌های باز را با مارک پرایس می‌سنجد و سر استاپ، نزدیکِ استاپ، لیکوئید و تارگتِ
+          پله‌ی بعدیِ نقشه پیام می‌دهد. پوزیشن را عوض نمی‌کند؛ بسته شدن را خود برنامه دفعه‌ی بعد ثبت می‌کند.
+        </details>
+      </div>
+    </div>
+    </details>
+
+    <details class="sec" data-sec="lock"><summary>قفل ورود</summary>
+    <div class="wsetup">
+      <div class="wtitle">وضعیت: <span id="lockState">خاموش</span></div>
+      <div class="srow">
+        <button class="btn" id="btnLockSet">گذاشتن رمز</button>
+        <button class="btn hide" id="btnLockOff">برداشتن قفل</button>
+      </div>
+      <div class="hint">
+        رمز 4 تا 8 رقمی. هر بار که برنامه را باز کنی — و اگر بیش از دو دقیقه ازش بیرون بروی —
+        پرسیده می‌شود.<br>
+        <b>صریح بگویم:</b> این برنامه تماماً داخل مرورگر اجرا می‌شود، پس این رمز
+        <b>پرده است نه قفل</b>. جلوی کسی که گوشی‌ات را برمی‌دارد را می‌گیرد، ولی کسی که
+        سورس صفحه را باز کند دورش می‌زند. اگر قفل واقعی می‌خواهی، همان حساب Cloudflare که
+        داری این کار را رایگان می‌کند.<br>
+        راه بازیابی ندارد: اگر فراموشش کنی، تنها راه پاک کردن همه‌ی داده‌هاست.
+        پس اول از «پشتیبان JSON» پایین خروجی بگیر.
+      </div>
+    </div>
+    </details>
+
+    <details class="sec" data-sec="risk" open><summary>اندازه و ریسک</summary>
+    <div class="grid">
+      <div class="fld"><label>موجودی حساب ($)</label><input id="sAcct" class="money" value="100"></div>
+      <div class="fld"><label>مارجین هر معامله ($)</label><input id="sCap" class="money" value="10"></div>
+      <div class="fld"><label>مبلغ‌های آماده ($)</label><input id="sAmts" value="10, 25, 50, 100" dir="ltr" placeholder="10, 25, 50, 100"></div>
+      <div class="fld"><label>ریسک هدف (٪ مارجین)</label><input id="sRisk" type="number" value="5" min="0.5" max="100" step="0.5"></div>
+      <div class="fld"><label>سقف اهرم</label><input id="sMaxLev" type="number" value="10" min="1" max="125" step="1"></div>
+      <div class="fld"><label>حد ضرر روزانه (٪ حساب)</label><input id="sDaily" type="number" value="10" min="1" max="100" step="1"></div>
+      <div class="fld"><label>حالت محاسبه</label>
+        <select id="sMode"><option value="margin">کل مارجین وارد شود</option><option value="risk">ریسک ثابت</option></select></div>
+      <div class="fld"><label>تارگت‌ها (R)</label><input id="sR" value="1.5, 3, 5" dir="ltr"></div>
+      <div class="fld"><label>کارمزد رفت‌وبرگشت (٪)</label><input id="sFee" type="number" value="0.1" min="0" max="2" step="0.01"></div>
+      <div class="fld"><label>لغزش روی استاپ (٪)</label><input id="sSlip" type="number" value="0.05" min="0" max="2" step="0.01"></div>
+      <div class="fld"><label>فاندینگ تخمینی (٪ هر ۸ ساعت)</label><input id="sFund" type="number" value="0" min="-1" max="1" step="0.005"></div>
+      <div class="fld"><label>سقف ریسک باز هم‌زمان (٪ حساب)</label><input id="sOpenRisk" type="number" value="15" min="1" max="100" step="1"></div>
+      <div class="fld"><label>سبک خروج پیش‌فرض</label><select id="sPb">
+        <option value="s1">اسکلپ · تارگت 1</option><option value="s2">اسکلپ · تارگت 2</option>
+        <option value="bal">متعادل</option><option value="sw">سوئینگ پله‌ای</option><option value="cu">دلخواه</option></select></div>
+    </div>
+    <div class="hint">
+      «کل مارجین وارد شود» یعنی تمام مبلغ هر معامله وارد می‌شود و اهرم طوری انتخاب می‌شود که ضرر در استاپ به ریسک هدف برسد.
+      «ریسک ثابت» یعنی فقط بخشی از مبلغ وارد می‌شود تا ضرر دقیقاً اندازه ریسک هدف بماند.
+      موجودی حساب فقط برای درصدهای کارنامه و حد ضرر روزانه به کار می‌رود.
+    </div>
+    </details>
+
+    <details class="sec" data-sec="data"><summary>داده‌ها</summary>
+    <div class="srow" style="margin-top:0">
+      <button class="btn sm" id="btnExport">پشتیبان JSON</button>
+      <button class="btn sm" id="btnCsv">خروجی CSV</button>
+      <button class="btn sm" id="btnImport">بازیابی</button>
+      <input type="file" id="fileIn" accept=".json,application/json" class="hide">
+    </div>
+    </details>
+    <div class="hint" style="margin-top:12px">میز سیگنال · نسخه‌ی 2 ·
+      <a href="backup/signal-desk-v1.zip" download>دانلود نسخه‌ی 1 (زیپ)</a></div>
+    <div class="srow"><button class="btn pri" id="setDone">تمام</button></div>
+  </div>
+</div>
+
+<div class="veil hide" id="veil"><div class="sheet" id="sheet" role="dialog"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+//@js
+</script>
+</body>
+</html>

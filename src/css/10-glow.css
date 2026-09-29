@@ -1,0 +1,121 @@
+/* ==================== نور طلایی ==================== */
+/* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
+   برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
+   نیست — روی گوشی گران است؛ هاله‌ها خودشان نرم‌اند و فقط transform/opacity حرکت می‌کنند. */
+html.fx{--glow:233,178,74; --glowUp:70,220,150; --glowDn:236,96,110;
+  --cardA:rgba(30,32,40,.84); --cardB:rgba(18,20,25,.86)}
+/* ── زمینه: سه هاله‌ی نور ثابت. قبلاً مدام جابه‌جا می‌شدند و چون سربرگ و منو شیشه‌ای (blur)
+   روی آن‌ها هستند، گوشی هر فریم تاری را از نو حساب می‌کرد — حتی وقتی به صفحه دست نمی‌زدی. ── */
+.bgfx .h{display:none}
+html.fx .bgfx::after{display:none}
+html.fx .bgfx .h{display:block;position:absolute;border-radius:50%}
+html.fx .bgfx .h1{width:720px;height:620px;top:-300px;inset-inline-end:-260px;
+  background:radial-gradient(closest-side,rgba(var(--glow),.30),rgba(var(--glow),.08) 55%,transparent)}
+html.fx .bgfx .h2{width:620px;height:620px;top:38%;inset-inline-start:-320px;
+  background:radial-gradient(closest-side,rgba(46,184,150,.17),transparent)}
+html.fx .bgfx .h3{width:560px;height:560px;bottom:-280px;inset-inline-end:-180px;
+  background:radial-gradient(closest-side,rgba(233,120,74,.14),transparent)}
+html.fx .bgfx::before{opacity:.075;-webkit-mask-image:radial-gradient(ellipse 90% 70% at 50% 10%,#000 25%,transparent 80%);
+  mask-image:radial-gradient(ellipse 90% 70% at 50% 10%,#000 25%,transparent 80%)}
+/* ── سربرگ: شیشه با خط نور طلایی زیرش ── */
+html.fx header::after{content:"";position:absolute;inset-inline:0;bottom:-1px;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(var(--glow),.55),rgba(var(--glowUp),.25),transparent)}
+html.fx .emblem{background:radial-gradient(circle at 50% 35%,#FFE3A1,#E9B24A 55%,#A8741F);border-color:rgba(255,220,150,.55);
+  box-shadow:0 0 26px rgba(var(--glow),.62),inset 0 1px 0 rgba(255,255,255,.45)}
+html.fx .emblem .star{color:#2A1A04}
+html.fx.busy .emblem{box-shadow:0 0 30px rgba(var(--glow),.85),inset 0 1px 0 rgba(255,255,255,.45)}
+html.fx .rbtn{box-shadow:0 8px 24px -6px rgba(var(--glow),.75),inset 0 1px 0 rgba(255,255,255,.45)}
+html.fx .hchip,html.fx .ibtn{background:rgba(22,24,30,.7);border-color:rgba(255,255,255,.07)}
+html.fx .hs[data-s="ok"] i{box-shadow:0 0 0 3px rgba(var(--glowUp),.2),0 0 10px rgba(var(--glowUp),.8)}
+/* ── منو: شیشه‌ی شناور؛ تبِ فعال هاله‌ی طلایی از پایین و آیکونِ روشن ── */
+html.fx .tabs{border-color:rgba(255,255,255,.07)}
+html.fx .tabs .ind{background:radial-gradient(90% 130% at 50% 100%,rgba(var(--glow),.36),rgba(var(--glow),.07)),rgba(28,30,37,.9);
+  border-color:rgba(255,210,130,.45);box-shadow:0 0 22px -4px rgba(var(--glow),.7)}
+html.fx .tab[aria-selected="true"]{color:#FFE7B8}
+html.fx .tab[aria-selected="true"] .ic{color:#F6C866;filter:drop-shadow(0 0 6px rgba(var(--glow),.9))}
+html.fx .tab .cnt.g{box-shadow:0 0 12px rgba(var(--glow),.8)}
+@media (max-width:699px){html.fx .tabs{background:rgba(16,17,22,.74);box-shadow:0 20px 44px -12px #000,inset 0 1px 0 rgba(255,255,255,.06)}}
+/* ── نوار فیلتر و گروه‌دکمه‌ها ── */
+html.fx .fb.on,html.fx .fb[aria-pressed="true"]{background:linear-gradient(180deg,rgba(var(--glow),.24),rgba(var(--glow),.07));
+  box-shadow:0 0 18px -4px rgba(var(--glow),.6),inset 0 0 0 1px rgba(255,210,130,.42);color:#FFE3A6}
+html.fx .fb.on i{text-shadow:0 0 10px rgba(var(--glow),.8)}
+html.fx .mktb.on,html.fx .amtb.on,html.fx .pbc.on,html.fx .catchip.on{box-shadow:0 0 14px -4px rgba(var(--glow),.75)}
+/* ── کارت‌ها: شیشه‌ی نیمه‌شفاف با لبه‌ی نورانی؛ هاله‌ی کارت جهت را می‌گوید ── */
+html.fx .card,html.fx .panel{border-color:transparent;
+  background:linear-gradient(180deg,var(--cardA),var(--cardB) 140px) padding-box,
+    linear-gradient(150deg,rgba(255,214,140,.34),rgba(255,255,255,.07) 28%,rgba(255,255,255,.035) 62%,rgba(var(--glow),.16)) border-box;
+  box-shadow:0 24px 50px -30px #000,inset 0 1px 0 rgba(255,255,255,.06)}
+html.fx .card.d-long{background:linear-gradient(180deg,var(--cardA),var(--cardB) 140px) padding-box,
+    linear-gradient(to left,rgba(var(--glowUp),.95),rgba(var(--glowUp),.35) 6%,rgba(255,255,255,.07) 30%,rgba(255,255,255,.035) 70%,rgba(var(--glow),.14)) border-box;
+  box-shadow:14px 0 36px -24px rgba(var(--glowUp),.8),0 24px 50px -30px #000,inset 0 1px 0 rgba(255,255,255,.06)}
+html.fx .card.d-short{background:linear-gradient(180deg,var(--cardA),var(--cardB) 140px) padding-box,
+    linear-gradient(to left,rgba(var(--glowDn),.95),rgba(var(--glowDn),.35) 6%,rgba(255,255,255,.07) 30%,rgba(255,255,255,.035) 70%,rgba(var(--glow),.14)) border-box;
+  box-shadow:14px 0 36px -24px rgba(var(--glowDn),.75),0 24px 50px -30px #000,inset 0 1px 0 rgba(255,255,255,.06)}
+/* پوزیشن باز: کارت با سود/ضرر هاله‌ی سبز/قرمز از پایین می‌گیرد */
+html.fx .card.pu{box-shadow:14px 0 36px -24px rgba(var(--glowUp),.6),0 18px 44px -26px rgba(var(--glowUp),.55),inset 0 1px 0 rgba(255,255,255,.06)}
+html.fx .card.pd{box-shadow:14px 0 36px -24px rgba(var(--glowDn),.55),0 18px 44px -26px rgba(var(--glowDn),.5),inset 0 1px 0 rgba(255,255,255,.06)}
+html.fx .card.enter{animation:riseglow .6s var(--ease) both;animation-delay:var(--d,0ms)}
+@keyframes riseglow{from{opacity:0;transform:translateY(18px) scale(.98);filter:brightness(1.6)}}
+html.fx .card.fresh{animation:freshpulse 2.4s ease-out 2}
+@keyframes freshpulse{0%{box-shadow:0 0 0 1px rgba(var(--glow),.8),0 0 0 0 rgba(var(--glow),.55)}
+  70%{box-shadow:0 0 0 1px rgba(var(--glow),.5),0 0 0 14px rgba(var(--glow),0)}100%{box-shadow:0 0 0 1px rgba(var(--glow),.45),0 0 36px -10px rgba(var(--glow),.55)}}
+html.fx .chead{border-bottom-color:rgba(255,255,255,.055)}
+html.fx .bk,html.fx .kv .k{background:rgba(10,11,15,.5)}
+html.fx .bk{border-color:rgba(255,255,255,.055)}
+/* ── برچسب‌ها و قیمت زنده ── */
+html.fx .pill.long{box-shadow:0 0 14px -4px rgba(var(--glowUp),.8)}
+html.fx .pill.short{box-shadow:0 0 14px -4px rgba(var(--glowDn),.8)}
+html.fx .pill.gold{box-shadow:0 0 14px -5px rgba(var(--glow),.8)}
+html.fx .pill.live i{box-shadow:0 0 8px rgba(var(--glowUp),.95)}
+html.fx .fl-u{text-shadow:0 0 14px rgba(var(--glowUp),.9)}
+html.fx .fl-d{text-shadow:0 0 14px rgba(var(--glowDn),.9)}
+html.fx .pnlhero .big.u{text-shadow:0 0 26px rgba(var(--glowUp),.6)}
+html.fx .pnlhero .big.d{text-shadow:0 0 26px rgba(var(--glowDn),.55)}
+html.fx .bk span.u,html.fx .kv span.u,html.fx .st span.u{text-shadow:0 0 12px rgba(var(--glowUp),.45)}
+/* ── دکمه‌ها: طلای براق با نواری از نور که گاه‌به‌گاه از رویش رد می‌شود ── */
+html.fx .btn.pri,html.fx .acts .btn.ok{overflow:hidden;color:#231503;
+  background:linear-gradient(100deg,#B98631,#F2CE7E 46%,#E9B24A 56%,#B98631);
+  box-shadow:0 10px 28px -10px rgba(var(--glow),.85),inset 0 1px 0 rgba(255,255,255,.5)}
+/* نوار نور با transform حرکت می‌کند نه با جابه‌جایی لبه؛ قبلی هر فریم چیدمان صفحه را دوباره حساب می‌کرد */
+html.fx .btn.pri::after,html.fx .acts .btn.ok::after{content:"";position:absolute;top:0;bottom:0;width:45%;left:0;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:translateX(-130%) skewX(-18deg);
+  animation:sweep 6s var(--ease) infinite;pointer-events:none}
+@keyframes sweep{0%,70%{transform:translateX(-130%) skewX(-18deg)}100%{transform:translateX(290%) skewX(-18deg)}}
+html.fx .btn.pri:active,html.fx .acts .btn.ok:active{box-shadow:0 4px 18px -6px rgba(var(--glow),1),inset 0 1px 0 rgba(255,255,255,.5)}
+html.fx .btn:not(.pri):not(.ok):hover{box-shadow:0 0 16px -6px rgba(var(--glow),.6)}
+html.fx .mark:not(.ghost){box-shadow:0 0 14px -6px rgba(var(--glow),.8)}
+/* ── دستگیره‌ها: هاله‌ی ثابت طلایی (نبضِ سایه هر فریم دوباره نقاشی می‌شد) ── */
+html.fx .ladder .hs2{box-shadow:0 0 0 1px var(--gold),0 0 18px 1px rgba(var(--glow),.6)}
+html.fx .sldrow input[type=range]::-webkit-slider-thumb,html.fx .levtrack input[type=range]::-webkit-slider-thumb{
+  box-shadow:0 0 0 1px var(--gold),0 0 18px rgba(var(--glow),.7),0 6px 16px -4px rgba(var(--glow),.85)}
+html.fx .levbox,html.fx .pbx,html.fx .gcalc,html.fx .gclock,html.fx .grulesnow{background:rgba(10,11,15,.5)}
+/* ── ورق‌ها: لبه‌ی بالای نورانی و دسته‌ی طلایی ── */
+html.fx .sheet{background:linear-gradient(180deg,rgba(26,28,35,.97),rgba(15,16,21,.98) 220px);border-color:rgba(255,214,140,.22);
+  box-shadow:0 -24px 70px -20px rgba(0,0,0,.8),0 -1px 0 rgba(255,214,140,.35),0 -30px 60px -40px rgba(var(--glow),.55);
+  transition:transform .46s cubic-bezier(.22,1.12,.36,1)}
+html.fx .sheet::before{background:linear-gradient(90deg,var(--gold2),#F6CE7A,var(--gold2));box-shadow:0 0 12px rgba(var(--glow),.7)}
+html.fx .veil.open{background:rgba(3,4,10,.66)}
+/* ── اعلان: شیشه‌ی تیره با لبه‌ی رنگی ── */
+html.fx .toast{background:rgba(22,24,30,.94);color:var(--tx);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:0 0 0 1px rgba(var(--glow),.4),0 14px 40px -10px rgba(var(--glow),.45)}
+html.fx .toast.ok{box-shadow:0 0 0 1px rgba(var(--glowUp),.45),0 14px 40px -10px rgba(var(--glowUp),.45)}
+html.fx .toast.err{box-shadow:0 0 0 1px rgba(var(--glowDn),.5),0 14px 40px -10px rgba(var(--glowDn),.45)}
+html.fx .toast .ti{box-shadow:0 0 12px currentColor}
+/* ── بارگذاری: درخشش طلایی روی اسکلت کارت‌ها ── */
+html.fx .skel{background:linear-gradient(180deg,var(--cardA),var(--cardB));border-color:rgba(255,255,255,.06)}
+html.fx .skel i{background:linear-gradient(90deg,rgba(255,255,255,.04) 20%,rgba(var(--glow),.22) 50%,rgba(255,255,255,.04) 80%) 0 0/300% 100%;
+  animation:skelglow 1.6s linear infinite}
+@keyframes skelglow{from{background-position:100% 0}to{background-position:-200% 0}}
+/* ── آمار و بخش‌ها ── */
+html.fx .stats{background:transparent}
+html.fx .st{background:rgba(10,11,15,.45);box-shadow:0 0 0 1px rgba(255,255,255,.05)}
+html.fx .guide,html.fx .gn{box-shadow:0 0 40px -26px rgba(var(--glow),.8)}
+html.fx .gsteps li>i,html.fx .gnum{box-shadow:0 0 14px -3px rgba(var(--glow),.8)}
+html.fx .labr.best{box-shadow:inset 3px 0 0 var(--up),0 0 30px -18px rgba(var(--glowUp),.9)}
+html.fx .status{background:rgba(20,22,28,.6)}
+html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
+@media (prefers-reduced-motion:reduce){html.fx .btn.pri::after,html.fx .acts .btn.ok::after{display:none}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  html.busy .prog::before{animation:none;width:100%;opacity:.6}
+}

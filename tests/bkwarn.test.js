@@ -1,0 +1,23 @@
+const {chromium} = require('./lib').pw;
+let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);};
+(async()=>{
+ const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:900},acceptDownloads:true});
+ const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
+ await p.route('**',r=>r.request().url().includes('localhost:8899')?r.continue():r.abort());
+ await p.addInitScript(()=>{if(!sessionStorage.getItem('x')){sessionStorage.setItem('x',1);
+   localStorage.setItem('signaldesk.v1',JSON.stringify({positions:[{id:'a',ticker:'BTC',dir:'long',entry:100,stop:90,margin:10,lev:5,openedAt:Date.now()-9*864e5,status:'open',partials:[],log:[]}],settings:{}}));
+   localStorage.setItem('signaldesk.backupat.v1',JSON.stringify(Date.now()-9*864e5));}});
+ await p.goto('http://localhost:8899/index.html',{waitUntil:'domcontentloaded'});await p.waitForTimeout(3000);
+ const w=await p.evaluate(()=>{const x=document.querySelector('#bkWarn');return {vis:!x.classList.contains('hide'),t:x.textContent,persist:PERSIST};});
+ ok(w.vis&&w.t.includes('9 روز'),'۹ روز بدون پشتیبان: یادآوری دیده می‌شود — '+w.t.slice(0,40));
+ console.log('   persist=',w.persist);
+ const [dl]=await Promise.all([p.waitForEvent('download'),p.click('#bkWarn .btn.pri')]);
+ ok(!!dl,'«پشتیبان بگیر» فایل را دانلود کرد');
+ ok(await p.evaluate(()=>document.querySelector('#bkWarn').classList.contains('hide')&&Date.now()-JSON.parse(localStorage.getItem('signaldesk.backupat.v1'))<5000),'بعد از پشتیبان، یادآوری رفت و زمان ثبت شد');
+ await p.evaluate(()=>{lsSet(BKKEY,Date.now()-8*864e5);showBackupWarn();document.querySelector('#bkWarn .btn:not(.pri)').click();});
+ ok(await p.evaluate(()=>{showBackupWarn();return document.querySelector('#bkWarn').classList.contains('hide');}),'«بعداً»: سه روز دیگر');
+ await p.evaluate(()=>{localStorage.removeItem(BKSNOOZE);syncCfg.url='https://x';syncCfg.token='t';showBackupWarn();});
+ ok(await p.evaluate(()=>document.querySelector('#bkWarn').classList.contains('hide')),'همگام‌سازی روشن: یادآوری لازم نیست');
+ await p.evaluate(()=>{syncCfg.url='';sheetHealth();});
+ ok(errs.length===0,'بدون خطای JS '+errs.join('|'));
+ await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');})();

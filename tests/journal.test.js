@@ -1,0 +1,57 @@
+const {chromium} = require('./lib').pw;
+const {route}=require('./fixture');
+let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);};
+(async()=>{
+ const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:900}});await route(ctx);
+ const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('dialog',d=>d.accept());
+ await p.addInitScript(()=>{if(sessionStorage.getItem('x'))return;sessionStorage.setItem('x',1);localStorage.setItem('signaldesk.v1',JSON.stringify({positions:[],settings:{feat:{autoexec:false},acct:1000}}));});
+ await p.goto('http://localhost:8899/index.html',{waitUntil:'domcontentloaded'});await p.waitForTimeout(3000);
+ console.log('=== برچسب در فرم ورود ===');
+ await p.evaluate(()=>{const post=POSTS.find(x=>x.id.endsWith('/920'));sheetEnter(post,sigOf(post),OVERRIDE[post.id]||{},PRICES.get('BTC'));});
+ await p.waitForTimeout(500);
+ await p.evaluate(()=>{document.querySelector('.tagpick').open=true;
+   [...document.querySelectorAll('.tagpick .pbc')].find(b=>b.textContent==='پولبک').click();
+   [...document.querySelectorAll('.tagpick .pbc')].find(b=>b.textContent==='عجله / جا نمونم').click();
+   document.querySelector('#ok').click();});
+ await p.waitForTimeout(400);
+ let pos=await p.evaluate(()=>DB.positions[DB.positions.length-1]);
+ ok(pos&&pos.setup==='پولبک'&&pos.mood==='fomo','ستاپ «پولبک» و حال «عجله» روی پوزیشن ثبت شد');
+ console.log('=== تخلف‌ها ===');
+ await p.evaluate(()=>{const x=DB.positions[DB.positions.length-1];x.stop=x.stop-500;save();});
+ pos=await p.evaluate(()=>DB.positions[DB.positions.length-1]);
+ ok(pos.viol&&pos.viol.some(v=>v.k==='stopaway'),'استاپ دورتر رفت ← تخلف «استاپ را دورتر بردی»');
+ await p.evaluate(()=>{const x=DB.positions[DB.positions.length-1];x.stop=x.entry;save();});
+ ok(await p.evaluate(()=>DB.positions[DB.positions.length-1].viol.length)===1,'استاپ به سمت سود: تخلف تازه‌ای نیست');
+ // undo نباید تخلف بسازد
+ await p.evaluate(()=>{const x=DB.positions[DB.positions.length-1];undoable('t',()=>{x.stop=x.entry+100;});});
+ await p.evaluate(()=>document.querySelector('#toast .tundo').click());
+ ok(await p.evaluate(()=>DB.positions[DB.positions.length-1].viol.length)===1,'برگرداندن جابه‌جایی استاپ: تخلف حساب نشد');
+ // زودتر از نقشه
+ await p.evaluate(()=>{const H=36e5,now=Date.now();
+   const x={id:'e1',ticker:'ETH',dir:'long',kind:'futures',entry:100,stop:90,margin:10,lev:5,openedAt:now-5*H,status:'open',targets:[110,120],partials:[],log:[],setup:'بریک‌اوت',mood:'plan'};
+   DB.positions.push(x);pbAttach(x,'bal');save();
+   x.status='closed';x.exitPrice=104;x.closedAt=now;x.fees=0.05;save();
+   const y={id:'n1',ticker:'XRP',dir:'short',kind:'futures',entry:2,stop:null,margin:10,lev:3,openedAt:now-30*H,status:'open',partials:[],log:[],setup:'بریک‌اوت',mood:'plan'};
+   DB.positions.push(y);save();y.status='closed';y.exitPrice=1.9;y.closedAt=now-H;y.fees=0.03;save();
+   const z={id:'c1',ticker:'SOL',dir:'long',kind:'futures',entry:100,stop:95,margin:10,lev:5,openedAt:now-3*H,status:'open',targets:[110],partials:[],log:[],setup:'بریک‌اوت',mood:'plan'};
+   DB.positions.push(z);pbAttach(z,'s1');save();z.status='closed';z.exitPrice=95;z.closedAt=now-60e3;z.fees=0.05;save();});
+ const v=await p.evaluate(()=>['e1','n1','c1'].map(id=>(DB.positions.find(x=>x.id===id).viol||[]).map(v=>v.k).join('+')));
+ ok(v[0]==='early','دستی روی 104 بستی در حالی که پله‌ی بعد 110 بود ← «زودتر از نقشه»');
+ ok(v[1]==='nostop','شورت فیوچرز بی‌استاپ ← «بدون استاپ»');
+ ok(v[2]==='','بستن دستی روی خودِ استاپ تخلف نیست');
+ console.log('=== کارنامه ===');
+ await p.evaluate(()=>{repPeriod='all';go('report',true);renderAll();});await p.waitForTimeout(500);
+ const j=await p.evaluate(()=>{const w=document.querySelector('.jr');return w&&{secs:[...w.querySelectorAll('.jsec summary')].map(s=>s.textContent),
+   plan:w.querySelector('.jsec').textContent};});
+ console.log('   ',j&&j.secs.join(' | '));
+ ok(j&&j.secs.includes('ستاپ')&&j.secs.includes('روز هفته (روز ورود)')&&j.secs.includes('ساعت ورود')&&j.secs.includes('تخلف‌ها'),'بخش‌های دفتر معامله');
+ ok(j.plan.includes('طبق نقشه')&&j.plan.includes('خلاف نقشه'),'طبق نقشه در برابر خلاف نقشه');
+ await p.evaluate(()=>{posFilter='all';POSOPEN.add('e1');go('positions',true);renderAll();});await p.waitForTimeout(300);
+ const card=await p.evaluate(()=>{const c=document.querySelector('#pos-e1');return {h:c.querySelector('.chead').textContent,t:c.querySelector('.tagrow')?.textContent,v:c.querySelector('.violrow')?.textContent};});
+ ok(card.h.includes('خلاف نقشه')&&card.t.includes('بریک‌اوت')&&card.v.includes('زودتر از نقشه'),'کارت: برچسب‌ها و تخلف');
+ await p.evaluate(()=>document.querySelector('#pos-e1 .violrow .mark').click());
+ ok(await p.evaluate(()=>!DB.positions.find(x=>x.id==='e1').viol),'«اشتباه است، پاک کن»');
+ await p.evaluate(()=>{go('report',true);renderAll();document.querySelectorAll('.jr details').forEach(d=>d.open=true);});
+ const e=await p.$('.jr');await e.screenshot({path:require('./lib').out('journal.png')});
+ ok(errs.length===0,'بدون خطا '+errs.join('|'));
+ await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');})();

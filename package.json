@@ -1,0 +1,14 @@
+{
+  "name": "signal-desk",
+  "private": true,
+  "description": "میز سیگنال — تست‌ها و ساخت؛ خود برنامه وابستگی ندارد",
+  "scripts": {
+    "build": "node tools/build.js",
+    "test": "bash tests/run.sh",
+    "test:full": "FULL=1 bash tests/run.sh"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1",
+    "pdfjs-dist": "4.10.38"
+  }
+}

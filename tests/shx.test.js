@@ -1,0 +1,26 @@
+const {chromium} = require('./lib').pw;
+const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
+(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:390,height:900}});
+ p.on('pageerror',e=>console.log('PAGEERROR:',e.message));
+ await p.route('**',r=>r.request().url().includes('localhost')?r.continue():r.abort());
+ await p.goto('http://localhost:8899/index.html');await p.waitForTimeout(2500);
+ await p.evaluate(()=>{const now=Date.now();
+   DB.positions=[ensureBase({id:'s1',ticker:'BTC',kind:'futures',dir:'long',entry:60000,stop:58000,stop0:58000,margin:20,baseMargin:20,lev:5,targets:[64000],
+     openedAt:now-(3*864e5+5*3600e3),closedAt:now,status:'closed',exitPrice:63000,fees:0.2,partials:[],log:[]})];save();go('positions',true);posFilter='all';renderPositions();});
+ await p.waitForTimeout(300);
+ await p.evaluate(()=>sheetShare(DB.positions[0]));await p.waitForTimeout(900);
+ const t=await p.evaluate(()=>({dur:shDur(DB.positions[0].openedAt,DB.positions[0].closedAt),inputs:[...document.querySelectorAll('.shtx input')].map(i=>i.id),dt:!!document.getElementById('o_dt')}));
+ console.log('  ',JSON.stringify(t));
+ ok(t.dur==='3 روز و 5 ساعت','مدت: '+t.dur);
+ ok(t.inputs.join()==='t_title,t_brand,t_ch,t_foot'&&t.dt,'ویرایش عنوان/نام/کانال/کپی‌رایت و کلید تاریخ‌ها');
+ await p.evaluate(()=>{document.querySelector('.shtx').open=true;
+   const set=(id,v)=>{const i=document.getElementById(id);i.value=v;i.dispatchEvent(new Event('input'));};
+   set('t_title','ترید طلایی من');set('t_brand','باشگاه کوین');set('t_ch','کانال کریپتو کوینر');set('t_foot','© 2026 CryptoCoiner');});
+ await p.waitForTimeout(500);
+ ok(await p.evaluate(()=>shBrand()==='باشگاه کوین'&&shChan()==='کانال کریپتو کوینر'&&shFoot()==='© 2026 CryptoCoiner'),'متن‌ها روی تصویر نشستند و ذخیره شدند');
+ const src=await p.$eval('#shImg',i=>i.src);require('fs').writeFileSync(require('./lib').out('share_edit.png'),Buffer.from(src.split(',')[1],'base64'));
+ await p.evaluate(()=>closeSheet());await p.waitForTimeout(400);
+ await p.evaluate(()=>sheetShareSummary(agg(DB.positions),'مهر 1405'));await p.waitForTimeout(700);
+ ok(await p.evaluate(()=>document.querySelectorAll('.shtx input').length===3),'تصویر کارنامه هم ویرایش متن دارد');
+ const src2=await p.$eval('#shImg',i=>i.src);require('fs').writeFileSync(require('./lib').out('share_sum.png'),Buffer.from(src2.split(',')[1],'base64'));
+ await b.close();})();
