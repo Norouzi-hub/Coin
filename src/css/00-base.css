@@ -488,12 +488,12 @@ html{overscroll-behavior-y:contain}
 @keyframes drop{from{opacity:0;transform:translateY(-8px)}}
 
 /* ================= کارت ================= */
-/* کارت‌های بیرون از کادر دید اصلاً چیده نمی‌شوند. اندازه‌گیری روی گوشیِ
-   شبیه‌سازی‌شده با 30 کارت: چیدمان صفحه از 147 به 82 میلی‌ثانیه و رندر دوباره
-   از 189 به 59 میلی‌ثانیه رسید. auto یعنی مرورگر ارتفاع واقعیِ هر کارت را بعد
-   از یک بار دیده شدن به یاد می‌سپارد، پس نوار اسکرول هم سر جایش می‌نشیند. */
-#list>.card,#posList>.card,#lessonList>.card{
-  content-visibility:auto;contain-intrinsic-size:auto 330px}
+/* content-visibility فقط برای آموزش‌ها. روی فهرست سیگنال‌ها و پوزیشن‌ها عامل «پرش» بود:
+   کارت بسته‌ی آکاردئون حدود 86 پیکسل است، ولی هر کارتِ تازه‌ساخته‌ای که هنوز دیده نشده
+   330 پیکسل فرض می‌شد؛ با هر بروزرسانی (هر دقیقه) یا باز کردن یک پست، ارتفاع صفحه صدها
+   پیکسل عوض می‌شد و اسکرول جابه‌جا می‌شد (گاهی تا ته صفحه). حالا که کارت‌های بسته سبک‌اند
+   این صرفه‌جویی لازم نیست. */
+#lessonList>.card{content-visibility:auto;contain-intrinsic-size:auto 330px}
 .card{background:linear-gradient(180deg,var(--card2),var(--card) 90px);border:1px solid var(--line);border-radius:var(--r);
   margin:14px 0;overflow:hidden;box-shadow:var(--sh);position:relative}
 .card.d-long,.card.d-short{border-inline-start-width:3px}
@@ -618,6 +618,9 @@ tr.tap:hover td{background:var(--card2)}
 .status .sc b.w{color:var(--warn)}.status .sc b.m{color:var(--tx3)}
 /* حالت فشرده: متن و پلن پنهان، فقط سرِ کارت می‌ماند */
 .card.tight{cursor:pointer}
+.chead .when .tglink{display:inline-flex;align-items:center;gap:4px;margin-inline-start:8px;padding:2px 9px;border-radius:99px;
+  border:1px solid var(--line2);color:var(--tx2);text-decoration:none;font-size:11.5px;vertical-align:middle}
+.chead .when .tglink .ic{width:12px;height:12px}
 .card.tight .body,.card.tight .plan,.card.tight .acts,.card.tight .prow,.card.tight .shot,
 .card.tight .brief,.card.tight .stale{display:none}
 /* خلاصه‌ی یک‌خطیِ کارتِ بسته در آکاردئون */

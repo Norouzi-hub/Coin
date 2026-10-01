@@ -60,8 +60,21 @@ function countUps(){
     requestAnimationFrame(step);
   }
 }
+/* فهرست پوزیشن‌ها با هر قیمت تازه و هر باز/بسته کردن کارت از نو ساخته می‌شود؛ جای خواندن
+   (اولین کارتی که زیر سربرگ پیداست) قبل و بعدش یکی می‌ماند تا صفحه نپرد */
 function renderPositions(){
   if(DRAGGING)return;
+  let a=null;
+  if(window.scrollY>4&&!$('#vPositions').classList.contains('hide')){
+    const edge=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hdrH'))||0;
+    for(const c of $('#posList').querySelectorAll('.card[id]')){const r=c.getBoundingClientRect();
+      if(r.bottom>edge+4){a={id:c.id,top:r.top};break;}}
+  }
+  renderPositions0();
+  if(a){const c=document.getElementById(a.id);
+    if(c){const dy=c.getBoundingClientRect().top-a.top;if(Math.abs(dy)>0.5)window.scrollBy(0,dy);}}
+}
+function renderPositions0(){
   queueMicrotask(countUps);
   const wrap=$('#posList'), sum=$('#posSummary');
   wrap.innerHTML='';sum.innerHTML='';

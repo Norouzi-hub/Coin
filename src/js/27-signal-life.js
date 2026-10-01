@@ -142,8 +142,12 @@ function buildCard(p,lite){
   }
   if(DB.edits[p.id]&&DB.edits[p.id].nums)head.appendChild(el('span','pill lose','ویرایش‌شده'));
   if(DB.gone[p.id])head.appendChild(el('span','pill lose','حذف از کانال'));
-  head.appendChild(el('div','when','<a href="'+p.link+'" target="_blank" rel="noopener">'+
-    relTime(p.date)+(p.date?' · '+jStampFa(p.date):'')+'</a>'));
+  /* تاریخ متن ساده است، نه لینک: وسط سربرگ بود و زدن روی آن به‌جای باز/بسته کردن پست به تلگرام می‌برد.
+     لینک تلگرام یک دکمه‌ی کوچک جدا روی کارتِ باز است. */
+  const wh=el('div','when',relTime(p.date)+(p.date?' · '+jStampFa(p.date):''));
+  if(!lite&&p.link)wh.appendChild(el('a','tglink',ic('share')+'<span>تلگرام</span>'));
+  if(!lite&&p.link){const a=wh.querySelector('.tglink');a.href=p.link;a.target='_blank';a.rel='noopener';a.title='دیدن همین پست در تلگرام';}
+  head.appendChild(wh);
   card.appendChild(head);
   // خلاصه‌ی یک‌خطی — فقط وقتی کارت در آکاردئون بسته است دیده می‌شود
   {
@@ -262,6 +266,7 @@ function rebuildCard(p){
   const lite=old.classList.contains('tight'), acc=lite||old.classList.contains('accopen');
   const fresh=buildCard(p,lite);
   if(acc)accWire(fresh,p,!lite);
+  swipeWire(fresh,p);
   old.replaceWith(fresh);
 }
 
@@ -1172,19 +1177,75 @@ function wirePTR(){
 }
 /* ارتفاع سربرگ برای چسباندن سربرگ روزها زیر آن */
 function setHdrH(){const h=document.querySelector('header');if(h)document.documentElement.style.setProperty('--hdrH',h.offsetHeight+'px');}
+/* ---- آکاردئون ----
+   کارت بسته یک دکمه‌ی بزرگ است: هر جایش را بزنی باز می‌شود. قبلاً وسط سربرگ، تاریخِ پست لینک
+   تلگرام بود و نماد دکمه‌ی فیلتر؛ زدن روی آن‌ها کارت را باز نمی‌کرد و یا به تلگرام می‌برد یا
+   فهرست را فیلتر و به بالا پرت می‌کرد. آن دو فقط روی کارت باز کار می‌کنند. */
 function accWire(c,p,isOpen){
   c.classList.add(isOpen?'accopen':'tight');
+  if(!isOpen){
+    c.setAttribute('role','button');c.tabIndex=0;c.setAttribute('aria-expanded','false');
+    c.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();accToggle(p,true);},true);
+    c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();accToggle(p,true);}});
+    return;
+  }
   c.addEventListener('click',e=>{
     if(e.target.closest('button,a,input,select,label,.shot,.reply,.txt a'))return;
-    if(isOpen){if(!e.target.closest('.chead'))return;ACCOPEN='';}
-    else ACCOPEN=p.id;
-    renderSignals();
-    if(ACCOPEN){const cc=CARDS.get(p.id);
-      if(cc)requestAnimationFrame(()=>cc.scrollIntoView({block:'start',behavior:'smooth'}));}
+    if(!e.target.closest('.chead,.csum'))return;
+    accToggle(p,false);
   });
 }
+/* باز/بسته کردن در جا: فقط کارتِ زده‌شده و کارتی که باز بود از نو ساخته می‌شوند — نه کل فهرست.
+   ساختن دوباره‌ی کل فهرست صفحه را یک لحظه خالی می‌کرد و مرورگر جای اسکرول را گم می‌کرد (پرش،
+   گاهی تا ته صفحه). کارتی که زدی زیر انگشتت می‌ماند. */
+function accToggle(p,open){
+  const card=CARDS.get(p.id);
+  if(!card||!card.isConnected){ACCOPEN=open?p.id:'';return renderSignals();}
+  const y0=card.getBoundingClientRect().top;
+  ACCOPEN=open?p.id:'';
+  if(open)for(const oc of [...$('#list').querySelectorAll('.card.accopen')]){
+    const q=POSTS.find(x=>x.id===oc.dataset.id);if(q&&q.id!==p.id)accSwap(q,false);
+  }
+  const nc=accSwap(p,open);
+  const dy=nc.getBoundingClientRect().top-y0;
+  if(Math.abs(dy)>0.5)window.scrollBy(0,dy);
+  // اگر سربرگ کارت زیر نوار بالا و سربرگِ روز رفته، فقط آن‌قدر پایین بیاید که دیده شود
+  const top=nc.getBoundingClientRect().top, min=listTopEdge()+6;
+  if(top<min)window.scrollBy(0,top-min);
+}
+function accSwap(p,open){
+  const old=CARDS.get(p.id), fresh=buildCard(p,!open);
+  accWire(fresh,p,open);swipeWire(fresh,p);
+  if(old&&old.isConnected)old.replaceWith(fresh);
+  return fresh;
+}
+/* لبه‌ی بالای ناحیه‌ی دیدنیِ فهرست: زیر سربرگ برنامه و سربرگِ چسبانِ روز */
+function listTopEdge(){
+  const h=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hdrH'))||0;
+  const d=document.querySelector('#list .dsep');
+  return h+(d?d.offsetHeight:0);
+}
+/* جای خواندن: اولین کارتی که از زیر سربرگ پیداست و فاصله‌اش از بالا */
+function listAnchor(){
+  if(window.scrollY<4||$('#vSignals').classList.contains('hide'))return null;
+  const edge=listTopEdge();
+  for(const c of $('#list').querySelectorAll('.card[data-id]')){
+    const r=c.getBoundingClientRect();
+    if(r.bottom>edge+4)return {id:c.dataset.id,top:r.top};
+  }
+  return null;
+}
+function restoreAnchor(a){
+  if(!a)return;
+  const c=CARDS.get(a.id);if(!c||!c.isConnected)return;
+  const dy=c.getBoundingClientRect().top-a.top;
+  if(Math.abs(dy)>0.5)window.scrollBy(0,dy);
+}
+let RS_KEY='';
 function renderSignals(){
   const list=$('#list');
+  // بروزرسانی خودکار هر دقیقه همین را صدا می‌زند؛ جای خواندن نباید تکان بخورد
+  const anchor=listAnchor();
   /* سطل آموزش فهرست خودش را دارد (عنوان، دسته، اسکن کانال)، پس به‌جای کارت پست
      همان را نشان می‌دهیم. جستجوی بالای صفحه هم همان‌جا روی آموزش‌ها کار می‌کند. */
   if(bucket==='les')bucket='live';     // آموزش حالا تبِ خودش را دارد
@@ -1197,6 +1258,8 @@ function renderSignals(){
   let firstId=null, lastDay=null, sepEl=null, sepN=0;
   const closeSep=()=>{if(sepEl)sepEl.querySelector('.dsn').textContent=sepN+' پست';};
   const dp=dayPass(), cat=activeCat(), kind=!cat&&bucket==='live'&&sigFilter==='all'&&VIEW.kind!=='all'?VIEW.kind:'';
+  // انیمیشن ورود کارت‌ها فقط وقتی فهرست واقعاً عوض شده (فیلتر، سطل، جستجو)، نه با هر بروزرسانی
+  const rk=[bucket,sigFilter,coinFilter,q,cat,VIEW.day,kind].join('|'), animate=rk!==RS_KEY;RS_KEY=rk;
   for(const p of POSTS){
     if(dp&&!dp(p))continue;
     const sig=sigOf(p), bk=bucketOf(p);
@@ -1233,7 +1296,7 @@ function renderSignals(){
     const c=buildCard(p,acc&&!isOpen);
     if(acc)accWire(c,p,isOpen);
     swipeWire(c,p);
-    if(shown<8){c.classList.add('enter');c.style.setProperty('--d',(shown*45)+'ms');shown++;}
+    if(animate&&shown<8){c.classList.add('enter');c.style.setProperty('--d',(shown*45)+'ms');shown++;}
     frag.appendChild(c);n++;
   }
   closeSep();
@@ -1302,6 +1365,7 @@ function renderSignals(){
   }
   renderMore();
   showStatus();
+  restoreAnchor(anchor);
 }
 function renderMore(){
   const b=$('#btnMore'), i=$('#moreInfo');

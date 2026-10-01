@@ -3,7 +3,7 @@ const posts=[];
 // ۴ سیگنال + ۳ پست عادی
 const sig=(n,t)=>`<div class="tgme_widget_message" data-post="c/1893051/${n}">
  <div class="tgme_widget_message_bubble"><div class="tgme_widget_message_text">${t}</div>
- <time datetime="2026-09-2${n%9}T0${n%9}:00:00+00:00"></time></div></div>`;
+ <time datetime="${new Date(Date.now()-((n%9)+1)*36e5).toISOString()}"></time></div></div>`;
 posts.push(sig(610,'#بیت_کوین لانگ بالای ۶۵۰۰۰ ورود حد ضرر ۶۳۰۰۰ تارگت ۷۰۰۰۰'));
 posts.push(sig(609,'#اتریوم شورت ورود ۳۰۰۰ حد ضرر ۳۲۰۰ تارگت ۲۷۰۰'));
 posts.push(sig(608,'#سولانا لانگ ورود ۱۵۰ حد ضرر ۱۴۰ تارگت ۱۸۰ اهرم ۳'));
