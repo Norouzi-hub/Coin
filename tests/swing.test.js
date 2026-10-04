@@ -99,6 +99,13 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    const C=seq.slice(1).map((c,i)=>({t:t0+i*36e5,o:seq[i],h:Math.max(seq[i],c),l:Math.min(seq[i],c),c}));
    const pr=coinProfile(C,{lev:10,roi:20,tf:'1h'});return {s:pr.supp,r:pr.res,nl:pr.nLow,nh:pr.nHigh};});
  ok(sug.s>98.7&&sug.s<99.2&&sug.r>102.9&&sug.r<103.6,'پیشنهاد رنج: کف‌ها حوالی ۹۹، سقف‌ها حوالی ۱۰۳ — '+JSON.stringify(sug));
+ ok(sug.nl<=3&&sug.nh<=3,'«چند بار» = نقطه‌های چرخشِ واقعی نزدیک سطح، نه همه‌ی حرکت‌ها — '+sug.nl+'/'+sug.nh);
+ // روند: دو روزِ اول رنج ۷۸–۸۰، روز آخر رنج ۸۵–۸۷ ← پیشنهاد باید رنجِ اخیر باشد
+ const tr=await p.evaluate(()=>{const t0=Date.now()-3*864e5, seq=[];
+   for(let i=0;i<48;i++)seq.push(i%2?80:78);for(let i=0;i<24;i++)seq.push(i%2?87:85);
+   const C=seq.slice(1).map((c,i)=>({t:t0+i*36e5,o:seq[i],h:Math.max(seq[i],c),l:Math.min(seq[i],c),c}));
+   const pr=coinProfile(C,{lev:10,roi:20,tf:'1h'});return {s:pr.supp,r:pr.res};});
+ ok(tr.s===85&&tr.r===87,'روند: پیشنهاد از رنجِ اخیر (۸۵ ⇄ ۸۷)، نه میانه‌ی کل دوره — '+JSON.stringify(tr));
  await p.evaluate(()=>{const C=[];const t0=Date.now()-864e5;const seq=[100,103,99,103.5,98.8,103.2,99.1];
    for(let i=1;i<seq.length;i++)C.push({t:t0+i*36e5,o:seq[i-1],h:Math.max(seq[i-1],seq[i]),l:Math.min(seq[i-1],seq[i]),c:seq[i]});
    SWCOIN={tk:'RNG',o:Object.assign({},SWOPT),pr:coinProfile(C,SWOPT),sc:null,mp:null};paintSwCoin();

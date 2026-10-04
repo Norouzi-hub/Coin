@@ -7758,22 +7758,22 @@ function swPts(C){
 /* زیگزاگ: هر «حرکت» یعنی دست‌کم th (کسر) از آخرین قله/کف، تا برگشتِ دست‌کم th */
 function swZigzag(P,th){
   const legs=[];if(!P.length||!(th>0))return legs;
-  let hi=P[0].p,lo=P[0].p,dir=0,piv=P[0].p,ext=P[0].p;
-  for(const {p} of P){
+  let hi=P[0].p,lo=P[0].p,tHi=P[0].t,tLo=P[0].t,dir=0,piv=P[0].p,ext=P[0].p,tPiv=P[0].t,tExt=P[0].t;
+  for(const {p,t} of P){
     if(dir===0){
-      if(p>hi)hi=p;if(p<lo)lo=p;
-      if(hi/lo-1>=th){dir=p===hi?1:-1;piv=dir>0?lo:hi;ext=p;}
+      if(p>hi){hi=p;tHi=t;}if(p<lo){lo=p;tLo=t;}
+      if(hi/lo-1>=th){dir=p===hi?1:-1;piv=dir>0?lo:hi;tPiv=dir>0?tLo:tHi;ext=p;tExt=t;}
       continue;
     }
     if(dir>0){
-      if(p>ext)ext=p;
-      else if(ext/p-1>=th){legs.push({up:true,pct:(ext/piv-1)*100,from:piv,to:ext});piv=ext;ext=p;dir=-1;}
+      if(p>ext){ext=p;tExt=t;}
+      else if(ext/p-1>=th){legs.push({up:true,pct:(ext/piv-1)*100,from:piv,to:ext,tFrom:tPiv,tTo:tExt});piv=ext;tPiv=tExt;ext=p;tExt=t;dir=-1;}
     }else{
-      if(p<ext)ext=p;
-      else if(p/ext-1>=th){legs.push({up:false,pct:(1-ext/piv)*100,from:piv,to:ext});piv=ext;ext=p;dir=1;}
+      if(p<ext){ext=p;tExt=t;}
+      else if(p/ext-1>=th){legs.push({up:false,pct:(1-ext/piv)*100,from:piv,to:ext,tFrom:tPiv,tTo:tExt});piv=ext;tPiv=tExt;ext=p;tExt=t;dir=1;}
     }
   }
-  if(dir!==0){const pct=dir>0?(ext/piv-1)*100:(1-ext/piv)*100;if(pct>=th*100)legs.push({up:dir>0,pct,open:true,from:piv,to:ext});}
+  if(dir!==0){const pct=dir>0?(ext/piv-1)*100:(1-ext/piv)*100;if(pct>=th*100)legs.push({up:dir>0,pct,open:true,from:piv,to:ext,tFrom:tPiv,tTo:tExt});}
   return legs;
 }
 /* نمونه‌برداری برای نمودار کوچک: در هر سطل هم کمینه و هم بیشینه، تا قله‌ها گم نشوند */
@@ -7835,18 +7835,29 @@ function coinProfile(C,o){
   const L=swZigzag(P,a), lg=legStat(L);
   let hi=-Infinity,lo=Infinity;for(const k of C){if(k.h>hi)hi=k.h;if(k.l<lo)lo=k.l;}
   const p0=C[0].o, hours=(C[C.length-1].t+swTfMs(o)-C[0].t)/36e5;
-  /* کف‌ها و سقف‌های برگشت (نقطه‌های چرخشِ زیگزاگ) — برای پیشنهاد ورود و تارگت در رنج */
+  /* کف‌ها و سقف‌های برگشت — برای پیشنهاد ورود و تارگت در رنج.
+     فقط از بخشِ اخیرِ دوره (۲۴ ساعت آخر، یا نیمه‌ی دوم اگر دوره کوتاه‌تر است): اگر قیمت در این
+     مدت روند گرفته، میانه‌ی کل دوره رنجی را پیشنهاد می‌داد که قیمت مدت‌هاست از آن بیرون رفته.
+     هر نقطه‌ی چرخش یک بار (قبلاً «تا»ی یک حرکت و «از»ِ حرکت بعد دو بار شمرده می‌شد)، و «چند بار»
+     یعنی چند کف/سقف واقعاً نزدیکِ همان سطح (در نیم‌باند) بوده. */
   const med=a=>{if(!a.length)return null;const b=a.slice().sort((x,y)=>x-y),m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2;};
-  const lows=[],highs=[];
-  for(const l of L){(l.up?lows:highs).push(l.from);if(!l.open)(l.up?highs:lows).push(l.to);}
+  const tEndAll=C[C.length-1].t, span=tEndAll-C[0].t, tCut=tEndAll-Math.min(864e5,span/2);
+  const pivs=L.map(l=>({p:l.from,t:l.tFrom,low:l.up}));
+  const lastL=L[L.length-1];if(lastL&&!lastL.open)pivs.push({p:lastL.to,t:lastL.tTo,low:!lastL.up});
+  let rec=pivs.filter(x=>x.t>=tCut);
+  if(rec.filter(x=>x.low).length<2||rec.filter(x=>!x.low).length<2)rec=pivs;
+  const lows=rec.filter(x=>x.low).map(x=>x.p), highs=rec.filter(x=>!x.low).map(x=>x.p);
+  const near=(arr,v)=>v==null?0:arr.filter(x=>Math.abs(x/v-1)<=a/2).length;
+  const recH=(tEndAll-Math.min(...rec.map(x=>x.t).concat([tEndAll])))/36e5;
   // نوسان ساعتی: میانگینِ (سقف−کف)/کف در هر ساعت
   const hr=new Map();for(const k of C){const h=Math.floor(k.t/36e5);const v=hr.get(h)||{h:-Infinity,l:Infinity};v.h=Math.max(v.h,k.h);v.l=Math.min(v.l,k.l);hr.set(h,v);}
   const hrs=[...hr.values()].map(v=>(v.h/v.l-1)*100);
   return {from:C[0].t,to:C[C.length-1].t+swTfMs(o),hours,aP:a*100,liqP:liqF*100,lev:+o.lev,roi:+o.roi,tf:o.tf||'5m',
-    supp:med(lows),res:med(highs),nLow:lows.length,nHigh:highs.length,
+    supp:med(lows),res:med(highs),recH,
     hi,lo,rangeP:(hi/lo-1)*100,legs:lg.n,up:lg.up,dn:lg.dn,legAvg:lg.avg,legMax:lg.max,
     overLiq:L.filter(x=>x.pct/100>=liqF).length,hrAvg:hrs.length?hrs.reduce((s,v)=>s+v,0)/hrs.length:null,
     perDay:hours>0?lg.n/(hours/24):null,last:C[C.length-1].c,
+    nLow:near(lows,med(lows)),nHigh:near(highs,med(highs)),
     spark:swSpark(P.map(q=>(q.p/p0-1)*100),70)};
 }
 
@@ -8253,8 +8264,10 @@ function paintSwCoin(){
   // ── پیشنهاد ورود و تارگت از کف و سقف‌های برگشت ──
   if(pr.supp!=null&&pr.res!=null&&pr.res>pr.supp){
     const w=(pr.res/pr.supp-1)*100;
-    h+='<div class="swsug"><b>پیشنهاد از کف و سقف‌های برگشتِ همین دوره</b>'+
-      '<div>کف‌ها حوالی <b dir="ltr">'+fmtPrice(pr.supp)+'</b> ('+faN(pr.nLow)+' بار) · سقف‌ها حوالی <b dir="ltr">'+fmtPrice(pr.res)+'</b> ('+faN(pr.nHigh)+' بار) · فاصله '+fmtNum(w)+'٪'+
+    const out=pr.last>pr.res*(1+pr.aP/100)?'بالاتر':pr.last<pr.supp*(1-pr.aP/100)?'پایین‌تر':null;
+    h+='<div class="swsug"><b>پیشنهاد از کف و سقف‌های برگشتِ '+(pr.recH!=null&&pr.recH<pr.hours-1?fmtNum(pr.recH)+' ساعت اخیر':'همین دوره')+'</b>'+
+      (out?'<div class="flag d"><i>!</i><span>قیمت الان ('+fmtPrice(pr.last)+') از این رنج '+out+' رفته؛ رنج شکسته شده و این پیشنهاد فعلاً به کار نمی‌آید. دوره را کوتاه‌تر کن.</span></div>':'')+
+      '<div>کف‌ها حوالی <b dir="ltr">'+fmtPrice(pr.supp)+'</b> ('+faN(pr.nLow)+' برگشت نزدیکش) · سقف‌ها حوالی <b dir="ltr">'+fmtPrice(pr.res)+'</b> ('+faN(pr.nHigh)+' برگشت) · فاصله '+fmtNum(w)+'٪'+
       ' = روی مارجین '+fmtNum(w*lev)+'٪</div>'+
       '<div class="srow"><button class="btn sm" id="swUseL">لانگ از کف، تارگت سقف</button><button class="btn sm" id="swUseS">شورت از سقف، تارگت کف</button></div>'+
       '<div class="hint">میانه‌ی نقطه‌های چرخشِ حرکت‌های دست‌کم '+fmtNum(pr.aP)+'٪ است، نه پیش‌بینی. استاپ را آن سوی کف/سقف بگذار؛ اگر قیمت از رنج بیرون بزند این حساب به هم می‌خورد.</div></div>';
