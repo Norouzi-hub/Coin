@@ -919,6 +919,16 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .swsug{margin-top:10px;padding:10px 12px;border-radius:12px;border:1px dashed color-mix(in srgb,var(--gold) 45%,var(--line));font-size:12.5px;line-height:1.9;color:var(--tx2)}
 .swsug>b{color:var(--gold)}
 .swsug .srow{margin-top:8px}
+.scalp{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
+.scalp .sechd b{color:var(--gold)}
+.sctr{margin-top:10px}
+.sctr table.tp{min-width:0;font-size:12px}
+.sctr table.tp th,.sctr table.tp td{padding:6px 5px}
+.sctr td.num{white-space:nowrap}
+.sctr td.sd{font-weight:800;white-space:nowrap}.sctr td.sd.long{color:var(--up)}.sctr td.sd.short{color:var(--dn)}
+.sctr td small{display:block;font-size:11px;color:var(--tx3);margin-top:2px}
+.sctr td span.num{white-space:nowrap}
+.sctr td.u{color:var(--up)}.sctr td.d{color:var(--dn)}
 .swp .swopt{margin-top:10px}
 .swtok{margin-top:6px}
 .swsvg{display:block;width:100%;height:auto;margin:8px 0 2px;border-radius:10px;background:var(--inset)}

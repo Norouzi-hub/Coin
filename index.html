@@ -936,6 +936,16 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .swsug{margin-top:10px;padding:10px 12px;border-radius:12px;border:1px dashed color-mix(in srgb,var(--gold) 45%,var(--line));font-size:12.5px;line-height:1.9;color:var(--tx2)}
 .swsug>b{color:var(--gold)}
 .swsug .srow{margin-top:8px}
+.scalp{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
+.scalp .sechd b{color:var(--gold)}
+.sctr{margin-top:10px}
+.sctr table.tp{min-width:0;font-size:12px}
+.sctr table.tp th,.sctr table.tp td{padding:6px 5px}
+.sctr td.num{white-space:nowrap}
+.sctr td.sd{font-weight:800;white-space:nowrap}.sctr td.sd.long{color:var(--up)}.sctr td.sd.short{color:var(--dn)}
+.sctr td small{display:block;font-size:11px;color:var(--tx3);margin-top:2px}
+.sctr td span.num{white-space:nowrap}
+.sctr td.u{color:var(--up)}.sctr td.d{color:var(--dn)}
 .swp .swopt{margin-top:10px}
 .swtok{margin-top:6px}
 .swsvg{display:block;width:100%;height:auto;margin:8px 0 2px;border-radius:10px;background:var(--inset)}
@@ -7720,7 +7730,7 @@ function audR(r,inp,rule){
    کندل قرمز اول سقف بعد کف. */
 const SWKEY='signaldesk.swing.v1', SWOPTKEY='signaldesk.swopt.v1';
 const SWING=lsGet(SWKEY)||{};                   // شناسه‌ی پست ← {k, at, prof}
-const SWOPT=Object.assign({lev:10,roi:20,win:'sig',near:0.75,hys:0.5,days:3,tk:'',tf:'5m',dir:'long',me:'',mt:'',ms:'',open:'tok'},lsGet(SWOPTKEY)||{});
+const SWOPT=Object.assign({lev:10,roi:20,win:'sig',near:0.75,hys:0.5,days:3,tk:'',tf:'5m',dir:'long',me:'',mt:'',ms:'',mg:'',open:'tok'},lsGet(SWOPTKEY)||{});
 /* تایم‌فریم: کوچک‌تر یعنی ترتیبِ بالا و پایینِ داخل هر کندل دقیق‌تر، ولی کندل بیشتر و کندتر */
 const SW_TF={'1m':'۱ دقیقه','3m':'۳ دقیقه','5m':'۵ دقیقه','30m':'۳۰ دقیقه','1h':'۱ ساعت'};
 const SW_TFBASE={'3m':'1m','30m':'5m'};        // اگر هیچ منبعی این را نداشت، از کوچک‌تر ساخته می‌شود
@@ -7815,7 +7825,8 @@ function swingProfile(inp,C,r,o){
     tpR,tpN,beN,nearN,stopN,tTp,mfeR:mfe,maeR:mae,maeBR:tpR!=null&&tTp!=null?maeB:null,
     mfeP:maxM*100,maeP:minM*100,aP:a*100,plusN,minusN,flips,liqT,liqP:liqF*100,
     legs:lg.n,legAvg:lg.avg,legMax:lg.max,
-    tpP:inp.tps.length?(inp.tps[0]-E)*sign/E*100:null,stopP:-risk/E*100,spark:swSpark(mv,70)};
+    tpP:inp.tps.length?(inp.tps[0]-E)*sign/E*100:null,stopP:-risk/E*100,spark:swSpark(mv,70),
+    scalp:inp.tps.length?scalpSummary(rangeScalp(W,scalpCfg(inp,o,r.tAct)),8):null};
 }
 /* پروفایل یک توکن بدون سیگنال: حرکت‌های دست‌کم به اندازه‌ی باند و خطر لیکوئید */
 function coinProfile(C,o){
@@ -7839,6 +7850,75 @@ function coinProfile(C,o){
     spark:swSpark(P.map(q=>(q.p/p0-1)*100),70)};
 }
 
+/* ==== اسکلپ رنج: رفت‌وبرگشت بین ورود و تارگت ۱ ====
+   لانگ روی کفِ رنج (L)، بستن روی سقف (H) و همان‌جا شورت، بستن روی کف و دوباره لانگ… (stop-and-reverse)
+   اولین معامله در جهتِ خودت و روی نقطه‌ی ورودِ خودت. استاپ هر معامله به همان فاصله‌ی استاپِ تو:
+   لانگ زیر L، شورت بالای H. بعد از استاپ منتظر می‌ماند تا قیمت دوباره به L یا H برسد. بدون استاپ،
+   لیکوئید با همان اهرم = −۱۰۰٪ مارجین. کارمزد رفت‌وبرگشت روی هر معامله کم می‌شود.
+   داخل کندل همان ترتیبِ تقریبی (سبز: کف بعد سقف). تابع خالص است. */
+function scalpCfg(inp,o,t0){
+  const sign=inp.dir==='long'?1:-1, E=inp.entry, T=inp.tps[0];
+  const L=sign>0?E:T, H=sign>0?T:E, d=inp.stop?Math.abs(E-inp.stop):null;
+  return {L,H,first:inp.dir,d,lev:+o.lev||10,fee:+S.fee||0,mg:+o.mg||+S.cap||10,t0:t0||0};
+}
+function rangeScalp(C,cfg){
+  const {L,H,d,lev,fee}=cfg, liqF=1/lev-MMR, out=[];
+  if(!(L>0&&H>L))return {trades:out,open:null,cfg};
+  const lv=side=>{
+    if(side==='long'){const sl=d!=null?L-d:null, lq=liqF>0?L*(1-liqF):null;
+      const adv=sl!=null&&lq!=null?Math.max(sl,lq):sl!=null?sl:lq;return {en:L,tp:H,adv,liq:lq!=null&&adv===lq&&(sl==null||lq>sl)};}
+    const sl=d!=null?H+d:null, lq=liqF>0?H*(1+liqF):null;
+    const adv=sl!=null&&lq!=null?Math.min(sl,lq):sl!=null?sl:lq;return {en:H,tp:L,adv,liq:lq!=null&&adv===lq&&(sl==null||lq<sl)};
+  };
+  const roiOf=(side,en,ex,liq)=>liq?-100:((ex-en)/en*(side==='long'?1:-1)*lev*100-fee*lev);
+  let pos=null, started=false;
+  const P=swPts(C.filter(k=>k.t>=(cfg.t0||0)));
+  if(!P.length)return {trades:out,open:null,cfg};
+  const cross=(a,b,x)=>(a<x&&b>=x)||(a>x&&b<=x)||(a===x&&b===x);
+  let prev=P[0].p;
+  for(let i=0;i<P.length;i++){
+    const q=P[i], b=q.p;let cur=i===0?b:prev;
+    for(let g=0;g<8;g++){
+      if(!pos){
+        // منتظر ورود: اول فقط ورودِ خودت؛ بعد از آن هر کدام از دو سرِ رنج
+        const cand=started?[['long',L],['short',H]]:[[cfg.first,cfg.first==='long'?L:H]];
+        let hit=null;
+        for(const [side,x] of cand)if(cross(cur,b,x)||(i===0&&g===0&&Math.abs(b-x)/x<1e-9)){
+          if(!hit||Math.abs(x-cur)<Math.abs(hit[1]-cur))hit=[side,x];}
+        if(!hit)break;
+        pos={side:hit[0],en:hit[1],t:q.t};started=true;cur=hit[1];continue;
+      }
+      const v=lv(pos.side);
+      const towardTp=pos.side==='long'?b>cur:b<cur;
+      if(towardTp&&cross(cur,b,v.tp)){
+        out.push({side:pos.side,en:pos.en,ex:v.tp,t0:pos.t,t1:q.t,win:true,roi:roiOf(pos.side,pos.en,v.tp,false)});
+        const ns=pos.side==='long'?'short':'long';
+        pos={side:ns,en:v.tp,t:q.t};cur=v.tp;continue;           // همان‌جا برعکس
+      }
+      if(!towardTp&&v.adv!=null&&cross(cur,b,v.adv)){
+        out.push({side:pos.side,en:pos.en,ex:v.adv,t0:pos.t,t1:q.t,win:false,liq:v.liq,roi:roiOf(pos.side,pos.en,v.adv,v.liq)});
+        pos=null;cur=v.adv;continue;
+      }
+      break;
+    }
+    prev=b;
+  }
+  const lastP=P[P.length-1].p;
+  const open=pos?{side:pos.side,en:pos.en,t0:pos.t,px:lastP,roi:roiOf(pos.side,pos.en,lastP,false)}:null;
+  return {trades:out,open,cfg};
+}
+function scalpSummary(r,keep){
+  const T=r.trades, mg=r.cfg.mg;
+  const w=T.filter(x=>x.win), l=T.filter(x=>!x.win);
+  let streak=0,maxL=0;for(const x of T){if(x.win)streak=0;else maxL=Math.max(maxL,++streak);}
+  const sumRoi=T.reduce((s,x)=>s+x.roi,0);
+  return {L:r.cfg.L,H:r.cfg.H,lev:r.cfg.lev,mg,fee:r.cfg.fee,d:r.cfg.d,
+    n:T.length,longW:w.filter(x=>x.side==='long').length,shortW:w.filter(x=>x.side==='short').length,
+    stops:l.filter(x=>!x.liq).length,liqs:l.filter(x=>x.liq).length,
+    winRoi:w.length?w[0].roi:null,sumRoi,usd:sumRoi/100*mg,maxL,
+    avgH:T.length?T.reduce((s,x)=>s+(x.t1-x.t0),0)/T.length/36e5:null,
+    open:r.open,trades:keep?T.slice(-keep):T};
+}
 /* سناریوی دستی: «اگر روی این قیمت وارد شده بودم». ورود = اولین کندلی در دوره که قیمت از ورود
    گذشته. تارگت ۱ و استاپِ خالی از باند حساب می‌شوند (+باند / −باند روی مارجین). برخلاف سیگنال،
    با خوردن استاپ تمام نمی‌شود: تا آخر دوره می‌شمارد که چند بار خورد و چند بار برگشت. */
@@ -7861,6 +7941,8 @@ function manualProfile(C,o,sc){
   if(iAct<0)return {act:false,why:(C.length&&(C[0].o-E)*sign>0?'above':'below')};
   const r={tAct:C[iAct].t,fin:false,st:'open'};
   const pr=swingProfile(Object.assign({},sc,{t0:C[0].t}),C,r,Object.assign({},o,{win:'sig'}));
+  // اسکلپ رنج با فهرستِ کامل معامله‌ها (برای سیگنال‌ها فقط چند تای آخر نگه داشته می‌شود)
+  if(pr.act)pr.scalp=scalpSummary(rangeScalp(C.filter(k=>k.t>=r.tAct),scalpCfg(sc,o,r.tAct)),0);
   return pr;
 }
 
@@ -8033,12 +8115,14 @@ function buildSwingPanel(rows){
       '<div class="fld"><label>نقطه‌ی ورود</label><input id="swMe" dir="ltr" inputmode="decimal" placeholder="خالی = فقط نوسان توکن" value="'+esc(o.me||'')+'"></div>'+
       '<div class="fld"><label>تارگت ۱</label><input id="swMt" dir="ltr" inputmode="decimal" placeholder="خالی = +باند" value="'+esc(o.mt||'')+'"></div>'+
       '<div class="fld"><label>حد ضرر</label><input id="swMs" dir="ltr" inputmode="decimal" placeholder="خالی = −باند" value="'+esc(o.ms||'')+'"></div>'+
+      '<div class="fld"><label>مارجین هر معامله ($)</label><input id="swMg" dir="ltr" inputmode="decimal" placeholder="'+esc(String(S.cap||10))+'" value="'+esc(o.mg||'')+'"></div>'+
       '</div><div class="srow"><button class="btn pri" id="swTkGo">'+ic('search')+'<span>بسنج</span></button>'+
       '<button class="btn" id="swClr">پاک کردن ورود</button></div><div id="swCoin"></div>';
     setTimeout(()=>{
       $('#swDays').value=String(o.days||3);$('#swDir').value=o.dir||'long';
       const read=()=>{o.tk=String($('#swTk').value||'').trim().toUpperCase().replace(/USDT$/,'');o.days=+$('#swDays').value||3;
-        o.dir=$('#swDir').value;o.me=$('#swMe').value.trim();o.mt=$('#swMt').value.trim();o.ms=$('#swMs').value.trim();swOptSave();};
+        o.dir=$('#swDir').value;o.me=$('#swMe').value.trim();o.mt=$('#swMt').value.trim();o.ms=$('#swMs').value.trim();o.mg=$('#swMg').value.trim();swOptSave();
+        if(SWCOIN)paintSwCoin();};
       b.querySelectorAll('input,select').forEach(i=>i.onchange=read);
       $('#swClr').onclick=()=>{$('#swMe').value=$('#swMt').value=$('#swMs').value='';read();};
       $('#swTkGo').onclick=async e=>{
@@ -8084,6 +8168,37 @@ function buildSwingPanel(rows){
   }));
   return c;
 }
+/* نمایش اسکلپ رنج. full: فهرست کامل معامله‌ها (سناریوی دستی)؛ وگرنه فقط خلاصه */
+const swMg=()=>+normDig(String(SWOPT.mg||'')).replace(/,/g,'')||+S.cap||10;
+function scalpHtml(sc,full){
+  if(!sc)return '';
+  const mg=swMg(), lev=sc.lev, f=sc.fee*lev;
+  const lw=(sc.H-sc.L)/sc.L*lev*100-f, sw=(sc.H-sc.L)/sc.H*lev*100-f, usd=sc.sumRoi/100*mg;
+  const k=(l,v,c,sub)=>stHtml(l,v,c,sub);
+  const hm=t=>{const s=jStampFa(new Date(t));return '<bdi>'+s.slice(5)+'</bdi>';};
+  let h='<div class="scalp"><div class="sechd">اسکلپ رنج: لانگ روی <b dir="ltr">'+fmtPrice(sc.L)+'</b> ⇄ شورت روی <b dir="ltr">'+fmtPrice(sc.H)+'</b></div>';
+  if(!sc.n&&!sc.open){h+='<div class="hint">در این بازه قیمت به نقطه‌ی ورود نرسید یا هیچ معامله‌ای کامل نشد.</div></div>';return h;}
+  h+='<div class="stats">'+
+    k('معامله‌ی کامل',faN(sc.n),sc.n?'':'m',faN(sc.longW)+' لانگ و '+faN(sc.shortW)+' شورت سر تارگت')+
+    k('هر بُرد روی مارجین','+'+fmtNum(lw)+'٪','u','لانگ؛ شورت +'+fmtNum(sw)+'٪ · بعد از کارمزد')+
+    k('استاپ / لیکوئید',faN(sc.stops)+' / '+faN(sc.liqs),sc.stops+sc.liqs?'d':'u',sc.d!=null?'استاپ '+fmtPrice(sc.d)+' آن سوی رنج':'بی‌استاپ')+
+    k('جمع روی مارجین',fmtPct(z0(sc.sumRoi)),cls(sc.sumRoi),'هر معامله با مارجین ثابت')+
+    k('سود/ضرر با $'+fmtNum(mg),fmtUsd(usd),cls(usd),'اهرم '+fmtNum(lev)+'x')+
+    k('باخت پیاپی',faN(sc.maxL),sc.maxL>=2?'d':'','بیشترین'+(sc.avgH!=null?' · نگه‌داری '+fmtNum(sc.avgH)+' ساعت':''))+
+  '</div>';
+  if(sc.open)h+='<div class="flag i"><i>i</i><span>الان یک <b>'+(sc.open.side==='long'?'لانگ':'شورت')+'</b> از '+fmtPrice(sc.open.en)+
+    ' باز است ('+hm(sc.open.t0)+')؛ با قیمت آخر '+fmtPrice(sc.open.px)+' روی مارجین '+fmtPct(z0(sc.open.roi))+'.</span></div>';
+  if(sc.trades&&sc.trades.length){
+    const rows=sc.trades.map(x=>'<tr><td class="sd '+x.side+'">'+(x.side==='long'?'لانگ':'شورت')+'</td>'+
+      '<td><span class="num" dir="ltr">'+fmtPrice(x.en)+' → '+fmtPrice(x.ex)+'</span><small>'+hm(x.t1)+'</small></td>'+
+      '<td class="num '+(x.roi>=0?'u':'d')+'"><bdi>'+(x.liq?'لیکوئید':fmtPct(z0(x.roi)))+'</bdi></td></tr>').join('');
+    h+='<details class="sec sub2 sctr"'+(full&&sc.trades.length<=12?' open':'')+'><summary>'+(full?'همه‌ی معامله‌ها':'آخرین معامله‌ها')+' ('+faN(sc.trades.length)+')</summary>'+
+      '<div class="tscroll"><table class="tp"><thead><tr><th>جهت</th><th>ورود → خروج · بسته شد</th><th>روی مارجین</th></tr></thead><tbody>'+rows+'</tbody></table></div></details>';
+  }
+  h+='<div class="hint">اولین معامله در جهتِ خودت روی ورود؛ سرِ هر تارگت بسته و همان‌جا برعکس. استاپِ هر معامله همان فاصله‌ی استاپِ تو آن سوی رنج است؛ '+
+    'بعد از استاپ صبر می‌کند تا قیمت دوباره به یکی از دو سر برسد. لغزش و فاندینگ حساب نشده؛ گذشته است، نه تضمین.</div></div>';
+  return h;
+}
 let SWCOIN=null;
 function paintSwCoin(){
   const box=$('#swCoin');if(!box)return;
@@ -8114,7 +8229,8 @@ function paintSwCoin(){
           k('سقف / کف',fmtPct(z0(mp.mfeP))+' / '+fmtPct(z0(mp.maeP)),'',mp.maeBR!=null?'افت پیش از تارگت '+fmtR(mp.maeBR):'')+
           k('لیکوئید با '+fmtNum(lev)+'x',mp.liqT?'می‌شد':'نه',mp.liqT?'d':'u',mp.liqT?jStampFa(new Date(mp.liqT)):'فاصله '+fmtNum(mp.liqP)+'٪')+
         '</div>'+
-        '<div class="hint">بعد از خوردن استاپ هم شمارش ادامه دارد (برای دیدن رفتار قیمت)؛ «خوردن استاپ» یعنی چند بار به آن رسید.</div>';
+        '<div class="hint">بعد از خوردن استاپ هم شمارش ادامه دارد (برای دیدن رفتار قیمت)؛ «خوردن استاپ» یعنی چند بار به آن رسید.</div>'+
+        scalpHtml(mp.scalp,true);
     }
     h+='</div>';
   }
@@ -8177,6 +8293,10 @@ function swAggregate(have){
     stHtml('افت پیش از سود',withTp.length?fmtR(avg(withTp.filter(z=>z.pr.maeBR!=null).map(z=>z.pr.maeBR))):'—','d',
       nearBefore?faN(nearBefore)+' تا پیش از سود تا نزدیک استاپ رفتند':'میانگین، پیش از تارگت ۱')+
     stHtml('بیشترین سود در دسترس',fmtR(avg(P.map(z=>z.pr.mfeR))),'u','میانگین MFE')+
+    (()=>{const Q=P.filter(z=>z.pr.scalp&&z.pr.scalp.n);if(!Q.length)return '';
+      const m=avg(Q.map(z=>z.pr.scalp.sumRoi)), pos=Q.filter(z=>z.pr.scalp.sumRoi>0).length;
+      return stHtml('اسکلپ ورود ⇄ تارگت ۱',fmtNum(avg(Q.map(z=>z.pr.scalp.n)))+' معامله',m>=0?'u':'d',
+        'میانگین '+fmtPct(m)+' روی مارجین · '+pct(pos,Q.length)+'٪ سیگنال‌ها مثبت');})()+
     stHtml('رفت‌وآمد ±'+fmtNum(SWOPT.roi)+'٪',fmtNum(avg(P.map(z=>z.pr.flips))),flipAny?'w':'m',pct(flipAny,P.length)+'٪ دست‌کم یک بار از سر به سر')+
     stHtml('لیکوئید با '+fmtNum(SWOPT.lev)+'x',faN(liqN),liqN?'d':'u',pct(liqN,P.length)+'٪ سیگنال‌ها، بدون استاپ');
   w.appendChild(st);
@@ -8240,7 +8360,7 @@ function sheetSwing(p){
       '<div class="k"><b>رفت‌وآمد از سر به سر</b><span class="'+(pr.flips?'w':'')+'">'+faN(pr.flips)+' بار</span></div>'+
       '<div class="k"><b>حرکت‌های دست‌کم '+fmtNum(pr.aP)+'٪</b><span>'+faN(pr.legs)+(pr.legAvg!=null?' · میانگین '+fmtNum(pr.legAvg)+'٪':'')+'</span></div>'+
       '<div class="k"><b>لیکوئید با '+fmtNum(o.lev)+'x</b><span class="'+(pr.liqT?'d':'u')+'">'+(pr.liqT?'می‌شد · '+jStampFa(new Date(pr.liqT)):'نه')+'</span></div>'+
-    '</div>';
+    '</div>'+scalpHtml(pr.scalp,false);
   openSheet('<h3>نوسان · '+esc(inp.tk)+' <span class="pill '+inp.dir+'">'+(inp.dir==='long'?'لانگ':'شورت')+'</span></h3>'+
     '<div class="sub">ورود '+fmtPrice(inp.entry)+' · استاپ '+fmtPrice(inp.stop)+(inp.tps.length?' · تارگت ۱ '+fmtPrice(inp.tps[0]):'')+
       ' · باند ±'+fmtNum(o.roi)+'٪ با '+fmtNum(o.lev)+'x · '+SW_WIN[o.win]+' · کندل '+SW_TF[o.tf||'5m']+'</div>'+body+
