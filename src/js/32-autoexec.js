@@ -140,28 +140,28 @@ async function autoCatchUp(list){
 /* ---- گرفتن کندل ---- */
 const AUD_SRC=[
   {n:'Binance',u:(s,iv,st,l)=>'https://api.binance.com/api/v3/klines?symbol='+s+'USDT&interval='+iv+'&startTime='+st+'&limit='+l,
-   iv:{'1m':'1m','5m':'5m','1h':'1h'},max:1000},
+   iv:{'1m':'1m','3m':'3m','5m':'5m','30m':'30m','1h':'1h'},max:1000},
   {n:'Binance فیوچرز',u:(s,iv,st,l)=>'https://fapi.binance.com/fapi/v1/klines?symbol='+s+'USDT&interval='+iv+'&startTime='+st+'&limit='+l,
-   iv:{'1m':'1m','5m':'5m','1h':'1h'},max:1500},
+   iv:{'1m':'1m','3m':'3m','5m':'5m','30m':'30m','1h':'1h'},max:1500},
   {n:'MEXC',u:(s,iv,st,l)=>'https://api.mexc.com/api/v3/klines?symbol='+s+'USDT&interval='+iv+'&startTime='+st+'&limit='+l,
-   iv:{'1m':'1m','5m':'5m','1h':'60m'},max:1000},
+   iv:{'1m':'1m','5m':'5m','30m':'30m','1h':'60m'},max:1000},
   /* سه منبع دیگر، همان‌هایی که قیمت زنده هم از آن‌ها می‌آید. وقتی بایننس و MEXC از
      مسیرِ کاربر بسته‌اند (تحریم یا واسطِ خراب) قیمت می‌آمد ولی کندل نه، و همه‌ی سیگنال‌ها
      «کندل نیامد» می‌شدند. قالب پاسخ هر کدام فرق دارد، پس هر منبع مبدل خودش را دارد. */
   {n:'Gate',
-   u:(s,iv,st,l)=>{const f=Math.floor(st/1000),sec={'1m':60,'5m':300,'1h':3600}[iv];
+   u:(s,iv,st,l)=>{const f=Math.floor(st/1000),sec={'1m':60,'5m':300,'30m':1800,'1h':3600}[iv];
      return 'https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair='+s+'_USDT&interval='+iv+'&from='+f+'&to='+(f+sec*(l-1));},
-   iv:{'1m':'1m','5m':'5m','1h':'1h'},max:1000,
+   iv:{'1m':'1m','5m':'5m','30m':'30m','1h':'1h'},max:1000,
    p:d=>d.map(k=>({t:+k[0]*1000,o:+k[5],h:+k[3],l:+k[4],c:+k[2]}))},
   {n:'KuCoin',
-   u:(s,iv,st,l)=>{const f=Math.floor(st/1000),sec={'1min':60,'5min':300,'1hour':3600}[iv];
+   u:(s,iv,st,l)=>{const f=Math.floor(st/1000),sec={'1min':60,'3min':180,'5min':300,'30min':1800,'1hour':3600}[iv];
      return 'https://api.kucoin.com/api/v1/market/candles?type='+iv+'&symbol='+s+'-USDT&startAt='+f+'&endAt='+(f+sec*l);},
-   iv:{'1m':'1min','5m':'5min','1h':'1hour'},max:1500,ok:d=>d&&Array.isArray(d.data),
+   iv:{'1m':'1min','3m':'3min','5m':'5min','30m':'30min','1h':'1hour'},max:1500,ok:d=>d&&Array.isArray(d.data),
    p:d=>d.data.map(k=>({t:+k[0]*1000,o:+k[1],h:+k[3],l:+k[4],c:+k[2]}))},
   {n:'Bitget',
-   u:(s,iv,st,l)=>{const ms={'1min':6e4,'5min':3e5,'1h':36e5}[iv];
+   u:(s,iv,st,l)=>{const ms={'1min':6e4,'3min':18e4,'5min':3e5,'30min':18e5,'1h':36e5}[iv];
      return 'https://api.bitget.com/api/v2/spot/market/candles?symbol='+s+'USDT&granularity='+iv+'&startTime='+st+'&endTime='+(st+ms*l)+'&limit='+l;},
-   iv:{'1m':'1min','5m':'5min','1h':'1h'},max:1000,ok:d=>d&&Array.isArray(d.data),
+   iv:{'1m':'1min','3m':'3min','5m':'5min','30m':'30min','1h':'1h'},max:1000,ok:d=>d&&Array.isArray(d.data),
    p:d=>d.data.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]}))}
 ];
 const audParse=(src,d)=>src.p?src.p(d):d.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]}));
@@ -173,6 +173,7 @@ async function audCandles(sym,iv,start,limit){
     if(pref!=null&&AUD_SRC[pref]){order.splice(order.indexOf(pref),1);order.unshift(pref);}
   for(const i of order){
     const src=AUD_SRC[i];
+    if(!src.iv[iv])continue;                         // این منبع این تایم‌فریم را ندارد
     try{
       /* fetchVia برای یک قیمت، مسیرها را مسابقه‌ای می‌فرستد. برای صدها کندل این یعنی
          چند برابر درخواست روی واسط‌ها؛ پس اگر مسیرِ سالمِ قیمت معلوم است، فقط همان. */
@@ -194,7 +195,7 @@ async function audCandles(sym,iv,start,limit){
   }
   throw new Error('nocandle');
 }
-const IVMS={'1m':60000,'5m':300000,'1h':3600000};
+const IVMS={'1m':60000,'3m':180000,'5m':300000,'30m':1800000,'1h':3600000};
 
 async function audOne(job,R){
   const {p,inp,k}=job;
@@ -489,6 +490,44 @@ function rCurve(pts,dd){
 }
 const stHtml=(l,v,c,sub)=>'<div class="st"><b>'+l+'</b><span class="'+(c||'')+'">'+v+'</span>'+(sub?'<small>'+sub+'</small>':'')+'</div>';
 
+/* ---- آکاردئونِ کانال‌سنج: فقط یک بخش باز؛ بقیه فقط سربرگشان دیده می‌شود ---- */
+const AUDOPENKEY='signaldesk.audopen.v1';
+let AUDOPEN=lsGet(AUDOPENKEY);if(AUDOPEN==null)AUDOPEN='کارنامه‌ی کانال';
+function audAcc(n,name){
+  n.dataset.acc=name;
+  if(n.tagName==='DETAILS'){
+    n.open=AUDOPEN===name;
+    n.addEventListener('toggle',()=>{
+      if(n.open&&AUDOPEN!==name){AUDOPEN=name;lsSet(AUDOPENKEY,AUDOPEN);audShutOthers(name);}
+      else if(!n.open&&AUDOPEN===name){AUDOPEN='';lsSet(AUDOPENKEY,AUDOPEN);}
+    });
+    return;
+  }
+  const head=n.querySelector(':scope>.panelhead');
+  if(!n.classList.contains('panel')||!head)return;
+  n.classList.add('acc');
+  const shut=AUDOPEN!==name;n.classList.toggle('shut',shut);
+  head.appendChild(el('i','chev'));
+  head.setAttribute('role','button');head.tabIndex=0;head.setAttribute('aria-expanded',shut?'false':'true');
+  head.addEventListener('click',e=>{if(e.target.closest('button,a,input,select,label,.infob'))return;audAccToggle(n,name);});
+  head.addEventListener('keydown',e=>{if(e.target===head&&(e.key==='Enter'||e.key===' ')){e.preventDefault();audAccToggle(n,name);}});
+}
+function audAccToggle(n,name){
+  const y0=n.getBoundingClientRect().top, open=n.classList.contains('shut');
+  AUDOPEN=open?name:'';lsSet(AUDOPENKEY,AUDOPEN);
+  if(open)audShutOthers(name);
+  n.classList.toggle('shut',!open);
+  const h=n.querySelector(':scope>.panelhead');if(h)h.setAttribute('aria-expanded',open?'true':'false');
+  // سربرگِ زده‌شده زیر انگشت بماند؛ بسته شدنِ بخشِ بالاتر صفحه را نپراند
+  const dy=n.getBoundingClientRect().top-y0;if(Math.abs(dy)>0.5)window.scrollBy(0,dy);
+}
+function audShutOthers(name){
+  for(const x of document.querySelectorAll('#audBody [data-acc]')){
+    if(x.dataset.acc===name)continue;
+    if(x.tagName==='DETAILS')x.open=false;
+    else{x.classList.add('shut');const h=x.querySelector(':scope>.panelhead');if(h)h.setAttribute('aria-expanded','false');}
+  }
+}
 function renderAudit(){
   const box=$('#audBody');if(!box)return;
   box.innerHTML='';
@@ -520,7 +559,7 @@ function renderAudit(){
   /* هر بخش جدا ساخته می‌شود؛ خطا در یکی نباید کل تب را خالی بگذارد (قبلاً یک استثنا
      بقیه‌ی بخش‌ها را هم از بین می‌برد و تب فقط سربرگ داشت). خطا روی صفحه نوشته می‌شود. */
   const safe=(name,fn)=>{
-    try{const n=fn();if(n)box.appendChild(n);}
+    try{const n=fn();if(n){audAcc(n,name);box.appendChild(n);}}
     catch(e){
       logIt('err','کانال‌سنج · '+name+': '+(e&&e.message||e));
       box.appendChild(el('div','panel audfail','<b>بخش «'+esc(name)+'» ساخته نشد</b><br>'+

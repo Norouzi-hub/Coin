@@ -9,7 +9,7 @@ const px=(sym,t)=>{const p=PATH[sym]||[[0,1]];const h=(t-NOW)/H;
   if(h<=p[0][0])return p[0][1];
   for(let i=1;i<p.length;i++)if(h<=p[i][0]){const [h0,v0]=p[i-1],[h1,v1]=p[i];return v0+(v1-v0)*(h-h0)/(h1-h0);}
   return p[p.length-1][1];};
-const IV={'1m':60000,'5m':300000,'1h':3600000,'60m':3600000};
+const IV={'1m':60000,'3m':180000,'5m':300000,'30m':1800000,'1h':3600000,'60m':3600000};
 const kl=(sym,iv,st,lim)=>{const ms=IV[iv],out=[];
   for(let t=st;t<NOW&&out.length<lim;t+=ms){const o=px(sym,t),c=px(sym,t+ms);out.push([t,String(o),String(Math.max(o,c)),String(Math.min(o,c)),String(c),'1',t+ms-1]);}
   return out;};
