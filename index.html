@@ -936,6 +936,21 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .swsug{margin-top:10px;padding:10px 12px;border-radius:12px;border:1px dashed color-mix(in srgb,var(--gold) 45%,var(--line));font-size:12.5px;line-height:1.9;color:var(--tx2)}
 .swsug>b{color:var(--gold)}
 .swsug .srow{margin-top:8px}
+.swdec{margin-top:12px;padding:14px;border-radius:16px;border:1.5px solid var(--line2);background:var(--inset)}
+.swdec.long{border-color:color-mix(in srgb,var(--up) 60%,var(--line));background:color-mix(in srgb,var(--up) 8%,var(--inset))}
+.swdec.short{border-color:color-mix(in srgb,var(--dn) 60%,var(--line));background:color-mix(in srgb,var(--dn) 8%,var(--inset))}
+.swdec.wait{border-color:color-mix(in srgb,var(--gold) 50%,var(--line))}
+.swdec .dv{font-size:20px;font-weight:900;color:var(--tx)}
+.swdec.long .dv{color:var(--up)}.swdec.short .dv{color:var(--dn)}.swdec.wait .dv{color:var(--gold)}
+.swdec .dw{font-size:12.5px;color:var(--tx2);line-height:1.9;margin-top:4px}
+.swdec .dw b.u{color:var(--up)}.swdec .dw b.d{color:var(--dn)}
+.swdec .dplan{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:13px;color:var(--tx2)}
+.dnum{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.dnum span{display:flex;flex-direction:column;gap:2px;padding:8px;border-radius:10px;background:var(--card);border:1px solid var(--line);text-align:center}
+.dnum i{font-style:normal;font-size:11.5px;color:var(--tx3)}
+.dnum b{font-size:14.5px;color:var(--tx)}.dnum b.u{color:var(--up)}.dnum b.d{color:var(--dn)}
+.swdec .flag{margin-top:10px}
+.swmore{margin-top:12px}
 .scalp{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
 .scalp .sechd b{color:var(--gold)}
 .sctr{margin-top:10px}
@@ -7858,6 +7873,7 @@ function coinProfile(C,o){
     overLiq:L.filter(x=>x.pct/100>=liqF).length,hrAvg:hrs.length?hrs.reduce((s,v)=>s+v,0)/hrs.length:null,
     perDay:hours>0?lg.n/(hours/24):null,last:C[C.length-1].c,
     nLow:near(lows,med(lows)),nHigh:near(highs,med(highs)),
+    recChg:(()=>{const i=C.findIndex(k=>k.t>=tCut);const p0=C[Math.max(0,i)].o;return (C[C.length-1].c/p0-1)*100;})(),
     spark:swSpark(P.map(q=>(q.p/p0-1)*100),70)};
 }
 
@@ -8210,6 +8226,51 @@ function scalpHtml(sc,full){
     'بعد از استاپ صبر می‌کند تا قیمت دوباره به یکی از دو سر برسد. لغزش و فاندینگ حساب نشده؛ گذشته است، نه تضمین.</div></div>';
   return h;
 }
+/* ---- تصمیم ساده: لانگ، شورت یا صبر ----
+   دو سؤال: روندِ روز اخیر چیست (بالا / پایین / درجا)، و قیمت الان کجای رنج است (کف / وسط / سقف).
+   روند بالا: فقط لانگ از کف. روند پایین: فقط شورت از سقف. درجا: کف لانگ، سقف شورت. وسط رنج: صبر.
+   قیمت بیرون از رنج: رنج شکسته، اسکلپ نه. تابع خالص است. */
+function swDecide(pr,o){
+  if(!pr||pr.supp==null||pr.res==null||!(pr.res>pr.supp))return {act:'none'};
+  const a=pr.aP/100, lev=+o.lev||10, fee=+S.fee||0;
+  const trend=pr.recChg>=2*pr.aP?'up':pr.recChg<=-2*pr.aP?'down':'flat';
+  const pos=(pr.last-pr.supp)/(pr.res-pr.supp);
+  const where=pr.last>pr.res*(1+a)?'above':pr.last<pr.supp*(1-a)?'below':pos<=0.33?'bottom':pos>=0.67?'top':'mid';
+  let act='wait', side;
+  if(where==='above'||where==='below'){act='out';side=trend==='down'?'short':'long';}
+  else if(trend==='up'){side='long';if(where==='bottom')act='long';}
+  else if(trend==='down'){side='short';if(where==='top')act='short';}
+  else{side=where==='top'?'short':'long';if(where!=='mid')act=side;}
+  const L=side==='long';
+  const entry=L?pr.supp:pr.res, tp=L?pr.res:pr.supp, stop=L?pr.supp*(1-a):pr.res*(1+a);
+  const winP=Math.abs(tp/entry-1)*lev*100-fee*lev, lossP=Math.abs(stop/entry-1)*lev*100+fee*lev;
+  // اهرمی که بزرگ‌ترین حرکتِ دوره (با ۲۰٪ حاشیه) لیکوئیدش نکند
+  const safeLev=pr.legMax?Math.max(1,Math.floor(1/((pr.legMax/100)*1.2+MMR))):lev;
+  return {act,side,trend,where,entry,tp,stop,winP,lossP,lev,safeLev,pos};
+}
+const SW_TREND={up:'صعودی ↗',down:'نزولی ↘',flat:'درجا (رنج) ↔'};
+const SW_WHERE={bottom:'نزدیک کفِ رنج',mid:'وسطِ رنج',top:'نزدیک سقفِ رنج',above:'بالاتر از رنج (شکسته)',below:'پایین‌تر از رنج (شکسته)'};
+function swDecideHtml(d,pr,o){
+  if(d.act==='none')return '<div class="swdec wait"><div class="dv">نمی‌شود گفت</div><div class="dw">در این دوره حرکتی به اندازه‌ی باند ('+fmtNum(pr.aP)+'٪) نبود؛ باند را کوچک‌تر یا دوره را بلندتر کن.</div></div>';
+  const mg=swMg(), S2=d.side==='long'?'لانگ':'شورت';
+  const head=d.act==='long'?'الان: لانگ':d.act==='short'?'الان: شورت':d.act==='out'?'صبر کن — رنج شکسته شده':'صبر کن';
+  const why=d.act==='out'?'قیمت از رنجِ اخیر بیرون زده؛ تا رنجِ تازه‌ای شکل نگیرد اسکلپِ رنج معنی ندارد.'
+    :d.act==='wait'?(d.trend==='up'?'روند صعودی است؛ فقط لانگ، آن هم وقتی قیمت به کف برگردد.'
+      :d.trend==='down'?'روند نزولی است؛ فقط شورت، آن هم وقتی قیمت به سقف برگردد.'
+      :'قیمت وسط رنج است؛ نه سودِ کافی دارد نه استاپِ نزدیک.')
+    :(d.trend==='flat'?'رنج درجاست و قیمت '+SW_WHERE[d.where]+' است.':'هم‌جهت با روند، و قیمت '+SW_WHERE[d.where]+' است.');
+  const plan=(d.act==='wait'?'صبر کن تا قیمت به <b dir="ltr">'+fmtPrice(d.entry)+'</b> برسد، بعد '+S2+':':'برنامه:');
+  return '<div class="swdec '+(d.act==='long'?'long':d.act==='short'?'short':'wait')+'">'+
+    '<div class="dv">'+head+'</div>'+
+    '<div class="dw">روند روز اخیر: <b>'+SW_TREND[d.trend]+'</b> ('+fmtPct(pr.recChg)+') · قیمت الان <b dir="ltr">'+fmtPrice(pr.last)+'</b>: '+SW_WHERE[d.where]+'</div>'+
+    '<div class="dw">'+why+'</div>'+
+    (d.act!=='out'?'<div class="dplan">'+plan+
+      '<div class="dnum"><span><i>ورود '+S2+'</i><b dir="ltr">'+fmtPrice(d.entry)+'</b></span><span><i>تارگت</i><b dir="ltr" class="u">'+fmtPrice(d.tp)+'</b></span><span><i>استاپ</i><b dir="ltr" class="d">'+fmtPrice(d.stop)+'</b></span></div>'+
+      '<div class="dw">با '+fmtNum(d.lev)+'x و $'+fmtNum(mg)+': هر بُرد حدود <b class="u">'+fmtUsd(d.winP/100*mg)+'</b> · هر استاپ حدود <b class="d">'+fmtUsd(-d.lossP/100*mg)+'</b> (با کارمزد)</div>'+
+      '<div class="srow"><button class="btn pri sm" id="swDecRun">'+ic('bars')+'<span>این برنامه در همین روزها چند بار جواب می‌داد؟</span></button></div></div>':'')+
+    (d.safeLev<d.lev?'<div class="flag d"><i>!</i><span>بزرگ‌ترین حرکتِ این دوره '+fmtNum(pr.legMax)+'٪ بود؛ با '+fmtNum(d.lev)+'x یک حرکتِ این‌چنینی لیکوئیدت می‌کند. اهرم حداکثر <b>'+faN(d.safeLev)+'x</b>.</span></div>':'')+
+  '</div>';
+}
 let SWCOIN=null;
 function paintSwCoin(){
   const box=$('#swCoin');if(!box)return;
@@ -8218,6 +8279,9 @@ function paintSwCoin(){
   const k=(l,v,c,sub)=>stHtml(l,v,c,sub);
   const lev=o.lev;
   let h='';
+  // ── تصمیم ساده (اول از همه) ──
+  const dec=swDecide(pr,o);
+  h+=swDecideHtml(dec,pr,o);
   // ── سناریوی دستی ──
   if(sc){
     const sign=sc.dir==='long'?1:-1, pct=v=>(v-sc.entry)*sign/sc.entry*100;
@@ -8249,7 +8313,7 @@ function paintSwCoin(){
   const verdict=pr.legs===0?['i','در این دوره هیچ حرکتی به اندازه‌ی باند نبود']
     :pr.overLiq?['d',faN(pr.overLiq)+' حرکت از فاصله‌ی لیکوئید ('+fmtNum(pr.liqP)+'٪) بزرگ‌تر بود؛ با اهرم '+fmtNum(lev)+'x بدون استاپ، یک بار خلاف جهت بودن کافی بود']
     :['u','هیچ حرکتی از فاصله‌ی لیکوئید بزرگ‌تر نبود؛ ولی این گذشته است، نه تضمین آینده'];
-  h+='<div class="swres">'+
+  h+='<details class="sec sub2 swmore"><summary>جزئیات نوسانِ '+esc(tk)+'</summary><div class="swres">'+
     '<div class="swh"><b dir="ltr">'+esc(tk)+'</b><span>نوسان '+(pr.hours<24?fmtNum(pr.hours)+' ساعت':faN(Math.round(pr.hours/24*10)/10)+' روز')+' · کندل '+SW_TF[pr.tf]+' · الان '+fmtPrice(pr.last)+'</span></div>'+
     swSvg(pr.spark,[{v:0,c:'e'}],70)+
     '<div class="stats">'+
@@ -8273,8 +8337,13 @@ function paintSwCoin(){
       '<div class="hint">میانه‌ی نقطه‌های چرخشِ حرکت‌های دست‌کم '+fmtNum(pr.aP)+'٪ است، نه پیش‌بینی. استاپ را آن سوی کف/سقف بگذار؛ اگر قیمت از رنج بیرون بزند این حساب به هم می‌خورد.</div></div>';
   }
   h+='<div class="hint">«حرکت» یعنی دست‌کم '+fmtNum(pr.aP)+'٪ از آخرین سقف یا کف (= '+fmtNum(o.roi)+'٪ روی مارجین با اهرم '+fmtNum(lev)+'x)، '+
-      'تا وقتی قیمت به همان اندازه برگردد. نوسان‌های ریزتر از کندل '+SW_TF[pr.tf]+' دیده نمی‌شوند.</div></div>';
+      'تا وقتی قیمت به همان اندازه برگردد. نوسان‌های ریزتر از کندل '+SW_TF[pr.tf]+' دیده نمی‌شوند.</div></div></details>';
   box.innerHTML=h;
+  const dr=$('#swDecRun');
+  if(dr)dr.onclick=()=>{const fx=v=>String(+(+v).toPrecision(6));
+    SWOPT.dir=dec.side;SWOPT.me=fx(dec.entry);SWOPT.mt=fx(dec.tp);SWOPT.ms=fx(dec.stop);swOptSave();
+    $('#swDir').value=dec.side;$('#swMe').value=SWOPT.me;$('#swMt').value=SWOPT.mt;$('#swMs').value=SWOPT.ms;
+    $('#swTkGo').click();};
   const use=(dir,e,t)=>{const fx=v=>String(+(+v).toPrecision(6));
     SWOPT.dir=dir;SWOPT.me=fx(e);SWOPT.mt=fx(t);SWOPT.ms='';swOptSave();
     $('#swDir').value=dir;$('#swMe').value=SWOPT.me;$('#swMt').value=SWOPT.mt;$('#swMs').value='';
