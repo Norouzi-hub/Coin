@@ -899,6 +899,29 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 @keyframes pbping{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--gold) 60%,transparent)}100%{box-shadow:0 0 0 10px transparent}}
 .pbact{display:flex;gap:8px;align-items:center;flex:0 0 100%;padding-inline-start:34px}
 .pbact .btn{padding:7px 14px}
+.swp .swopt{margin-top:10px}
+.swtok{margin-top:6px}
+.swsvg{display:block;width:100%;height:auto;margin:8px 0 2px;border-radius:10px;background:var(--inset)}
+.swsvg .swp{stroke:var(--tx);stroke-width:1.4;vector-effect:non-scaling-stroke}
+.swsvg .swl{stroke-width:1;vector-effect:non-scaling-stroke}
+.swsvg .swl.e{stroke:var(--tx3);stroke-dasharray:3 3}
+.swsvg .swl.b{stroke:var(--gold);stroke-dasharray:5 4;opacity:.7}
+.swsvg .swl.t{stroke:var(--up)}
+.swsvg .swl.s{stroke:var(--dn)}
+.swleg{display:flex;gap:6px 12px;flex-wrap:wrap;align-items:center;font-size:11.5px;color:var(--tx3);margin:4px 0 8px}
+.swleg i{display:inline-block;width:14px;height:0;border-top:2px solid;margin-inline-end:4px;vertical-align:middle}
+.swleg i.t{border-color:var(--up)}.swleg i.e{border-color:var(--tx3);border-top-style:dashed}
+.swleg i.b{border-color:var(--gold);border-top-style:dashed}.swleg i.s{border-color:var(--dn)}
+.swres{margin-top:10px;padding:12px;border-radius:14px;background:var(--inset);border:1px solid var(--line)}
+.swh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--tx3)}
+.swh b{font-size:15px;color:var(--tx)}
+.swh span:last-child{margin-inline-start:auto}
+.swtips ul{margin:10px 0 0;padding-inline-start:18px;line-height:1.9;font-size:12.5px;color:var(--tx2)}
+.swlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;margin-top:8px}
+.swit{display:block;text-align:start;font:inherit;color:inherit;padding:10px;border-radius:12px;background:var(--inset);border:1px solid var(--line);cursor:pointer}
+.swit:active{transform:scale(.99)}
+.swl1{font-size:11.5px;color:var(--tx2);line-height:1.7}
+.stats .st span.w{color:var(--warn)}
 .gatebox{display:flex;gap:9px;align-items:flex-start;margin-top:12px;padding:10px 12px;border-radius:12px;font-size:12.5px;line-height:1.8;
   color:var(--dn);background:color-mix(in srgb,var(--dn) 8%,var(--card));border:1px solid color-mix(in srgb,var(--dn) 40%,var(--line))}
 .gatebox .ic{width:16px;height:16px;flex:none;margin-top:3px}

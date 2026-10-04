@@ -566,6 +566,7 @@ function renderAudit(){
   return sc;
   });
 
+  safe('نوسان‌سنج',()=>buildSwingPanel(rows));
   safe('صحت‌سنجی',()=>buildVerify(all));
   safe('شما در برابر کانال',()=>buildVsChannel(rows));
   safe('آزمایشگاه خروج',()=>buildExitLab(rows));
@@ -922,9 +923,11 @@ function sheetAudPost(p){
    (DB.gone[p.id]?'<div class="flag d"><i>!</i><span>این پست دیگر در کانال نیست ('+jStampFa(new Date(DB.gone[p.id].at))+
      ' متوجه شدیم). متن بالا نسخه‌ای است که برنامه پیش از حذف دیده بود.</span></div>':'')+
    '<div class="sechd">متن پست</div><div class="audtxt">'+esc(p.origText||p.text||'')+'</div>'+
-   '<div class="srow"><button class="btn" id="fx">اصلاح عددها</button><button class="btn" id="cx">بستن</button></div>',
+   '<div class="srow"><button class="btn" id="swb">'+ic('bars')+'<span>نوسان این سیگنال</span></button>'+
+     '<button class="btn" id="fx">اصلاح عددها</button><button class="btn" id="cx">بستن</button></div>',
    ()=>{
      $('#cx').onclick=closeSheet;
+     $('#swb').onclick=()=>{closeSheet();setTimeout(()=>sheetSwing(p),260);};
      $('#fx').onclick=()=>{closeSheet();setTimeout(()=>sheetMarkSignal(p,sigOf(p)),260);};
    });
 }
