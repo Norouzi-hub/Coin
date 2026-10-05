@@ -1499,3 +1499,16 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 .scard .srow{margin-top:10px}
 .scard .sctr td small{display:block}
 .k span.rt{direction:rtl}
+/* ---- تست خودکار و ربات اسکلپ ---- */
+.swdecb{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
+.btres{margin-top:12px}
+.btres .tscroll{margin-top:8px}
+table.btv,table.btsum{min-width:0;font-size:12.5px}
+table.btv th,table.btv td,table.btsum th,table.btsum td{padding:7px 6px}
+table.btv td.num,table.btsum td.num{white-space:nowrap}
+table.btv tr.on td{background:color-mix(in srgb,var(--gold) 12%,transparent);font-weight:800}
+table.btv tr.on td:first-child{box-shadow:inset -3px 0 0 var(--gold)}
+table.btv td.u,table.btsum td.u{color:var(--up)}table.btv td.d,table.btsum td.d{color:var(--dn)}
+.btres .flag{margin-top:10px}
+.btbrk{line-height:2}
+.btrules{line-height:1.95}

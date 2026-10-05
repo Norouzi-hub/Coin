@@ -89,12 +89,12 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(man.sc&&man.sc.entry===64000&&man.sc.tpAuto&&Math.abs(man.sc.tps[0]-65280)<1e-6&&Math.abs(man.sc.stop-62720)<1e-6,'ورود ۶۴۰۰۰؛ تارگت و استاپ خالی ← ±۲٪: ۶۵۲۸۰ / ۶۲۷۲۰');
  ok(man.mp&&man.mp.act&&man.n===2,'ورود در همین سه روز فعال شد؛ دو کارت: سناریو و نوسان توکن');
  ok(/ورود فعال شد/.test(man.t)&&/لمس تارگت ۱/.test(man.t),'کارت سناریو: زمان ورود، لمس تارگت، استاپ، باند');
+ // زیر بار (تست‌های موازی) گرفتن کندل ممکن است چند ثانیه طول بکشد: تا نتیجه‌ی تازه صبر
+ const until=async f=>{for(let i=0;i<50&&!(await p.evaluate(f));i++)await p.waitForTimeout(300);return p.evaluate(f);};
  await p.evaluate(()=>{const i=document.querySelector('#swMe');i.value='90000';i.dispatchEvent(new Event('change'));document.querySelector('#swTkGo').click();});
- await p.waitForTimeout(1500);
- ok(await p.evaluate(()=>/نرسید/.test(document.querySelector('#swCoin').textContent)),'ورود ۹۰۰۰۰ (دور از قیمت): «قیمت به ورود نرسید»');
+ ok(await until(()=>/نرسید/.test(document.querySelector('#swCoin').textContent)),'ورود ۹۰۰۰۰ (دور از قیمت): «قیمت به ورود نرسید»');
  await p.evaluate(()=>{const i=document.querySelector('#swMe');i.value='';i.dispatchEvent(new Event('change'));document.querySelector('#swTkGo').click();});
- await p.waitForTimeout(1500);
- ok(await p.evaluate(()=>!SWCOIN.sc&&document.querySelectorAll('#swCoin .swres').length===1),'ورود خالی: فقط نوسان توکن');
+ ok(await until(()=>!SWCOIN.sc&&document.querySelectorAll('#swCoin .swres').length===1),'ورود خالی: فقط نوسان توکن');
  // پیشنهاد کف/سقف: روی مسیر ساختگیِ رنج
  const sug=await p.evaluate(()=>{const t0=Date.now()-864e5, seq=[100,103,99,103.5,98.8,103.2,99.1];
    const C=seq.slice(1).map((c,i)=>({t:t0+i*36e5,o:seq[i],h:Math.max(seq[i],c),l:Math.min(seq[i],c),c}));

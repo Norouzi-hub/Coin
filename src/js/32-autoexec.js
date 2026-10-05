@@ -165,7 +165,7 @@ const AUD_SRC=[
    p:d=>d.data.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]}))}
 ];
 const audParse=(src,d)=>src.p?src.p(d):d.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]}));
-async function audCandles(sym,iv,start,limit){
+async function audCandles(sym,iv,start,limit,quiet){
   /* اول منبعی که برای همین نماد جواب داده، بعد منبعی که آخرین بار برای هر نمادی جواب داده
      (اگر بایننس از مسیرِ تو بسته است، برای هر سیگنال از نو امتحانش نکنیم) */
   const order=AUD_SRC.map((_,i)=>i);
@@ -178,7 +178,7 @@ async function audCandles(sym,iv,start,limit){
       /* fetchVia برای یک قیمت، مسیرها را مسابقه‌ای می‌فرستد. برای صدها کندل این یعنی
          چند برابر درخواست روی واسط‌ها؛ پس اگر مسیرِ سالمِ قیمت معلوم است، فقط همان. */
       const good=goodFor('px'), url=src.u(sym,src.iv[iv],start,Math.min(limit,src.max));
-      const opt={json:true,timeout:12000,kind:'px',label:'کندل '+sym+' · '+src.n,validate:src.ok||(d=>Array.isArray(d))};
+      const opt={json:true,timeout:12000,kind:'px',quiet:!!quiet,label:'کندل '+sym+' · '+src.n,validate:src.ok||(d=>Array.isArray(d))};
       let got=null;
       if(good)got=await fetchVia(url,Object.assign({onlyRoutes:[good]},opt)).catch(()=>null);
       if(!got)got=await fetchVia(url,opt);         // فقط اگر مسیر سالم برای این منبع جواب نداد

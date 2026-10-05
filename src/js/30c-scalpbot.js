@@ -1,0 +1,661 @@
+/* ==================== ربات اسکلپ: تست خودکار و ربات زنده ==================== */
+/* کارت «الان لانگ / الان شورت / صبر کن» را خودکار دنبال می‌کند؛ با یک موتور، هم روی روزهای گذشته
+   (تست خودکار: جواب در چند ثانیه) و هم از همین حالا به بعد (ربات: معامله‌ی کاغذی، بی‌سفارش به صرافی).
+
+   قاعده‌ها (حالت خودکار):
+   - سرِ هر کندلِ تایم‌فریم، اگر پوزیشنی باز نیست، رنج و روند دوباره حساب می‌شود؛ فقط با کندل‌هایی
+     که تا همان لحظه بسته شده‌اند (همان swCore و swDecide کارت؛ هیچ نگاهی به آینده نیست).
+   - «الان لانگ/شورت» ← همان لحظه با قیمت بازار (با لغزش) وارد می‌شود.
+   - «صبر» ← سفارشِ منتظر روی کف (لانگ) و/یا سقف (شورت)، هر جهتی که روند اجازه می‌دهد؛ تا ارزیابی بعد.
+   - «رنج شکسته» یا «رنجی نیست» ← هیچ سفارشی.
+   - تارگت = لبه‌ی مقابل رنج؛ استاپ = یک باند آن سوی لبه؛ اگر لیکوئید زودتر برسد، لیکوئید (−۱۰۰٪).
+   - سیو سود وسطِ راهِ ورود تا تارگت: نصف بسته و استاپ روی ورود (half)، فقط استاپ روی ورود (be)، یا هیچ (none).
+   حالت رنج ثابت (fix): کف و سقف خودت؛ لانگ روی کف، شورت روی سقف، سر تارگت همان‌جا برعکس.
+
+   اجرا روی کندل ۱ دقیقه‌ای (تستِ خیلی بلند: ۵ دقیقه‌ای)؛ داخل هر کندل ترتیب تقریبی: سبز اول کف بعد
+   سقف، قرمز برعکس. کارمزد رفت‌وبرگشت و لغزشِ ورود بازار و استاپ حساب می‌شود؛ فاندینگ نه.
+   ربات زنده هم کندل‌محور است: وقتی برنامه بسته بوده، با باز شدن دقیقاً همان معامله‌هایی را ثبت
+   می‌کند که اگر همیشه روشن بود می‌کرد؛ فقط خبرش دیرتر می‌رسد. */
+const BOT_SAVE={half:'نصف وسط راه + استاپ روی ورود',be:'وسط راه فقط استاپ روی ورود',none:'بدون سیو: همه سر تارگت'};
+const BOT_SAVE_S={half:'نصف + ریسک‌فری',be:'فقط ریسک‌فری',none:'همه سر تارگت'};
+const BOT_BY={tp:'تارگت',stop:'استاپ',be:'ریسک‌فری',liq:'لیکوئید',man:'دستی'};
+const BOT_KEEP=300, BOT_EVERY=30000, BOTSTKEY='signaldesk.botst.v1';
+/* هر ربات فقط روی دستگاهی که روشنش کرده اجرا می‌شود؛ دستگاه‌های دیگر (با همگام‌سازی) فقط می‌بینند */
+const DEVID=(()=>{let d=lsGet('signaldesk.devid');if(!d){d=uid();lsSet('signaldesk.devid',d);}return d;})();
+const botMine=b=>!b.dev||b.dev===DEVID;
+const faSide=s=>s==='long'?'لانگ':'شورت';
+
+function botCfg(o){
+  return {mode:o.mode==='fix'?'fix':'auto',lev:Math.min(125,Math.max(1,+o.lev||10)),roi:+o.roi||20,days:+o.days||1,
+    tf:IVMS[o.tf]?o.tf:'5m',mg:+o.mg||+S.cap||10,save:BOT_SAVE[o.save]?o.save:'half',
+    fee:o.fee!=null?+o.fee:+S.fee||0,slip:o.slip!=null?+o.slip:Math.max(0,+S.slip||0),
+    L:o.L!=null?+o.L:null,H:o.H!=null?+o.H:null,d:o.d!=null&&isFinite(o.d)?+o.d:null,first:o.first==='short'?'short':'long'};
+}
+
+/* ---- برنامه‌ی هر لحظه: سفارش بازار، سفارش‌های منتظر، یا هیچ ---- */
+function botPlan(cfg,pr,st){
+  if(cfg.mode==='fix'){
+    const {L,H,d}=cfg, lo={side:'long',en:L,tp:H,stop:d!=null?L-d:null}, sh={side:'short',en:H,tp:L,stop:d!=null?H+d:null};
+    return {orders:st.started?[lo,sh]:[cfg.first==='short'?sh:lo]};
+  }
+  if(!pr)return {sum:{act:'nodata'},orders:[]};
+  const dec=swDecide(pr,{lev:cfg.lev});
+  if(dec.act==='none')return {sum:{act:'none'},orders:[]};
+  const sum={act:dec.act,trend:dec.trend,where:dec.where,supp:pr.supp,res:pr.res,last:pr.last};
+  if(dec.act==='out')return {sum,orders:[]};
+  if(dec.act==='long'||dec.act==='short')return {sum,mkt:{side:dec.act,tp:dec.tp,stop:dec.stop},orders:[]};
+  const a=pr.aP/100, lo={side:'long',en:pr.supp,tp:pr.res,stop:pr.supp*(1-a)}, sh={side:'short',en:pr.res,tp:pr.supp,stop:pr.res*(1+a)};
+  return {sum,orders:dec.trend==='up'?[lo]:dec.trend==='down'?[sh]:[lo,sh]};
+}
+/* رنج و روند در لحظه‌ی T فقط از کندل‌های تایم‌فریمی که تا T بسته شده‌اند، در «دوره»ی پیش از آن */
+function botProf(TF,tfms,days,a){
+  let P=null;const memo=new Map(), span=days*864e5;
+  const lb=f=>{let lo=0,hi=TF.length;while(lo<hi){const m=(lo+hi)>>1;if(f(TF[m]))hi=m;else lo=m+1;}return lo;};
+  return T=>{
+    if(memo.has(T))return memo.get(T);
+    const i1=lb(k=>k.t+tfms>T), i0=lb(k=>k.t>=T-span);
+    let pr=null;
+    if(i1-i0>=12&&TF[i1-1].t+tfms-TF[i0].t>=span*0.5){
+      if(!P)P=swPts(TF);
+      const core=swCore(TF.slice(i0,i1),P.slice(4*i0,4*i1),a);
+      pr=Object.assign(core,{aP:a*100,legMax:legStat(core.L).max});
+    }
+    memo.set(T,pr);return pr;
+  };
+}
+
+/* ---- موتور ---- */
+const xCross=(a,b,x)=>x!=null&&((a<x&&b>=x)||(a>x&&b<=x));
+const botMove=(p,x,lev)=>(x-p.en)/p.en*(p.side==='long'?1:-1)*lev*100;     // ٪ روی مارجین، برای کل حجم
+function botInitSt(cfg,t0){
+  const st={pos:null,pend:[],nextEval:0,lastT:t0,prev:null,started:false,seq:0,plan:null};
+  if(cfg.mode==='fix')st.pend=botPlan(cfg,null,st).orders;
+  return st;
+}
+function botOpen(st,cfg,o,px,t,how,ev){
+  const sg=o.side==='long'?1:-1, en=how==='mkt'?px*(1+sg*cfg.slip/100):px;
+  if(!((o.tp-en)*sg>0)||(o.stop!=null&&!((en-o.stop)*sg>0)))return false;
+  const lq=1/cfg.lev-MMR;
+  st.pos={side:o.side,en,tp:o.tp,stop:o.stop,stop0:o.stop,liq:cfg.lev>1.05&&lq>0?en*(1-sg*lq):null,
+    mid:cfg.save!=='none'?en+(o.tp-en)/2:null,t0:t,how,q:1,real:0,half:false,tr:(st.plan&&st.plan.trend)||null};
+  st.pend=[];st.started=true;st.seq++;
+  ev.push({k:'open',t,pos:Object.assign({},st.pos)});
+  return true;
+}
+function botClose(st,cfg,x,t,by,ev){
+  const p=st.pos;
+  const roi=p.real+(by==='liq'?-100*p.q:p.q*botMove(p,x,cfg.lev))-cfg.fee*cfg.lev;
+  const tr={side:p.side,en:p.en,ex:x,t0:p.t0,t1:t,how:p.how,by,half:p.half,roi,usd:roi/100*cfg.mg,tr:p.tr||null};
+  st.pos=null;st.seq++;
+  st.pend=cfg.mode==='fix'?botPlan(cfg,null,st).orders:[];
+  ev.push({k:'close',t,x:tr});
+  return tr;
+}
+/* حرکت قیمت از cur به b (یک‌نوا)؛ چند رویداد پشت هم در همین پاره ممکن است */
+function botSeg(st,cfg,cur,b,t,ev){
+  for(let g=0;g<12;g++){
+    if(!st.pos){
+      let hit=null;
+      for(const o of st.pend)if(xCross(cur,b,o.en)&&(!hit||Math.abs(o.en-cur)<Math.abs(hit.en-cur)))hit=o;
+      if(!hit)return;
+      if(!botOpen(st,cfg,hit,hit.en,t,'lim',ev)){st.pend=st.pend.filter(o=>o!==hit);continue;}
+      cur=hit.en;continue;
+    }
+    const p=st.pos, sg=p.side==='long'?1:-1, dir=(b-cur)*sg;
+    if(dir<0){
+      const liqFirst=p.liq!=null&&(p.stop==null||(p.liq-p.stop)*sg>0), x=liqFirst?p.liq:p.stop;
+      if(!xCross(cur,b,x))return;
+      botClose(st,cfg,liqFirst?x:x*(1-sg*cfg.slip/100),t,liqFirst?'liq':p.half?'be':'stop',ev);
+      cur=x;continue;
+    }
+    if(dir>0){
+      if(!p.half&&p.mid!=null&&xCross(cur,b,p.mid)){
+        if(cfg.save==='half'){p.real+=0.5*botMove(p,p.mid,cfg.lev);p.q=0.5;}
+        p.stop=p.en;p.half=true;st.seq++;
+        ev.push({k:'save',t,pos:Object.assign({},p)});
+        cur=p.mid;continue;
+      }
+      if(xCross(cur,b,p.tp)){
+        const tr=botClose(st,cfg,p.tp,t,'tp',ev);
+        cur=tr.ex;
+        if(cfg.mode==='fix'){const op=st.pend.find(o=>o.side!==tr.side);if(op)botOpen(st,cfg,op,op.en,t,'lim',ev);}  // همان‌جا برعکس
+        continue;
+      }
+    }
+    return;
+  }
+}
+/* کندل‌های بسته‌ی X از st.lastT تا tEnd را جلو می‌برد. prof(T): رنج و روند در لحظه‌ی T (حالت خودکار) */
+function botRun(st,cfg,X,xms,prof,tEnd){
+  const ev=[], tfms=IVMS[cfg.tf]||3e5;
+  for(const k of X){
+    if(k.t<st.lastT)continue;
+    if(k.t+xms>tEnd)break;
+    if(st.prev==null)st.prev=k.o;
+    if(cfg.mode==='auto'&&k.t>=st.nextEval){
+      const T=Math.floor(k.t/tfms)*tfms;st.nextEval=T+tfms;
+      if(!st.pos){
+        const pl=botPlan(cfg,prof?prof(T):null,st);
+        st.plan=pl.sum||null;st.pend=pl.orders;
+        if(pl.mkt)botOpen(st,cfg,pl.mkt,k.o,k.t,'mkt',ev);
+      }
+    }
+    const up=k.c>=k.o;
+    for(const q of [k.o,up?k.l:k.h,up?k.h:k.l,k.c]){botSeg(st,cfg,st.prev,q,k.t,ev);st.prev=q;}
+    st.lastT=k.t+xms;
+  }
+  return ev;
+}
+
+/* ---- آمار ---- */
+function botStats(T){
+  const n=T.length;let usd=0,peak=0,cum=0,dd=0,streak=0,maxL=0,gw=0,gl=0;const by={};
+  for(const x of T){usd+=x.usd;cum+=x.usd;peak=Math.max(peak,cum);dd=Math.max(dd,peak-cum);
+    if(x.roi>0){streak=0;gw+=x.usd;}else{maxL=Math.max(maxL,++streak);gl-=x.usd;}by[x.by]=(by[x.by]||0)+1;}
+  const grp=f=>{const a=T.filter(f);return {n:a.length,w:a.filter(x=>x.roi>0).length,usd:a.reduce((s,x)=>s+x.usd,0)};};
+  const w=T.filter(x=>x.roi>0).length;
+  return {n,w,wr:n?w/n*100:null,usd,dd,maxL,avg:n?usd/n:null,pf:gl>0?gw/gl:gw>0?Infinity:null,by,
+    long:grp(x=>x.side==='long'),short:grp(x=>x.side==='short'),mkt:grp(x=>x.how==='mkt'),lim:grp(x=>x.how==='lim'),
+    flat:grp(x=>x.tr==='flat'),trend:grp(x=>x.tr==='up'||x.tr==='down')};
+}
+function botTot0(){return {n:0,w:0,usd:0,roi:0,peak:0,dd:0};}
+function botBook(b,tr){
+  b.trades.push(tr);if(b.trades.length>BOT_KEEP)b.trades=b.trades.slice(-BOT_KEEP);
+  const T=b.tot||(b.tot=botTot0());
+  T.n++;if(tr.roi>0)T.w++;T.usd+=tr.usd;T.roi+=tr.roi;T[tr.by]=(T[tr.by]||0)+1;
+  T.peak=Math.max(T.peak,T.usd);T.dd=Math.max(T.dd,T.peak-T.usd);
+}
+
+/* ---- کندل‌ها: یک انبار در حافظه برای هر نماد و تایم‌فریم؛ فقط بخشِ نداشته گرفته می‌شود ---- */
+const CC=new Map();
+async function ccGet(tk,iv,from,to,x){
+  x=x||{};const ms=IVMS[iv], key=tk+'|'+iv;
+  let c=CC.get(key);
+  const merge=Y=>{if(!Y||!Y.length)return;const t0=Y[0].t;c.X=c.X.filter(k=>k.t<t0).concat(Y);};
+  const opt={maxReq:x.maxReq,quiet:x.quiet};
+  if(!c||!c.X.length){
+    const Y=await swCandles(tk,from,to,x.onProg,iv,opt);
+    c={X:Y.slice(),cut:!!Y.cut};CC.set(key,c);
+  }else{
+    if(c.X[0].t>from+ms){            // بخشِ قدیمی‌تر کم است
+      const Y=(await swCandles(tk,from,c.X[0].t-ms,x.onProg,iv,opt)).filter(k=>k.t<c.X[0].t);
+      c.X=Y.concat(c.X);
+    }
+    const last=c.X[c.X.length-1].t;
+    if(last<to-ms){                   // کندل‌های تازه (و آخرینِ نیمه‌کاره‌ی قبلی، از نو)
+      const Y=await swCandles(tk,last,to,null,iv,opt);
+      merge(Y.filter(k=>k.t>=last));
+    }
+  }
+  c.at=Date.now();
+  if(c.X.length>20000)c.X=c.X.slice(-20000);
+  return c.X;
+}
+
+/* ==================== تست خودکار روی روزهای گذشته ==================== */
+/* N روز گذشته، با رنجِ «دوره»ی پیش از هر لحظه. هر سه روشِ سیو سود روی همان کندل‌ها. */
+async function botBacktest(tk,o,N,prog){
+  const D=+o.days||1, tf=IVMS[o.tf]?o.tf:'5m', now=Date.now();
+  const exec=N+D<=8?'1m':'5m', xms=IVMS[exec], tfUse=IVMS[tf]>=xms?tf:exec, tfms=IVMS[tfUse];
+  const start=Math.ceil((now-N*864e5)/tfms)*tfms, from=start-D*864e5-tfms;
+  const need=Math.ceil((now-from)/xms);
+  const all=await ccGet(tk,exec,from,now,{maxReq:Math.ceil(need/1000)+1,
+    onProg:out=>{prog&&prog('گرفتن کندل '+faN(Math.min(out.length,need))+' از '+faN(need));return false;}});
+  const X=all.filter(k=>k.t>=from);
+  if(X.length<30)throw new Error('nocandle');
+  const TF=tfUse===exec?X:swAggr(X,tfms);
+  const a=(+o.roi||20)/(+o.lev||10)/100, prof=botProf(TF,tfms,D,a);
+  // رنجِ همه‌ی لحظه‌ها یک بار (برای هر سه روش مشترک)، با مکث‌های کوتاه تا صفحه قفل نشود
+  let i=0;
+  for(let T=start;T<now;T+=tfms){
+    prof(T);
+    if(++i%250===0){prog&&prog('سنجش '+faN(Math.round((T-start)/(now-start)*100))+'٪');await sleep(0);}
+  }
+  const mg=+o.mg||+S.cap||10, res={};
+  for(const save of Object.keys(BOT_SAVE)){
+    const cfg=botCfg(Object.assign({},o,{mode:'auto',save,tf:tfUse,mg}));
+    const st=botInitSt(cfg,start), ev=botRun(st,cfg,X,xms,prof,now);
+    const T=ev.filter(e=>e.k==='close').map(e=>e.x);
+    res[save]={T,s:botStats(T),open:st.pos?Object.assign({},st.pos):null};
+  }
+  const best=Object.keys(res).sort((x,y)=>res[y].s.usd-res[x].s.usd)[0];
+  const t0=X.find(k=>k.t>=start);
+  return {tk,N,D,exec,tf:tfUse,lev:+o.lev||10,roi:+o.roi||20,mg,fee:+S.fee||0,slip:Math.max(0,+S.slip||0),
+    start,end:now,res,sel:best,best,cut:!!X.cut||X[0].t>from+2*xms,
+    hold:t0?(X[X.length-1].c/t0.o-1)*100:null,at:now};
+}
+function botVerdict(s,r){
+  if(!s.n)return ['i','در این '+faN(r.N)+' روز هیچ معامله‌ای باز نشد: رنجی به اندازه‌ی باند نبود، یا قیمت به لبه‌ها نرسید.'];
+  const few=s.n<20, sign=s.usd>0?'مثبت':'منفی';
+  return [s.usd>0?(few?'i':'u'):'d',sign+': '+fmtUsd(s.usd)+' با '+faN(s.n)+' معامله (برد '+faN(Math.round(s.wr))+'٪)'+
+    (few?' — نمونه کم است (کمتر از ۲۰ معامله)؛ قبل از نتیجه گرفتن، روی چند توکن و بازه‌ی دیگر هم بسنج.':
+      s.usd>0?'. ادامه‌ی منطقی: همین را با ربات زنده روی روزهای آینده هم بسنج.':'. این روش با این تنظیم روی این توکن جواب نداده.')];
+}
+
+let BTRES=[];
+const BTQ={on:false,stop:false,msg:''};
+async function btRun(list){
+  if(BTQ.on||!list.length)return;
+  Object.assign(BTQ,{on:true,stop:false,msg:''});paintBtProg();
+  const o=Object.assign({},SWOPT,{mg:swMg()}), N=+SWOPT.btN||3;
+  for(const tk of list){
+    if(BTQ.stop)break;
+    BTQ.msg=tk+'…';paintBtProg();
+    let r;
+    try{r=await botBacktest(tk,o,N,m=>{BTQ.msg=tk+': '+m;paintBtProg();});}
+    catch(e){r={tk,N,err:e&&e.message==='nocandle'?'کندل '+tk+' نیامد'+(AUDQ.err?' — '+AUDQ.err:''):String(e&&e.message||e)};}
+    BTRES=[r].concat(BTRES.filter(x=>x.tk!==tk)).slice(0,8);
+    paintBt();
+  }
+  BTQ.on=false;BTQ.msg='';paintBtProg();paintBt();
+}
+function paintBtProg(){
+  const b=$('#btProg'), go=$('#btGo'), stop=$('#btStop');
+  if(go)go.disabled=BTQ.on;
+  if(stop)stop.classList.toggle('hide',!BTQ.on);
+  if(!b)return;
+  b.classList.toggle('hide',!BTQ.on);
+  b.innerHTML=BTQ.on?'<span>'+esc(BTQ.msg||'…')+'</span>':'';
+}
+/* قاعده‌ها، به زبان ساده، با همین تنظیم‌ها */
+function botRulesHtml(o){
+  const a=(+o.roi||20)/(+o.lev||10);
+  return '<b>ربات چه می‌کند:</b> سرِ هر کندل '+SW_TF[o.tf||'5m']+'، فقط با کندل‌های تا همان لحظه، رنج و روندِ '+
+    ({0.5:'۱۲ ساعت',1:'۱ روز',3:'۳ روز',7:'۷ روز'}[+o.days]||faN(o.days)+' روز')+' قبل را حساب می‌کند (همان کارت «الان لانگ/شورت/صبر»). '+
+    '«الان لانگ/شورت» ← همان لحظه با قیمت بازار؛ «صبر» ← سفارش روی کف یا سقف، در جهتی که روند اجازه می‌دهد؛ رنج شکسته ← هیچ. '+
+    'تارگت لبه‌ی مقابل، استاپ ±'+fmtNum(a)+'٪ آن سوی لبه. '+
+    'اهرم '+fmtNum(o.lev)+'x، مارجین $'+fmtNum(swMg())+'، کارمزد '+fmtNum(+S.fee||0)+'٪، لغزش '+fmtNum(+S.slip||0)+'٪ (از تنظیم‌ها). '+
+    'هر سه روشِ سیو سود با هم سنجیده می‌شوند.';
+}
+/* بدنه‌ی بخش «تست خودکار» در تب اسکلپ */
+function buildBotBt(b){
+  const o=SWOPT;
+  const tks=[...new Set(POSTS.map(p=>sigOf(p).ticker).filter(Boolean))].sort();
+  b.innerHTML='<div class="grid swopt">'+
+    '<div class="fld"><label>نماد (چندتا با فاصله)</label><input id="btTk" dir="ltr" list="btTkL" placeholder="مثلاً AERO SOL" value="'+esc(o.btTk||o.tk||'')+'">'+
+      '<datalist id="btTkL">'+tks.map(t=>'<option value="'+esc(t)+'">').join('')+'</datalist></div>'+
+    '<div class="fld"><label>بازه‌ی تست</label><select id="btN"><option value="1">۱ روز گذشته</option><option value="3">۳ روز گذشته</option><option value="7">۷ روز گذشته</option></select></div>'+
+    '<div class="fld"><label>رنج از</label><select id="btD"><option value="0.5">۱۲ ساعتِ قبل</option><option value="1">۱ روزِ قبل</option><option value="3">۳ روزِ قبل</option><option value="7">۷ روزِ قبل</option></select></div>'+
+    '</div><div class="hint btrules">'+botRulesHtml(o)+'</div>'+
+    '<div class="srow"><button class="btn pri" id="btGo">'+ic('bars')+'<span>تست کن</span></button><button class="btn hide" id="btStop">توقف</button></div>'+
+    '<div class="audprog hide" id="btProg"></div><div id="btRes"></div>';
+  const q=s=>b.querySelector(s);
+  q('#btN').value=String(o.btN||3);q('#btD').value=String(o.days||3);
+  const read=()=>{o.btTk=String(q('#btTk').value||'').toUpperCase().replace(/USDT\b/g,'').trim();o.btN=+q('#btN').value||3;
+    o.days=+q('#btD').value||3;swOptSave();q('.btrules').innerHTML=botRulesHtml(o);};
+  b.querySelectorAll('input,select').forEach(i=>i.onchange=read);
+  q('#btGo').onclick=()=>{read();
+    const list=[...new Set(o.btTk.split(/[\s,،]+/).filter(t=>/^[A-Z0-9]{2,15}$/.test(t)))].slice(0,6);
+    if(!list.length)return toast('نماد را بنویس، مثلاً AERO','err');
+    btRun(list);};
+  q('#btStop').onclick=()=>{BTQ.stop=true;BTQ.msg='بعد از همین نماد متوقف می‌شود';paintBtProg();};
+  setTimeout(()=>{paintBt();paintBtProg();},0);
+}
+const hmFa=t=>'<bdi>'+jStampFa(new Date(t)).slice(5)+'</bdi>';
+function botTradeRows(T){
+  return T.slice().reverse().map(x=>'<tr><td class="sd '+x.side+'">'+faSide(x.side)+'</td>'+
+    '<td><span class="num" dir="ltr">'+fmtPrice(x.en)+' → '+fmtPrice(x.ex)+'</span><small>'+hmFa(x.t1)+' · '+(x.how==='mkt'?'بازار':'سفارش')+
+      ' · '+BOT_BY[x.by]+(x.half&&x.by!=='be'?' · سیو':'')+'</small></td>'+
+    '<td class="num '+(x.usd>=0?'u':'d')+'"><bdi>'+fmtUsd(x.usd)+'</bdi><small>'+fmtPct(z0(x.roi))+'</small></td></tr>').join('');
+}
+const botTradeTable=(T,title,open)=>'<details class="sec sub2 sctr"'+(open?' open':'')+'><summary>'+title+' ('+faN(T.length)+')</summary>'+
+  '<div class="tscroll"><table class="tp"><thead><tr><th>جهت</th><th>ورود → خروج</th><th>سود/ضرر</th></tr></thead><tbody>'+botTradeRows(T)+'</tbody></table></div></details>';
+function botEqSvg(T,base){
+  const v=[base||0];let c=base||0;for(const x of T){c+=x.usd;v.push(+c.toFixed(4));}
+  return v.length>1?swSvg(v,[{v:0,c:'e'}],56):'';
+}
+function botBreak(s){
+  const pc=g=>g.n?' (برد '+faN(Math.round(g.w/g.n*100))+'٪)':'';
+  const by=Object.entries(s.by).map(([k,n])=>BOT_BY[k]+' '+faN(n)).join(' · ');
+  return [by,
+    'لانگ '+faN(s.long.n)+pc(s.long)+' · شورت '+faN(s.short.n)+pc(s.short),
+    'ورود بازار '+faN(s.mkt.n)+pc(s.mkt)+' · سفارش روی لبه '+faN(s.lim.n)+pc(s.lim),
+    (s.flat.n||s.trend.n)?'در رنجِ درجا '+faN(s.flat.n)+pc(s.flat)+' · هم‌جهت روند '+faN(s.trend.n)+pc(s.trend):''].filter(Boolean).join('<br>');
+}
+function btCardHtml(r){
+  if(r.err)return '<div class="swres btres"><div class="swh"><b dir="ltr">'+esc(r.tk)+'</b></div><div class="flag d"><i>!</i><span>'+esc(r.err)+'</span></div></div>';
+  const v=r.res[r.sel], s=v.s, vd=botVerdict(s,r);
+  const rows=Object.keys(BOT_SAVE).map(k=>{const q=r.res[k].s;
+    return '<tr class="tap'+(k===r.sel?' on':'')+'" data-tk="'+esc(r.tk)+'" data-k="'+k+'"><td>'+(k===r.best&&q.n?'★ ':'')+BOT_SAVE_S[k]+'</td>'+
+      '<td class="num">'+faN(q.n)+'</td><td class="num">'+(q.wr==null?'—':faN(Math.round(q.wr))+'٪')+'</td>'+
+      '<td class="num '+cls(q.usd)+'"><bdi>'+fmtUsd(q.usd)+'</bdi></td><td class="num'+(q.dd?' d':'')+'"><bdi>'+(q.dd?fmtUsd(-q.dd):'—')+'</bdi></td></tr>';}).join('');
+  return '<div class="swres btres" data-tk="'+esc(r.tk)+'"><div class="swh"><b dir="ltr">'+esc(r.tk)+'</b><span>'+faN(r.N)+' روز گذشته · ارزیابی هر '+SW_TF[r.tf]+
+      ' · اجرا با کندل '+SW_TF[r.exec]+' · '+fmtNum(r.lev)+'x · باند ±'+fmtNum(r.roi)+'٪ · رنج از '+fmtNum(r.D)+' روز · مارجین $'+fmtNum(r.mg)+'</span></div>'+
+    (r.cut?'<div class="flag i"><i>i</i><span>کندل‌های این نماد کامل نیامد؛ نتیجه فقط برای بخشی از بازه است.</span></div>':'')+
+    '<div class="tscroll"><table class="tp btv"><thead><tr><th>سیو سود</th><th>معامله</th><th>برد</th><th>خالص</th><th>بیشترین افت</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div class="flag '+vd[0]+'"><i>'+(vd[0]==='d'?'!':'i')+'</i><span>«'+BOT_SAVE_S[r.sel]+'»: '+vd[1]+'</span></div>'+
+    (s.n?botEqSvg(v.T)+'<div class="hint btbrk">'+botBreak(s)+
+      '<br>بیشترین باخت پیاپی '+faN(s.maxL)+' · ضریب سود '+(s.pf==null?'—':s.pf===Infinity?'∞':fmtNum(s.pf))+
+      (r.hold!=null?' · خودِ قیمت در این مدت '+fmtPct(r.hold):'')+'</div>':'')+
+    (v.open?'<div class="hint">آخرِ بازه یک '+faSide(v.open.side)+' از '+fmtPrice(v.open.en)+' هنوز باز بود (در آمار نیامده).</div>':'')+
+    (s.n?botTradeTable(v.T,'معامله‌ها',false):'')+
+    '<div class="srow"><button class="btn pri sm" data-bot="'+esc(r.tk)+'">'+ic('play')+'<span>ربات زنده با «'+BOT_SAVE_S[r.sel]+'»</span></button></div>'+
+  '</div>';
+}
+function paintBt(){
+  const box=$('#btRes');if(!box)return;
+  if(!BTRES.length){box.innerHTML='';return;}
+  let h='';
+  const ok=BTRES.filter(r=>!r.err);
+  if(ok.length>1){
+    h+='<div class="tscroll"><table class="tp btsum"><thead><tr><th>نماد</th><th>بهترین سیو</th><th>معامله</th><th>خالص</th></tr></thead><tbody>'+
+      ok.map(r=>{const q=r.res[r.best].s;return '<tr class="tap" data-go="'+esc(r.tk)+'"><td dir="ltr">'+esc(r.tk)+'</td><td>'+BOT_SAVE_S[r.best]+'</td><td class="num">'+faN(q.n)+
+        '</td><td class="num '+cls(q.usd)+'"><bdi>'+fmtUsd(q.usd)+'</bdi></td></tr>';}).join('')+'</tbody></table></div>';
+  }
+  h+=BTRES.map(btCardHtml).join('');
+  box.innerHTML=h;
+  box.querySelectorAll('.btv tr[data-k]').forEach(tr=>tr.onclick=()=>{
+    const r=BTRES.find(x=>x.tk===tr.dataset.tk);if(!r)return;r.sel=tr.dataset.k;paintBt();});
+  box.querySelectorAll('.btsum tr[data-go]').forEach(tr=>tr.onclick=()=>{
+    const n=box.querySelector('.btres[data-tk="'+tr.dataset.go+'"]');if(n)n.scrollIntoView({block:'start',behavior:'smooth'});});
+  box.querySelectorAll('[data-bot]').forEach(bt=>bt.onclick=()=>{
+    const r=BTRES.find(x=>x.tk===bt.dataset.bot);if(!r)return;
+    botStartSheet({mode:'auto',tk:r.tk,lev:r.lev,roi:r.roi,days:r.D,tf:r.tf,mg:r.mg,save:r.sel});});
+}
+
+/* ==================== ربات زنده ==================== */
+/* حالتِ هر تیک (lastT و سفارش‌های منتظر) روی همین دستگاه نگه داشته می‌شود؛ داده‌ی اصلی (و همگام‌سازی)
+   فقط وقتی معامله‌ای باز یا بسته می‌شود ذخیره می‌شود، نه هر ۳۰ ثانیه. */
+let BOTFIX=false, BOTTICK=false, BOTLAST=0;
+const BOTERR=new Map(), BOTPX=new Map();
+function botList(){
+  if(!Array.isArray(DB.scalps))DB.scalps=[];
+  if(DB.scalps.some(s=>!s||s.v!==2)){DB.scalps=DB.scalps.map(s=>s&&s.v===2?s:botMigrate(s)).filter(Boolean);save();}
+  if(!BOTFIX){BOTFIX=true;
+    const loc=lsGet(BOTSTKEY)||{};
+    for(const b of DB.scalps){const l=loc[b.id];if(l&&botMine(b)&&l.seq===b.st.seq&&l.lastT>b.st.lastT)b.st=l;}
+  }
+  return DB.scalps;
+}
+function botLocSave(){const o={};for(const b of botList())if(botMine(b))o[b.id]=b.st;lsSet(BOTSTKEY,o);}
+/* جلسه‌های «اسکلپ زنده»ی نسخه‌ی قبل ← ربات رنج ثابت */
+function botMigrate(s){
+  if(!s||!s.tk||!(s.L>0&&s.H>s.L))return null;
+  const cfg=botCfg({mode:'fix',lev:s.lev,mg:s.mg,save:'none',L:s.L,H:s.H,d:s.d,first:s.first,fee:s.fee,slip:0});
+  const seen=(lsGet('signaldesk.scseen.v1')||{})[s.id];
+  const st=botInitSt(cfg,Math.ceil(((seen&&seen.t)||s.at||Date.now())/6e4)*6e4);
+  st.started=!!(s.st&&s.st.started);
+  const p=s.st&&s.st.pos;
+  if(p){const sg=p.side==='long'?1:-1, lq=1/cfg.lev-MMR;
+    st.pos={side:p.side,en:p.en,tp:sg>0?cfg.H:cfg.L,stop:cfg.d!=null?(sg>0?cfg.L-cfg.d:cfg.H+cfg.d):null,stop0:null,
+      liq:cfg.lev>1.05&&lq>0?p.en*(1-sg*lq):null,mid:null,t0:p.t||s.at,how:'lim',q:1,real:0,half:false,tr:null};
+    st.pos.stop0=st.pos.stop;st.pend=[];}
+  else st.pend=botPlan(cfg,null,st).orders;
+  const b={v:2,id:s.id,tk:s.tk,dev:DEVID,cfg,on:s.on!==false,at:s.at||Date.now(),st,trades:[],tot:botTot0()};
+  for(const x of s.trades||[])botBook(b,{side:x.side,en:x.en,ex:x.ex,t0:x.t0,t1:x.t1,how:'lim',by:x.by||'tp',half:false,roi:x.roi,usd:x.usd,tr:null});
+  return b;
+}
+function botNew(o){
+  const cfg=botCfg(o), t0=Math.ceil(Date.now()/6e4)*6e4;
+  const b={v:2,id:uid(),tk:o.tk,dev:DEVID,cfg,on:true,at:Date.now(),st:botInitSt(cfg,t0),trades:[],tot:botTot0()};
+  botList().unshift(b);save();botLocSave();
+  logIt('info','ربات '+b.tk+' روشن شد: '+botDesc(b));
+  return b;
+}
+function botDesc(b){
+  const c=b.cfg;
+  return (c.mode==='fix'?'رنج ثابت '+fmtPrice(c.L)+' ⇄ '+fmtPrice(c.H):'خودکار · رنج از '+fmtNum(c.days)+' روز · هر '+SW_TF[c.tf]+' · باند ±'+fmtNum(c.roi)+'٪')+
+    ' · '+fmtNum(c.lev)+'x · $'+fmtNum(c.mg)+' · '+BOT_SAVE_S[c.save];
+}
+/* آخرین قیمت: کندلِ نیمه‌کاره‌ی آخر یا قیمت‌های معمول برنامه، هر کدام تازه‌تر */
+function botPx(tk){const a=BOTPX.get(tk), p=PRICES.get(tk);if(a&&(p==null||a.at>=PX_AT))return a.px;return p!=null?p:a?a.px:null;}
+async function botTick(force){
+  if(BOTTICK||(!force&&document.hidden))return;
+  const act=botList().filter(b=>b.on&&botMine(b));
+  if(!act.length)return;
+  BOTTICK=true;BOTLAST=Date.now();
+  try{
+    for(const tk of [...new Set(act.map(b=>b.tk))]){
+      const bs=act.filter(b=>b.tk===tk), now=Date.now();
+      const from=Math.min(...bs.map(b=>{const c=b.cfg, tfms=IVMS[c.tf]||3e5;
+        return c.mode==='auto'?Math.floor((b.st.lastT-c.days*864e5-2*tfms)/tfms)*tfms:b.st.lastT-6e4;}));
+      let X;
+      try{X=await ccGet(tk,'1m',from,now,{maxReq:12,quiet:true});BOTERR.delete(tk);}
+      catch(e){BOTERR.set(tk,'کندل '+tk+' نیامد'+(AUDQ.err?' — '+AUDQ.err:'')+'؛ دوباره امتحان می‌شود.');continue;}
+      if(X.length)BOTPX.set(tk,{px:X[X.length-1].c,at:Date.now()});
+      for(const b0 of bs){
+        const b=botList().find(x=>x.id===b0.id);      // در این فاصله ممکن است عوض شده باشد (توقف، حذف، همگام‌سازی)
+        if(b&&b.on&&botMine(b))botAdvance(b,X,Date.now());
+      }
+    }
+    botLocSave();
+  }catch(e){logIt('err','ربات اسکلپ: '+(e&&e.message||e));}
+  finally{BOTTICK=false;if(view==='scalp')paintBots();paintBotBadge();}
+}
+function botAdvance(b,X,now){
+  const c=b.cfg;let prof=null;
+  if(c.mode==='auto'){
+    const tfms=IVMS[c.tf]||3e5, from=Math.floor((b.st.lastT-c.days*864e5-2*tfms)/tfms)*tfms;
+    const W=X.filter(k=>k.t>=from&&k.t+6e4<=now);
+    prof=botProf(c.tf==='1m'?W:swAggr(W,tfms),tfms,c.days,c.roi/c.lev/100);
+  }
+  const ev=botRun(b.st,c,X,6e4,prof,now);
+  if(!ev.length)return;
+  for(const e of ev)if(e.k==='close')botBook(b,e.x);
+  save();
+  botReport(b,ev,now);
+}
+function botMsg(b,e){
+  if(e.k==='open'){const p=e.pos;return b.tk+': '+faSide(p.side)+' گرفت روی '+fmtPrice(p.en)+(p.how==='mkt'?' (بازار)':' (سفارش روی لبه)')+
+    ' · تارگت '+fmtPrice(p.tp)+(p.stop!=null?' · استاپ '+fmtPrice(p.stop):'');}
+  if(e.k==='save'){const p=e.pos;return b.tk+': سیو سود روی '+fmtPrice(p.mid)+(b.cfg.save==='half'?' — نصفِ '+faSide(p.side)+' بسته شد':'')+' و استاپ رفت روی ورود';}
+  const x=e.x;return b.tk+': '+faSide(x.side)+' بسته شد ('+BOT_BY[x.by]+' روی '+fmtPrice(x.ex)+') '+fmtUsd(x.usd)+' · جمع ربات '+fmtUsd(b.tot.usd);
+}
+function botReport(b,ev,now){
+  const late=ev.filter(e=>now-e.t>4*60e3), live=ev.filter(e=>now-e.t<=4*60e3);
+  logIt('info','ربات '+b.tk+' — '+ev.map(e=>botMsg(b,e)).join('؛ '));
+  const parts=[];
+  if(late.length){const cl=late.filter(e=>e.k==='close');
+    parts.push('ربات '+b.tk+' وقتی برنامه بسته بود '+faN(cl.length)+' معامله بست ('+fmtUsd(cl.reduce((s,e)=>s+e.x.usd,0))+')');}
+  parts.push(...live.slice(-2).map(e=>botMsg(b,e)));
+  const msg=parts.join('؛ ');
+  const bad=ev.some(e=>e.k==='close'&&e.x.roi<=0);
+  toast(esc(msg),bad?'err':'ok');
+  try{if(live.length&&navigator.vibrate)navigator.vibrate(bad?[200,80,200]:[120,60,120]);}catch(e){}
+  if(F('notify'))notify('ربات اسکلپ',msg,'bot'+b.id);
+}
+function botAct(id,k){
+  const b=botList().find(x=>x.id===id);if(!b)return;
+  const now=Date.now();
+  if(k==='close'){
+    const px=botPx(b.tk);if(!b.st.pos)return;
+    if(px==null)return toast('قیمت '+b.tk+' هنوز نیامده','err');
+    const ev=[], x=botClose(b.st,b.cfg,px,now,'man',ev);botBook(b,x);
+    // کندل‌های پیش از این لحظه دیگر با حالتِ «بی‌پوزیشن» دوباره خوانده نشوند
+    Object.assign(b.st,{lastT:Math.max(b.st.lastT,Math.ceil(now/6e4)*6e4),prev:null,nextEval:0});
+    save();botLocSave();renderAll();
+    toast(b.tk+': دستی بسته شد روی '+fmtPrice(px)+' '+fmtUsd(x.usd),'ok');
+  }else if(k==='stop'){
+    undoable(b.tk+': ربات متوقف شد'+(b.st.pos?' و پوزیشن بازش بسته شد':''),()=>{
+      const px=botPx(b.tk);
+      if(b.st.pos&&px!=null){const ev=[];botBook(b,botClose(b.st,b.cfg,px,now,'man',ev));}
+      b.on=false;});
+    botLocSave();
+  }else if(k==='take'){
+    // دستگاه عوض شده (نصب دوباره، پاک شدن داده‌ی مرورگر، برگرداندن پشتیبان): ربات از همین دقیقه اینجا ادامه می‌دهد
+    Object.assign(b.st,{lastT:Math.ceil(now/6e4)*6e4,prev:null,nextEval:0,pos:null,pend:b.cfg.mode==='fix'?botPlan(b.cfg,null,b.st).orders:[]});
+    b.dev=DEVID;b.on=true;save();botLocSave();renderAll();toast(b.tk+': ربات روی این دستگاه روشن شد','ok');setTimeout(()=>botTick(true),200);
+  }else if(k==='resume'){
+    // فاصله‌ی توقف سنجیده نمی‌شود
+    Object.assign(b.st,{lastT:Math.ceil(now/6e4)*6e4,prev:null,nextEval:0,pos:null,pend:b.cfg.mode==='fix'?botPlan(b.cfg,null,b.st).orders:[]});
+    b.on=true;save();botLocSave();renderAll();toast(b.tk+': ربات دوباره روشن شد','ok');setTimeout(()=>botTick(true),200);
+  }else if(k==='del'){
+    undoable(b.tk+': ربات پاک شد',()=>{DB.scalps=botList().filter(x=>x.id!==id);});
+    botLocSave();
+  }
+}
+setInterval(()=>botTick(),BOT_EVERY);
+setTimeout(()=>botTick(),2500);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(()=>botTick(),400);});
+
+/* ---- شروع ربات ---- */
+function botStartSheet(o){
+  const fix=o.mode==='fix', S0=SWOPT;
+  if(!o||!/^[A-Z0-9]{2,15}$/.test(o.tk||''))return toast('اول نماد را بنویس و بسنج','err');
+  if(fix&&!(o.L>0&&o.H>o.L))return toast('رنج معتبر نیست: کف باید از سقف کمتر باشد','err');
+  const fx=v=>v==null||v===''||!isFinite(v)?'':String(+(+v).toPrecision(6));
+  let save=BOT_SAVE[o.save]?o.save:BOT_SAVE[S0.bsave]?S0.bsave:'half';
+  const sel=(id,opts,v)=>'<select id="'+id+'">'+Object.entries(opts).map(([k,t])=>'<option value="'+k+'"'+(String(k)===String(v)?' selected':'')+'>'+t+'</option>').join('')+'</select>';
+  const fld=(l,h)=>'<div class="fld"><label>'+l+'</label>'+h+'</div>';
+  const inp=(id,v,ph)=>'<input id="'+id+'" dir="ltr" inputmode="decimal" value="'+fx(v)+'"'+(ph?' placeholder="'+ph+'"':'')+'>';
+  openSheet('<h3>'+(fix?'ربات رنج ثابت':'ربات خودکار')+' · <bdi dir="ltr">'+esc(o.tk)+'</bdi></h3>'+
+    '<div class="sub">'+(fix?'لانگ روی کف، شورت روی سقف، سر تارگت همان‌جا برعکس؛ استاپ آن سوی رنج.'
+      :'همان کارت «الان لانگ / الان شورت / صبر» را خودش دنبال می‌کند: لانگ و شورت می‌گیرد، سیو سود می‌کند و می‌بندد.')+
+      ' معامله‌ی کاغذی است (به صرافی سفارشی نمی‌رود) و جدا از پوزیشن‌ها و کارنامه ثبت می‌شود. وقتی برنامه بسته است هم از دست نمی‌رود: با باز شدن، از روی کندل‌ها همان کارها ثبت می‌شود.</div>'+
+    '<div class="grid swopt">'+
+    (fix?fld('کف رنج (ورود لانگ)',inp('bL',o.L))+fld('سقف رنج (ورود شورت)',inp('bH',o.H))+
+        fld('استاپ لانگ (زیر کف)',inp('bSL',o.d!=null?o.L-o.d:null,'خالی = بی‌استاپ'))+
+        fld('اولین معامله',sel('bFirst',{long:'لانگ روی کف',short:'شورت روی سقف'},o.first==='short'?'short':'long'))
+      :fld('باند روی مارجین (٪)',inp('bRoi',o.roi||S0.roi))+fld('رنج از',sel('bDays',{0.5:'۱۲ ساعتِ قبل',1:'۱ روزِ قبل',3:'۳ روزِ قبل',7:'۷ روزِ قبل'},o.days||S0.days||1))+
+        fld('ارزیابی هر',sel('bTf',SW_TF,o.tf||S0.tf||'5m')))+
+    fld('اهرم',inp('bLev',o.lev||S0.lev))+fld('مارجین هر معامله ($)',inp('bMg',o.mg||swMg()))+
+    '</div>'+
+    '<div class="tgl">سیو سود</div><div class="pbpick" id="bSave">'+Object.entries(BOT_SAVE).map(([k,v])=>
+      '<button class="pbc'+(k===save?' on':'')+'" data-k="'+k+'" aria-pressed="'+(k===save)+'">'+v+'</button>').join('')+'</div>'+
+    '<div class="hint" id="bInfo"></div>'+
+    '<div class="srow"><button class="btn pri" id="bGo">'+ic('play')+'<span>روشن کردن ربات</span></button><button class="btn" id="cx">انصراف</button></div>',
+  sh=>{
+    const q=s=>sh.querySelector(s);
+    q('#cx').onclick=closeSheet;
+    const num=id=>{const n=q(id);if(!n)return null;const v=parseFloat(normDig(String(n.value||'')).replace(/,/g,''));return isFinite(v)&&v>0?v:null;};
+    const read=()=>{
+      const r={mode:fix?'fix':'auto',tk:o.tk,lev:Math.min(125,Math.max(1,num('#bLev')||10)),mg:num('#bMg')||+S.cap||10,save};
+      if(fix){r.L=num('#bL');r.H=num('#bH');const sl=num('#bSL');r.d=sl!=null&&r.L!=null&&sl<r.L?r.L-sl:null;r.badSl=sl!=null&&r.L!=null&&sl>=r.L;r.first=q('#bFirst').value;}
+      else{r.roi=Math.min(500,Math.max(1,num('#bRoi')||20));r.days=+q('#bDays').value||1;r.tf=q('#bTf').value;}
+      return r;
+    };
+    const info=()=>{
+      const r=read(), b=q('#bInfo'), lq=(1/r.lev-MMR)*100, f=(+S.fee||0)*r.lev;
+      if(fix){
+        if(!(r.L&&r.H&&r.H>r.L)){b.innerHTML='<span class="d">کف باید از سقف کمتر باشد.</span>';return;}
+        const w=(r.H/r.L-1)*100;
+        b.innerHTML='استاپ لانگ '+(r.d!=null?'<b dir="ltr">'+fmtPrice(r.L-r.d)+'</b>':'ندارد')+' · استاپ شورت '+(r.d!=null?'<b dir="ltr">'+fmtPrice(r.H+r.d)+'</b>':'ندارد')+
+          ' · هر بُرد حدود <b class="u">'+fmtUsd((w*r.lev-f)/100*r.mg)+'</b>'+(r.d!=null?' · هر استاپ حدود <b class="d">'+fmtUsd(-((r.d/r.L)*100*r.lev+f)/100*r.mg)+'</b>':'')+
+          (r.badSl?'<br><span class="d">استاپ لانگ باید زیر کف باشد؛ نادیده گرفته شد.</span>':'');
+      }else{
+        const a=r.roi/r.lev;
+        b.innerHTML='سرِ هر کندل '+SW_TF[r.tf]+' ارزیابی · باند و استاپ ±'+fmtNum(a)+'٪ قیمت · هر استاپ حدود <b class="d">'+fmtUsd(-(r.roi+f)/100*r.mg)+'</b> یا کمتر'+
+          (lq<=a*1.5?'<br><span class="d">با '+fmtNum(r.lev)+'x لیکوئید حدود '+fmtNum(lq)+'٪ خلاف جهت است؛ نزدیک استاپ. اهرم را کم کن یا باند را کوچک.</span>':'');
+      }
+      b.innerHTML+='<br>«'+BOT_SAVE[save]+'».';
+    };
+    sh.querySelectorAll('input,select').forEach(i=>i.oninput=i.onchange=info);
+    sh.querySelectorAll('#bSave .pbc').forEach(x=>x.onclick=()=>{save=x.dataset.k;
+      sh.querySelectorAll('#bSave .pbc').forEach(y=>{y.classList.toggle('on',y===x);y.setAttribute('aria-pressed',y===x);});info();});
+    info();
+    q('#bGo').onclick=()=>{
+      const r=read();
+      if(fix&&!(r.L&&r.H&&r.H>r.L))return toast('کف باید از سقف کمتر باشد','err');
+      SWOPT.bsave=save;swOptSave();
+      const b=botNew(r);
+      closeSheet();go('scalp',true);
+      setTimeout(()=>{const c=$('#bot-'+b.id);if(c)c.scrollIntoView({block:'center',behavior:'smooth'});},150);
+      toast('ربات '+b.tk+' روشن شد؛ '+(fix?'منتظر رسیدن قیمت به '+fmtPrice(r.first==='short'?r.H:r.L):'سرِ کندل بعدی تصمیم می‌گیرد'),'ok');
+      setTimeout(()=>botTick(true),300);
+    };
+  });
+}
+
+/* ---- تب اسکلپ ---- */
+function renderScalp(){
+  const box=$('#scBody');if(!box)return;
+  // وسط تایپ در فرم، رندرِ دوره‌ای (قیمت، بروزرسانی کانال) فرم را از نو نسازد؛ فقط ربات‌ها
+  const ae=document.activeElement;
+  if(box.firstChild&&ae&&box.contains(ae)&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)){paintBots();return;}
+  box.innerHTML='';
+  try{box.appendChild(buildSwingPanel(null,'scalp'));}
+  catch(e){logIt('err','تب اسکلپ: '+(e&&e.message||e));box.appendChild(el('div','panel audfail','<b>بخش سنجش ساخته نشد</b><br><span dir="ltr">'+esc(String(e&&e.message||e).slice(0,160))+'</span>'));}
+  const lv=el('div','sclive');lv.id='scLive';box.appendChild(lv);
+  paintBots();
+  if(Date.now()-BOTLAST>15000)setTimeout(()=>botTick(),60);
+}
+function paintBotBadge(){
+  const n=(Array.isArray(DB.scalps)?DB.scalps:[]).filter(b=>b&&b.on&&b.st&&b.st.pos).length, e=$('#cScalp');
+  if(e){e.textContent=faN(n);e.classList.toggle('z',!n);e.title=n?faN(n)+' ربات با پوزیشن باز':'';}
+}
+const BOTOPEN=new Set();           // تاریخچه‌های باز، تا رندر دوباره ببندشان
+function paintBots(){
+  const box=$('#scLive');if(!box||DRAGGING)return;
+  const L=botList();
+  box.innerHTML='';
+  box.appendChild(el('div','sechd schd','<b>ربات‌های اسکلپ</b>'+(L.length?'<span>'+faN(L.filter(b=>b.on).length)+' روشن</span>':'')));
+  if(!L.length){
+    box.appendChild(el('div','empty sm','هنوز رباتی روشن نکرده‌ای. بالا یک نماد را بسنج؛ زیر کارت «الان لانگ/شورت/صبر» دو دکمه هست: '+
+      '«تست خودکار» همین روش را روی روزهای گذشته می‌سنجد، و «ربات خودکار» از همین حالا خودش معامله می‌کند.'));
+    paintBotBadge();return;
+  }
+  for(const b of L)box.appendChild(botCard(b));
+  box.appendChild(el('div','hint','ربات‌ها هر ۳۰ ثانیه با کندل ۱ دقیقه‌ای جلو می‌روند (تا وقتی برنامه باز است). اگر برنامه بسته بوده، با باز شدن از روی کندل‌ها '+
+    'همان معامله‌ها ثبت می‌شود. معامله‌ی کاغذی است؛ فاندینگ حساب نشده.'));
+  paintBotBadge();
+}
+function botCard(b){
+  const c=b.cfg, st=b.st, pos=st.pos, px=botPx(b.tk), mine=botMine(b);
+  const flo=pos&&px!=null?pos.real+pos.q*botMove(pos,px,c.lev)-c.fee*c.lev:null, flu=flo!=null?flo/100*c.mg:null;
+  const card=el('div','card scard'+(pos?' d-'+pos.side+(flu?(flu>0?' pu':' pd'):''):'')+(b.on?'':' off'));card.id='bot-'+b.id;
+  const head=el('div','chead');
+  head.appendChild(el('span','tick',b.tk));
+  head.appendChild(el('span','pill gold',c.mode==='fix'?'رنج ثابت':'ربات خودکار'));
+  if(pos)head.appendChild(el('span','pill '+pos.side,faSide(pos.side)));
+  head.appendChild(el('span','pill mut',fmtNum(c.lev)+'x'));
+  head.appendChild(el('span','pill '+(!b.on?'mut':pos?'open':'gold'),!b.on?'متوقف':pos?'باز':'منتظر'));
+  head.appendChild(el('div','when',pos?'باز: '+jStampFa(new Date(pos.t0)):'روشن از: '+jStampFa(new Date(b.at))));
+  card.appendChild(head);
+  const bd=el('div','body');
+  const err=BOTERR.get(b.tk);
+  if(err&&b.on)bd.appendChild(el('div','flag d','<i>!</i><span>'+esc(err)+'</span>'));
+  if(!mine)bd.appendChild(el('div','flag i','<i>i</i><span>این ربات روی دستگاه دیگری روشن شده و همان‌جا اجرا می‌شود؛ اینجا فقط آخرین وضعیتِ همگام‌شده دیده می‌شود. '+
+    'اگر آن دستگاه دیگر نیست (یا داده‌ی مرورگر پاک شده)، «اجرا روی این دستگاه» را بزن؛ اگر هست، اول آنجا متوقفش کن.</span>'));
+  if(pos){
+    const hero=el('div','pnlhero');
+    hero.innerHTML='<div><span class="lab">سود/ضرر شناور</span><div class="big '+cls(flu)+'">'+fmtUsd(flu)+'</div></div>'+
+      '<div><span class="lab">روی مارجین</span><div class="lp '+cls(flo)+'">'+fmtPct(flo)+'</div></div>'+
+      '<div class="side"><span class="lab">قیمت الان</span><div class="lp">'+(px!=null?fmtPrice(px):'—')+'</div></div>';
+    bd.appendChild(hero);
+    const p={id:'bot-'+b.id,ticker:b.tk,kind:'fut',dir:pos.side,entry:pos.en,stop:pos.stop,targets:pos.mid!=null&&!pos.half?[pos.mid,pos.tp]:[pos.tp],
+      lev:c.lev,margin:c.mg*pos.q,baseMargin:c.mg,status:'bot',openedAt:pos.t0,partials:[],log:[]};
+    try{bd.appendChild(buildLadder(p,px,posMetrics(p,px)));}catch(e){}
+    bd.appendChild(el('div','scnext',ic('bolt')+'<span>'+(pos.half?(c.save==='half'?'نصفش روی '+fmtPrice(pos.mid)+' بسته شد؛ ':'')+'استاپ روی ورود (ریسک‌فری) · ':
+        pos.mid!=null?'سیو سود روی <b dir="ltr">'+fmtPrice(pos.mid)+'</b> ('+(c.save==='half'?'نصف + ':'')+'استاپ روی ورود) · ':'')+
+      'تارگت <b dir="ltr">'+fmtPrice(pos.tp)+'</b> · استاپ <b dir="ltr">'+(pos.stop!=null?fmtPrice(pos.stop):'—')+'</b>'+
+      (pos.how==='mkt'?' · ورود بازار':' · ورود با سفارش')+'</span>'));
+  }else{
+    const pl=st.plan, pend=st.pend||[];
+    let t='';
+    if(!b.on)t='متوقف است.';
+    else if(c.mode==='auto'&&(!pl||pl.act==='nodata'))t='در حال جمع کردن کندل‌ها برای اولین تصمیم…';
+    else if(pl&&pl.act==='none')t='در این دوره رنجی به اندازه‌ی باند نیست؛ صبر.';
+    else if(pl&&pl.act==='out')t='قیمت از رنج بیرون زده (رنج شکسته)؛ تا رنج تازه صبر.';
+    else if(pend.length)t='منتظر: '+pend.map(o=>faSide(o.side)+' روی <b dir="ltr">'+fmtPrice(o.en)+'</b>').join(' یا ');
+    else t='منتظر ارزیابی بعدی.';
+    if(pl&&pl.trend&&c.mode==='auto')t+='<br>روند: '+SW_TREND[pl.trend]+' · رنج <span dir="ltr">'+fmtPrice(pl.supp)+' ⇄ '+fmtPrice(pl.res)+'</span>';
+    if(px!=null&&b.on)t+=' · قیمت الان <b dir="ltr">'+fmtPrice(px)+'</b>';
+    bd.appendChild(el('div','scnext wait',ic('clock')+'<span>'+t+'</span>'));
+  }
+  const T=b.tot||botTot0(), hrs=(Date.now()-b.at)/36e5;
+  const kv=el('div','kv');
+  kv.innerHTML='<div class="k"><b>روش</b><span class="rt">'+(c.mode==='fix'?'رنج <bdi dir="ltr">'+fmtPrice(c.L)+' ⇄ '+fmtPrice(c.H)+'</bdi>':'رنج از '+fmtNum(c.days)+' روز · هر '+SW_TF[c.tf]+' · باند '+fmtNum(c.roi)+'٪')+'</span></div>'+
+    '<div class="k"><b>سیو سود</b><span class="rt">'+BOT_SAVE_S[c.save]+'</span></div>'+
+    '<div class="k"><b>معامله‌ی بسته</b><span class="rt">بُرد <bdi>'+faN(T.w)+'</bdi> · باخت <bdi>'+faN(T.n-T.w)+'</bdi> · از <bdi>'+faN(T.n)+'</bdi></span></div>'+
+    '<div class="k"><b>جمع سود/ضرر</b><span class="rt big '+cls(T.usd)+'"><bdi>'+fmtUsd(T.usd)+'</bdi></span></div>'+
+    '<div class="k"><b>بیشترین افت</b><span class="rt'+(T.dd?' d':'')+'"><bdi>'+(T.dd?fmtUsd(-T.dd):'—')+'</bdi></span></div>'+
+    '<div class="k"><b>روشن از</b><span class="rt">'+(hrs<48?fmtNum(hrs)+' ساعت پیش':fmtNum(hrs/24)+' روز پیش')+'</span></div>';
+  bd.appendChild(kv);
+  if(b.trades.length)bd.insertAdjacentHTML('beforeend',botEqSvg(b.trades,T.usd-b.trades.reduce((s,x)=>s+x.usd,0)));
+  const act=el('div','srow');
+  const btn=(k,t,cl,icn)=>{const x=el('button','btn sm'+(cl?' '+cl:''),(icn?ic(icn):'')+'<span>'+t+'</span>');x.dataset.k=k;x.onclick=()=>botAct(b.id,k);act.appendChild(x);};
+  if(pos&&b.on&&mine)btn('close','همین الان ببند','pri','door');
+  if(mine){if(b.on)btn('stop','توقف','','pause');else btn('resume','ادامه','pri','play');}
+  else btn('take','اجرا روی این دستگاه','','play');
+  btn('del','حذف','','trash');
+  bd.appendChild(act);
+  if(b.trades.length){
+    const d=el('details','sec sub2 sctr');d.open=BOTOPEN.has(b.id);
+    d.innerHTML='<summary>معامله‌ها ('+faN(b.trades.length)+(T.n>b.trades.length?' از '+faN(T.n):'')+')</summary>'+
+      '<div class="tscroll"><table class="tp"><thead><tr><th>جهت</th><th>ورود → خروج</th><th>سود/ضرر</th></tr></thead><tbody>'+botTradeRows(b.trades)+'</tbody></table></div>';
+    d.addEventListener('toggle',()=>{d.open?BOTOPEN.add(b.id):BOTOPEN.delete(b.id);});
+    bd.appendChild(d);
+  }
+  card.appendChild(bd);
+  return card;
+}

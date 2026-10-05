@@ -63,7 +63,7 @@ function renderAll(){
   else if(view==='learn')renderLessons();
   else if(view==='scalp')renderScalp();
   paintLearnBadge();
-  paintScalpBadge();
+  paintBotBadge();
   paintMoreBadge();
   destackAll();
   renderHealth();
