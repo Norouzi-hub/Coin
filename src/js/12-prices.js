@@ -24,6 +24,7 @@ function applyPrices(m,srcName,route,ms){
   let did=false;
   try{did=checkAutoExec();}catch(e){logIt('err','اجرای خودکار: '+e.message);}
   try{if(!did)checkAlerts();checkPending();}catch(e){}
+  try{checkScalp();}catch(e){logIt('err','اسکلپ زنده: '+e.message);}
 }
 /* ---- مارک پرایس فیوچرز ---- */
 /* قیمت اصلی از بازار اسپات می‌آید، ولی صرافی استاپ فیوچرز را با «مارک پرایس» اجرا می‌کند؛ در
@@ -72,6 +73,7 @@ function onMarks(){
   let did=false;
   try{did=checkAutoExec();}catch(e){}
   try{if(!did)checkAlerts();}catch(e){}
+  try{checkScalp();}catch(e){}
   if(!did&&!$('#vPositions').classList.contains('hide'))renderPositions();
 }
 function rowsToMap(rows){

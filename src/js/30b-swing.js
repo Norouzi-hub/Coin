@@ -157,50 +157,57 @@ function scalpCfg(inp,o,t0){
   const L=sign>0?E:T, H=sign>0?T:E, d=inp.stop?Math.abs(E-inp.stop):null;
   return {L,H,first:inp.dir,d,lev:+o.lev||10,fee:+S.fee||0,mg:+o.mg||+S.cap||10,t0:t0||0};
 }
-function rangeScalp(C,cfg){
-  const {L,H,d,lev,fee}=cfg, liqF=1/lev-MMR, out=[];
-  if(!(L>0&&H>L))return {trades:out,open:null,cfg};
-  const lv=side=>{
-    if(side==='long'){const sl=d!=null?L-d:null, lq=liqF>0?L*(1-liqF):null;
-      const adv=sl!=null&&lq!=null?Math.max(sl,lq):sl!=null?sl:lq;return {en:L,tp:H,adv,liq:lq!=null&&adv===lq&&(sl==null||lq>sl)};}
-    const sl=d!=null?H+d:null, lq=liqF>0?H*(1+liqF):null;
-    const adv=sl!=null&&lq!=null?Math.min(sl,lq):sl!=null?sl:lq;return {en:H,tp:L,adv,liq:lq!=null&&adv===lq&&(sl==null||lq<sl)};
-  };
-  const roiOf=(side,en,ex,liq)=>liq?-100:((ex-en)/en*(side==='long'?1:-1)*lev*100-fee*lev);
-  let pos=null, started=false;
-  const P=swPts(C.filter(k=>k.t>=(cfg.t0||0)));
-  if(!P.length)return {trades:out,open:null,cfg};
+/* سطح‌های هر طرف: ورود، تارگت و «خلاف جهت» (استاپ یا لیکوئید، هر کدام نزدیک‌تر) */
+function scalpLv(cfg,side){
+  const {L,H,d,lev}=cfg, liqF=1/lev-MMR;
+  if(side==='long'){const sl=d!=null?L-d:null, lq=liqF>0?L*(1-liqF):null;
+    const adv=sl!=null&&lq!=null?Math.max(sl,lq):sl!=null?sl:lq;return {en:L,tp:H,adv,liq:lq!=null&&adv===lq&&(sl==null||lq>sl)};}
+  const sl=d!=null?H+d:null, lq=liqF>0?H*(1+liqF):null;
+  const adv=sl!=null&&lq!=null?Math.min(sl,lq):sl!=null?sl:lq;return {en:H,tp:L,adv,liq:lq!=null&&adv===lq&&(sl==null||lq<sl)};
+}
+const scalpRoi=(cfg,side,en,ex,liq)=>liq?-100:((ex-en)/en*(side==='long'?1:-1)*cfg.lev*100-cfg.fee*cfg.lev);
+/* یک قدم از اسکلپ رنج روی نقطه‌های تازه. st حالتِ ماندگار است و همین‌جا عوض می‌شود:
+   {pos:{side,en,t}|null, started, prev} — همان تابع هم برای آزمون گذشته (همه‌ی کندل‌ها یک‌جا)
+   و هم برای اجرای زنده (هر بار چند نقطه‌ی تازه) به کار می‌رود. خروجی: معامله‌های بسته‌شده در این قدم. */
+function scalpStep(P,cfg,st){
+  const {L,H}=cfg, out=[];
+  if(!(L>0&&H>L)||!P.length)return out;
   const cross=(a,b,x)=>(a<x&&b>=x)||(a>x&&b<=x)||(a===x&&b===x);
-  let prev=P[0].p;
-  for(let i=0;i<P.length;i++){
-    const q=P[i], b=q.p;let cur=i===0?b:prev;
+  for(const q of P){
+    const b=q.p, first=st.prev==null;let cur=first?b:st.prev;
     for(let g=0;g<8;g++){
-      if(!pos){
+      if(!st.pos){
         // منتظر ورود: اول فقط ورودِ خودت؛ بعد از آن هر کدام از دو سرِ رنج
-        const cand=started?[['long',L],['short',H]]:[[cfg.first,cfg.first==='long'?L:H]];
+        const cand=st.started?[['long',L],['short',H]]:[[cfg.first,cfg.first==='long'?L:H]];
         let hit=null;
-        for(const [side,x] of cand)if(cross(cur,b,x)||(i===0&&g===0&&Math.abs(b-x)/x<1e-9)){
+        for(const [side,x] of cand)if(cross(cur,b,x)||(first&&g===0&&Math.abs(b-x)/x<1e-9)){
           if(!hit||Math.abs(x-cur)<Math.abs(hit[1]-cur))hit=[side,x];}
         if(!hit)break;
-        pos={side:hit[0],en:hit[1],t:q.t};started=true;cur=hit[1];continue;
+        st.pos={side:hit[0],en:hit[1],t:q.t};st.started=true;cur=hit[1];continue;
       }
-      const v=lv(pos.side);
+      const pos=st.pos, v=scalpLv(cfg,pos.side);
       const towardTp=pos.side==='long'?b>cur:b<cur;
       if(towardTp&&cross(cur,b,v.tp)){
-        out.push({side:pos.side,en:pos.en,ex:v.tp,t0:pos.t,t1:q.t,win:true,roi:roiOf(pos.side,pos.en,v.tp,false)});
-        const ns=pos.side==='long'?'short':'long';
-        pos={side:ns,en:v.tp,t:q.t};cur=v.tp;continue;           // همان‌جا برعکس
+        out.push({side:pos.side,en:pos.en,ex:v.tp,t0:pos.t,t1:q.t,win:true,roi:scalpRoi(cfg,pos.side,pos.en,v.tp,false)});
+        st.pos={side:pos.side==='long'?'short':'long',en:v.tp,t:q.t};cur=v.tp;continue;   // همان‌جا برعکس
       }
       if(!towardTp&&v.adv!=null&&cross(cur,b,v.adv)){
-        out.push({side:pos.side,en:pos.en,ex:v.adv,t0:pos.t,t1:q.t,win:false,liq:v.liq,roi:roiOf(pos.side,pos.en,v.adv,v.liq)});
-        pos=null;cur=v.adv;continue;
+        out.push({side:pos.side,en:pos.en,ex:v.adv,t0:pos.t,t1:q.t,win:false,liq:v.liq,roi:scalpRoi(cfg,pos.side,pos.en,v.adv,v.liq)});
+        st.pos=null;cur=v.adv;continue;
       }
       break;
     }
-    prev=b;
+    st.prev=b;
   }
-  const lastP=P[P.length-1].p;
-  const open=pos?{side:pos.side,en:pos.en,t0:pos.t,px:lastP,roi:roiOf(pos.side,pos.en,lastP,false)}:null;
+  return out;
+}
+function rangeScalp(C,cfg){
+  const st={pos:null,started:false,prev:null};
+  const P=swPts(C.filter(k=>k.t>=(cfg.t0||0)));
+  const out=scalpStep(P,cfg,st);
+  if(!P.length||!(cfg.L>0&&cfg.H>cfg.L))return {trades:out,open:null,cfg};
+  const lastP=P[P.length-1].p, pos=st.pos;
+  const open=pos?{side:pos.side,en:pos.en,t0:pos.t,px:lastP,roi:scalpRoi(cfg,pos.side,pos.en,lastP,false)}:null;
   return {trades:out,open,cfg};
 }
 function scalpSummary(r,keep){
@@ -352,8 +359,10 @@ function swLine(pr){
 const z0=v=>Math.abs(v)<0.005?0:v;         // «−0.00٪» نشان داده نشود
 const fmtNum=v=>v==null||!isFinite(v)?'—':String(+(+v).toFixed(v<1?2:1));
 
-/* ---- پنل در کانال‌سنج ----
-   سه بخشِ آکاردئونی (فقط یکی باز): تنظیم‌ها، بررسی توکن و سناریوی دستی، سیگنال‌ها */
+/* ---- پنل‌ها ----
+   تب اسکلپ: دو بخشِ آکاردئونی (فقط یکی باز): تنظیم‌ها، بررسی توکن و سناریوی دستی.
+   کانال‌سنج: فقط نوسانِ سیگنال‌های کانال (با همان تنظیم‌ها). */
+const swRerender=()=>{if(view==='scalp')renderScalp();else if(view==='audit')renderAudit();};
 function swSection(id,title,sub,bodyFn){
   const open=SWOPT.open===id;
   const w=el('div','swsec'+(open?' on':''));w.dataset.id=id;
@@ -361,7 +370,7 @@ function swSection(id,title,sub,bodyFn){
   h.type='button';h.setAttribute('aria-expanded',open?'true':'false');
   h.onclick=()=>{
     const y0=h.getBoundingClientRect().top;
-    SWOPT.open=open?'':id;swOptSave();renderAudit();
+    SWOPT.open=open?'':id;swOptSave();swRerender();
     // سربرگِ زده‌شده سر جایش بماند (رندر دوباره‌ی تب صفحه را نپراند)
     const nh=document.querySelector('.swsec[data-id="'+id+'"] .swsh');
     if(nh){const dy=nh.getBoundingClientRect().top-y0;if(Math.abs(dy)>0.5)window.scrollBy(0,dy);}
@@ -370,12 +379,21 @@ function swSection(id,title,sub,bodyFn){
   if(open){const b=el('div','swsb');bodyFn(b);w.appendChild(b);}
   return w;
 }
-function buildSwingPanel(rows){
-  const o=SWOPT, a=swBand(o)*100, liq=(1/(+o.lev||10)-MMR)*100;
+function buildSwingPanel(rows,mode){
+  const o=SWOPT, a=swBand(o)*100, liq=(1/(+o.lev||10)-MMR)*100, tool=mode==='scalp';
   const c=el('div','panel swp');
-  c.appendChild(el('div','panelhead','<b>نوسان‌سنج</b><span class="markhint">فقط وقتی بزنی می‌سنجد</span>'));
+  c.appendChild(el('div','panelhead',tool?'<b>سنجش رنج و اسکلپ</b><span class="markhint">فقط وقتی بزنی می‌سنجد</span>'
+    :'<b>نوسان‌سنج</b><span class="markhint">فقط وقتی بزنی می‌سنجد</span>'));
   c.appendChild(el('div','hint','باند <b>±'+fmtNum(o.roi)+'٪ روی مارجین</b> با اهرم <b>'+fmtNum(o.lev)+'x</b> = ±'+fmtNum(a)+'٪ حرکت قیمت · کندل '+SW_TF[o.tf||'5m']));
   if(liq<=a)c.appendChild(el('div','flag d','<i>!</i><span>با اهرم '+fmtNum(o.lev)+'x قیمت در حدود '+fmtNum(liq)+'٪ خلاف جهت لیکوئید می‌شود؛ یعنی پیش از رسیدن به −'+fmtNum(o.roi)+'٪ کل مارجین رفته است.</span>'));
+  if(!tool){
+    const r=el('div','srow');r.style.marginTop='6px';
+    const b=el('button','btn sm',ic('sliders')+'<span>تنظیم اهرم، باند و تایم‌فریم (تب اسکلپ)</span>');
+    b.onclick=()=>{SWOPT.open='opt';swOptSave();go('scalp');};
+    r.appendChild(b);c.appendChild(r);
+    c.appendChild(swSigBody(rows,o));
+    return c;
+  }
 
   // ── تنظیم‌ها ──
   c.appendChild(swSection('opt','تنظیم‌ها','اهرم '+fmtNum(o.lev)+'x · باند '+fmtNum(o.roi)+'٪ · '+SW_TF[o.tf||'5m']+' · '+SW_WIN[o.win],b=>{
@@ -387,15 +405,15 @@ function buildSwingPanel(rows){
     b.appendChild(el('div','tgl','تایم‌فریم کندل'));
     const tf=el('div','pbpick swtf');
     for(const [k,v] of Object.entries(SW_TF)){const x=el('button','pbc'+((o.tf||'5m')===k?' on':''),v);x.type='button';
-      x.setAttribute('aria-pressed',(o.tf||'5m')===k);x.onclick=()=>{o.tf=k;swOptSave();renderAudit();};tf.appendChild(x);}
+      x.setAttribute('aria-pressed',(o.tf||'5m')===k);x.onclick=()=>{o.tf=k;swOptSave();swRerender();};tf.appendChild(x);}
     b.appendChild(tf);
     b.appendChild(el('div','hint','کوچک‌تر = دقیق‌تر (ترتیبِ بالا و پایینِ داخل هر کندل) ولی کندتر؛ ۱ و ۳ دقیقه‌ای حداکثر حدود '+
-      '۵ و ۱۶ روز را پوشش می‌دهند. تایم‌فریم و باند برای هر دو بخش پایین است؛ عوضشان کنی، سیگنال‌ها باید دوباره سنجیده شوند.'));
+      '۵ و ۱۶ روز را پوشش می‌دهند. همین تنظیم‌ها برای نوسانِ سیگنال‌ها در کانال‌سنج هم به کار می‌رود؛ عوضشان کنی، آن‌ها باید دوباره سنجیده شوند.'));
     const read=()=>{
       o.lev=Math.min(125,Math.max(1,parseFloat(normDig($('#swLev').value))||10));
       o.roi=Math.min(500,Math.max(1,parseFloat(normDig($('#swRoi').value))||20));
       o.win=$('#swWin').value in SW_WIN?$('#swWin').value:'sig';
-      swOptSave();renderAudit();
+      swOptSave();swRerender();
     };
     g.querySelectorAll('input,select').forEach(i=>i.onchange=read);
   }));
@@ -440,29 +458,31 @@ function buildSwingPanel(rows){
     },0);
   }));
 
-  // ── سیگنال‌ها ──
+  return c;
+}
+/* نوسانِ سیگنال‌های کانال (داخل کانال‌سنج) */
+function swSigBody(rows,o){
+  const b=el('div','swsig');
   const meas=rows.filter(x=>x.inp.tk&&!audPre(x.inp)&&x.r&&x.r.tAct);
   const have=meas.filter(x=>swOf(x.p,x.inp)), todo=meas.filter(x=>!swOf(x.p,x.inp));
-  c.appendChild(swSection('sig','سیگنال‌ها'+(AF.sym?' · '+esc(AF.sym):''),
-    faN(have.length)+' از '+faN(meas.length)+' سنجیده'+(SWQ.on?' · در حال سنجش':''),b=>{
-    const bar=el('div','srow');bar.style.marginTop='0';
-    const bRun=el('button','btn pri sm',ic('bars')+'<span>'+(todo.length?'سنجش نوسان '+faN(todo.length)+' سیگنال':'همه سنجیده شده‌اند')+'</span>');
-    bRun.disabled=!todo.length||SWQ.on;
-    bRun.onclick=()=>swRun(todo.map(x=>({p:x.p,inp:x.inp})));
-    bar.appendChild(bRun);
-    if(have.length){const bAll=el('button','btn sm','دوباره همه ('+faN(meas.length)+')');bAll.disabled=SWQ.on;
-      bAll.onclick=()=>swRun(meas.map(x=>({p:x.p,inp:x.inp})));bar.appendChild(bAll);}
-    const bStop=el('button','btn sm'+(SWQ.on?'':' hide'),'توقف');bStop.onclick=()=>{SWQ.stop=true;};
-    bar.appendChild(bStop);
-    b.appendChild(bar);
-    const pg=el('div','audprog'+(SWQ.on?'':' hide'));pg.id='swProg';b.appendChild(pg);
-    if(!meas.length)b.appendChild(el('div','hint','هنوز سیگنالِ فعال‌شده‌ای در کانال‌سنج نیست؛ اول باید سنجیده شوند (ورودشان فعال شده باشد).'));
-    else if(!have.length)b.appendChild(el('div','hint',faN(meas.length)+' سیگنال آماده‌ی سنجش'+(AF.sym||AF.dir!=='all'||AF.span?' (با فیلتر بالا)':'')+
-      '. برای هر کدام کندل '+SW_TF[o.tf||'5m']+' گرفته می‌شود؛ چند دقیقه طول می‌کشد.'));
-    else b.appendChild(swAggregate(have));
-    setTimeout(paintSwProg,0);
-  }));
-  return c;
+  b.appendChild(el('div','hint',faN(have.length)+' از '+faN(meas.length)+' سیگنال سنجیده'+(AF.sym?' · '+esc(AF.sym):'')+(SWQ.on?' · در حال سنجش':'')));
+  const bar=el('div','srow');
+  const bRun=el('button','btn pri sm',ic('bars')+'<span>'+(todo.length?'سنجش نوسان '+faN(todo.length)+' سیگنال':'همه سنجیده شده‌اند')+'</span>');
+  bRun.disabled=!todo.length||SWQ.on;
+  bRun.onclick=()=>swRun(todo.map(x=>({p:x.p,inp:x.inp})));
+  bar.appendChild(bRun);
+  if(have.length){const bAll=el('button','btn sm','دوباره همه ('+faN(meas.length)+')');bAll.disabled=SWQ.on;
+    bAll.onclick=()=>swRun(meas.map(x=>({p:x.p,inp:x.inp})));bar.appendChild(bAll);}
+  const bStop=el('button','btn sm'+(SWQ.on?'':' hide'),'توقف');bStop.onclick=()=>{SWQ.stop=true;};
+  bar.appendChild(bStop);
+  b.appendChild(bar);
+  const pg=el('div','audprog'+(SWQ.on?'':' hide'));pg.id='swProg';b.appendChild(pg);
+  if(!meas.length)b.appendChild(el('div','hint','هنوز سیگنالِ فعال‌شده‌ای در کانال‌سنج نیست؛ اول باید سنجیده شوند (ورودشان فعال شده باشد).'));
+  else if(!have.length)b.appendChild(el('div','hint',faN(meas.length)+' سیگنال آماده‌ی سنجش'+(AF.sym||AF.dir!=='all'||AF.span?' (با فیلتر بالا)':'')+
+    '. برای هر کدام کندل '+SW_TF[o.tf||'5m']+' گرفته می‌شود؛ چند دقیقه طول می‌کشد.'));
+  else b.appendChild(swAggregate(have));
+  setTimeout(paintSwProg,0);
+  return b;
 }
 /* نمایش اسکلپ رنج. full: فهرست کامل معامله‌ها (سناریوی دستی)؛ وگرنه فقط خلاصه */
 const swMg=()=>+normDig(String(SWOPT.mg||'')).replace(/,/g,'')||+S.cap||10;
@@ -536,7 +556,8 @@ function swDecideHtml(d,pr,o){
     (d.act!=='out'?'<div class="dplan">'+plan+
       '<div class="dnum"><span><i>ورود '+S2+'</i><b dir="ltr">'+fmtPrice(d.entry)+'</b></span><span><i>تارگت</i><b dir="ltr" class="u">'+fmtPrice(d.tp)+'</b></span><span><i>استاپ</i><b dir="ltr" class="d">'+fmtPrice(d.stop)+'</b></span></div>'+
       '<div class="dw">با '+fmtNum(d.lev)+'x و $'+fmtNum(mg)+': هر بُرد حدود <b class="u">'+fmtUsd(d.winP/100*mg)+'</b> · هر استاپ حدود <b class="d">'+fmtUsd(-d.lossP/100*mg)+'</b> (با کارمزد)</div>'+
-      '<div class="srow"><button class="btn pri sm" id="swDecRun">'+ic('bars')+'<span>این برنامه در همین روزها چند بار جواب می‌داد؟</span></button></div></div>':'')+
+      '<div class="srow"><button class="btn pri sm" id="swDecLive">'+ic('play')+'<span>شروع اسکلپ زنده با همین برنامه</span></button>'+
+        '<button class="btn sm" id="swDecRun">'+ic('bars')+'<span>این برنامه در همین روزها چند بار جواب می‌داد؟</span></button></div></div>':'')+
     (d.safeLev<d.lev?'<div class="flag d"><i>!</i><span>بزرگ‌ترین حرکتِ این دوره '+fmtNum(pr.legMax)+'٪ بود؛ با '+fmtNum(d.lev)+'x یک حرکتِ این‌چنینی لیکوئیدت می‌کند. اهرم حداکثر <b>'+faN(d.safeLev)+'x</b>.</span></div>':'')+
   '</div>';
 }
@@ -574,7 +595,8 @@ function paintSwCoin(){
           k('لیکوئید با '+fmtNum(lev)+'x',mp.liqT?'می‌شد':'نه',mp.liqT?'d':'u',mp.liqT?jStampFa(new Date(mp.liqT)):'فاصله '+fmtNum(mp.liqP)+'٪')+
         '</div>'+
         '<div class="hint">بعد از خوردن استاپ هم شمارش ادامه دارد (برای دیدن رفتار قیمت)؛ «خوردن استاپ» یعنی چند بار به آن رسید.</div>'+
-        scalpHtml(mp.scalp,true);
+        scalpHtml(mp.scalp,true)+
+        (mp.scalp?'<div class="srow"><button class="btn pri sm" id="swScLive">'+ic('play')+'<span>همین اسکلپ را زنده اجرا کن</span></button></div>':'');
     }
     h+='</div>';
   }
@@ -613,6 +635,12 @@ function paintSwCoin(){
     SWOPT.dir=dec.side;SWOPT.me=fx(dec.entry);SWOPT.mt=fx(dec.tp);SWOPT.ms=fx(dec.stop);swOptSave();
     $('#swDir').value=dec.side;$('#swMe').value=SWOPT.me;$('#swMt').value=SWOPT.mt;$('#swMs').value=SWOPT.ms;
     $('#swTkGo').click();};
+  // شروع اسکلپ زنده: رنج از کارت تصمیم یا از سناریوی دستی
+  const dl=$('#swDecLive');
+  if(dl)dl.onclick=()=>scStartSheet({tk,first:dec.side,L:dec.side==='long'?dec.entry:dec.tp,H:dec.side==='long'?dec.tp:dec.entry,
+    d:Math.abs(dec.entry-dec.stop),lev:+o.lev||10,mg:swMg()});
+  const sl=$('#swScLive');
+  if(sl&&sc)sl.onclick=()=>{const c=scalpCfg(sc,o);scStartSheet({tk,first:sc.dir,L:c.L,H:c.H,d:c.d,lev:c.lev,mg:swMg()});};
   const use=(dir,e,t)=>{const fx=v=>String(+(+v).toPrecision(6));
     SWOPT.dir=dir;SWOPT.me=fx(e);SWOPT.mt=fx(t);SWOPT.ms='';swOptSave();
     $('#swDir').value=dir;$('#swMe').value=SWOPT.me;$('#swMt').value=SWOPT.mt;$('#swMs').value='';
@@ -721,7 +749,7 @@ function sheetSwing(p){
      $('#swGo').onclick=async e=>{
        btnBusy(e.currentTarget,true,'در حال گرفتن کندل');
        try{const prof=await swOne(p,inp,Object.assign({},SWOPT));SWING[p.id]={k:swKey(inp,SWOPT),at:Date.now(),prof};swSave();
-         closeSheet();setTimeout(()=>{sheetSwing(p);if(!$('#vAudit').classList.contains('hide'))renderAudit();},260);}
+         closeSheet();setTimeout(()=>{sheetSwing(p);swRerender();},260);}
        catch(err){toast('کندل نیامد'+(AUDQ.err?' — '+AUDQ.err:''),'err');btnBusy(e.currentTarget,false);}
      };
    });

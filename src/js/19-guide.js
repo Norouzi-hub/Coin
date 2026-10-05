@@ -262,7 +262,7 @@ function paintLearnBadge(){
   const b=$('#cLearn');if(!b)return;
   const list=guideList();
   const n=list.filter(([num])=>{const L=guideRec(num);return L&&!L.read;}).length;
-  b.textContent=faN(n);b.classList.toggle('z',!n);
+  b.textContent=faN(n);b.dataset.n=n;b.classList.toggle('z',!n);
 }
 function mediaOf(L){
   const w=el('div','gmedia');

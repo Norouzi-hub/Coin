@@ -56,7 +56,7 @@ const channelHtml=()=>'<html><body>'+POSTS_SRC.map(x=>mkPost(...x)).join('')+'</
  await p.waitForTimeout(4500);
  await p.evaluate(()=>{DB.lessons['c/1893051/901']={id:'c/1893051/901',title:'مدیریت سرمایه',text:'x',at:Date.now()};save();});
  // برو به کانال‌سنج و بگذار بسنجد
- await p.click('.tab[data-v="audit"]');
+ await p.click('.tab[data-v="more"]');await p.click('.moreit[data-go="audit"]');
  await p.waitForFunction(()=>!AUDQ.on&&AUDQ.at>0,{timeout:60000});
  await p.waitForTimeout(600);
  const st=await p.evaluate(()=>{const o={};for(const x of POSTS){const a=AUD[x.id];if(a)o[x.id.split('/').pop()]=
@@ -170,7 +170,7 @@ const channelHtml=()=>'<html><body>'+POSTS_SRC.map(x=>mkPost(...x)).join('')+'</
  ok(kept.n>=7,'نتایج سنجش بعد از بارگذاری دوباره مانده ('+kept.n+')');
  ok(kept.ed&&kept.orig,'ویرایش و متن اولیه ماندگارند');
  const before=calls.binance+calls.mexc+calls.fapi;
- await p.click('.tab[data-v="audit"]');await p.waitForTimeout(3000);
+ await p.click('.tab[data-v="more"]');await p.click('.moreit[data-go="audit"]');await p.waitForTimeout(3000);
  const after=calls.binance+calls.mexc+calls.fapi;
  console.log('  درخواست کندلِ اضافه بعد از بارگذاری دوباره:',after-before);
  ok(after-before<=4,'نتیجه‌های قطعی دوباره گرفته نمی‌شوند');

@@ -10,7 +10,7 @@ const html='<html><body><div class="tgme_widget_message" data-post="ccoineres/10
   return r.abort();});
  await p.goto('http://localhost:8899/index.html',{waitUntil:'domcontentloaded'});
  await p.waitForTimeout(3500);
- await p.click('.tab[data-v="learn"]');await p.waitForTimeout(400);
+ await p.click('.tab[data-v="more"]');await p.click('.moreit[data-go="learn"]');await p.waitForTimeout(400);
  const pills=await p.$$eval('.gcard .ghead',e=>e.map(h=>h.textContent.includes('آموزش')));
  ok(pills.length===9,'9 درس');
  // همه را باز کن

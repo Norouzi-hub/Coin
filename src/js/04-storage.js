@@ -3,12 +3,12 @@ const KEY='signaldesk.v1';
 let storeOK=true;
 /* کلیدهای داده در یک جا: ذخیره، بارگذاری، همگام‌سازی و پشتیبان همه از همین فهرست می‌خوانند،
    پس کلید تازه فقط اینجا اضافه می‌شود (قبلاً پنج جا تکرار شده بود).
-   cats: دسته‌های ساخت کاربر [{id,n}] · pcat: پست ← فهرست شناسه‌ی دسته‌ها
+   cats: دسته‌های ساخت کاربر [{id,n}] · scalps: اسکلپ‌های زنده (30c-scalplive.js) · pcat: پست ← فهرست شناسه‌ی دسته‌ها
    ledit: متنِ ویرایش‌شده‌ی آموزش‌ها ('g'+شماره برای دستورالعمل، شناسه‌ی پست برای بقیه)
    tomb: «سنگ قبر» چیزهای پاک‌شده {'positions:id'|'<مجموعه>:<کلید>': زمان} — تا همگام‌سازی
          چیزی را که روی یک دستگاه پاک کرده‌ای از دستگاه دیگر زنده نکند */
 const DB_OBJ=['decisions','overrides','lessons','archived','results','edits','gone','revived','pcat','ledit','tomb'];
-const DB_ARR=['pending','watch','spot','cats'];
+const DB_ARR=['pending','watch','spot','cats','scalps'];
 const DB={positions:[],settings:{}};
 const isObj=x=>!!x&&typeof x==='object'&&!Array.isArray(x);
 function fillDB(d){

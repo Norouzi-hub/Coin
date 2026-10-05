@@ -1,11 +1,15 @@
 /* ==================== ناوبری ==================== */
 let view='signals';
+const VIEWS=[['vSignals','signals'],['vPositions','positions'],['vScalp','scalp'],['vReport','report'],['vMore','more'],['vAudit','audit'],['vLearn','learn']];
+/* کانال‌سنج و آموزش زیرِ «سایر»اند: وقتی بازند، همان تب روشن می‌ماند */
+const TAB_OF={audit:'more',learn:'more'};
 function go(v,noScroll){
   if(view===v&&noScroll)return;
   view=v;
   document.documentElement.classList.remove('navhide');   // با عوض کردن تب، منو همیشه پیداست
-  $$('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.v===v?'true':'false'));
-  for(const [id,name] of [['vSignals','signals'],['vPositions','positions'],['vReport','report'],['vAudit','audit'],['vLearn','learn']]){
+  const tab=TAB_OF[v]||v;
+  $$('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.v===tab?'true':'false'));
+  for(const [id,name] of VIEWS){
     const n=$('#'+id), on=name===v;
     n.classList.toggle('hide',!on);
     if(on){n.classList.remove('enter');void n.offsetWidth;n.classList.add('enter');}
@@ -33,6 +37,11 @@ function moveInd(scroll){
   if(l>=box.scrollLeft&&r<=box.scrollLeft+box.clientWidth)return;  // همین حالا دیده می‌شود
   try{t.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});}catch(e){}
 }
+/* نشانِ «سایر» = ادعاهای نادرستِ کانال + آموزش‌های نخوانده (هر دو بعد از رنگ شدنِ خودشان) */
+function paintMoreBadge(){
+  const n=['#cAud','#cLearn'].reduce((s,id)=>{const b=$(id);return s+(b&&+b.dataset.n||0);},0);
+  const b=$('#cMore');if(b){b.textContent=faN(n);b.classList.toggle('z',!n);}
+}
 function renderAll(){
   document.documentElement.classList.toggle('fx',F('fx'));
   const open=DB.positions.filter(p=>p.status==='open').length;
@@ -52,7 +61,10 @@ function renderAll(){
   else if(view==='positions')renderPositions();
   else if(view==='report')renderReport();
   else if(view==='learn')renderLessons();
+  else if(view==='scalp')renderScalp();
   paintLearnBadge();
+  paintScalpBadge();
+  paintMoreBadge();
   destackAll();
   renderHealth();
 }

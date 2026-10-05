@@ -56,12 +56,12 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
  ok(!side.some(x=>x.includes('آموزش')),'سطل آموزش از نوار فیلتر برداشته شد '+JSON.stringify(side));
  // تب پایین
  const tabs=await p.$$eval('.tab',e=>e.map(t=>t.textContent.trim()));
- ok(tabs.some(t=>t.startsWith('آموزش')),'تب آموزش در منوی پایین '+JSON.stringify(tabs));
+ ok(tabs.some(t=>t.startsWith('سایر')),'آموزش زیر تب «سایر» در منوی پایین '+JSON.stringify(tabs));
  const badge=await p.$eval('#cLearn',e=>e.classList.contains('z')?'':e.textContent);
  ok(badge==='9','نشان تب: 9 درس نخوانده');
  const fit=await p.evaluate(()=>{const n=document.getElementById('tabs');return n.scrollWidth<=n.clientWidth+1;});
  ok(fit,'5 تب در عرض 360 جا می‌شوند');
- await p.click('.tab[data-v="learn"]');await p.waitForTimeout(500);
+ await p.click('.tab[data-v="more"]');await p.click('.moreit[data-go="learn"]');await p.waitForTimeout(500);
  const g=await p.evaluate(()=>({cards:[...document.querySelectorAll('.gcard')].map(c=>c.querySelector('.gttl').textContent),
    prog:document.querySelector('.gprog span').textContent,warn:!!document.querySelector('.gwarn')}));
  ok(g.cards.length===9&&g.cards[0]===TITLES[0],'9 کارت به ترتیب');

@@ -31,6 +31,9 @@ const ICO={
   share:'<circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="m8.3 10.8 7.4-4.3M8.3 13.2l7.4 4.3"/>',
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
   undo:'<path d="M4 9h11a5 5 0 0 1 0 10h-6"/><path d="M8 5 4 9l4 4"/>',
+  back:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+  play:'<path d="M8 5v14l11-7z"/>',
+  pause:'<path d="M8 5v14M16 5v14"/>',
   more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
 };
 const ic=(n,c)=>'<svg class="ic'+(c?' '+c:'')+'" viewBox="0 0 24 24" aria-hidden="true">'+(ICO[n]||'')+'</svg>';

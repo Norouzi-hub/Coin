@@ -25,7 +25,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(R.safe===13,'بزرگ‌ترین حرکت ۵.۹٪ ← اهرم امن حداکثر ۱۳x (۲۰x لیکوئید می‌شد): '+R.safe);
  ok(R.none==='none','بدون کف/سقف: «نمی‌شود گفت»');
  console.log('=== رابط ===');
- await p.evaluate(()=>{AUDOPEN='نوسان‌سنج';SWOPT.open='tok';SWOPT.tf='5m';SWOPT.me='';SWOPT.mt='';SWOPT.ms='';SWOPT.lev=20;go('audit',true);});await p.waitForTimeout(1200);
+ await p.evaluate(()=>{SWOPT.open='tok';SWOPT.tf='5m';SWOPT.me='';SWOPT.mt='';SWOPT.ms='';SWOPT.lev=20;go('scalp',true);});await p.waitForTimeout(1200);
  // مسیر ساختگی: دو روز رنجِ پایین، روز آخر رنجِ بالاتر و قیمت الان نزدیک کفِ رنج تازه
  await p.evaluate(()=>{const t0=Date.now()-3*864e5, seq=[];
    for(let i=0;i<48;i++)seq.push(i%2?80:78);for(let i=0;i<23;i++)seq.push(i%2?87:85);seq.push(85.1);

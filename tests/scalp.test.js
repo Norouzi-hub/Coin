@@ -28,7 +28,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    return rangeScalp(C,scalpCfg({dir:'short',entry:85000,stop:86000,tps:[80000]},{lev:10},0)).trades.map(x=>x.side+(x.win?'+':'-'));},mk);
  ok(s1.join(',')==='short+,long+','ورود شورت ۸۵۰۰۰، تارگت ۸۰۰۰۰: اول شورت، بعد لانگ');
  console.log('=== رابط ===');
- await p.evaluate(()=>{AUDOPEN='نوسان‌سنج';SWOPT.open='tok';SWOPT.tf='5m';go('audit',true);});await p.waitForTimeout(1500);
+ await p.evaluate(()=>{SWOPT.open='tok';SWOPT.tf='5m';go('scalp',true);});await p.waitForTimeout(1500);
  await p.evaluate(()=>{const v=(id,x)=>{const i=document.querySelector(id);i.value=x;i.dispatchEvent(new Event('change'));};
    v('#swTk','btc');v('#swDays','3');v('#swDir','long');v('#swMe','64000');v('#swMt','64500');v('#swMs','63500');v('#swMg','20');document.querySelector('#swTkGo').click();});
  for(let i=0;i<60&&!(await p.evaluate(()=>!!document.querySelector('#swCoin .scalp')));i++)await p.waitForTimeout(400);

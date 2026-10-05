@@ -53,13 +53,11 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  await p.evaluate(()=>document.querySelector('#audBody .panel.acc[data-acc="نوسان‌سنج"] > .panelhead').click());
  const acc2=await p.evaluate(()=>[...document.querySelectorAll('#audBody .panel.acc')].filter(x=>!x.classList.contains('shut')).map(x=>x.dataset.acc));
  ok(acc2.length===1&&acc2[0]==='نوسان‌سنج','زدن روی «نوسان‌سنج»: همان باز شد و کارنامه بسته شد');
- const subs=await p.evaluate(()=>[...document.querySelectorAll('.swsec')].map(x=>x.dataset.id+':'+(x.classList.contains('on')?1:0)).join(','));
- ok(subs==='opt:0,tok:1,sig:0','داخل نوسان‌سنج هم فقط یک بخش باز (بررسی توکن): '+subs);
+ const subs=await p.evaluate(()=>({sec:document.querySelectorAll('#audBody .swsec').length,sig:!!document.querySelector('#audBody .swsig'),tok:!!document.querySelector('#audBody #swTk')}));
+ ok(subs.sec===0&&subs.sig&&!subs.tok,'نوسان‌سنجِ کانال‌سنج فقط سیگنال‌ها را دارد؛ ابزار توکن در تب اسکلپ است');
 
  console.log('=== سیگنال‌ها: فقط با دکمه ===');
  ok(await p.evaluate(()=>Object.keys(SWING).length)===0,'باز کردن کانال‌سنج: نوسان چیزی نسنجید');
- await p.evaluate(()=>document.querySelector('.swsec[data-id="sig"] .swsh').click());await p.waitForTimeout(300);
- ok(await p.evaluate(()=>document.querySelector('.swsec[data-id="tok"]').classList.contains('on')===false&&document.querySelector('.swsec[data-id="sig"]').classList.contains('on')),'بخش سیگنال‌ها باز، بررسی توکن بسته');
  const btn=await p.evaluate(()=>{const b=[...document.querySelectorAll('.swp .btn')].find(x=>/سنجش نوسان/.test(x.textContent));return b&&{t:b.textContent,d:b.disabled};});
  ok(btn&&!btn.d,'دکمه: '+(btn&&btn.t));
  await p.evaluate(()=>[...document.querySelectorAll('.swp .btn')].find(x=>/سنجش نوسان/.test(x.textContent)).click());
@@ -70,11 +68,14 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(await p.evaluate(()=>/لمس تارگت ۱|نزدیک استاپ/.test(document.querySelector('#sheet').textContent)&&!!document.querySelector('#sheet .swsvg')),'جزئیات یک سیگنال با نمودار');
  await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
 
- console.log('=== تایم‌فریم دستی ===');
- await p.evaluate(()=>document.querySelector('.swsec[data-id="opt"] .swsh').click());await p.waitForTimeout(200);
+ console.log('=== تایم‌فریم دستی (تب اسکلپ) ===');
+ await p.evaluate(()=>[...document.querySelectorAll('#audBody .swp .btn')].find(x=>/تب اسکلپ/.test(x.textContent)).click());await p.waitForTimeout(500);
+ ok(await p.evaluate(()=>view==='scalp'&&document.querySelector('.swsec[data-id="opt"]').classList.contains('on')),'«تنظیم اهرم، باند و تایم‌فریم» تب اسکلپ را با تنظیم‌های باز آورد');
  await p.evaluate(()=>[...document.querySelectorAll('.swtf .pbc')].find(b=>b.textContent==='۳ دقیقه').click());await p.waitForTimeout(300);
  ok(await p.evaluate(()=>SWOPT.tf==='3m'&&/کندل ۳ دقیقه/.test(document.querySelector('.swp').textContent)),'۳ دقیقه انتخاب شد');
- ok(await p.evaluate(()=>/سنجش نوسان/.test(document.querySelector('.swsec[data-id="sig"] .swsh').textContent+document.querySelector('.swsec[data-id="sig"] .swsh span').textContent)||/0 از/.test(document.querySelector('.swsec[data-id="sig"] .swsh').textContent)),'تایم‌فریم عوض شد ← نتیجه‌های قبلی برای این تنظیم معتبر نیست');
+ await p.evaluate(()=>go('audit',true));await p.waitForTimeout(600);
+ ok(await p.evaluate(()=>/^0 از/.test(document.querySelector('#audBody .swsig .hint').textContent)),'تایم‌فریم عوض شد ← نتیجه‌های قبلی برای این تنظیم معتبر نیست: '+await p.evaluate(()=>document.querySelector('#audBody .swsig .hint').textContent));
+ await p.evaluate(()=>go('scalp',true));await p.waitForTimeout(400);
  const ivs=[];p.on('request',r=>{const m=r.url().match(/interval=(\w+)/);if(m)ivs.push(m[1]);});
 
  console.log('=== توکن و ورود دستی ===');
@@ -111,7 +112,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    SWCOIN={tk:'RNG',o:Object.assign({},SWOPT),pr:coinProfile(C,SWOPT),sc:null,mp:null};paintSwCoin();
    document.querySelector('#swUseL').click();});
  ok(await p.evaluate(()=>SWOPT.dir==='long'&&+SWOPT.me>98.7&&+SWOPT.me<99.2&&+SWOPT.mt>102.9&&document.querySelector('#swMe').value===SWOPT.me),'«لانگ از کف، تارگت سقف» فرم را پر کرد: '+await p.evaluate(()=>SWOPT.me+' → '+SWOPT.mt));
- await p.evaluate(()=>{SWOPT.open='tok';SWOPT.me='64000';SWOPT.tf='5m';swOptSave();renderAudit();});await p.waitForTimeout(300);
+ await p.evaluate(()=>{SWOPT.open='tok';SWOPT.me='64000';SWOPT.tf='5m';swOptSave();renderScalp();});await p.waitForTimeout(300);
  await p.evaluate(()=>{document.querySelector('#swTkGo').click();});await p.waitForTimeout(2500);
  const e=await p.$('.swp');await e.screenshot({path:require('./lib').out('swing.png')});
  ok(errs.length===0,'بدون خطا '+errs.join('|'));

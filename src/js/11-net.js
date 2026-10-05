@@ -119,7 +119,7 @@ function routeOrder(url,only,kind){
 /* همه‌ی مسیرها کنار هم فرستاده می‌شوند؛ اولین پاسخ درست برنده است و بقیه لغو می‌شوند */
 async function fetchVia(url,opt){
   opt=opt||{};
-  netStart();
+  if(!opt.quiet)netStart();      // quiet: درخواست‌های پشت‌سرهمِ پس‌زمینه (قیمت اسکلپ) نوار بالا و گزارش را پر نکنند
   const label=opt.label||url;
   try{
     const order=routeOrder(url,opt.onlyRoutes,opt.kind);
@@ -147,8 +147,8 @@ async function fetchVia(url,opt){
     });
     if(winner){
       const losers=results.filter(x=>x.route.id!==winner.route.id&&x.res.why&&x.res.why!=='cancelled');
-      logIt('ok',label+' آمد',{route:winner.route.name,ms:winner.res.ms});
-      if(losers.length)logIt('info','مسیرهای دیگر جواب ندادند: '+
+      if(!opt.quiet)logIt('ok',label+' آمد',{route:winner.route.name,ms:winner.res.ms});
+      if(losers.length&&!opt.quiet)logIt('info','مسیرهای دیگر جواب ندادند: '+
         losers.map(x=>x.route.name+' ('+(x.res.why||'?')+')').join('، '));
       setGoodRoute(opt.kind,winner.route.id);
       return {data:winner.res.data,route:winner.route.name,ms:winner.res.ms};
@@ -157,12 +157,12 @@ async function fetchVia(url,opt){
     for(const x of results){
       if(x.res.why==='unwrap'||x.res.why==='badproxy')DEADROUTE.add(x.route.id);
       tried.push(x.route.name+': '+x.res.msg);
-      logIt('warn',label+' — '+x.res.msg,{route:x.route.name,ms:x.res.ms,status:x.res.status,why:x.res.why});
+      if(!opt.quiet)logIt('warn',label+' — '+x.res.msg,{route:x.route.name,ms:x.res.ms,status:x.res.status,why:x.res.why});
     }
     const gk=opt.kind||'tg';
     if(GOOD[gk]&&results.some(x=>x.route.id===GOOD[gk])){GOOD[gk]=null;lsSet(GOODKEY,GOOD);}
-    logIt('err',label+' از هیچ مسیری نیامد',{why:'all-failed'});
+    if(!opt.quiet)logIt('err',label+' از هیچ مسیری نیامد',{why:'all-failed'});
     const err=new Error('no-route');err.tried=tried;throw err;
-  }finally{netEnd();}
+  }finally{if(!opt.quiet)netEnd();}
 }
 

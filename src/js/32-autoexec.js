@@ -302,8 +302,9 @@ function paintAudBadge(){
   if(audBadgeT)return;
   const run=()=>{audBadgeT=null;
     const nNo=claimsAll().filter(x=>x.vd.v==='no').length;
-    const ca=$('#cAud');if(ca){ca.textContent=faN(nNo);ca.classList.toggle('z',!nNo);
-      ca.title=nNo?faN(nNo)+' ادعای نادرستِ کانال':'';}};
+    const ca=$('#cAud');if(ca){ca.textContent=faN(nNo);ca.dataset.n=nNo;ca.classList.toggle('z',!nNo);
+      ca.title=nNo?faN(nNo)+' ادعای نادرستِ کانال':'';}
+    paintMoreBadge();};
   audBadgeT=(window.requestIdleCallback||setTimeout)(run,{timeout:1500});
 }
 function paintAudProgress(){

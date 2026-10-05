@@ -8,7 +8,7 @@ const {chromium} = require('./lib').pw;
     await p.goto('http://localhost:8899/index.html', {waitUntil:'domcontentloaded'});
     await p.waitForTimeout(3000);
     let worst = 0, rows = [];
-    for (const v of ['signals','positions','audit','report']) {
+    for (const v of ['signals','positions','scalp','report','more']) {
       await p.click(`.tab[data-v="${v}"]`);
       await p.waitForTimeout(700);                 // انیمیشن و اسکرول تمام شود
       const m = await p.evaluate(() => {

@@ -11,6 +11,10 @@ function wire(){
     t.insertAdjacentHTML('afterbegin',ic(t.dataset.ic));
     t.onclick=()=>go(t.dataset.v);
   });
+  // منوی «سایر» و دکمه‌ی برگشت در بالای کانال‌سنج و آموزش
+  $$('.moreit [data-ic]').forEach(i=>{i.outerHTML=ic(i.dataset.ic);});
+  $$('[data-go]').forEach(b=>b.onclick=()=>b.dataset.go==='settings'?openPanel('setVeil'):go(b.dataset.go));
+  $$('.crumb').forEach(b=>b.insertAdjacentHTML('afterbegin',ic('back')));
   $('#hchip').onclick=sheetHealth;
   $('#btnRef').onclick=()=>{readSettings();refresh(false);};
   $('#btnMore').onclick=async e=>{
