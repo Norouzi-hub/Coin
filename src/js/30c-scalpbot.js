@@ -28,7 +28,7 @@ const faSide=s=>s==='long'?'لانگ':'شورت';
 function botCfg(o){
   return {mode:o.mode==='fix'?'fix':o.mode==='scalp'?'scalp':'auto',
     tmax:o.mode==='scalp'?(+o.tmax||60):0,tearly:o.mode==='scalp'?(+o.tearly||0):0,
-    miss:o.miss!=null?+o.miss:2,flt:Object.assign({},o.flt||{}),lev:Math.min(125,Math.max(1,+o.lev||10)),roi:+o.roi||20,days:+o.days||1,
+    miss:o.miss!=null?+o.miss:2,costX:+o.costX||3,flt:Object.assign({},o.flt||{}),lev:Math.min(125,Math.max(1,+o.lev||10)),roi:+o.roi||20,days:+o.days||1,
     tf:IVMS[o.tf]?o.tf:'5m',mg:+o.mg||+S.cap||10,save:BOT_SAVE[o.save]?o.save:'half',
     fee:o.fee!=null?+o.fee:+S.fee||0,slip:o.slip!=null?+o.slip:Math.max(0,+S.slip||0),
     L:o.L!=null?+o.L:null,H:o.H!=null?+o.H:null,d:o.d!=null&&isFinite(o.d)?+o.d:null,first:o.first==='short'?'short':'long'};
@@ -147,6 +147,7 @@ function botRun(st,cfg,X,xms,prof,tEnd){
       if(!st.pos){
         const pl=botPlan(cfg,prof?prof(T):null,st);
         st.plan=pl.sum||null;st.pend=pl.orders;
+        if(cfg.mode==='scalp'&&pl.sum){const w=st.why||(st.why={}), r=pl.mkt?'in':pl.sum.act==='nodata'?'nodata':pl.sum.why||'mid';w[r]=(w[r]||0)+1;}
         if(pl.mkt)botOpen(st,cfg,pl.mkt,k.o,k.t,'mkt',ev);
       }
     }
@@ -244,7 +245,7 @@ async function botBacktest(tk,o,N,prog){
   }
   const mg=+o.mg||+S.cap||10, base=Object.assign({},o,{mode,tf:tfUse,mg});
   const run=x=>{const cfg=botCfg(Object.assign({},base,x)), st=botInitSt(cfg,start), ev=botRun(st,cfg,X,xms,prof,now);
-    const T=ev.filter(e=>e.k==='close').map(e=>e.x);return {T,s:botStats(T),open:st.pos?Object.assign({},st.pos):null};};
+    const T=ev.filter(e=>e.k==='close').map(e=>e.x);return {T,s:botStats(T),open:st.pos?Object.assign({},st.pos):null,why:st.why||null};};
   const res={};
   for(const save of Object.keys(BOT_SAVE))res[save]=run({save});
   const best=Object.keys(res).sort((x,y)=>res[y].s.usd-res[x].s.usd)[0];
@@ -257,32 +258,66 @@ async function botBacktest(tk,o,N,prog){
   }
   const t0=X.find(k=>k.t>=start);
   return {tk,N,D,exec,tf:tfUse,style:scalp?'scalp':'range',lev:+o.lev||10,roi:+o.roi||20,mg,fee:+S.fee||0,slip:Math.max(0,+S.slip||0),
-    tmax:scalp?+o.tmax||60:0,tearly:scalp?+o.tearly||0:0,miss:o.miss!=null?+o.miss:2,flt:Object.assign({},o.flt||{}),
+    tmax:scalp?+o.tmax||60:0,tearly:scalp?+o.tearly||0:0,miss:o.miss!=null?+o.miss:2,costX:+o.costX||3,flt:Object.assign({},o.flt||{}),
     start,end:now,res,sel:best,best,abl,cut:!!X.cut||X[0].t>from+2*xms,
     hold:t0?(X[X.length-1].c/t0.o-1)*100:null,at:now};
 }
-function botVerdict(s,r){
-  if(!s.n)return ['i','در این '+faN(r.N)+' روز هیچ معامله‌ای باز نشد: '+(r.style==='scalp'?'قیمت به باندها نرسید، تأییدها کامل نشد، یا تارگت در برابر کارمزد کوچک بود.':'رنجی به اندازه‌ی باند نبود، یا قیمت به لبه‌ها نرسید.')];
+/* چرا معامله باز نشد: شمارشِ ارزیابی‌های بی‌پوزیشن (فقط اسکلپ) */
+const BOT_WHY={in:'وارد شد',mid:'وسطِ باندها',score:'تأیید کم',cost:'تارگت کوچک در برابر کارمزد',wild:'نزدیک لیکوئید',nodata:'داده کم'};
+function botWhyHtml(w){
+  if(!w)return '';
+  const tot=Object.values(w).reduce((a,b)=>a+b,0);if(!tot)return '';
+  const edge=tot-(w.mid||0)-(w.nodata||0);
+  return 'از '+faN(tot)+' بار تصمیم‌گیری (بی‌پوزیشن): '+faN(w.mid||0)+' بار قیمت وسطِ باندها بود؛ '+faN(edge)+' بار کنار باند'+
+    (edge?' ← '+['in','cost','score','wild'].filter(k=>w[k]).map(k=>BOT_WHY[k]+' '+faN(w[k])).join('، '):'')+(w.nodata?' · داده کم '+faN(w.nodata):'')+'.';
+}
+function botVerdict(s,r,w){
+  if(!s.n){
+    let why=r.style==='scalp'?'قیمت به باندها نرسید، تأییدها کامل نشد، یا تارگت در برابر کارمزد کوچک بود.':'رنجی به اندازه‌ی باند نبود، یا قیمت به لبه‌ها نرسید.';
+    // وسطِ باندها همیشه زیاد است؛ دلیلِ اصلی از میان بارهایی که قیمت کنار باند بود
+    if(w){const top=['cost','score','wild'].filter(k=>w[k]).sort((a,b)=>w[b]-w[a])[0]||(w.mid?'mid':null);
+      if(top==='cost')why='بیشترِ بارهایی که قیمت کنار باند بود، تارگت از '+fmtNum(r.costX||3)+' برابرِ کارمزد و لغزش کوچک‌تر بود. «ضریب کارمزد» را کم کن، کارمزدِ تنظیمات را با صرافی‌ات تطبیق بده، یا کندل/سقف زمانِ بزرگ‌تر بگذار.';
+      else if(top==='score')why='قیمت کنار باند می‌آمد ولی شرط‌های تأیید کامل نمی‌شد. «حداکثر شرطِ ردشده» را بیشتر کن یا جدول «اثر هر شرط» را ببین.';
+      else if(top==='wild')why='استاپ‌ها با این اهرم به لیکوئید نزدیک بودند؛ اهرم را کم کن.';
+      else if(top==='mid')why='قیمت تقریباً همیشه وسطِ باندها بود.';}
+    return ['i','در این '+faN(r.N)+' روز هیچ معامله‌ای باز نشد: '+why];
+  }
   const few=s.n<20, sign=s.usd>0?'مثبت':'منفی';
   return [s.usd>0?(few?'i':'u'):'d',sign+': '+fmtUsd(s.usd)+' با '+faN(s.n)+' معامله (برد '+faN(Math.round(s.wr))+'٪)'+
     (few?' — نمونه کم است (کمتر از ۲۰ معامله)؛ قبل از نتیجه گرفتن، روی چند توکن و بازه‌ی دیگر هم بسنج.':
       s.usd>0?'. ادامه‌ی منطقی: همین را با ربات زنده روی روزهای آینده هم بسنج.':'. این روش با این تنظیم روی این توکن جواب نداده.')];
 }
 
-let BTRES=[];
+/* تاریخچه‌ی تست‌ها: روی همین دستگاه می‌ماند (حداکثر ۳۰)، با برچسب، فیلتر و مقایسه.
+   فهرست معامله‌ها کوتاه نگه داشته می‌شود (بهترین روش ۱۲۰، بقیه ۳۰) تا حافظه‌ی مرورگر پر نشود. */
+const BTHKEY='signaldesk.bthist.v1', BTH_MAX=30;
+let BTH=(()=>{const v=lsGet(BTHKEY);return Array.isArray(v)?v.filter(e=>e&&e.r):[];})();
+const BTOPEN=new Set(), BTCMP=new Set();
 const BTQ={on:false,stop:false,msg:''};
+const btTagAuto=r=>r.err?'':r.style==='scalp'?'اسکلپ '+SW_TF[r.tf]+' · '+faN(r.tmax)+' دقیقه':'رنج '+SW_TF[r.tf]+' · '+fmtNum(r.D)+' روز';
+function btSlim(r){
+  if(r.err)return r;const res={};
+  for(const [k,v] of Object.entries(r.res))res[k]={s:v.s,why:v.why||null,open:v.open,T:(v.T||[]).slice(-(k===r.best?120:30))};
+  return Object.assign({},r,{res});
+}
+function bthSave(){
+  BTH=BTH.slice(0,BTH_MAX);
+  while(!lsSet(BTHKEY,BTH)&&BTH.length>3)BTH=BTH.slice(0,Math.ceil(BTH.length/2));   // جا نبود: قدیمی‌ها می‌روند
+}
+const bthFind=id=>BTH.find(e=>e.id===id);
 async function btRun(list){
   if(BTQ.on||!list.length)return;
   Object.assign(BTQ,{on:true,stop:false,msg:''});paintBtProg();
-  const o=Object.assign({},SWOPT,{mg:swMg()}), N=+SWOPT.btN||3;
+  const o=Object.assign({},SWOPT,{mg:swMg()}), N=+SWOPT.btN||3, batch=uid();
   for(const tk of list){
     if(BTQ.stop)break;
     BTQ.msg=tk+'…';paintBtProg();
     let r;
     try{r=await botBacktest(tk,o,N,m=>{BTQ.msg=tk+': '+m;paintBtProg();});}
     catch(e){r={tk,N,err:e&&e.message==='nocandle'?'کندل '+tk+' نیامد'+(AUDQ.err?' — '+AUDQ.err:''):String(e&&e.message||e)};}
-    BTRES=[r].concat(BTRES.filter(x=>x.tk!==tk)).slice(0,8);
-    paintBt();
+    const en={id:uid(),at:Date.now(),tag:btTagAuto(r),batch,r:btSlim(r)};
+    BTH.unshift(en);BTOPEN.add(en.id);
+    bthSave();paintBt();
   }
   BTQ.on=false;BTQ.msg='';paintBtProg();paintBt();
 }
@@ -358,9 +393,12 @@ function botBreak(s){
     'ورود بازار '+faN(s.mkt.n)+pc(s.mkt)+' · سفارش روی لبه '+faN(s.lim.n)+pc(s.lim),
     (s.flat.n||s.trend.n)?'در رنجِ درجا '+faN(s.flat.n)+pc(s.flat)+' · هم‌جهت روند '+faN(s.trend.n)+pc(s.trend):''].filter(Boolean).join('<br>');
 }
-function btCardHtml(r){
-  if(r.err)return '<div class="swres btres"><div class="swh"><b dir="ltr">'+esc(r.tk)+'</b></div><div class="flag d"><i>!</i><span>'+esc(r.err)+'</span></div></div>';
-  const v=r.res[r.sel], s=v.s, vd=botVerdict(s,r);
+function btCardHtml(e){
+  const r=e.r, tools='<div class="bttools"><span>'+jStampFa(new Date(e.at))+'</span>'+(e.tag?'<span class="pill mut">'+esc(e.tag)+'</span>':'')+
+    '<button class="btn xs" data-act="tag">برچسب</button><button class="btn xs'+(BTCMP.has(e.id)?' on':'')+'" data-act="cmp">مقایسه</button>'+
+    '<button class="btn xs" data-act="fold">بستن</button><button class="btn xs" data-act="del">حذف</button></div>';
+  if(r.err)return '<div class="swres btres" data-id="'+e.id+'"><div class="swh"><b dir="ltr">'+esc(r.tk)+'</b></div>'+tools+'<div class="flag d"><i>!</i><span>'+esc(r.err)+'</span></div></div>';
+  const v=r.res[r.sel], s=v.s, vd=botVerdict(s,r,v.why), T=v.T||[];
   const rows=Object.keys(BOT_SAVE).map(k=>{const q=r.res[k].s;
     return '<tr class="tap'+(k===r.sel?' on':'')+'" data-tk="'+esc(r.tk)+'" data-k="'+k+'"><td>'+(k===r.best&&q.n?'★ ':'')+BOT_SAVE_S[k]+'</td>'+
       '<td class="num">'+faN(q.n)+'</td><td class="num">'+(q.wr==null?'—':faN(Math.round(q.wr))+'٪')+'</td>'+
@@ -371,40 +409,94 @@ function btCardHtml(r){
     r.abl.map(a=>{const d=r.res[r.best].s.usd-a.s.usd;return '<tr><td>'+(a.k==='all'?'بدون هیچ تأیید':SC_FLT[a.k])+'</td><td class="num">'+faN(a.s.n)+'</td><td class="num">'+(a.s.wr==null?'—':faN(Math.round(a.s.wr))+'٪')+
       '</td><td class="num '+cls(a.s.usd)+'"><bdi>'+fmtUsd(a.s.usd)+'</bdi></td><td class="num '+cls(d)+'"><bdi>'+(Math.abs(d)<0.005?'بی‌اثر':(d>0?'+':'')+fmtUsd(d))+'</bdi></td></tr>';}).join('')+
     '</tbody></table></div><div class="hint">«اثرِ شرط» مثبت یعنی بودنش نتیجه را بهتر کرده؛ منفی یعنی بهتر است در تنظیم‌ها خاموشش کنی. با نمونه‌ی کم، به تفاوت‌های کوچک اعتماد نکن.</div>':'';
-  return '<div class="swres btres" data-tk="'+esc(r.tk)+'"><div class="swh"><b dir="ltr">'+esc(r.tk)+'</b><span>'+faN(r.N)+' روز گذشته · '+(sc?'اسکلپ':'رنج')+' · ارزیابی هر '+SW_TF[r.tf]+
-      ' · اجرا با کندل '+SW_TF[r.exec]+' · '+fmtNum(r.lev)+'x · '+(sc?'حداکثر '+faN(r.tmax)+' دقیقه · '+swMissTxt(r.miss):'باند ±'+fmtNum(r.roi)+'٪ · رنج از '+fmtNum(r.D)+' روز')+' · مارجین $'+fmtNum(r.mg)+'</span></div>'+
+  return '<div class="swres btres" data-id="'+e.id+'" data-tk="'+esc(r.tk)+'"><div class="swh"><b dir="ltr">'+esc(r.tk)+'</b><span>'+faN(r.N)+' روز گذشته · '+(sc?'اسکلپ':'رنج')+' · ارزیابی هر '+SW_TF[r.tf]+
+      ' · اجرا با کندل '+SW_TF[r.exec]+' · '+fmtNum(r.lev)+'x · '+(sc?'حداکثر '+faN(r.tmax)+' دقیقه · '+swMissTxt(r.miss)+' · ضریب کارمزد '+fmtNum(r.costX||3):'باند ±'+fmtNum(r.roi)+'٪ · رنج از '+fmtNum(r.D)+' روز')+' · مارجین $'+fmtNum(r.mg)+'</span></div>'+
+    tools+
     (r.cut?'<div class="flag i"><i>i</i><span>کندل‌های این نماد کامل نیامد؛ نتیجه فقط برای بخشی از بازه است.</span></div>':'')+
     '<div class="tscroll"><table class="tp btv"><thead><tr><th>سیو سود</th><th>معامله</th><th>برد</th><th>خالص</th><th>بیشترین افت</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
     '<div class="flag '+vd[0]+'"><i>'+(vd[0]==='d'?'!':'i')+'</i><span>«'+BOT_SAVE_S[r.sel]+'»: '+vd[1]+'</span></div>'+
-    (s.n?botEqSvg(v.T)+'<div class="hint btbrk">'+botBreak(s)+
+    (v.why?'<div class="hint btwhy">'+botWhyHtml(v.why)+'</div>':'')+
+    (s.n?botEqSvg(T)+'<div class="hint btbrk">'+botBreak(s)+
       '<br>بیشترین باخت پیاپی '+faN(s.maxL)+' · ضریب سود '+(s.pf==null?'—':s.pf===Infinity?'∞':fmtNum(s.pf))+
       (s.hold!=null?' · میانگین نگه‌داری '+fmtNum(s.hold)+' دقیقه':'')+
       (r.hold!=null?' · خودِ قیمت در این مدت '+fmtPct(r.hold):'')+'</div>':'')+
     (v.open?'<div class="hint">آخرِ بازه یک '+faSide(v.open.side)+' از '+fmtPrice(v.open.en)+' هنوز باز بود (در آمار نیامده).</div>':'')+
-    abl+(s.n?botTradeTable(v.T,'معامله‌ها',false):'')+
+    abl+(T.length?botTradeTable(T,T.length<s.n?'آخرین معامله‌ها':'معامله‌ها',false):'')+
     '<div class="srow"><button class="btn pri sm" data-bot="'+esc(r.tk)+'">'+ic('play')+'<span>ربات زنده با «'+BOT_SAVE_S[r.sel]+'»</span></button></div>'+
   '</div>';
 }
+const btBest=r=>r.err?null:r.res[r.best].s;
+function btRowHtml(e){
+  const r=e.r, q=btBest(r);
+  return '<div class="btrow tap" data-id="'+e.id+'"><div class="btrh"><b dir="ltr">'+esc(r.tk)+'</b>'+(e.tag?'<span class="pill mut">'+esc(e.tag)+'</span>':'')+
+    (q?'<span class="num '+cls(q.usd)+'"><bdi>'+fmtUsd(q.usd)+'</bdi></span>':'<span class="d">خطا</span>')+'</div>'+
+    '<small>'+jStampFa(new Date(e.at))+' · '+faN(r.N)+' روز'+(q?' · '+faN(q.n)+' معامله · بهترین: '+BOT_SAVE_S[r.best]:'')+'</small></div>';
+}
+/* مقایسه‌ی دو تست کنار هم */
+function btCmpHtml(){
+  const E=[...BTCMP].map(bthFind).filter(e=>e&&!e.r.err);if(E.length<2)return '';
+  const row=(l,f)=>'<tr><td>'+l+'</td>'+E.map(e=>'<td class="num">'+f(e.r,btBest(e.r))+'</td>').join('')+'</tr>';
+  return '<div class="tgl">مقایسه</div><div class="tscroll"><table class="tp btcmp"><thead><tr><th></th>'+E.map(e=>'<th><bdi>'+esc(e.r.tk)+'</bdi><small>'+esc(e.tag||'')+'</small></th>').join('')+'</tr></thead><tbody>'+
+    row('بازه',r=>faN(r.N)+' روز')+row('سبک',r=>r.style==='scalp'?'اسکلپ · '+faN(r.tmax)+' دقیقه':'رنج')+row('کندل',r=>SW_TF[r.tf])+
+    row('اهرم',r=>fmtNum(r.lev)+'x')+row('بهترین سیو',r=>BOT_SAVE_S[r.best])+row('معامله',(r,q)=>faN(q.n))+
+    row('برد',(r,q)=>q.wr==null?'—':faN(Math.round(q.wr))+'٪')+row('خالص',(r,q)=>'<bdi class="'+cls(q.usd)+'">'+fmtUsd(q.usd)+'</bdi>')+
+    row('بیشترین افت',(r,q)=>q.dd?fmtUsd(-q.dd):'—')+row('نگه‌داری',(r,q)=>q.hold!=null?fmtNum(q.hold)+' دقیقه':'—')+
+    '</tbody></table></div><div class="srow"><button class="btn xs" data-act="cmpclr">پاک کردن مقایسه</button></div>';
+}
 function paintBt(){
+  const bi=document.querySelector('.scbar [data-v="bt"] i');if(bi)bi.textContent=faN(BTH.length);
   const box=$('#btRes');if(!box)return;
-  if(!BTRES.length){box.innerHTML='';return;}
-  let h='';
-  const ok=BTRES.filter(r=>!r.err);
-  if(ok.length>1){
-    h+='<div class="tscroll"><table class="tp btsum"><thead><tr><th>نماد</th><th>بهترین سیو</th><th>معامله</th><th>خالص</th></tr></thead><tbody>'+
-      ok.map(r=>{const q=r.res[r.best].s;return '<tr class="tap" data-go="'+esc(r.tk)+'"><td dir="ltr">'+esc(r.tk)+'</td><td>'+BOT_SAVE_S[r.best]+'</td><td class="num">'+faN(q.n)+
-        '</td><td class="num '+cls(q.usd)+'"><bdi>'+fmtUsd(q.usd)+'</bdi></td></tr>';}).join('')+'</tbody></table></div>';
-  }
-  h+=BTRES.map(btCardHtml).join('');
+  if(!BTH.length){box.innerHTML='';return;}
+  const F=SWOPT.btF||(SWOPT.btF={tag:'',st:''});
+  const tags=[...new Set(BTH.map(e=>e.tag).filter(Boolean))];
+  if(F.tag&&!tags.includes(F.tag))F.tag='';
+  const list=BTH.filter(e=>(!F.tag||e.tag===F.tag)&&(!F.st||(e.r.style||'range')===F.st));
+  let h='<div class="tgl">تست‌های ذخیره‌شده ('+faN(BTH.length)+')</div>'+
+    '<div class="pbpick btf">'+[['','همه'],['scalp','اسکلپ'],['range','رنج']].map(([k,t])=>'<button class="pbc'+(F.st===k?' on':'')+'" data-st="'+k+'">'+t+'</button>').join('')+'</div>'+
+    (tags.length?'<div class="pbpick btf">'+[''].concat(tags).map(t=>'<button class="pbc'+(F.tag===t?' on':'')+'" data-tag="'+esc(t)+'">'+(t?esc(t):'همه‌ی برچسب‌ها')+'</button>').join('')+'</div>':'');
+  h+=btCmpHtml();
+  // خلاصه‌ی آخرین اجرای چندنمادی
+  const last=BTH[0]&&BTH[0].batch, bat=BTH.filter(e=>e.batch===last&&!e.r.err);
+  if(bat.length>1)h+='<div class="tgl">آخرین اجرا</div><div class="tscroll"><table class="tp btsum"><thead><tr><th>نماد</th><th>بهترین سیو</th><th>معامله</th><th>خالص</th></tr></thead><tbody>'+
+    bat.map(e=>{const q=btBest(e.r);return '<tr class="tap" data-go="'+e.id+'"><td dir="ltr">'+esc(e.r.tk)+'</td><td>'+BOT_SAVE_S[e.r.best]+'</td><td class="num">'+faN(q.n)+
+      '</td><td class="num '+cls(q.usd)+'"><bdi>'+fmtUsd(q.usd)+'</bdi></td></tr>';}).join('')+'</tbody></table></div>';
+  h+=list.length?list.map(e=>BTOPEN.has(e.id)?btCardHtml(e):btRowHtml(e)).join(''):'<div class="hint">تستی با این فیلتر نیست.</div>';
   box.innerHTML=h;
+  const re=()=>{swOptSave();paintBt();};
+  box.querySelectorAll('.btf [data-st]').forEach(b=>b.onclick=()=>{F.st=b.dataset.st;re();});
+  box.querySelectorAll('.btf [data-tag]').forEach(b=>b.onclick=()=>{F.tag=b.dataset.tag;re();});
+  box.querySelectorAll('.btrow').forEach(n=>n.onclick=()=>{BTOPEN.add(n.dataset.id);paintBt();});
+  box.querySelectorAll('.btsum tr[data-go]').forEach(tr=>tr.onclick=()=>{BTOPEN.add(tr.dataset.go);paintBt();
+    const n=box.querySelector('.btres[data-id="'+tr.dataset.go+'"]');if(n)n.scrollIntoView({block:'start',behavior:'smooth'});});
   box.querySelectorAll('.btv tr[data-k]').forEach(tr=>tr.onclick=()=>{
-    const r=BTRES.find(x=>x.tk===tr.dataset.tk);if(!r)return;r.sel=tr.dataset.k;paintBt();});
-  box.querySelectorAll('.btsum tr[data-go]').forEach(tr=>tr.onclick=()=>{
-    const n=box.querySelector('.btres[data-tk="'+tr.dataset.go+'"]');if(n)n.scrollIntoView({block:'start',behavior:'smooth'});});
+    const e=bthFind(tr.closest('[data-id]').dataset.id);if(!e)return;e.r.sel=tr.dataset.k;bthSave();paintBt();});
+  box.querySelectorAll('[data-act]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();
+    const act=b.dataset.act;
+    if(act==='cmpclr'){BTCMP.clear();return paintBt();}
+    const id=b.closest('[data-id]').dataset.id, e=bthFind(id);if(!e)return;
+    if(act==='fold')BTOPEN.delete(id);
+    else if(act==='cmp'){if(BTCMP.has(id))BTCMP.delete(id);else{if(BTCMP.size>=2)BTCMP.delete([...BTCMP][0]);BTCMP.add(id);}
+      if(BTCMP.size===2)setTimeout(()=>{const t=box.querySelector('.btcmp');if(t)t.scrollIntoView({block:'center',behavior:'smooth'});},50);}
+    else if(act==='del'){BTH=BTH.filter(x=>x.id!==id);BTOPEN.delete(id);BTCMP.delete(id);bthSave();toast('تست پاک شد','info');}
+    else if(act==='tag')return btTagSheet(e);
+    paintBt();});
   box.querySelectorAll('[data-bot]').forEach(bt=>bt.onclick=()=>{
-    const r=BTRES.find(x=>x.tk===bt.dataset.bot);if(!r)return;
+    const e=bthFind(bt.closest('[data-id]').dataset.id);if(!e)return;const r=e.r;
     botStartSheet({mode:r.style==='scalp'?'scalp':'auto',tk:r.tk,lev:r.lev,roi:r.roi,days:r.D,tf:r.tf,mg:r.mg,save:r.sel,
-      tmax:r.tmax,tearly:r.tearly,miss:r.miss,flt:r.flt});});
+      tmax:r.tmax,tearly:r.tearly,miss:r.miss,costX:r.costX,flt:r.flt});});
+}
+/* برچسب یک تست: دسته‌بندیِ دلخواه (مثلاً «آلت‌ها ۵ دقیقه») */
+function btTagSheet(e){
+  const tags=[...new Set(BTH.map(x=>x.tag).filter(Boolean))];
+  openSheet('<h3>برچسب تست · <bdi dir="ltr">'+esc(e.r.tk)+'</bdi></h3><div class="sub">با برچسب، تست‌های هم‌دسته را با هم فیلتر و مقایسه کن.</div>'+
+    '<div class="fld"><label>برچسب</label><input id="btTagI" value="'+esc(e.tag||'')+'" maxlength="40"></div>'+
+    (tags.length?'<div class="pbpick">'+tags.map(t=>'<button class="pbc" data-t="'+esc(t)+'">'+esc(t)+'</button>').join('')+'</div>':'')+
+    '<div class="srow"><button class="btn pri" id="btTagGo">ذخیره</button><button class="btn" id="cx">انصراف</button></div>',
+  sh=>{
+    sh.querySelector('#cx').onclick=closeSheet;
+    sh.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{sh.querySelector('#btTagI').value=b.dataset.t;});
+    sh.querySelector('#btTagGo').onclick=()=>{e.tag=String(sh.querySelector('#btTagI').value||'').trim().slice(0,40);bthSave();closeSheet();paintBt();};
+  });
 }
 
 /* ==================== ربات زنده ==================== */
@@ -576,8 +668,9 @@ function botStartSheet(o){
         fld('استاپ لانگ (زیر کف)',inp('bSL',o.d!=null?o.L-o.d:null,'خالی = بی‌استاپ'))+
         fld('اولین معامله',sel('bFirst',{long:'لانگ روی کف',short:'شورت روی سقف'},o.first==='short'?'short':'long'))
       :scl?fld('ارزیابی هر',sel('bTf',{'1m':'۱ دقیقه','3m':'۳ دقیقه','5m':'۵ دقیقه'},IVMS[o.tf||S0.tf]<=3e5?(o.tf||S0.tf):'1m'))+
-        fld('حداکثر نگه‌داری',sel('bTmax',{15:'۱۵ دقیقه',30:'۳۰ دقیقه',60:'۶۰ دقیقه',90:'۹۰ دقیقه',120:'۱۲۰ دقیقه'},o.tmax||S0.tmax||60))+
-        fld('خروج زود',sel('bTearly',{0:'خاموش',10:'۱۰ دقیقه در ضرر',20:'۲۰ دقیقه در ضرر',30:'۳۰ دقیقه در ضرر'},o.tearly!=null?o.tearly:S0.tearly))+
+        fld('حداکثر نگه‌داری',sel('bTmax',SW_TMAX,o.tmax||S0.tmax||60))+
+        fld('خروج زود',sel('bTearly',SW_TEARLY,o.tearly!=null?o.tearly:S0.tearly))+
+        fld('ضریب کارمزد',sel('bCostX',SW_COSTX,o.costX||S0.costX||3))+
         fld('حداکثر شرطِ ردشده',sel('bMiss',SW_MISS,o.miss!=null?o.miss:S0.miss))
       :fld('باند روی مارجین (٪)',inp('bRoi',o.roi||S0.roi))+fld('رنج از',sel('bDays',{0.5:'۱۲ ساعتِ قبل',1:'۱ روزِ قبل',3:'۳ روزِ قبل',7:'۷ روزِ قبل'},o.days||S0.days||1))+
         fld('ارزیابی هر',sel('bTf',SW_TF,o.tf||S0.tf||'5m')))+
@@ -595,7 +688,7 @@ function botStartSheet(o){
     const num=id=>{const n=q(id);if(!n)return null;const v=parseFloat(normDig(String(n.value||'')).replace(/,/g,''));return isFinite(v)&&v>0?v:null;};
     const read=()=>{
       const r={mode:fix?'fix':scl?'scalp':'auto',tk:o.tk,lev:Math.min(125,Math.max(1,num('#bLev')||10)),mg:num('#bMg')||+S.cap||10,save};
-      if(scl){r.tf=q('#bTf').value;r.tmax=+q('#bTmax').value||60;r.tearly=+q('#bTearly').value||0;r.miss=+q('#bMiss').value;r.flt=Object.assign({},flt);}
+      if(scl){r.tf=q('#bTf').value;r.tmax=+q('#bTmax').value||60;r.tearly=+q('#bTearly').value||0;r.miss=+q('#bMiss').value;r.costX=+q('#bCostX').value||3;r.flt=Object.assign({},flt);}
       else if(fix){r.L=num('#bL');r.H=num('#bH');const sl=num('#bSL');r.d=sl!=null&&r.L!=null&&sl<r.L?r.L-sl:null;r.badSl=sl!=null&&r.L!=null&&sl>=r.L;r.first=q('#bFirst').value;}
       else{r.roi=Math.min(500,Math.max(1,num('#bRoi')||20));r.days=+q('#bDays').value||1;r.tf=q('#bTf').value;}
       return r;
@@ -630,7 +723,7 @@ function botStartSheet(o){
       if(fix&&!(r.L&&r.H&&r.H>r.L))return toast('کف باید از سقف کمتر باشد','err');
       SWOPT.bsave=save;swOptSave();
       const b=botNew(r);
-      closeSheet();go('scalp',true);
+      closeSheet();SWOPT.open='bots';swOptSave();if(view==='scalp')renderScalp();else go('scalp',true);
       setTimeout(()=>{const c=$('#bot-'+b.id);if(c)c.scrollIntoView({block:'center',behavior:'smooth'});},150);
       toast('ربات '+b.tk+' روشن شد؛ '+(fix?'منتظر رسیدن قیمت به '+fmtPrice(r.first==='short'?r.H:r.L):'سرِ کندل بعدی تصمیم می‌گیرد'),'ok');
       setTimeout(()=>botTick(true),300);
@@ -638,38 +731,114 @@ function botStartSheet(o){
   });
 }
 
-/* ---- تب اسکلپ ---- */
+/* ---- تب اسکلپ: نوار بالا مثل تب سیگنال‌ها — بررسی | ربات‌ها | تست‌ها | گزارش، و «تنظیم» کنارش ---- */
+const SC_VIEWS={tok:'بررسی',bots:'ربات‌ها',bt:'تست‌ها',rep:'گزارش'};
+const scView=()=>(SC_VIEWS[SWOPT.open]||SWOPT.open==='opt')?SWOPT.open:'tok';
+function scGo(v){SWOPT.open=v;swOptSave();renderScalp();window.scrollTo({top:0,behavior:'smooth'});}
 function renderScalp(){
   const box=$('#scBody');if(!box)return;
   // وسط تایپ در فرم، رندرِ دوره‌ای (قیمت، بروزرسانی کانال) فرم را از نو نسازد؛ فقط ربات‌ها
   const ae=document.activeElement;
   if(box.firstChild&&ae&&box.contains(ae)&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)){paintBots();return;}
+  const v=scView(), L=botList();
   box.innerHTML='';
-  try{box.appendChild(buildSwingPanel(null,'scalp'));}
-  catch(e){logIt('err','تب اسکلپ: '+(e&&e.message||e));box.appendChild(el('div','panel audfail','<b>بخش سنجش ساخته نشد</b><br><span dir="ltr">'+esc(String(e&&e.message||e).slice(0,160))+'</span>'));}
-  const lv=el('div','sclive');lv.id='scLive';box.appendChild(lv);
-  paintBots();
+  const cnt={bots:L.filter(b=>b.on).length,bt:BTH.length};
+  const bar=el('div','tools');
+  bar.innerHTML='<div class="fbar scbar"><div class="fseg" role="tablist" aria-label="اسکلپ">'+
+    Object.entries(SC_VIEWS).map(([k,t])=>'<button class="fb" data-v="'+k+'" aria-pressed="'+(v===k)+'"><span>'+t+'</span>'+(cnt[k]!=null?'<i>'+faN(cnt[k])+'</i>':'')+'</button>').join('')+
+    '</div><div class="fside"><button class="fb fbucket" data-v="opt" aria-pressed="'+(v==='opt')+'" title="تنظیم‌ها">'+ic('sliders')+'<span>تنظیم</span></button></div></div>'+
+    '<div class="scsum">'+scSummary()+'</div>';
+  bar.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>scGo(b.dataset.v));
+  bar.querySelector('.scsum').onclick=()=>scGo('opt');
+  box.appendChild(bar);
+  const pn=el('div','panel swp scview');pn.dataset.v=v;
+  try{
+    if(v==='opt')swOptBody(pn);
+    else if(v==='tok')swTokBody(pn);
+    else if(v==='bt')buildBotBt(pn);
+    else if(v==='rep')scReportBody(pn);
+    else{pn.classList.remove('panel','swp');pn.classList.add('sclive');pn.id='scLive';}
+  }catch(e){logIt('err','تب اسکلپ: '+(e&&e.message||e));pn.innerHTML='<b>این بخش ساخته نشد</b><br><span dir="ltr">'+esc(String(e&&e.message||e).slice(0,160))+'</span>';}
+  box.appendChild(pn);
+  if(v==='bots')paintBots();
   if(Date.now()-BOTLAST>15000)setTimeout(()=>botTick(),60);
+}
+/* یک خط از تنظیم‌های فعلی، بالای هر صفحه (زدنش «تنظیم» را باز می‌کند) */
+function scSummary(){
+  const o=SWOPT, sc=swScalp();
+  return ic('sliders')+'<span>'+SW_STYLE[sc?'scalp':'range']+' · کندل '+SW_TF[o.tf||'5m']+' · '+fmtNum(o.lev)+'x · $'+fmtNum(swMg())+
+    (sc?' · حداکثر '+faN(o.tmax||60)+' دقیقه · '+swMissTxt(o.miss)+' · ضریب کارمزد '+fmtNum(o.costX||3):' · باند '+fmtNum(o.roi)+'٪')+'</span>';
 }
 function paintBotBadge(){
   const n=(Array.isArray(DB.scalps)?DB.scalps:[]).filter(b=>b&&b.on&&b.st&&b.st.pos).length, e=$('#cScalp');
   if(e){e.textContent=faN(n);e.classList.toggle('z',!n);e.title=n?faN(n)+' ربات با پوزیشن باز':'';}
 }
 const BOTOPEN=new Set();           // تاریخچه‌های باز، تا رندر دوباره ببندشان
+const BOT_KIND={all:'همه',auto:'خودکار',man:'دستی (رنج ثابت)'}, BOT_STS={all:'همه',open:'باز',wait:'منتظر',off:'متوقف'};
+const botKind=b=>b.cfg.mode==='fix'?'man':'auto';
+const botSts=b=>!b.on?'off':b.st&&b.st.pos?'open':'wait';
 function paintBots(){
   const box=$('#scLive');if(!box||DRAGGING)return;
-  const L=botList();
+  const L=botList(), F=SWOPT.botF||(SWOPT.botF={k:'all',s:'all'});
   box.innerHTML='';
-  box.appendChild(el('div','sechd schd','<b>ربات‌های اسکلپ</b>'+(L.length?'<span>'+faN(L.filter(b=>b.on).length)+' روشن</span>':'')));
   if(!L.length){
-    box.appendChild(el('div','empty sm','هنوز رباتی روشن نکرده‌ای. بالا یک نماد را بسنج؛ زیر کارت «الان لانگ/شورت/صبر» دو دکمه هست: '+
+    box.appendChild(el('div','empty sm','هنوز رباتی روشن نکرده‌ای. در «بررسی» یک نماد را بسنج؛ زیر کارت «الان لانگ/شورت/صبر» دو دکمه هست: '+
       '«تست خودکار» همین روش را روی روزهای گذشته می‌سنجد، و «ربات خودکار» از همین حالا خودش معامله می‌کند.'));
     paintBotBadge();return;
   }
-  for(const b of L)box.appendChild(botCard(b));
+  const n=(k,s)=>L.filter(b=>(k==='all'||botKind(b)===k)&&(s==='all'||botSts(b)===s)).length;
+  const chips=(m,key,cur,cnt)=>'<div class="pbpick botf">'+Object.entries(m).map(([k,t])=>'<button class="pbc'+(cur===k?' on':'')+'" data-'+key+'="'+k+'">'+t+' <i>'+faN(cnt(k))+'</i></button>').join('')+'</div>';
+  const fl=el('div','botfl',chips(BOT_KIND,'k',F.k,k=>n(k,F.s))+chips(BOT_STS,'s',F.s,s=>n(F.k,s)));
+  fl.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{F.k=b.dataset.k;swOptSave();paintBots();});
+  fl.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{F.s=b.dataset.s;swOptSave();paintBots();});
+  box.appendChild(fl);
+  const V=L.filter(b=>(F.k==='all'||botKind(b)===F.k)&&(F.s==='all'||botSts(b)===F.s));
+  if(!V.length)box.appendChild(el('div','hint','رباتی با این فیلتر نیست.'));
+  for(const b of V)box.appendChild(botCard(b));
   box.appendChild(el('div','hint','ربات‌ها هر ۳۰ ثانیه با کندل ۱ دقیقه‌ای جلو می‌روند (تا وقتی برنامه باز است). اگر برنامه بسته بوده، با باز شدن از روی کندل‌ها '+
-    'همان معامله‌ها ثبت می‌شود. معامله‌ی کاغذی است؛ فاندینگ حساب نشده.'));
+    'همان معامله‌ها ثبت می‌شود. «خودکار»: خودش لانگ/شورت را تشخیص می‌دهد؛ «دستی»: رنجی که خودت دادی. معامله‌ی کاغذی است؛ فاندینگ حساب نشده.'));
   paintBotBadge();
+}
+
+/* ---- گزارش: کارنامه‌ی ربات‌ها و جمع‌بندی تست‌ها ---- */
+const SC_REP={d7:['۷ روز',7],d30:['۳۰ روز',30],all:['همه',0]};
+function scReportBody(pn){
+  const P=SC_REP[SWOPT.repP]?SWOPT.repP:'d7', days=SC_REP[P][1], t0=days?Date.now()-days*864e5:0;
+  const L=botList();
+  const all=[];for(const b of L)for(const x of b.trades||[])if(x.t1>=t0)all.push(Object.assign({},x,{b}));
+  all.sort((a,b)=>a.t1-b.t1);
+  let h='<div class="panelhead"><b>گزارش اسکلپ</b></div><div class="pbpick repp">'+Object.entries(SC_REP).map(([k,v])=>'<button class="pbc'+(P===k?' on':'')+'" data-p="'+k+'">'+v[0]+'</button>').join('')+'</div>';
+  if(!all.length)h+='<div class="hint">در این بازه ربات‌ها معامله‌ی بسته‌ای نداشته‌اند.</div>';
+  else{
+    const s=botStats(all);
+    h+='<div class="stats">'+stHtml('معامله',faN(s.n),'',faN(s.w)+' برد · '+faN(s.n-s.w)+' باخت')+
+      stHtml('نرخ برد',faN(Math.round(s.wr))+'٪',s.wr>=50?'u':'d')+
+      stHtml('خالص',fmtUsd(s.usd),cls(s.usd),'میانگین هر معامله '+fmtUsd(s.avg))+
+      stHtml('بیشترین افت',s.dd?fmtUsd(-s.dd):'—',s.dd?'d':'')+
+      stHtml('ضریب سود',s.pf==null?'—':s.pf===Infinity?'∞':fmtNum(s.pf),s.pf!=null&&s.pf>=1?'u':'d')+
+      stHtml('نگه‌داری',s.hold!=null?fmtNum(s.hold)+' دقیقه':'—','','میانگین')+'</div>'+botEqSvg(all);
+    const tbl=(title,rows)=>rows.length?'<div class="tgl">'+title+'</div><div class="tscroll"><table class="tp reptb"><thead><tr><th></th><th>معامله</th><th>برد</th><th>خالص</th></tr></thead><tbody>'+
+      rows.map(([l,g])=>'<tr><td>'+l+'</td><td class="num">'+faN(g.n)+'</td><td class="num">'+(g.n?faN(Math.round(g.w/g.n*100))+'٪':'—')+'</td><td class="num '+cls(g.usd)+'"><bdi>'+fmtUsd(g.usd)+'</bdi></td></tr>').join('')+'</tbody></table></div>':'';
+    const grp=f=>{const m=new Map();for(const x of all){const k=f(x);if(k==null)continue;const g=m.get(k)||{n:0,w:0,usd:0};g.n++;if(x.roi>0)g.w++;g.usd+=x.usd;m.set(k,g);}return m;};
+    const day=grp(x=>jStampFa(new Date(x.t1)).slice(0,10));
+    h+=tbl('روزبه‌روز',[...day].sort((a,b)=>a[0]<b[0]?1:-1).map(([k,g])=>['<bdi>'+k+'</bdi>',g]));
+    h+=tbl('خودکار یا دستی',[...grp(x=>x.b.cfg.mode)].map(([k,g])=>[{scalp:'خودکار · اسکلپ',auto:'خودکار · رنج',fix:'دستی · رنج ثابت'}[k]||k,g]));
+    h+=tbl('به تفکیک نماد',[...grp(x=>x.b.tk)].sort((a,b)=>b[1].usd-a[1].usd).map(([k,g])=>['<bdi dir="ltr">'+esc(k)+'</bdi>',g]));
+    h+=tbl('روش سیو سود',[...grp(x=>x.b.cfg.save)].map(([k,g])=>[BOT_SAVE_S[k]||k,g]));
+    h+=tbl('چطور بسته شد',[...grp(x=>x.by)].sort((a,b)=>b[1].n-a[1].n).map(([k,g])=>[BOT_BY[k]||k,g]));
+    h+=tbl('لانگ یا شورت',[...grp(x=>x.side)].map(([k,g])=>[faSide(k),g]));
+    h+=tbl('ساعتِ ورود',[...grp(x=>new Date(x.t0).getHours())].sort((a,b)=>a[0]-b[0]).map(([k,g])=>['<bdi>'+faN(k)+' تا '+faN((k+1)%24)+'</bdi>',g]));
+  }
+  // جمع‌بندی تست‌ها به تفکیک برچسب
+  const ok=BTH.filter(e=>!e.r.err&&e.at>=t0);
+  if(ok.length){
+    const m=new Map();for(const e of ok){const k=e.tag||'بی‌برچسب', g=m.get(k)||{n:0,pos:0,usd:0,tr:0};const q=btBest(e.r);g.n++;if(q.usd>0)g.pos++;g.usd+=q.usd;g.tr+=q.n;m.set(k,g);}
+    h+='<div class="tgl">تست‌ها به تفکیک برچسب</div><div class="tscroll"><table class="tp reptb"><thead><tr><th>برچسب</th><th>تست</th><th>مثبت</th><th>معامله</th><th>جمع خالص</th></tr></thead><tbody>'+
+      [...m].map(([k,g])=>'<tr><td>'+esc(k)+'</td><td class="num">'+faN(g.n)+'</td><td class="num">'+faN(g.pos)+'</td><td class="num">'+faN(g.tr)+'</td><td class="num '+cls(g.usd)+'"><bdi>'+fmtUsd(g.usd)+'</bdi></td></tr>').join('')+
+      '</tbody></table></div><div class="hint">جمع خالص با بهترین روشِ سیو سودِ هر تست. «مثبت»: چند تست سود داد.</div>';
+  }
+  pn.innerHTML=h;
+  pn.querySelectorAll('.repp [data-p]').forEach(b=>b.onclick=()=>{SWOPT.repP=b.dataset.p;swOptSave();renderScalp();});
 }
 function botCard(b){
   const c=b.cfg, st=b.st, pos=st.pos, px=botPx(b.tk), mine=botMine(b);
@@ -729,6 +898,7 @@ function botCard(b){
     '<div class="k"><b>بیشترین افت</b><span class="rt'+(T.dd?' d':'')+'"><bdi>'+(T.dd?fmtUsd(-T.dd):'—')+'</bdi></span></div>'+
     '<div class="k"><b>روشن از</b><span class="rt">'+(hrs<48?fmtNum(hrs)+' ساعت پیش':fmtNum(hrs/24)+' روز پیش')+'</span></div>';
   bd.appendChild(kv);
+  if(c.mode==='scalp'&&st.why&&!pos)bd.appendChild(el('div','hint btwhy',botWhyHtml(st.why)));
   if(b.trades.length)bd.insertAdjacentHTML('beforeend',botEqSvg(b.trades,T.usd-b.trades.reduce((s,x)=>s+x.usd,0)));
   const act=el('div','srow');
   const btn=(k,t,cl,icn)=>{const x=el('button','btn sm'+(cl?' '+cl:''),(icn?ic(icn):'')+'<span>'+t+'</span>');x.dataset.k=k;x.onclick=()=>botAct(b.id,k);act.appendChild(x);};

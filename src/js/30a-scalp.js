@@ -94,7 +94,7 @@ function scSeries(X,xms,tf,BX){
 
 const SC_FLT={trend:'روند ۱۵ دقیقه (EMA ۲۰/۵۰)',vwap:'سمتِ درستِ VWAP',rsi:'RSI از اشباع برگشته',rej:'کندل برگشتی',vol:'بدون شکستِ پرحجم',btc:'بیت‌کوین خلاف جهت نریخته'};
 const SC_WHY={mid:'قیمت وسطِ باندهاست؛ نه سودِ کافی دارد نه استاپِ نزدیک.',score:'قیمت کنار باند است ولی تأیید کافی نیست.',
-  cost:'تارگت در برابر کارمزد و لغزش کوچک است؛ این معامله ارزش ندارد.',wild:'بیش از حد پرنوسان است؛ استاپ با این اهرم به لیکوئید نزدیک می‌شد.',nodata:'هنوز کندل کافی نیست.'};
+  cost:'تارگت در برابر کارمزد و لغزش کوچک است؛ این معامله ارزش ندارد.',in:'وارد شد',wild:'بیش از حد پرنوسان است؛ استاپ با این اهرم به لیکوئید نزدیک می‌شد.',nodata:'هنوز کندل کافی نیست.'};
 /* o: {lev, fee, slip, miss: حداکثر شرطِ ردشده, flt:{trend,vwap,...}} — شرطِ خاموش هرگز رد نمی‌شود */
 function scDecide(x,o){
   if(!x)return {act:'wait',why:'nodata',checks:[],score:0,need:0};
@@ -102,9 +102,11 @@ function scDecide(x,o){
   const w=x.bbU-x.bbL, pb=w>0?(p-x.bbL)/w:0.5;
   const trend=x.e20==null||x.e50==null?'flat':x.e20>x.e50&&p>x.e50?'up':x.e20<x.e50&&p<x.e50?'down':'flat';
   const hm=x.hm!=null?x.hm:x.atr/p*100*4;
+  // نوسانِ معمول در همان مدتی که معامله باز می‌ماند: با جذرِ زمان (۵ دقیقه ≈ ۰.۲۹ نوسانِ یک ساعت)
+  const tmax=+o.tmax||60, hmT=hm*Math.sqrt(tmax/60), costX=+o.costX||3;
   const near=pb<=0.15?'long':pb>=0.85?'short':null, side=near||(pb<0.5?'long':'short');
   const sg=side==='long'?1:-1, k=x.k, kp=x.kp, rng=k.h-k.l;
-  const tpD=Math.min(Math.max(Math.abs(x.bbM-p),1.2*x.atr),0.6*hm/100*p);
+  const tpD=Math.min(Math.max(Math.abs(x.bbM-p),1.2*x.atr),0.6*hmT/100*p);
   const ext=sg>0?Math.min(k.l,kp.l):Math.max(k.h,kp.h);
   const slD=Math.max(1.2*x.atr,Math.abs(p-ext)+0.2*x.atr);
   const plan={side,en:p,tp:p+sg*tpD,stop:p-sg*slD,tpP:tpD/p*100,slP:slD/p*100};
@@ -123,15 +125,15 @@ function scDecide(x,o){
   const liqP=(1/lev-MMR)*100;
   let act='wait',why='';
   if(!near)why='mid';
-  else if(plan.tpP<3*cost)why='cost';
+  else if(plan.tpP<costX*cost)why='cost';
   else if(plan.slP>=liqP*0.8||plan.slP*lev>=60)why='wild';
   else if(checks.length-score>miss)why='score';
   else act=near;
-  return {act,side,why,pb,trend,hm,checks,score,need,plan,x,cost};
+  return {act,side,why,pb,trend,hm,hmT,tmax,costX,checks,score,need,plan,x,cost};
 }
 /* تنظیم‌های اسکلپ از SWOPT (یا از تنظیم یک ربات) */
 const scOpt=o=>({lev:+o.lev||10,fee:o.fee!=null?+o.fee:+S.fee||0,slip:o.slip!=null?+o.slip:Math.max(0,+S.slip||0),
-  miss:o.miss!=null?+o.miss:2,flt:Object.assign({},o.flt||{})});
+  miss:o.miss!=null?+o.miss:2,tmax:+o.tmax||60,costX:+o.costX||3,flt:Object.assign({},o.flt||{})});
 
 /* ---- نمایش ---- */
 const SC_TREND={up:'صعودی ↗',down:'نزولی ↘',flat:'خنثی ↔'};
@@ -146,8 +148,9 @@ function scDecideHtml(d,o){
   const checks=d.checks.length?'<ul class="sccheck">'+d.checks.map(c=>'<li class="'+(c.ok?'ok':'no')+'"><i>'+(c.ok?'✓':'✗')+'</i>'+SC_FLT[c.k]+'</li>').join('')+'</ul>':'';
   return '<div class="swdec '+(d.act==='long'?'long':d.act==='short'?'short':'wait')+'">'+
     '<div class="dv">'+head+(d.checks.length?' <span class="scs">'+faN(d.score)+' از '+faN(d.checks.length)+'</span>':'')+'</div>'+
-    '<div class="dw">قیمت <b dir="ltr">'+fmtPrice(x.p)+'</b> '+where+' · روند ۱۵ دقیقه: <b>'+SC_TREND[d.trend]+'</b> · نوسانِ معمولِ یک ساعت: <b>'+fmtNum(d.hm)+'٪</b></div>'+
-    (d.act==='wait'?'<div class="dw">'+SC_WHY[d.why]+(d.why==='score'?' ('+faN(d.score)+' از '+faN(d.need)+' لازم)':'')+'</div>':'')+lvl+
+    '<div class="dw">قیمت <b dir="ltr">'+fmtPrice(x.p)+'</b> '+where+' · روند ۱۵ دقیقه: <b>'+SC_TREND[d.trend]+'</b> · نوسانِ معمولِ '+
+      (d.tmax===60?'یک ساعت':faN(d.tmax)+' دقیقه')+': <b>'+fmtNum(d.hmT)+'٪</b></div>'+
+    (d.act==='wait'?'<div class="dw">'+SC_WHY[d.why]+(d.why==='score'?' ('+faN(d.score)+' از '+faN(d.need)+' لازم)':d.why==='cost'?' (تارگت '+fmtNum(d.plan.tpP)+'٪؛ لازم دست‌کم '+fmtNum(d.costX*d.cost)+'٪ = '+fmtNum(d.costX)+' برابرِ هزینه)':'')+'</div>':'')+lvl+
     checks+
     (d.why!=='mid'?'<div class="dplan">'+(d.act==='wait'?'اگر '+S2+' می‌گرفتی:':'برنامه (حداکثر '+faN(+o.tmax||60)+' دقیقه):')+
       '<div class="dnum"><span><i>ورود '+S2+'</i><b dir="ltr">'+fmtPrice(pl.en)+'</b></span><span><i>تارگت</i><b dir="ltr" class="u">'+fmtPrice(pl.tp)+'</b></span><span><i>استاپ</i><b dir="ltr" class="d">'+fmtPrice(pl.stop)+'</b></span></div>'+

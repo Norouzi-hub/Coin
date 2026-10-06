@@ -1528,3 +1528,25 @@ table.btabl td.num{white-space:nowrap}
 table.btabl td.u{color:var(--up)}table.btabl td.d{color:var(--dn)}
 @media (max-width:380px){.sccheck{grid-template-columns:1fr}}
 .swleg i.p{border-color:var(--tx)}
+/* ---- تب اسکلپ: نوار، تاریخچه‌ی تست‌ها، فیلتر ربات‌ها، گزارش ---- */
+.scbar .fb .ic{width:16px;height:16px}
+.scsum{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--tx3);cursor:pointer;line-height:1.8}
+.scsum .ic{flex:none;width:14px;height:14px;color:var(--gold)}
+.scview{margin-top:10px}
+.btn.xs.on{border-color:var(--gold);color:var(--gold)}
+.bttools{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--tx3)}
+.bttools>span:first-child{margin-inline-end:auto}
+.btrow{margin-top:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--inset);cursor:pointer}
+.btrh{display:flex;align-items:center;gap:8px}
+.btrh .num{margin-inline-start:auto;font-weight:800}
+.btrh .num.u{color:var(--up)}.btrh .num.d{color:var(--dn)}
+.btrow small{display:block;margin-top:3px;font-size:11.5px;color:var(--tx3)}
+.btf{margin-top:6px}
+.btwhy{line-height:1.9}
+table.btcmp,table.reptb{min-width:0;font-size:12.5px}
+table.btcmp th small{display:block;font-weight:400;color:var(--tx3);font-size:11px}
+table.btcmp td,table.reptb td,table.reptb th{padding:6px 6px}
+table.reptb td.u,table.btcmp .u{color:var(--up)}table.reptb td.d,table.btcmp .d{color:var(--dn)}
+.botfl{display:flex;flex-direction:column;gap:6px;margin:10px 0 4px}
+.botf .pbc i{font-style:normal;opacity:.7;font-size:11px}
+.repp{margin:8px 0}

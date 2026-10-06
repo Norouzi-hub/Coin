@@ -99,8 +99,8 @@ const rng=t=>100*(1+0.03*Math.sin(2*Math.PI*t/(4*36e5)));
 
  console.log('=== رابط: تب اسکلپ و تست خودکار ===');
  await p.evaluate(()=>{SWOPT.style='range';SWOPT.open='bt';SWOPT.btN=1;SWOPT.days=1;SWOPT.tf='5m';SWOPT.lev=10;SWOPT.roi=20;swOptSave();go('scalp',true);});await p.waitForTimeout(500);
- const secs=await p.evaluate(()=>[...document.querySelectorAll('#scBody .swsec')].map(x=>x.dataset.id+':'+(x.classList.contains('on')?1:0)).join(','));
- ok(secs==='opt:0,tok:0,bt:1','سه بخش: تنظیم‌ها، بررسی توکن، تست خودکار ('+secs+')');
+ const secs=await p.evaluate(()=>[...document.querySelectorAll('#scBody .scbar [data-v]')].map(x=>x.dataset.v+':'+(x.getAttribute('aria-pressed')==='true'?1:0)).join(','));
+ ok(secs==='tok:0,bots:0,bt:1,rep:0,opt:0','نوار تب اسکلپ: بررسی، ربات‌ها، تست‌ها، گزارش، تنظیم ('+secs+')');
  await p.evaluate(()=>{const i=document.querySelector('#btTk');i.value='rng';i.dispatchEvent(new Event('change'));document.querySelector('#btGo').click();});
  for(let i=0;i<60&&!(await p.evaluate(()=>!!document.querySelector('#btRes .btres .btv')));i++)await p.waitForTimeout(300);
  const ui=await p.evaluate(()=>({rows:document.querySelectorAll('#btRes .btv tbody tr').length,on:document.querySelector('#btRes .btv tr.on')?.dataset.k,
@@ -165,7 +165,7 @@ const rng=t=>100*(1+0.03*Math.sin(2*Math.PI*t/(4*36e5)));
  ok(mg&&mg.v===2&&mg.mode==='fix'&&mg.L===100&&mg.H===110&&mg.pos==='short@110>100/115'&&mg.n===1&&mg.usd===10,'منتقل شد: رنج، شورتِ باز و تاریخچه ماند — '+JSON.stringify(mg));
 
  console.log('=== ربات دستگاه دیگر ===');
- const tk=await p.evaluate(()=>{const b=botList().find(x=>x.id==='old1');b.dev='other-device';renderScalp();
+ const tk=await p.evaluate(()=>{const b=botList().find(x=>x.id==='old1');b.dev='other-device';SWOPT.open='bots';SWOPT.botF={k:'all',s:'all'};renderScalp();
    const c=document.querySelector('#bot-old1');const btns=[...c.querySelectorAll('.srow button')].map(x=>x.dataset.k).join(',');
    const ran=b.st.lastT;botTick(true);
    c.querySelector('button[data-k="take"]').click();

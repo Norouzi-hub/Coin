@@ -70,16 +70,16 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
 
  console.log('=== تایم‌فریم دستی (تب اسکلپ) ===');
  await p.evaluate(()=>[...document.querySelectorAll('#audBody .swp .btn')].find(x=>/تب اسکلپ/.test(x.textContent)).click());await p.waitForTimeout(500);
- ok(await p.evaluate(()=>view==='scalp'&&document.querySelector('.swsec[data-id="opt"]').classList.contains('on')),'«تنظیم اهرم، باند و تایم‌فریم» تب اسکلپ را با تنظیم‌های باز آورد');
+ ok(await p.evaluate(()=>view==='scalp'&&scView()==='opt'&&!!document.querySelector('.swtf')),'«تنظیم اهرم، باند و تایم‌فریم» تب اسکلپ را روی صفحه‌ی «تنظیم» آورد');
  await p.evaluate(()=>[...document.querySelectorAll('.swtf .pbc')].find(b=>b.textContent==='۳ دقیقه').click());await p.waitForTimeout(300);
- ok(await p.evaluate(()=>SWOPT.tf==='3m'&&/کندل ۳ دقیقه/.test(document.querySelector('.swp').textContent)),'۳ دقیقه انتخاب شد');
+ ok(await p.evaluate(()=>SWOPT.tf==='3m'&&/کندل ۳ دقیقه/.test(document.querySelector('#scBody .scsum').textContent)),'۳ دقیقه انتخاب شد (در خلاصه‌ی بالای تب)');
  await p.evaluate(()=>go('audit',true));await p.waitForTimeout(600);
  ok(await p.evaluate(()=>/^0 از/.test(document.querySelector('#audBody .swsig .hint').textContent)),'تایم‌فریم عوض شد ← نتیجه‌های قبلی برای این تنظیم معتبر نیست: '+await p.evaluate(()=>document.querySelector('#audBody .swsig .hint').textContent));
  await p.evaluate(()=>go('scalp',true));await p.waitForTimeout(400);
  const ivs=[];p.on('request',r=>{const m=r.url().match(/interval=(\w+)/);if(m)ivs.push(m[1]);});
 
  console.log('=== توکن و ورود دستی ===');
- await p.evaluate(()=>document.querySelector('.swsec[data-id="tok"] .swsh').click());await p.waitForTimeout(200);
+ await p.evaluate(()=>document.querySelector('.scbar [data-v="tok"]').click());await p.waitForTimeout(200);
  await p.evaluate(()=>{const v=(id,x)=>{const i=document.querySelector(id);i.value=x;i.dispatchEvent(new Event('change'));};
    v('#swTk','btc');v('#swDays','3');v('#swDir','long');v('#swMe','64000');v('#swMt','');v('#swMs','');document.querySelector('#swTkGo').click();});
  for(let i=0;i<60&&!(await p.evaluate(()=>!!document.querySelector('#swCoin .swres')));i++)await p.waitForTimeout(400);
