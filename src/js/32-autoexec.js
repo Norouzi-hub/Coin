@@ -228,6 +228,7 @@ async function audOne(job,R){
   }
   if(r.amb){r.st='amb';r.fin=true;}
   delete r.amb;
+  if(r.tAct&&r.st!=='amb'){try{r.xg=audXGrid(inp,C,r.tAct);}catch(e){}}
   AUD[p.id]=Object.assign(r,{k,at:Date.now()});
 }
 
@@ -246,7 +247,7 @@ function audJobs(force,needPath){
     const inp=audInput(p);if(!inp)continue;
     const k=audKey(inp,R), a=AUD[p.id];
     if(a&&a.k===k&&!force){
-      const noPath=needPath&&!a.path&&['win','loss','exp'].includes(a.st);
+      const noPath=needPath&&(!a.path||!a.xg||a.xg.v!==XG_V)&&['win','loss','exp'].includes(a.st);
       if(noPath){paths.push({p,inp,k,pathOnly:true});continue;}
       if(a.fin&&!(a.st==='bad'&&a.why==='nocandle'))continue;
       if(a.st==='bad'&&a.why==='nocandle'&&(a.tries||0)>=3)continue;
@@ -412,7 +413,7 @@ const claimOfPost=id=>{for(const c of claimsAll())if(c.p.id===id)return c;return
 
 /* ---- تب کانال‌سنج ---- */
 const AFKEY='signaldesk.af.v1';
-let AF=Object.assign({dir:'all',mkt:'all',rr:0,span:0,sym:'',noLate:true},(()=>{try{return lsGet(AFKEY)||{};}catch(e){return {};}})());
+let AF=Object.assign({dir:'all',mkt:'all',rr:0,span:0,sym:'',noLate:true,maxSd:0},(()=>{try{return lsGet(AFKEY)||{};}catch(e){return {};}})());
 const afSave=()=>lsSet(AFKEY,AF);
 let audList='all', audShown=40;
 const AUD_ST={win:['برد','win'],loss:['باخت','lose'],exp:['منقضی','mut'],none:['فعال نشد','mut'],
@@ -432,6 +433,10 @@ function audRows(){
   return rows;
 }
 const rrOf=inp=>inp.entry&&inp.stop&&inp.tps.length?Math.abs(inp.tps[0]-inp.entry)/Math.abs(inp.entry-inp.stop):null;
+/* فاصله‌ی استاپ تا ورود (٪) و بیشترین اهرمی که در مارجین ایزوله لیکوئید را آن سوی استاپ نگه می‌دارد
+   (با ۱۰٪ حاشیه). کانال با کراس کار می‌کند؛ با حساب کوچک و ایزوله، این سقف اهرم است. */
+const stopPctOf=i=>i&&i.entry>0&&i.stop>0?Math.abs(i.entry-i.stop)/i.entry*100:null;
+const isoLev=sd=>sd>0?Math.max(1,Math.floor(1/(sd/100*1.1+MMR))):null;
 function audFilter(rows){
   const now=Date.now();
   return rows.filter(x=>{
@@ -441,6 +446,7 @@ function audFilter(rows){
     if(AF.sym&&i.tk!==AF.sym)return false;
     if(AF.span&&i.t0&&now-i.t0>AF.span*DAY)return false;
     if(AF.rr){const q=rrOf(i);if(q==null||q<AF.rr)return false;}
+    if(AF.maxSd){const sd=stopPctOf(i);if(sd==null||sd>AF.maxSd)return false;}
     if(AF.noLate&&x.r&&x.r.late)return false;
     return true;
   });
@@ -611,6 +617,7 @@ function renderAudit(){
   safe('صحت‌سنجی',()=>buildVerify(all));
   safe('شما در برابر کانال',()=>buildVsChannel(rows));
   safe('آزمایشگاه خروج',()=>buildExitLab(rows));
+  safe('خروج کوتاه',()=>buildShortLab(rows));
   safe('نمادها',()=>buildCoinTable(rows));
   safe('فهرست سیگنال‌ها',()=>buildAudList(rows));
 
@@ -652,6 +659,17 @@ function buildAudDiag(all){
         (k==='nocandle'?' — «آزمایش اتصال» را بزن':
          k==='no-stop'||k==='no-entry'||k==='no-ticker'?' — در فهرست پایین «اصلاح عددها» را بزن':'')));
     d.appendChild(ul);
+    // متنِ سیگنال‌های بی‌استاپ/بی‌ورود برای فرستادن به سازنده، تا الگوی خواندنشان اضافه شود
+    const bad=all.filter(x=>x.r&&x.r.st==='bad'&&['no-stop','no-entry','px'].includes(x.r.why));
+    if(bad.length){
+      const cp=el('button','btn sm',ic('share')+'<span>کپی متن '+faN(bad.length)+' سیگنالِ ناقص</span>');
+      cp.onclick=async()=>{
+        const txt=bad.slice(0,40).map((x,i)=>'#'+(i+1)+' ['+(AUD_WHY[x.r.why]||x.r.why)+']\n'+String(x.p.text||'').slice(0,600)).join('\n\n———\n\n');
+        try{await navigator.clipboard.writeText(txt);toast('متن '+faN(Math.min(40,bad.length))+' سیگنال کپی شد؛ برای سازنده بفرست','ok');}
+        catch(e){openSheet('<h3>متن سیگنال‌های ناقص</h3><textarea class="cptxt" readonly>'+esc(txt)+'</textarea>',sh=>{const ta=sh.querySelector('textarea');ta.focus();ta.select();});}
+      };
+      const r=el('div','srow');r.appendChild(cp);d.appendChild(r);
+    }
   }
   if(nSig&&!all.length)d.appendChild(el('div','hint','سیگنال‌ها شناخته شده‌اند ولی هیچ‌کدام عددِ ورود/استاپِ قابل خواندن ندارند.'));
   const last=AUDQ.at?'آخرین سنجش '+ageTxt(AUDQ.at):'هنوز سنجشی انجام نشده';
@@ -689,7 +707,7 @@ function buildAudFilter(all){
   const d=el('details','sec audf');
   // «دیرهنگام‌ها در آمار نیایند» پیش‌فرض روشن است؛ شمرده می‌شود تا معلوم باشد چیزی کنار رفته،
   // ولی به‌خاطر آن بخش خودبه‌خود باز نمی‌شود
-  const user=(AF.dir!=='all')+(AF.mkt!=='all')+(!!AF.rr)+(!!AF.span)+(!!AF.sym);
+  const user=(AF.dir!=='all')+(AF.mkt!=='all')+(!!AF.rr)+(!!AF.span)+(!!AF.sym)+(!!AF.maxSd);
   const active=user+(AF.noLate?1:0);
   d.open=!!user;
   d.innerHTML='<summary>فیلتر — «اگر فقط این‌ها را گرفته بودم؟»'+
@@ -709,6 +727,7 @@ function buildAudFilter(all){
   row('بازار',[['all','همه'],['futures','فیوچرز'],['spot','اسپات']],'mkt');
   row('سود به ریسک',[[0,'همه'],[1,'1+'],[1.5,'1٫5+'],[2,'2+'],[3,'3+']],'rr');
   row('بازه',[[0,'همه'],[30,'30 روز'],[90,'90 روز']],'span');
+  row('فاصله‌ی استاپ',[[0,'همه'],[5,'تا 5٪'],[10,'تا 10٪'],[15,'تا 15٪'],[25,'تا 25٪']],'maxSd');
   const syms=[...new Set(all.map(x=>x.inp.tk).filter(Boolean))].sort();
   const w=el('div','afrow');
   w.appendChild(el('span','aflab','نماد'));
@@ -722,7 +741,7 @@ function buildAudFilter(all){
   d.appendChild(lt);
   if(active){
     const c=el('button','btn xs','برداشتن همه‌ی فیلترها');
-    c.onclick=()=>{Object.assign(AF,{dir:'all',mkt:'all',rr:0,span:0,sym:''});afSave();renderAudit();};
+    c.onclick=()=>{Object.assign(AF,{dir:'all',mkt:'all',rr:0,span:0,sym:'',maxSd:0});afSave();renderAudit();};
     d.appendChild(c);
   }
   return d;
@@ -904,6 +923,7 @@ function buildAudList(rows){
       '<span class="pill '+S0[1]+'">'+S0[0]+(x.R!=null&&k!=='open'?' '+fmtR(x.R):'')+'</span>'+
       '<span class="when">'+(i.t0?jStampFa(new Date(i.t0)):'')+'</span></div>'+
       '<div class="ar2">ورود '+(i.entry?fmtPrice(i.entry):'—')+' · استاپ '+(i.stop?fmtPrice(i.stop):'—')+
+        (stopPctOf(i)!=null&&i.mkt!=='spot'?' ('+fmtNum(stopPctOf(i))+'٪ · ایزوله تا '+faN(isoLev(stopPctOf(i)))+'x)':'')+
       ' · تارگت '+(i.tps.length?i.tps.slice(0,3).map(fmtPrice).join('، '):'—')+'</div>'+
       (k==='bad'&&x.r?'<div class="ar2 bad">'+esc(AUD_WHY[x.r.why]||'')+'</div>':'')+
       (tags.length?'<div class="ar3">'+tags.join('')+'</div>':'');

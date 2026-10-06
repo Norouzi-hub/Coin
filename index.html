@@ -1567,6 +1567,16 @@ table.reptb td.u,table.btcmp .u{color:var(--up)}table.reptb td.d,table.btcmp .d{
 .botfl{display:flex;flex-direction:column;gap:6px;margin:10px 0 4px}
 .botf .pbc i{font-style:normal;opacity:.7;font-size:11px}
 .repp{margin:8px 0}
+/* ---- خروج کوتاه (کانال‌سنج) ---- */
+.xlab .afrow{margin-top:8px}
+table.xtab{min-width:0;font-size:12.5px}
+table.xtab td,table.xtab th{padding:6px 5px}
+table.xtab td.num{white-space:nowrap}
+table.xtab tr.on td{background:color-mix(in srgb,var(--up) 10%,transparent);font-weight:800}
+table.xtab td.u{color:var(--up)}table.xtab td.d{color:var(--dn)}
+.xbest{display:flex;flex-direction:column;gap:2px;margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--inset);border:1px solid var(--line);font-size:12.5px;color:var(--tx2);line-height:1.8}
+.xbest b{color:var(--up)}
+textarea.cptxt{width:100%;min-height:50vh;font:inherit;font-size:12px;direction:rtl;background:var(--inset);color:var(--tx);border:1px solid var(--line);border-radius:12px;padding:10px}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -2735,6 +2745,29 @@ const RX={
   lev:new RegExp('(?:اهرم|لوریج|\\bleverage\\b|\\blev\\b)\\s*(?:رو|:|：|=|-)?\\s*(\\d{1,3})\\s*[xX]?','i'),
   levx:/\b(\d{1,3})\s*[xX]\b/
 };
+/* اگر الگوی سفت بالا نخورد: بعد از کلیدواژه تا ۴۵ نویسه (حتی خطِ بعد) دنبال اولین عددی که
+   «زمان» یا «پله» نیست (حد ضرر ۴ ساعته زیر 0.85، ورود ۲ پله‌ای) و پیش از آن کلیدواژه‌ی دیگری
+   (تارگت، ورود، اهرم…) نیامده. «حد ضرر ۵ درصد» درصد است و بعد از ورود به قیمت تبدیل می‌شود. */
+const RX_KW={stop:'حد\\s*ضرر|حدضرر|استاپ\\s*لاس|استاپ|stop\\s*-?\\s*loss|\\bsl\\b',
+  entry:'ورود|انتری|\\bentry\\b|\\bbuy\\b|خرید|بخر'};
+const RX_GAPSTOP=/تارگت|هدف|تی\s*پی|\btp\d?\b|\btarget\b|حد\s*ضرر|استاپ|\bsl\b|ورود|\bentry\b|اهرم|لوریج/i;
+const RX_NOTPX=/^[ \t]*(?:ساعت|روز|دقیقه|هفته|ماه|کندل|پله|مرحله|بار|[xX]\b|h\b|d\b|min\b)/i;
+const RX_PCT=/^[ \t]*(?:%|٪|درصد)/;
+function kwNum(t,kw){
+  const re=new RegExp(kw,'gi');let m;
+  while((m=re.exec(t))){
+    const from=m.index+m[0].length, seg=t.slice(from,from+45), nr=/(\d[\d,]*\.?\d*)\s*([kKmM](?![a-zA-Z\u0600-\u06FF]))?/g;let n;
+    while((n=nr.exec(seg))){
+      if(RX_GAPSTOP.test(seg.slice(0,n.index)))break;
+      const after=seg.slice(n.index+n[0].length);
+      if(RX_NOTPX.test(after))continue;
+      const v=cleanNum(n[1],n[2]);if(v==null)continue;
+      return RX_PCT.test(after)?{pct:v}:{v};
+    }
+    if(m[0].length===0)re.lastIndex++;
+  }
+  return null;
+}
 /* اسپات یا فیوچرز؟ کانال همیشه صریح نمی‌گوید، ولی نشانه‌ها روشن‌اند:
    شورت، اهرم، «فیوچرز» و «پرپچوال» فقط در فیوچرز معنی دارند؛ «اسپات» و «هولد»
    و «خرید پله‌ای بلندمدت» نشانه‌ی اسپات‌اند. وقتی هیچ‌کدام نبود حدس می‌زنیم و
@@ -2762,10 +2795,20 @@ function parseSignal(raw,id){
   const sm=t.match(RX.stop),em=t.match(RX.entry),am=t.match(RX.above),t2=t.match(RX.tier2),
         lm=t.match(RX.lev)||t.match(RX.levx);
   const trig=am?cleanNum(am[1],am[2]):null;
-  let entry=em?cleanNum(em[1],em[2]):null;
+  // «ورود ۲ پله‌ای»، «حد ضرر ۴ ساعته»: عددِ چسبیده به کلیدواژه قیمت نیست
+  const okAt=m=>{if(!m)return false;
+    if(/\d[ \t]*\r?\n/.test(m[0]))return true;           // عدد آخرِ خط است؛ «پله دوم» خطِ بعد مالِ خودش است
+    const after=t.slice(m.index+m[0].length);return !RX_NOTPX.test(after)&&!RX_PCT.test(after);};
+  let entry=okAt(em)?cleanNum(em[1],em[2]):null;
+  if(entry==null){const k=kwNum(t,RX_KW.entry);if(k&&k.v!=null)entry=k.v;}
   if(entry==null&&trig!=null)entry=trig;
-  const r={ticker:detectTicker(t),direction:/\bshort\b|شورت|فروش|ریزش/i.test(t)?'short':'long',
-    entry,trigger:trig,tier2:t2?cleanNum(t2[1],t2[2]):null,stop:sm?cleanNum(sm[1],sm[2]):null,
+  const direction=/\bshort\b|شورت|فروش|ریزش/i.test(t)?'short':'long';
+  let stop=okAt(sm)?cleanNum(sm[1],sm[2]):null;
+  if(stop==null){const k=kwNum(t,RX_KW.stop);
+    if(k&&k.v!=null)stop=k.v;
+    else if(k&&k.pct>0&&k.pct<50&&entry)stop=+(entry*(1+(direction==='long'?-1:1)*k.pct/100)).toPrecision(8);}
+  const r={ticker:detectTicker(t),direction,
+    entry,trigger:trig,tier2:t2?cleanNum(t2[1],t2[2]):null,stop,
     targets:allNums(RX.tgt,t),leverage:lm?cleanNum(lm[1]):null,hasNum:/\d/.test(t)};
   const mk=detectMarket(t,r.direction,r.leverage);
   r.market=mk.market; r.marketGuess=mk.guess;
@@ -5598,6 +5641,9 @@ function buildBrief(p,sig,ov,px){
     d.appendChild(el('span',c||null,v));kv.appendChild(d);};
   add(I.spot?'قیمت خرید':'ورود',I.entry!=null?fmtPrice(I.entry):'—');
   add('حد ضرر',I.stop!=null?fmtPrice(I.stop):'—');
+  // کانال با کراس کار می‌کند؛ در ایزوله اهرمِ بیشتر از این، لیکوئید را جلوتر از استاپ می‌آورد
+  if(!I.spot&&I.entry&&I.stop){const sd=Math.abs(I.entry-I.stop)/I.entry*100;
+    add('اهرم امن ایزوله','تا '+faN(isoLev(sd))+'x',sd>15?'w':null);}
   if(px!=null&&I.entry){
     const gap=((px-I.entry)/I.entry)*100*(I.dir==='long'?1:-1);
     add('فاصله تا ورود',fmtPct(gap),gap>3?'d':(gap>0?'w':'u'));
@@ -9835,6 +9881,108 @@ function pbSetDefault(id){
   toast('سبک خروج پیش‌فرض: '+pbDef(id).n,'ok');
 }
 
+/* ==== خروج کوتاه: پول کمتر درگیر بماند ====
+   برای هر سیگنالِ فعال‌شده، روی همان کندل‌های کانال‌سنج (بی‌درخواستِ اضافه) یک جدول ساخته می‌شود:
+   استاپ (۱۰۰٪، ۷۵٪ یا ۵۰٪ فاصله‌ی استاپِ کانال) × خروج با سود (تارگت ۱ کانال، یا +۱، +۱.۵، +۲، +۳٪
+   حرکت قیمت) × سقف زمان (۱، ۲، ۴، ۸، ۲۴ ساعت یا ۳ روز؛ بعدش هر جا بود بسته می‌شود).
+   نتیجه به R نسبت به همان استاپ (حجم طوری که هر استاپ «یک واحد» ضرر باشد) و ساعتِ درگیری پول.
+   کندلِ لحظه‌ی فعال شدن کنار گذاشته می‌شود (ترتیبِ داخلش معلوم نیست)؛ کارمزد کم می‌شود. */
+const XK=[1,0.75,0.5], XT=['t1',1,1.5,2,3], XH=[1,2,4,8,24,72], XG_V=1;
+const xgIdx=(ki,ti,hi)=>(ki*XT.length+ti)*XH.length+hi;
+function audXGrid(inp,C,tAct){
+  const sign=inp.dir==='long'?1:-1, E=inp.entry, risk=Math.abs(E-inp.stop);
+  if(!(risk>0)||!C.length)return null;
+  const K=C.filter(k=>k.t>tAct);if(!K.length)return null;
+  const R=new Array(XK.length*XT.length*XH.length).fill(null), Hh=R.slice();
+  const lastT=K[K.length-1].t, fee=(+S.fee||0)/100*E;
+  const closeAt=T=>{let j=-1;for(let i=0;i<K.length&&K[i].t+3e5<=T;i++)j=i;return j<0?null:{px:K[j].c,t:K[j].t+3e5};};
+  XK.forEach((kf,ki)=>{
+    const sl=E-sign*kf*risk, rk=kf*risk;
+    XT.forEach((tg,ti)=>{
+      const tp=tg==='t1'?(inp.tps&&inp.tps[0]):E*(1+sign*tg/100);
+      if(!(tp>0)||(tp-E)*sign<=0)return;
+      // اولین برخورد به استاپ یا سود
+      let hit=null,prev=E;
+      for(const k of K){
+        const up=k.c>=k.o;
+        for(const q of [k.o,up?k.l:k.h,up?k.h:k.l,k.c]){
+          if((q-sl)*sign<=0&&(prev-sl)*sign>0){hit={px:sl,t:k.t};break;}
+          if((q-tp)*sign>=0&&(prev-tp)*sign<0){hit={px:tp,t:k.t};break;}
+          prev=q;
+        }
+        if(hit)break;
+      }
+      XH.forEach((h,hi)=>{
+        const cap=tAct+h*36e5;let ex=null;
+        if(hit&&hit.t<cap)ex=hit;
+        else if(lastT+3e5>=cap)ex=closeAt(cap);
+        if(!ex)return;                                  // هنوز آن‌قدر زمان نگذشته
+        R[xgIdx(ki,ti,hi)]=+(((ex.px-E)*sign-fee)/rk).toFixed(3);
+        Hh[xgIdx(ki,ti,hi)]=+((ex.t-tAct)/36e5).toFixed(2);
+      });
+    });
+  });
+  return {v:XG_V,R,h:Hh};
+}
+
+/* ---- پنل «خروج کوتاه» در کانال‌سنج ---- */
+const XT_FA=['تارگت ۱ کانال','+۱٪','+۱.۵٪','+۲٪','+۳٪'], XK_FA=['استاپ کانال','۷۵٪ فاصله','۵۰٪ فاصله'],
+  XH_FA=['۱ ساعت','۲ ساعت','۴ ساعت','۸ ساعت','۲۴ ساعت','۳ روز'];
+const XSELKEY='signaldesk.xsel.v1';
+const XSEL=Object.assign({k:0,h:2},lsGet(XSELKEY)||{});
+let XLABAUTO=false;
+function xStat(G,ki,ti,hi){
+  const i=xgIdx(ki,ti,hi);let n=0,sum=0,w=0,hs=0;
+  for(const x of G){const v=x.r.xg.R[i];if(v==null)continue;n++;sum+=v;if(v>0.001)w++;hs+=x.r.xg.h[i]||0;}
+  return {n,sum,avg:n?sum/n:null,win:n?w/n*100:null,hold:n?hs/n:null};
+}
+function buildShortLab(rows){
+  const c=el('div','panel lab xlab');
+  c.appendChild(el('div','panelhead','<b>'+ic('clock')+'خروج کوتاه: پول کمتر درگیر</b>'));
+  c.appendChild(el('div','hint','همان سیگنال‌های کانال روی مسیر واقعی قیمت، با خروج زودتر: سود کوچک‌تر، سقف زمان، یا استاپ نزدیک‌تر. '+
+    'نتیجه به R نسبت به همان استاپی که انتخاب می‌کنی است — یعنی اگر حجم را طوری بگیری که هر استاپ یک واحد ضرر باشد (با استاپ نزدیک‌تر، حجم بزرگ‌تر). کارمزد کم شده.'));
+  const fin=rows.filter(x=>x.r&&['win','loss','exp'].includes(x.r.st));
+  const G=fin.filter(x=>x.r.xg&&x.r.xg.v===XG_V);
+  if(fin.length>G.length){
+    c.appendChild(el('div','rwarn warn',faN(fin.length-G.length)+' سیگنالِ سنجیده‌شده هنوز جدول خروج کوتاه ندارد'+(AUDQ.on?' — در حال محاسبه…':'؛ یک بار دیگر با کندل سنجیده می‌شوند.')));
+    // فقط وقتی همین بخش باز است (سنجش دوباره سنگین است و کل تب را از نو می‌سازد)
+    if(!XLABAUTO&&!AUDQ.on&&AUDOPEN==='خروج کوتاه'){XLABAUTO=true;setTimeout(()=>audRun(false,true),600);}
+  }
+  if(!G.length){c.appendChild(el('div','hint','هنوز سیگنالی با جدول خروج کوتاه نیست.'));return c;}
+  const body=el('div');c.appendChild(body);
+  const paint=()=>{
+    const {k,h}=XSEL;
+    const chips=(arr,key,cur)=>'<div class="afopts">'+arr.map((t,i)=>'<button class="catchip'+(cur===i?' on':'')+'" data-'+key+'="'+i+'">'+t+'</button>').join('')+'</div>';
+    // بهترین‌ها روی همه‌ی ترکیب‌ها (با دست‌کم ۶۰٪ سیگنال‌ها، تا ترکیبی با نمونه‌ی کم برنده نشود)
+    const minN=Math.max(3,Math.ceil(G.length*0.6));let best=null,bestS=null;
+    for(let ki=0;ki<XK.length;ki++)for(let ti=0;ti<XT.length;ti++)for(let hi=0;hi<XH.length;hi++){
+      const s=xStat(G,ki,ti,hi);if(s.n<minN)continue;
+      const z={ki,ti,hi,s};
+      if(!best||s.sum>best.s.sum)best=z;
+      if(s.hold!=null&&s.hold<=8&&(!bestS||s.sum>bestS.s.sum))bestS=z;
+    }
+    const base=xStat(G,0,0,XH.length-1);
+    const sdM=medOf(G.map(x=>stopPctOf(x.inp)).filter(v=>v!=null));
+    const name=z=>XK_FA[z.ki]+' · خروج '+XT_FA[z.ti]+' · سقف '+XH_FA[z.hi];
+    const line=(t,z)=>z?'<div class="xbest"><b>'+t+'</b><span>'+name(z)+'</span><span>'+fmtR(z.s.sum)+' در '+faN(z.s.n)+' سیگنال · برد '+faN(Math.round(z.s.win))+'٪ · نگه‌داری '+fmtNum(z.s.hold)+' ساعت</span></div>':'';
+    let html='<div class="afrow"><span class="aflab">استاپ</span>'+chips(XK_FA,'k',k)+'</div>'+
+      '<div class="afrow"><span class="aflab">سقف زمان</span>'+chips(XH_FA,'h',h)+'</div>'+
+      '<div class="tscroll"><table class="tp xtab"><thead><tr><th>خروج با سود</th><th>سیگنال</th><th>برد</th><th>جمع</th><th>میانگین</th><th>نگه‌داری</th></tr></thead><tbody>'+
+      XT.map((t,ti)=>{const s=xStat(G,k,ti,h);return '<tr'+(best&&best.ki===k&&best.hi===h&&best.ti===ti?' class="on"':'')+'><td>'+XT_FA[ti]+'</td><td class="num">'+faN(s.n)+'</td><td class="num">'+(s.win==null?'—':faN(Math.round(s.win))+'٪')+
+        '</td><td class="num '+cls(s.sum)+'"><bdi>'+(s.n?fmtR(s.sum):'—')+'</bdi></td><td class="num"><bdi>'+(s.avg==null?'—':fmtR(s.avg))+'</bdi></td><td class="num">'+(s.hold==null?'—':fmtNum(s.hold)+' س')+'</td></tr>';}).join('')+
+      '</tbody></table></div>'+
+      line('بهترین کوتاه‌مدت (نگه‌داری تا ۸ ساعت):',bestS)+line('بهترین کل:',best)+
+      '<div class="hint">مبنا — قاعده‌ی کانال (تارگت ۱، استاپ کانال، تا ۳ روز): '+(base.n?fmtR(base.sum)+' در '+faN(base.n)+' سیگنال، نگه‌داری '+fmtNum(base.hold)+' ساعت':'—')+'.</div>'+
+      (sdM!=null?'<div class="hint">فاصله‌ی استاپِ معمولِ این کانال '+fmtNum(sdM)+'٪ است؛ اهرم امن در ایزوله: با استاپ کانال حدود <b>'+faN(isoLev(sdM))+'x</b>، با ۷۵٪ حدود <b>'+faN(isoLev(sdM*0.75))+'x</b>، با ۵۰٪ حدود <b>'+faN(isoLev(sdM*0.5))+'x</b>.</div>':'')+
+      (G.length<20?'<div class="rwarn warn">فقط '+faN(G.length)+' سیگنال؛ برای انتخاب قاعده دست‌کم ۲۰ تا لازم است. به تفاوت‌های کوچک اعتماد نکن.</div>':'');
+    body.innerHTML=html;
+    body.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{XSEL.k=+b.dataset.k;lsSet(XSELKEY,XSEL);paint();});
+    body.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{XSEL.h=+b.dataset.h;lsSet(XSELKEY,XSEL);paint();});
+  };
+  paint();
+  return c;
+}
+
 /* ---- آزمایشگاه خروج (در کانال‌سنج) ---- */
 let LABAUTO=false;
 function buildExitLab(rows){
@@ -10365,6 +10513,7 @@ async function audOne(job,R){
   }
   if(r.amb){r.st='amb';r.fin=true;}
   delete r.amb;
+  if(r.tAct&&r.st!=='amb'){try{r.xg=audXGrid(inp,C,r.tAct);}catch(e){}}
   AUD[p.id]=Object.assign(r,{k,at:Date.now()});
 }
 
@@ -10383,7 +10532,7 @@ function audJobs(force,needPath){
     const inp=audInput(p);if(!inp)continue;
     const k=audKey(inp,R), a=AUD[p.id];
     if(a&&a.k===k&&!force){
-      const noPath=needPath&&!a.path&&['win','loss','exp'].includes(a.st);
+      const noPath=needPath&&(!a.path||!a.xg||a.xg.v!==XG_V)&&['win','loss','exp'].includes(a.st);
       if(noPath){paths.push({p,inp,k,pathOnly:true});continue;}
       if(a.fin&&!(a.st==='bad'&&a.why==='nocandle'))continue;
       if(a.st==='bad'&&a.why==='nocandle'&&(a.tries||0)>=3)continue;
@@ -10549,7 +10698,7 @@ const claimOfPost=id=>{for(const c of claimsAll())if(c.p.id===id)return c;return
 
 /* ---- تب کانال‌سنج ---- */
 const AFKEY='signaldesk.af.v1';
-let AF=Object.assign({dir:'all',mkt:'all',rr:0,span:0,sym:'',noLate:true},(()=>{try{return lsGet(AFKEY)||{};}catch(e){return {};}})());
+let AF=Object.assign({dir:'all',mkt:'all',rr:0,span:0,sym:'',noLate:true,maxSd:0},(()=>{try{return lsGet(AFKEY)||{};}catch(e){return {};}})());
 const afSave=()=>lsSet(AFKEY,AF);
 let audList='all', audShown=40;
 const AUD_ST={win:['برد','win'],loss:['باخت','lose'],exp:['منقضی','mut'],none:['فعال نشد','mut'],
@@ -10569,6 +10718,10 @@ function audRows(){
   return rows;
 }
 const rrOf=inp=>inp.entry&&inp.stop&&inp.tps.length?Math.abs(inp.tps[0]-inp.entry)/Math.abs(inp.entry-inp.stop):null;
+/* فاصله‌ی استاپ تا ورود (٪) و بیشترین اهرمی که در مارجین ایزوله لیکوئید را آن سوی استاپ نگه می‌دارد
+   (با ۱۰٪ حاشیه). کانال با کراس کار می‌کند؛ با حساب کوچک و ایزوله، این سقف اهرم است. */
+const stopPctOf=i=>i&&i.entry>0&&i.stop>0?Math.abs(i.entry-i.stop)/i.entry*100:null;
+const isoLev=sd=>sd>0?Math.max(1,Math.floor(1/(sd/100*1.1+MMR))):null;
 function audFilter(rows){
   const now=Date.now();
   return rows.filter(x=>{
@@ -10578,6 +10731,7 @@ function audFilter(rows){
     if(AF.sym&&i.tk!==AF.sym)return false;
     if(AF.span&&i.t0&&now-i.t0>AF.span*DAY)return false;
     if(AF.rr){const q=rrOf(i);if(q==null||q<AF.rr)return false;}
+    if(AF.maxSd){const sd=stopPctOf(i);if(sd==null||sd>AF.maxSd)return false;}
     if(AF.noLate&&x.r&&x.r.late)return false;
     return true;
   });
@@ -10748,6 +10902,7 @@ function renderAudit(){
   safe('صحت‌سنجی',()=>buildVerify(all));
   safe('شما در برابر کانال',()=>buildVsChannel(rows));
   safe('آزمایشگاه خروج',()=>buildExitLab(rows));
+  safe('خروج کوتاه',()=>buildShortLab(rows));
   safe('نمادها',()=>buildCoinTable(rows));
   safe('فهرست سیگنال‌ها',()=>buildAudList(rows));
 
@@ -10789,6 +10944,17 @@ function buildAudDiag(all){
         (k==='nocandle'?' — «آزمایش اتصال» را بزن':
          k==='no-stop'||k==='no-entry'||k==='no-ticker'?' — در فهرست پایین «اصلاح عددها» را بزن':'')));
     d.appendChild(ul);
+    // متنِ سیگنال‌های بی‌استاپ/بی‌ورود برای فرستادن به سازنده، تا الگوی خواندنشان اضافه شود
+    const bad=all.filter(x=>x.r&&x.r.st==='bad'&&['no-stop','no-entry','px'].includes(x.r.why));
+    if(bad.length){
+      const cp=el('button','btn sm',ic('share')+'<span>کپی متن '+faN(bad.length)+' سیگنالِ ناقص</span>');
+      cp.onclick=async()=>{
+        const txt=bad.slice(0,40).map((x,i)=>'#'+(i+1)+' ['+(AUD_WHY[x.r.why]||x.r.why)+']\n'+String(x.p.text||'').slice(0,600)).join('\n\n———\n\n');
+        try{await navigator.clipboard.writeText(txt);toast('متن '+faN(Math.min(40,bad.length))+' سیگنال کپی شد؛ برای سازنده بفرست','ok');}
+        catch(e){openSheet('<h3>متن سیگنال‌های ناقص</h3><textarea class="cptxt" readonly>'+esc(txt)+'</textarea>',sh=>{const ta=sh.querySelector('textarea');ta.focus();ta.select();});}
+      };
+      const r=el('div','srow');r.appendChild(cp);d.appendChild(r);
+    }
   }
   if(nSig&&!all.length)d.appendChild(el('div','hint','سیگنال‌ها شناخته شده‌اند ولی هیچ‌کدام عددِ ورود/استاپِ قابل خواندن ندارند.'));
   const last=AUDQ.at?'آخرین سنجش '+ageTxt(AUDQ.at):'هنوز سنجشی انجام نشده';
@@ -10826,7 +10992,7 @@ function buildAudFilter(all){
   const d=el('details','sec audf');
   // «دیرهنگام‌ها در آمار نیایند» پیش‌فرض روشن است؛ شمرده می‌شود تا معلوم باشد چیزی کنار رفته،
   // ولی به‌خاطر آن بخش خودبه‌خود باز نمی‌شود
-  const user=(AF.dir!=='all')+(AF.mkt!=='all')+(!!AF.rr)+(!!AF.span)+(!!AF.sym);
+  const user=(AF.dir!=='all')+(AF.mkt!=='all')+(!!AF.rr)+(!!AF.span)+(!!AF.sym)+(!!AF.maxSd);
   const active=user+(AF.noLate?1:0);
   d.open=!!user;
   d.innerHTML='<summary>فیلتر — «اگر فقط این‌ها را گرفته بودم؟»'+
@@ -10846,6 +11012,7 @@ function buildAudFilter(all){
   row('بازار',[['all','همه'],['futures','فیوچرز'],['spot','اسپات']],'mkt');
   row('سود به ریسک',[[0,'همه'],[1,'1+'],[1.5,'1٫5+'],[2,'2+'],[3,'3+']],'rr');
   row('بازه',[[0,'همه'],[30,'30 روز'],[90,'90 روز']],'span');
+  row('فاصله‌ی استاپ',[[0,'همه'],[5,'تا 5٪'],[10,'تا 10٪'],[15,'تا 15٪'],[25,'تا 25٪']],'maxSd');
   const syms=[...new Set(all.map(x=>x.inp.tk).filter(Boolean))].sort();
   const w=el('div','afrow');
   w.appendChild(el('span','aflab','نماد'));
@@ -10859,7 +11026,7 @@ function buildAudFilter(all){
   d.appendChild(lt);
   if(active){
     const c=el('button','btn xs','برداشتن همه‌ی فیلترها');
-    c.onclick=()=>{Object.assign(AF,{dir:'all',mkt:'all',rr:0,span:0,sym:''});afSave();renderAudit();};
+    c.onclick=()=>{Object.assign(AF,{dir:'all',mkt:'all',rr:0,span:0,sym:'',maxSd:0});afSave();renderAudit();};
     d.appendChild(c);
   }
   return d;
@@ -11041,6 +11208,7 @@ function buildAudList(rows){
       '<span class="pill '+S0[1]+'">'+S0[0]+(x.R!=null&&k!=='open'?' '+fmtR(x.R):'')+'</span>'+
       '<span class="when">'+(i.t0?jStampFa(new Date(i.t0)):'')+'</span></div>'+
       '<div class="ar2">ورود '+(i.entry?fmtPrice(i.entry):'—')+' · استاپ '+(i.stop?fmtPrice(i.stop):'—')+
+        (stopPctOf(i)!=null&&i.mkt!=='spot'?' ('+fmtNum(stopPctOf(i))+'٪ · ایزوله تا '+faN(isoLev(stopPctOf(i)))+'x)':'')+
       ' · تارگت '+(i.tps.length?i.tps.slice(0,3).map(fmtPrice).join('، '):'—')+'</div>'+
       (k==='bad'&&x.r?'<div class="ar2 bad">'+esc(AUD_WHY[x.r.why]||'')+'</div>':'')+
       (tags.length?'<div class="ar3">'+tags.join('')+'</div>':'');

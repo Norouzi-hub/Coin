@@ -40,7 +40,10 @@ const html='<html><body>'+Array.from({length:40},(_,i)=>post(5000-i,i*2,
  ok(Math.abs(b1.top-b0.top)<=2,'بروزرسانی خودکار (renderAll): جای خواندن تکان نخورد ('+(b1.top-b0.top)+'px)');
  ok(await p.evaluate(()=>!document.querySelector('#list .card.enter')),'بروزرسانی: انیمیشن ورودِ کارت‌ها دوباره پخش نشد');
  // بستن با زدن روی سربرگ کارت باز
- const oid=await p.evaluate(()=>{const c=document.querySelector('#list .card.accopen');c.scrollIntoView({block:'center'});return c.dataset.id;});
+ const oid=await p.evaluate(()=>{const c=document.querySelector('#list .card.accopen');c.scrollIntoView({block:'center'});
+   // سربرگ باید کامل پیدا باشد (نه زیر نوار چسبان بالا)، همان‌طور که کاربر رویش می‌زند
+   const hd=document.querySelector('header'), top=hd?hd.getBoundingClientRect().bottom:0, r=c.getBoundingClientRect();
+   if(r.top<top+40)window.scrollBy(0,r.top-top-80);return c.dataset.id;});
  await p.waitForTimeout(300);
  const ob=await tops(oid);
  const hb=await p.evaluate(id=>{const r=document.querySelector('#list .card[data-id="'+id+'"] .chead').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};},oid);

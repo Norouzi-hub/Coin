@@ -67,6 +67,29 @@ const RX={
   lev:new RegExp('(?:اهرم|لوریج|\\bleverage\\b|\\blev\\b)\\s*(?:رو|:|：|=|-)?\\s*(\\d{1,3})\\s*[xX]?','i'),
   levx:/\b(\d{1,3})\s*[xX]\b/
 };
+/* اگر الگوی سفت بالا نخورد: بعد از کلیدواژه تا ۴۵ نویسه (حتی خطِ بعد) دنبال اولین عددی که
+   «زمان» یا «پله» نیست (حد ضرر ۴ ساعته زیر 0.85، ورود ۲ پله‌ای) و پیش از آن کلیدواژه‌ی دیگری
+   (تارگت، ورود، اهرم…) نیامده. «حد ضرر ۵ درصد» درصد است و بعد از ورود به قیمت تبدیل می‌شود. */
+const RX_KW={stop:'حد\\s*ضرر|حدضرر|استاپ\\s*لاس|استاپ|stop\\s*-?\\s*loss|\\bsl\\b',
+  entry:'ورود|انتری|\\bentry\\b|\\bbuy\\b|خرید|بخر'};
+const RX_GAPSTOP=/تارگت|هدف|تی\s*پی|\btp\d?\b|\btarget\b|حد\s*ضرر|استاپ|\bsl\b|ورود|\bentry\b|اهرم|لوریج/i;
+const RX_NOTPX=/^[ \t]*(?:ساعت|روز|دقیقه|هفته|ماه|کندل|پله|مرحله|بار|[xX]\b|h\b|d\b|min\b)/i;
+const RX_PCT=/^[ \t]*(?:%|٪|درصد)/;
+function kwNum(t,kw){
+  const re=new RegExp(kw,'gi');let m;
+  while((m=re.exec(t))){
+    const from=m.index+m[0].length, seg=t.slice(from,from+45), nr=/(\d[\d,]*\.?\d*)\s*([kKmM](?![a-zA-Z\u0600-\u06FF]))?/g;let n;
+    while((n=nr.exec(seg))){
+      if(RX_GAPSTOP.test(seg.slice(0,n.index)))break;
+      const after=seg.slice(n.index+n[0].length);
+      if(RX_NOTPX.test(after))continue;
+      const v=cleanNum(n[1],n[2]);if(v==null)continue;
+      return RX_PCT.test(after)?{pct:v}:{v};
+    }
+    if(m[0].length===0)re.lastIndex++;
+  }
+  return null;
+}
 /* اسپات یا فیوچرز؟ کانال همیشه صریح نمی‌گوید، ولی نشانه‌ها روشن‌اند:
    شورت، اهرم، «فیوچرز» و «پرپچوال» فقط در فیوچرز معنی دارند؛ «اسپات» و «هولد»
    و «خرید پله‌ای بلندمدت» نشانه‌ی اسپات‌اند. وقتی هیچ‌کدام نبود حدس می‌زنیم و
@@ -94,10 +117,20 @@ function parseSignal(raw,id){
   const sm=t.match(RX.stop),em=t.match(RX.entry),am=t.match(RX.above),t2=t.match(RX.tier2),
         lm=t.match(RX.lev)||t.match(RX.levx);
   const trig=am?cleanNum(am[1],am[2]):null;
-  let entry=em?cleanNum(em[1],em[2]):null;
+  // «ورود ۲ پله‌ای»، «حد ضرر ۴ ساعته»: عددِ چسبیده به کلیدواژه قیمت نیست
+  const okAt=m=>{if(!m)return false;
+    if(/\d[ \t]*\r?\n/.test(m[0]))return true;           // عدد آخرِ خط است؛ «پله دوم» خطِ بعد مالِ خودش است
+    const after=t.slice(m.index+m[0].length);return !RX_NOTPX.test(after)&&!RX_PCT.test(after);};
+  let entry=okAt(em)?cleanNum(em[1],em[2]):null;
+  if(entry==null){const k=kwNum(t,RX_KW.entry);if(k&&k.v!=null)entry=k.v;}
   if(entry==null&&trig!=null)entry=trig;
-  const r={ticker:detectTicker(t),direction:/\bshort\b|شورت|فروش|ریزش/i.test(t)?'short':'long',
-    entry,trigger:trig,tier2:t2?cleanNum(t2[1],t2[2]):null,stop:sm?cleanNum(sm[1],sm[2]):null,
+  const direction=/\bshort\b|شورت|فروش|ریزش/i.test(t)?'short':'long';
+  let stop=okAt(sm)?cleanNum(sm[1],sm[2]):null;
+  if(stop==null){const k=kwNum(t,RX_KW.stop);
+    if(k&&k.v!=null)stop=k.v;
+    else if(k&&k.pct>0&&k.pct<50&&entry)stop=+(entry*(1+(direction==='long'?-1:1)*k.pct/100)).toPrecision(8);}
+  const r={ticker:detectTicker(t),direction,
+    entry,trigger:trig,tier2:t2?cleanNum(t2[1],t2[2]):null,stop,
     targets:allNums(RX.tgt,t),leverage:lm?cleanNum(lm[1]):null,hasNum:/\d/.test(t)};
   const mk=detectMarket(t,r.direction,r.leverage);
   r.market=mk.market; r.marketGuess=mk.guess;

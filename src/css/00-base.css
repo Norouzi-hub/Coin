@@ -1550,3 +1550,13 @@ table.reptb td.u,table.btcmp .u{color:var(--up)}table.reptb td.d,table.btcmp .d{
 .botfl{display:flex;flex-direction:column;gap:6px;margin:10px 0 4px}
 .botf .pbc i{font-style:normal;opacity:.7;font-size:11px}
 .repp{margin:8px 0}
+/* ---- خروج کوتاه (کانال‌سنج) ---- */
+.xlab .afrow{margin-top:8px}
+table.xtab{min-width:0;font-size:12.5px}
+table.xtab td,table.xtab th{padding:6px 5px}
+table.xtab td.num{white-space:nowrap}
+table.xtab tr.on td{background:color-mix(in srgb,var(--up) 10%,transparent);font-weight:800}
+table.xtab td.u{color:var(--up)}table.xtab td.d{color:var(--dn)}
+.xbest{display:flex;flex-direction:column;gap:2px;margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--inset);border:1px solid var(--line);font-size:12.5px;color:var(--tx2);line-height:1.8}
+.xbest b{color:var(--up)}
+textarea.cptxt{width:100%;min-height:50vh;font:inherit;font-size:12px;direction:rtl;background:var(--inset);color:var(--tx);border:1px solid var(--line);border-radius:12px;padding:10px}

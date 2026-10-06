@@ -85,6 +85,108 @@ function pbSetDefault(id){
   toast('سبک خروج پیش‌فرض: '+pbDef(id).n,'ok');
 }
 
+/* ==== خروج کوتاه: پول کمتر درگیر بماند ====
+   برای هر سیگنالِ فعال‌شده، روی همان کندل‌های کانال‌سنج (بی‌درخواستِ اضافه) یک جدول ساخته می‌شود:
+   استاپ (۱۰۰٪، ۷۵٪ یا ۵۰٪ فاصله‌ی استاپِ کانال) × خروج با سود (تارگت ۱ کانال، یا +۱، +۱.۵، +۲، +۳٪
+   حرکت قیمت) × سقف زمان (۱، ۲، ۴، ۸، ۲۴ ساعت یا ۳ روز؛ بعدش هر جا بود بسته می‌شود).
+   نتیجه به R نسبت به همان استاپ (حجم طوری که هر استاپ «یک واحد» ضرر باشد) و ساعتِ درگیری پول.
+   کندلِ لحظه‌ی فعال شدن کنار گذاشته می‌شود (ترتیبِ داخلش معلوم نیست)؛ کارمزد کم می‌شود. */
+const XK=[1,0.75,0.5], XT=['t1',1,1.5,2,3], XH=[1,2,4,8,24,72], XG_V=1;
+const xgIdx=(ki,ti,hi)=>(ki*XT.length+ti)*XH.length+hi;
+function audXGrid(inp,C,tAct){
+  const sign=inp.dir==='long'?1:-1, E=inp.entry, risk=Math.abs(E-inp.stop);
+  if(!(risk>0)||!C.length)return null;
+  const K=C.filter(k=>k.t>tAct);if(!K.length)return null;
+  const R=new Array(XK.length*XT.length*XH.length).fill(null), Hh=R.slice();
+  const lastT=K[K.length-1].t, fee=(+S.fee||0)/100*E;
+  const closeAt=T=>{let j=-1;for(let i=0;i<K.length&&K[i].t+3e5<=T;i++)j=i;return j<0?null:{px:K[j].c,t:K[j].t+3e5};};
+  XK.forEach((kf,ki)=>{
+    const sl=E-sign*kf*risk, rk=kf*risk;
+    XT.forEach((tg,ti)=>{
+      const tp=tg==='t1'?(inp.tps&&inp.tps[0]):E*(1+sign*tg/100);
+      if(!(tp>0)||(tp-E)*sign<=0)return;
+      // اولین برخورد به استاپ یا سود
+      let hit=null,prev=E;
+      for(const k of K){
+        const up=k.c>=k.o;
+        for(const q of [k.o,up?k.l:k.h,up?k.h:k.l,k.c]){
+          if((q-sl)*sign<=0&&(prev-sl)*sign>0){hit={px:sl,t:k.t};break;}
+          if((q-tp)*sign>=0&&(prev-tp)*sign<0){hit={px:tp,t:k.t};break;}
+          prev=q;
+        }
+        if(hit)break;
+      }
+      XH.forEach((h,hi)=>{
+        const cap=tAct+h*36e5;let ex=null;
+        if(hit&&hit.t<cap)ex=hit;
+        else if(lastT+3e5>=cap)ex=closeAt(cap);
+        if(!ex)return;                                  // هنوز آن‌قدر زمان نگذشته
+        R[xgIdx(ki,ti,hi)]=+(((ex.px-E)*sign-fee)/rk).toFixed(3);
+        Hh[xgIdx(ki,ti,hi)]=+((ex.t-tAct)/36e5).toFixed(2);
+      });
+    });
+  });
+  return {v:XG_V,R,h:Hh};
+}
+
+/* ---- پنل «خروج کوتاه» در کانال‌سنج ---- */
+const XT_FA=['تارگت ۱ کانال','+۱٪','+۱.۵٪','+۲٪','+۳٪'], XK_FA=['استاپ کانال','۷۵٪ فاصله','۵۰٪ فاصله'],
+  XH_FA=['۱ ساعت','۲ ساعت','۴ ساعت','۸ ساعت','۲۴ ساعت','۳ روز'];
+const XSELKEY='signaldesk.xsel.v1';
+const XSEL=Object.assign({k:0,h:2},lsGet(XSELKEY)||{});
+let XLABAUTO=false;
+function xStat(G,ki,ti,hi){
+  const i=xgIdx(ki,ti,hi);let n=0,sum=0,w=0,hs=0;
+  for(const x of G){const v=x.r.xg.R[i];if(v==null)continue;n++;sum+=v;if(v>0.001)w++;hs+=x.r.xg.h[i]||0;}
+  return {n,sum,avg:n?sum/n:null,win:n?w/n*100:null,hold:n?hs/n:null};
+}
+function buildShortLab(rows){
+  const c=el('div','panel lab xlab');
+  c.appendChild(el('div','panelhead','<b>'+ic('clock')+'خروج کوتاه: پول کمتر درگیر</b>'));
+  c.appendChild(el('div','hint','همان سیگنال‌های کانال روی مسیر واقعی قیمت، با خروج زودتر: سود کوچک‌تر، سقف زمان، یا استاپ نزدیک‌تر. '+
+    'نتیجه به R نسبت به همان استاپی که انتخاب می‌کنی است — یعنی اگر حجم را طوری بگیری که هر استاپ یک واحد ضرر باشد (با استاپ نزدیک‌تر، حجم بزرگ‌تر). کارمزد کم شده.'));
+  const fin=rows.filter(x=>x.r&&['win','loss','exp'].includes(x.r.st));
+  const G=fin.filter(x=>x.r.xg&&x.r.xg.v===XG_V);
+  if(fin.length>G.length){
+    c.appendChild(el('div','rwarn warn',faN(fin.length-G.length)+' سیگنالِ سنجیده‌شده هنوز جدول خروج کوتاه ندارد'+(AUDQ.on?' — در حال محاسبه…':'؛ یک بار دیگر با کندل سنجیده می‌شوند.')));
+    // فقط وقتی همین بخش باز است (سنجش دوباره سنگین است و کل تب را از نو می‌سازد)
+    if(!XLABAUTO&&!AUDQ.on&&AUDOPEN==='خروج کوتاه'){XLABAUTO=true;setTimeout(()=>audRun(false,true),600);}
+  }
+  if(!G.length){c.appendChild(el('div','hint','هنوز سیگنالی با جدول خروج کوتاه نیست.'));return c;}
+  const body=el('div');c.appendChild(body);
+  const paint=()=>{
+    const {k,h}=XSEL;
+    const chips=(arr,key,cur)=>'<div class="afopts">'+arr.map((t,i)=>'<button class="catchip'+(cur===i?' on':'')+'" data-'+key+'="'+i+'">'+t+'</button>').join('')+'</div>';
+    // بهترین‌ها روی همه‌ی ترکیب‌ها (با دست‌کم ۶۰٪ سیگنال‌ها، تا ترکیبی با نمونه‌ی کم برنده نشود)
+    const minN=Math.max(3,Math.ceil(G.length*0.6));let best=null,bestS=null;
+    for(let ki=0;ki<XK.length;ki++)for(let ti=0;ti<XT.length;ti++)for(let hi=0;hi<XH.length;hi++){
+      const s=xStat(G,ki,ti,hi);if(s.n<minN)continue;
+      const z={ki,ti,hi,s};
+      if(!best||s.sum>best.s.sum)best=z;
+      if(s.hold!=null&&s.hold<=8&&(!bestS||s.sum>bestS.s.sum))bestS=z;
+    }
+    const base=xStat(G,0,0,XH.length-1);
+    const sdM=medOf(G.map(x=>stopPctOf(x.inp)).filter(v=>v!=null));
+    const name=z=>XK_FA[z.ki]+' · خروج '+XT_FA[z.ti]+' · سقف '+XH_FA[z.hi];
+    const line=(t,z)=>z?'<div class="xbest"><b>'+t+'</b><span>'+name(z)+'</span><span>'+fmtR(z.s.sum)+' در '+faN(z.s.n)+' سیگنال · برد '+faN(Math.round(z.s.win))+'٪ · نگه‌داری '+fmtNum(z.s.hold)+' ساعت</span></div>':'';
+    let html='<div class="afrow"><span class="aflab">استاپ</span>'+chips(XK_FA,'k',k)+'</div>'+
+      '<div class="afrow"><span class="aflab">سقف زمان</span>'+chips(XH_FA,'h',h)+'</div>'+
+      '<div class="tscroll"><table class="tp xtab"><thead><tr><th>خروج با سود</th><th>سیگنال</th><th>برد</th><th>جمع</th><th>میانگین</th><th>نگه‌داری</th></tr></thead><tbody>'+
+      XT.map((t,ti)=>{const s=xStat(G,k,ti,h);return '<tr'+(best&&best.ki===k&&best.hi===h&&best.ti===ti?' class="on"':'')+'><td>'+XT_FA[ti]+'</td><td class="num">'+faN(s.n)+'</td><td class="num">'+(s.win==null?'—':faN(Math.round(s.win))+'٪')+
+        '</td><td class="num '+cls(s.sum)+'"><bdi>'+(s.n?fmtR(s.sum):'—')+'</bdi></td><td class="num"><bdi>'+(s.avg==null?'—':fmtR(s.avg))+'</bdi></td><td class="num">'+(s.hold==null?'—':fmtNum(s.hold)+' س')+'</td></tr>';}).join('')+
+      '</tbody></table></div>'+
+      line('بهترین کوتاه‌مدت (نگه‌داری تا ۸ ساعت):',bestS)+line('بهترین کل:',best)+
+      '<div class="hint">مبنا — قاعده‌ی کانال (تارگت ۱، استاپ کانال، تا ۳ روز): '+(base.n?fmtR(base.sum)+' در '+faN(base.n)+' سیگنال، نگه‌داری '+fmtNum(base.hold)+' ساعت':'—')+'.</div>'+
+      (sdM!=null?'<div class="hint">فاصله‌ی استاپِ معمولِ این کانال '+fmtNum(sdM)+'٪ است؛ اهرم امن در ایزوله: با استاپ کانال حدود <b>'+faN(isoLev(sdM))+'x</b>، با ۷۵٪ حدود <b>'+faN(isoLev(sdM*0.75))+'x</b>، با ۵۰٪ حدود <b>'+faN(isoLev(sdM*0.5))+'x</b>.</div>':'')+
+      (G.length<20?'<div class="rwarn warn">فقط '+faN(G.length)+' سیگنال؛ برای انتخاب قاعده دست‌کم ۲۰ تا لازم است. به تفاوت‌های کوچک اعتماد نکن.</div>':'');
+    body.innerHTML=html;
+    body.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{XSEL.k=+b.dataset.k;lsSet(XSELKEY,XSEL);paint();});
+    body.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{XSEL.h=+b.dataset.h;lsSet(XSELKEY,XSEL);paint();});
+  };
+  paint();
+  return c;
+}
+
 /* ---- آزمایشگاه خروج (در کانال‌سنج) ---- */
 let LABAUTO=false;
 function buildExitLab(rows){

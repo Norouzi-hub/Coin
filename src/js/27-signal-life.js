@@ -378,6 +378,9 @@ function buildBrief(p,sig,ov,px){
     d.appendChild(el('span',c||null,v));kv.appendChild(d);};
   add(I.spot?'قیمت خرید':'ورود',I.entry!=null?fmtPrice(I.entry):'—');
   add('حد ضرر',I.stop!=null?fmtPrice(I.stop):'—');
+  // کانال با کراس کار می‌کند؛ در ایزوله اهرمِ بیشتر از این، لیکوئید را جلوتر از استاپ می‌آورد
+  if(!I.spot&&I.entry&&I.stop){const sd=Math.abs(I.entry-I.stop)/I.entry*100;
+    add('اهرم امن ایزوله','تا '+faN(isoLev(sd))+'x',sd>15?'w':null);}
   if(px!=null&&I.entry){
     const gap=((px-I.entry)/I.entry)*100*(I.dir==='long'?1:-1);
     add('فاصله تا ورود',fmtPct(gap),gap>3?'d':(gap>0?'w':'u'));
