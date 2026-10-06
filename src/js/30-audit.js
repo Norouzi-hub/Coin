@@ -19,14 +19,53 @@ const AUD_WHY={
   'no-date':'زمان انتشار معلوم نیست',
   'bad-stop':'استاپ با جهت معامله نمی‌خواند',
   'px':'قیمتِ اعلامی با قیمت بازار در لحظه‌ی انتشار بیش از 30٪ فاصله دارد — احتمالاً نماد اشتباه خوانده شده',
-  'nocandle':'کندلِ این نماد از هیچ منبعی نیامد'
+  'nocandle':'کندلِ این نماد از هیچ منبعی نیامد',
+  'far-sl':'استاپِ گرفته‌شده از سیگنالِ قبلیِ همین نماد بیش از 30٪ با ورود فاصله دارد'
 };
 const AUD_NONE={timeout:'قیمت در مهلت ورود به نقطه‌ی ورود نرسید',
   ran:'قیمت بدون برگشتن به نقطه‌ی ورود، مستقیم به تارگت رفت — قابل گرفتن نبود',
   inval:'قبل از فعال شدنِ ورود، قیمت از استاپ گذشت'};
 
+/* پست‌های پیگیریِ کانال («ورود مجدد مجازید»، «تریگر 0.0133 ست کنید»، «اگر 4 ساعته بالای 83700
+   بست ورود مجازه») استاپ و تارگت را تکرار نمی‌کنند؛ همان‌های آخرین سیگنالِ استاپ‌دارِ همین
+   نماد (تا ۴۵ روز پیش) معتبر است. نمایه یک بار ساخته می‌شود، نه برای هر پست. */
+let PREVIX=null,PREVV='';
+function prevSigOf(p,tk){
+  const v=POSTS.length+'|'+(POSTS[0]&&POSTS[0].id)+'|'+SYMVER+'|'+KGEN;
+  if(v!==PREVV){
+    PREVV=v;PREVIX=new Map();
+    for(const q of POSTS){
+      if(!q.date)continue;
+      const ov=OVERRIDE[q.id]||{}, g=q.origText?parseSignal(q.origText):parseSignal(q.text,q.id);
+      const t=ov.ticker||g.ticker, st=ov.stop!=null?ov.stop:g.stop;
+      if(!t||!st||!(ov.sig!=null?ov.sig:g.isSignal)||(ov.sig!==true&&isRes(q)))continue;
+      if(!PREVIX.has(t))PREVIX.set(t,[]);
+      PREVIX.get(t).push({t:+q.date,id:q.id,stop:st,tps:g.targets||[],dir:ov.dir||g.direction});
+    }
+    for(const l of PREVIX.values())l.sort((a,b)=>a.t-b.t);
+  }
+  const l=PREVIX.get(tk), t0=p.date?+p.date:0;
+  if(!l||!t0)return null;
+  let best=null;
+  for(const x of l){if(x.t>=t0)break;if(x.id!==p.id&&t0-x.t<=45*DAY)best=x;}
+  return best;
+}
+/* تارگت‌های در جهتِ سود از ورود؛ اگر کانال نداده، تارگت اولِ تنظیماتِ خودت (به R) فرض و صریح نوشته می‌شود */
+function audTps(inp){
+  const sign=inp.dir==='long'?1:-1, E=inp.entry, SL=inp.stop;
+  let tps=(inp.tgs||[]).filter(t=>isFinite(t)&&t>0&&E&&(t-E)*sign>0);
+  tps=[...new Set(tps)].sort((a,b)=>(a-b)*sign).slice(0,5);
+  inp.tpAssumed=false;
+  if(!tps.length&&E&&SL&&(E-SL)*sign>0){
+    tps=[+(E+sign*(S.rMul[0]||1.5)*Math.abs(E-SL)).toPrecision(8)];inp.tpAssumed=true;
+  }
+  inp.tps=tps;
+  return inp;
+}
 /* ورودیِ سنجش: عددهای «اولین نسخه‌ی» پست (اگر کانال بعداً ویرایشش کرده، ملاک همان است
-   که اول منتشر شد) به‌علاوه‌ی اصلاح دستیِ تو، چون پارسر همیشه درست نمی‌خواند. */
+   که اول منتشر شد) به‌علاوه‌ی اصلاح دستیِ تو، چون پارسر همیشه درست نمی‌خواند.
+   ورودِ بازار (mktE): پست عددِ ورود نداده («ورود مجازه»)؛ ورود = قیمت لحظه‌ی انتشار، که موقع
+   سنجش از اولین کندل گرفته و در نتیجه (e0) نگه داشته می‌شود. */
 function audInput(p){
   const ov=OVERRIDE[p.id]||{};
   const base=p.origText?parseSignal(p.origText):parseSignal(p.text,p.id);
@@ -37,26 +76,31 @@ function audInput(p){
   if(ov.trigger!=null)sig.trigger=ov.trigger;
   if(!sig.isSignal)return null;
   if(ov.sig!==true&&isRes(p))return null;      // پستِ نتیجه سیگنالِ تازه نیست
-  const I=planInputsOf(p,sig,ov,null);
-  const sign=I.dir==='long'?1:-1, E=I.entry||null, SL=I.stop||null;
-  let tps=(sig.targets||[]).filter(t=>isFinite(t)&&t>0&&E&&(t-E)*sign>0);
-  tps=[...new Set(tps)].sort((a,b)=>(a-b)*sign).slice(0,5);
-  let tpAssumed=false;
-  // کانال تارگت نداده: تارگت اولِ تنظیماتِ خودت (به R) فرض می‌شود و صریح نوشته می‌شود
-  if(!tps.length&&E&&SL&&(E-SL)*sign>0){
-    tps=[+(E+sign*(S.rMul[0]||1.5)*Math.abs(E-SL)).toPrecision(8)];tpAssumed=true;
+  const inh=sig.stop==null&&ov.stop==null&&sig.ticker?prevSigOf(p,sig.ticker):null;
+  if(inh){
+    sig.stop=inh.stop;
+    if(!sig.dirSet)sig.direction=inh.dir;
+    if(!(sig.targets||[]).length)sig.targets=inh.tps;
   }
-  return {tk:sig.ticker||null,dir:I.dir,entry:E,trig:sig.trigger!=null?sig.trigger:null,
-    stop:SL,tps,tpAssumed,mkt:I.market,t0:p.date?+p.date:null};
+  const I=planInputsOf(p,sig,ov,null);
+  const mktE=!I.entry&&ov.entry==null&&!!sig.mktEntry;
+  const inp={tk:sig.ticker||null,dir:I.dir,entry:I.entry||null,trig:sig.trigger!=null?sig.trigger:null,
+    stop:I.stop||null,tgs:sig.targets||[],mkt:I.market,t0:p.date?+p.date:null,
+    mktE,inh:inh?{id:inh.id,t:inh.t}:null};
+  audTps(inp);
+  const a=mktE?AUD[p.id]:null;
+  if(a&&a.e0&&a.k===audKey(inp,audRules())){inp.entry=a.e0;audTps(inp);}
+  return inp;
 }
-const audKey=(inp,R)=>JSON.stringify([inp.tk,inp.dir,inp.entry,inp.trig,inp.stop,inp.tps,inp.t0,
+/* کلیدِ ورودِ بازار از قیمتِ پرشده مستقل است، وگرنه بعد از هر سنجش کلید عوض می‌شد */
+const audKey=(inp,R)=>JSON.stringify([inp.tk,inp.dir,inp.mktE?'mkt':inp.entry,inp.trig,inp.stop,inp.mktE?inp.tgs:inp.tps,inp.t0,
   R.days,R.entryDays,R.tol]);
 function audPre(inp){
   if(!inp.tk)return 'no-ticker';
-  if(!inp.entry)return 'no-entry';
+  if(!inp.entry&&!inp.mktE)return 'no-entry';
   if(!inp.stop)return 'no-stop';
   if(!inp.t0)return 'no-date';
-  if((inp.entry-inp.stop)*(inp.dir==='long'?1:-1)<=0)return 'bad-stop';
+  if(inp.entry&&(inp.entry-inp.stop)*(inp.dir==='long'?1:-1)<=0)return 'bad-stop';
   return null;
 }
 

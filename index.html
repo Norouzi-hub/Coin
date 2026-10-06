@@ -2743,15 +2743,26 @@ const RX={
   tier2:new RegExp('(?:پله\\s*(?:دوم|2)|پله\\s*بعد)[^\\d\\n]{0,25}?'+NUM,'i'),
   tgt:new RegExp('(?:تارگت|تی\\s*پی|هدف|\\btarget\\b|\\btp\\d?\\b)\\s*(?:رو|روی|:|：|=|-)?\\s*'+NUM,'i'),
   lev:new RegExp('(?:اهرم|لوریج|\\bleverage\\b|\\blev\\b)\\s*(?:رو|:|：|=|-)?\\s*(\\d{1,3})\\s*[xX]?','i'),
-  levx:/\b(\d{1,3})\s*[xX]\b/
+  levx:/\b(\d{1,3})\s*[xX]\b/,
+  trg:new RegExp('(?:تریگر|\\btrigger\\b)(?:\\s*ورود)?\\s*(?:رو|روی|:|：|=|-)?\\s*'+NUM,'i'),
+  brk:new RegExp('شکست\\s*(?:رو|روی|از)?\\s*'+NUM,'i'),
+  avg:new RegExp('(?:رو|روی|در)\\s*'+NUM+'\\s*میانگین','i')
 };
+/* پست‌هایی که شکل سیگنال دارند ولی سیگنال نیستند (از نمونه‌های واقعی کانال):
+   هشدار لیکوئید («🟢 #BTC Liquidated Short: $89.5K at $85444») خطِ خبرِ بازار است و نمادش
+   مالِ پست نیست؛ مدیریتِ پوزیشنِ باز («۳۵٪ سیو کنید»، «تعداد پوزیشن‌ها را کم می‌کنیم»)؛ و خبر. */
+const RX_LIQ=/^.*\bLiquidated\s+(?:Short|Long)\b.*$/gim;
+const RX_MGMT=/سیو[\s\u200c]*(?:کنید|می[\s\u200c]*کنید|کردیم|کردم|می[\s\u200c]*کنیم)|تعداد[\s\u200c]*پوزیشن|(?:پوزیشن|لانگ|شورت)[^\n]{0,30}?کم[\s\u200c]*(?:می[\s\u200c]*)?(?:کنید|کنیم|خواهم|کردم)/;
+const RX_NEWSY=/(?:^|[\s،.])(?:اخبار|خبر)/;
+/* «ورود مجازه»، «یک پله الان»: ورود با قیمت بازارِ لحظه‌ی انتشار (عددی نمی‌آید) */
+const RX_GO=/(?:ورود|لانگ|شورت)[^\n\d]{0,20}?مجاز|یک[\s\u200c]*پله[\s\u200c]*(?:الان|اینجا)/;
 /* اگر الگوی سفت بالا نخورد: بعد از کلیدواژه تا ۴۵ نویسه (حتی خطِ بعد) دنبال اولین عددی که
    «زمان» یا «پله» نیست (حد ضرر ۴ ساعته زیر 0.85، ورود ۲ پله‌ای) و پیش از آن کلیدواژه‌ی دیگری
    (تارگت، ورود، اهرم…) نیامده. «حد ضرر ۵ درصد» درصد است و بعد از ورود به قیمت تبدیل می‌شود. */
 const RX_KW={stop:'حد\\s*ضرر|حدضرر|استاپ\\s*لاس|استاپ|stop\\s*-?\\s*loss|\\bsl\\b',
   entry:'ورود|انتری|\\bentry\\b|\\bbuy\\b|خرید|بخر'};
 const RX_GAPSTOP=/تارگت|هدف|تی\s*پی|\btp\d?\b|\btarget\b|حد\s*ضرر|استاپ|\bsl\b|ورود|\bentry\b|اهرم|لوریج/i;
-const RX_NOTPX=/^[ \t]*(?:ساعت|روز|دقیقه|هفته|ماه|کندل|پله|مرحله|بار|[xX]\b|h\b|d\b|min\b)/i;
+const RX_NOTPX=/^[ \t]*(?:ساعت|روز|دقیقه|هفته|ماه|کندل|پله|مرحله|بار|میانگین|[xX]\b|h\b|d\b|min\b)/i;
 const RX_PCT=/^[ \t]*(?:%|٪|درصد)/;
 function kwNum(t,kw){
   const re=new RegExp(kw,'gi');let m;
@@ -2791,9 +2802,9 @@ function allNums(re,t){
 const PCACHE=new Map();
 function parseSignal(raw,id){
   if(id){const c=PCACHE.get(id);if(c&&c.v===SYMVER)return c.r;}
-  const t=normDig(raw||'');
-  const sm=t.match(RX.stop),em=t.match(RX.entry),am=t.match(RX.above),t2=t.match(RX.tier2),
-        lm=t.match(RX.lev)||t.match(RX.levx);
+  const t0=normDig(raw||''), t=t0.replace(RX_LIQ,'').trim(), liq=t!==t0.trim();
+  const sm=t.match(RX.stop),em=t.match(RX.entry),am=t.match(RX.above)||t.match(RX.trg)||t.match(RX.brk),
+        t2=t.match(RX.tier2)||t.match(RX.avg),lm=t.match(RX.lev)||t.match(RX.levx);
   const trig=am?cleanNum(am[1],am[2]):null;
   // «ورود ۲ پله‌ای»، «حد ضرر ۴ ساعته»: عددِ چسبیده به کلیدواژه قیمت نیست
   const okAt=m=>{if(!m)return false;
@@ -2801,23 +2812,31 @@ function parseSignal(raw,id){
     const after=t.slice(m.index+m[0].length);return !RX_NOTPX.test(after)&&!RX_PCT.test(after);};
   let entry=okAt(em)?cleanNum(em[1],em[2]):null;
   if(entry==null){const k=kwNum(t,RX_KW.entry);if(k&&k.v!=null)entry=k.v;}
+  const eOwn=entry;                                     // ورودِ صریح، نه تریگر
   if(entry==null&&trig!=null)entry=trig;
   const direction=/\bshort\b|شورت|فروش|ریزش/i.test(t)?'short':'long';
+  const dirSet=direction==='short'||/\blong\b|لانگ|خرید|بخر/i.test(t);
   let stop=okAt(sm)?cleanNum(sm[1],sm[2]):null;
   if(stop==null){const k=kwNum(t,RX_KW.stop);
     if(k&&k.v!=null)stop=k.v;
     else if(k&&k.pct>0&&k.pct<50&&entry)stop=+(entry*(1+(direction==='long'?-1:1)*k.pct/100)).toPrecision(8);}
   const r={ticker:detectTicker(t),direction,
     entry,trigger:trig,tier2:t2?cleanNum(t2[1],t2[2]):null,stop,
-    targets:allNums(RX.tgt,t),leverage:lm?cleanNum(lm[1]):null,hasNum:/\d/.test(t)};
+    targets:allNums(RX.tgt,t),leverage:lm?cleanNum(lm[1]):null,hasNum:/\d/.test(t),dirSet};
+  const go=RX_GO.test(t);
+  // ورود عددی نیامده ولی «ورود مجازه» یا فقط استاپ داده: ورود = قیمت بازارِ لحظه‌ی انتشار
+  r.mktEntry=entry==null&&trig==null&&(stop!=null||go);
   const mk=detectMarket(t,r.direction,r.leverage);
   r.market=mk.market; r.marketGuess=mk.guess;
   /* سیگنال یعنی عددِ ورود یا استاپ یا تریگر، یا دست‌کم جهتِ صریح (لانگ/شورت). قبلاً اسم ارز +
      یک عدد + کلمه‌ای مثل «هدف» کافی بود و خبرها («بیت‌کوین به 65 هزار رسید؛ هدف بعدی…») و
      اطلاعیه‌ها هم سیگنال حساب می‌شدند — هم در فهرست سیگنال‌ها و هم در کانال‌سنج. */
   const strong=entry!=null||r.stop!=null||trig!=null||/لانگ|شورت|\blong\b|\bshort\b/i.test(t);
-  r.isSignal=!!(r.ticker&&r.hasNum&&strong&&
-    /حد\s*ضرر|استاپ|ورود|پله|تارگت|هدف|اهرم|فیوچرز|اسپات|لانگ|شورت|\bentry\b|\bsl\b|\btp\b|\blong\b|\bshort\b/i.test(t));
+  r.isSignal=!!(r.ticker&&(r.hasNum||go)&&(strong||go)&&
+    /حد\s*ضرر|استاپ|ورود|پله|تارگت|هدف|اهرم|فیوچرز|اسپات|لانگ|شورت|تریگر|\bentry\b|\bsl\b|\btp\b|\blong\b|\bshort\b/i.test(t));
+  // مدیریتِ پوزیشن و خبر سیگنال تازه نیستند، مگر ورود و استاپِ کامل داشته باشند
+  if(r.isSignal&&(RX_MGMT.test(t)&&!(eOwn!=null&&stop!=null)||RX_NEWSY.test(t)&&stop==null))r.isSignal=false;
+  r.liq=liq;
   if(id)PCACHE.set(id,{v:SYMVER,r});
   return r;
 }
@@ -5183,7 +5202,7 @@ function setArch(id,on){
    شکل اصلاً شناخته نمی‌شد. فاصله‌ی تا 30 نویسه‌ی بی‌عدد مجاز است — بی‌عدد تا خطِ
    «تارگت 62000» در خودِ سیگنال با فعلی که جلوتر آمده اشتباه گرفته نشود. */
 const RX_RESULT=new RegExp(
-  'تارگت\\s*(?:اول|دوم|سوم|چهارم|پنجم|\\d)?[^\\n\\d]{0,30}?(?:زده\\s*شد|زد|خورد|فعال\\s*شد|رسید)'+
+  'تارگت\\s*(?:اول|دوم|سوم|چهارم|پنجم|\\d)?[^\\n\\d]{0,30}?(?:زده\\s*شد|زد|خورد|فعال\\s*شد|رسید|داد)'+
   '|به\\s*تارگت[^\\n\\d]{0,25}?رسید'+
   '|سیو\\s*سود|سود\\s*(?:گرفته|زده|شناسایی)'+
   '|(?:استاپ|حد\\s*ضرر)[^\\n\\d]{0,25}?(?:خورد|فعال\\s*شد|زده\\s*شد)'+
@@ -7724,14 +7743,53 @@ const AUD_WHY={
   'no-date':'زمان انتشار معلوم نیست',
   'bad-stop':'استاپ با جهت معامله نمی‌خواند',
   'px':'قیمتِ اعلامی با قیمت بازار در لحظه‌ی انتشار بیش از 30٪ فاصله دارد — احتمالاً نماد اشتباه خوانده شده',
-  'nocandle':'کندلِ این نماد از هیچ منبعی نیامد'
+  'nocandle':'کندلِ این نماد از هیچ منبعی نیامد',
+  'far-sl':'استاپِ گرفته‌شده از سیگنالِ قبلیِ همین نماد بیش از 30٪ با ورود فاصله دارد'
 };
 const AUD_NONE={timeout:'قیمت در مهلت ورود به نقطه‌ی ورود نرسید',
   ran:'قیمت بدون برگشتن به نقطه‌ی ورود، مستقیم به تارگت رفت — قابل گرفتن نبود',
   inval:'قبل از فعال شدنِ ورود، قیمت از استاپ گذشت'};
 
+/* پست‌های پیگیریِ کانال («ورود مجدد مجازید»، «تریگر 0.0133 ست کنید»، «اگر 4 ساعته بالای 83700
+   بست ورود مجازه») استاپ و تارگت را تکرار نمی‌کنند؛ همان‌های آخرین سیگنالِ استاپ‌دارِ همین
+   نماد (تا ۴۵ روز پیش) معتبر است. نمایه یک بار ساخته می‌شود، نه برای هر پست. */
+let PREVIX=null,PREVV='';
+function prevSigOf(p,tk){
+  const v=POSTS.length+'|'+(POSTS[0]&&POSTS[0].id)+'|'+SYMVER+'|'+KGEN;
+  if(v!==PREVV){
+    PREVV=v;PREVIX=new Map();
+    for(const q of POSTS){
+      if(!q.date)continue;
+      const ov=OVERRIDE[q.id]||{}, g=q.origText?parseSignal(q.origText):parseSignal(q.text,q.id);
+      const t=ov.ticker||g.ticker, st=ov.stop!=null?ov.stop:g.stop;
+      if(!t||!st||!(ov.sig!=null?ov.sig:g.isSignal)||(ov.sig!==true&&isRes(q)))continue;
+      if(!PREVIX.has(t))PREVIX.set(t,[]);
+      PREVIX.get(t).push({t:+q.date,id:q.id,stop:st,tps:g.targets||[],dir:ov.dir||g.direction});
+    }
+    for(const l of PREVIX.values())l.sort((a,b)=>a.t-b.t);
+  }
+  const l=PREVIX.get(tk), t0=p.date?+p.date:0;
+  if(!l||!t0)return null;
+  let best=null;
+  for(const x of l){if(x.t>=t0)break;if(x.id!==p.id&&t0-x.t<=45*DAY)best=x;}
+  return best;
+}
+/* تارگت‌های در جهتِ سود از ورود؛ اگر کانال نداده، تارگت اولِ تنظیماتِ خودت (به R) فرض و صریح نوشته می‌شود */
+function audTps(inp){
+  const sign=inp.dir==='long'?1:-1, E=inp.entry, SL=inp.stop;
+  let tps=(inp.tgs||[]).filter(t=>isFinite(t)&&t>0&&E&&(t-E)*sign>0);
+  tps=[...new Set(tps)].sort((a,b)=>(a-b)*sign).slice(0,5);
+  inp.tpAssumed=false;
+  if(!tps.length&&E&&SL&&(E-SL)*sign>0){
+    tps=[+(E+sign*(S.rMul[0]||1.5)*Math.abs(E-SL)).toPrecision(8)];inp.tpAssumed=true;
+  }
+  inp.tps=tps;
+  return inp;
+}
 /* ورودیِ سنجش: عددهای «اولین نسخه‌ی» پست (اگر کانال بعداً ویرایشش کرده، ملاک همان است
-   که اول منتشر شد) به‌علاوه‌ی اصلاح دستیِ تو، چون پارسر همیشه درست نمی‌خواند. */
+   که اول منتشر شد) به‌علاوه‌ی اصلاح دستیِ تو، چون پارسر همیشه درست نمی‌خواند.
+   ورودِ بازار (mktE): پست عددِ ورود نداده («ورود مجازه»)؛ ورود = قیمت لحظه‌ی انتشار، که موقع
+   سنجش از اولین کندل گرفته و در نتیجه (e0) نگه داشته می‌شود. */
 function audInput(p){
   const ov=OVERRIDE[p.id]||{};
   const base=p.origText?parseSignal(p.origText):parseSignal(p.text,p.id);
@@ -7742,26 +7800,31 @@ function audInput(p){
   if(ov.trigger!=null)sig.trigger=ov.trigger;
   if(!sig.isSignal)return null;
   if(ov.sig!==true&&isRes(p))return null;      // پستِ نتیجه سیگنالِ تازه نیست
-  const I=planInputsOf(p,sig,ov,null);
-  const sign=I.dir==='long'?1:-1, E=I.entry||null, SL=I.stop||null;
-  let tps=(sig.targets||[]).filter(t=>isFinite(t)&&t>0&&E&&(t-E)*sign>0);
-  tps=[...new Set(tps)].sort((a,b)=>(a-b)*sign).slice(0,5);
-  let tpAssumed=false;
-  // کانال تارگت نداده: تارگت اولِ تنظیماتِ خودت (به R) فرض می‌شود و صریح نوشته می‌شود
-  if(!tps.length&&E&&SL&&(E-SL)*sign>0){
-    tps=[+(E+sign*(S.rMul[0]||1.5)*Math.abs(E-SL)).toPrecision(8)];tpAssumed=true;
+  const inh=sig.stop==null&&ov.stop==null&&sig.ticker?prevSigOf(p,sig.ticker):null;
+  if(inh){
+    sig.stop=inh.stop;
+    if(!sig.dirSet)sig.direction=inh.dir;
+    if(!(sig.targets||[]).length)sig.targets=inh.tps;
   }
-  return {tk:sig.ticker||null,dir:I.dir,entry:E,trig:sig.trigger!=null?sig.trigger:null,
-    stop:SL,tps,tpAssumed,mkt:I.market,t0:p.date?+p.date:null};
+  const I=planInputsOf(p,sig,ov,null);
+  const mktE=!I.entry&&ov.entry==null&&!!sig.mktEntry;
+  const inp={tk:sig.ticker||null,dir:I.dir,entry:I.entry||null,trig:sig.trigger!=null?sig.trigger:null,
+    stop:I.stop||null,tgs:sig.targets||[],mkt:I.market,t0:p.date?+p.date:null,
+    mktE,inh:inh?{id:inh.id,t:inh.t}:null};
+  audTps(inp);
+  const a=mktE?AUD[p.id]:null;
+  if(a&&a.e0&&a.k===audKey(inp,audRules())){inp.entry=a.e0;audTps(inp);}
+  return inp;
 }
-const audKey=(inp,R)=>JSON.stringify([inp.tk,inp.dir,inp.entry,inp.trig,inp.stop,inp.tps,inp.t0,
+/* کلیدِ ورودِ بازار از قیمتِ پرشده مستقل است، وگرنه بعد از هر سنجش کلید عوض می‌شد */
+const audKey=(inp,R)=>JSON.stringify([inp.tk,inp.dir,inp.mktE?'mkt':inp.entry,inp.trig,inp.stop,inp.mktE?inp.tgs:inp.tps,inp.t0,
   R.days,R.entryDays,R.tol]);
 function audPre(inp){
   if(!inp.tk)return 'no-ticker';
-  if(!inp.entry)return 'no-entry';
+  if(!inp.entry&&!inp.mktE)return 'no-entry';
   if(!inp.stop)return 'no-stop';
   if(!inp.t0)return 'no-date';
-  if((inp.entry-inp.stop)*(inp.dir==='long'?1:-1)<=0)return 'bad-stop';
+  if(inp.entry&&(inp.entry-inp.stop)*(inp.dir==='long'?1:-1)<=0)return 'bad-stop';
   return null;
 }
 
@@ -10484,13 +10547,17 @@ async function audCandles(sym,iv,start,limit,quiet){
 const IVMS={'1m':60000,'3m':180000,'5m':300000,'30m':1800000,'1h':3600000};
 
 async function audOne(job,R){
-  const {p,inp,k}=job;
+  const {p,k}=job;let inp=job.inp;
   const pre=audPre(inp);
   if(pre){AUD[p.id]={k,st:'bad',why:pre,fin:true,at:Date.now()};return;}
   const start=Math.ceil(inp.t0/IVMS['5m'])*IVMS['5m'];   // فقط آینده‌ی بعد از انتشار
   let C=await audCandles(inp.tk,'5m',start,1000);
   const px0=C[0].o;
+  // ورودِ بازار: قیمتِ اولین کندلِ بعد از انتشار
+  if(inp.mktE){inp=audTps(Object.assign({},inp,{entry:px0}));
+    if((px0-inp.stop)*(inp.dir==='long'?1:-1)<=0){AUD[p.id]={k,st:'bad',why:'bad-stop',px0,e0:px0,fin:true,at:Date.now()};return;}}
   if(Math.abs(inp.entry-px0)/px0>0.3){AUD[p.id]={k,st:'bad',why:'px',px0,fin:true,at:Date.now()};return;}
+  if(inp.inh&&Math.abs(inp.entry-inp.stop)/inp.entry>0.3){AUD[p.id]={k,st:'bad',why:'far-sl',px0,fin:true,at:Date.now()};return;}
   let r=audWalk(inp,C,R);
   // 1000 کندل 5 دقیقه‌ای حدود 83 ساعت است؛ اگر کار تمام نشد، ادامه با کندل ساعتی
   const last=C[C.length-1];
@@ -10514,7 +10581,7 @@ async function audOne(job,R){
   if(r.amb){r.st='amb';r.fin=true;}
   delete r.amb;
   if(r.tAct&&r.st!=='amb'){try{r.xg=audXGrid(inp,C,r.tAct);}catch(e){}}
-  AUD[p.id]=Object.assign(r,{k,at:Date.now()});
+  AUD[p.id]=Object.assign(r,{k,at:Date.now()},inp.mktE?{e0:inp.entry}:{});
 }
 
 const AUDQ={on:false,n:0,done:0,fail:0,at:0,err:''};
@@ -10945,11 +11012,11 @@ function buildAudDiag(all){
          k==='no-stop'||k==='no-entry'||k==='no-ticker'?' — در فهرست پایین «اصلاح عددها» را بزن':'')));
     d.appendChild(ul);
     // متنِ سیگنال‌های بی‌استاپ/بی‌ورود برای فرستادن به سازنده، تا الگوی خواندنشان اضافه شود
-    const bad=all.filter(x=>x.r&&x.r.st==='bad'&&['no-stop','no-entry','px'].includes(x.r.why));
+    const bad=all.filter(x=>x.r&&x.r.st==='bad'&&['no-stop','no-entry','px','bad-stop','far-sl'].includes(x.r.why));
     if(bad.length){
       const cp=el('button','btn sm',ic('share')+'<span>کپی متن '+faN(bad.length)+' سیگنالِ ناقص</span>');
       cp.onclick=async()=>{
-        const txt=bad.slice(0,40).map((x,i)=>'#'+(i+1)+' ['+(AUD_WHY[x.r.why]||x.r.why)+']\n'+String(x.p.text||'').slice(0,600)).join('\n\n———\n\n');
+        const txt=bad.slice(0,40).map((x,i)=>'#'+(i+1)+' ['+(AUD_WHY[x.r.why]||x.r.why)+']\n'+String(x.p.origText||x.p.text||'').slice(0,600)).join('\n\n———\n\n');
         try{await navigator.clipboard.writeText(txt);toast('متن '+faN(Math.min(40,bad.length))+' سیگنال کپی شد؛ برای سازنده بفرست','ok');}
         catch(e){openSheet('<h3>متن سیگنال‌های ناقص</h3><textarea class="cptxt" readonly>'+esc(txt)+'</textarea>',sh=>{const ta=sh.querySelector('textarea');ta.focus();ta.select();});}
       };
@@ -11251,8 +11318,9 @@ function sheetAudPost(p){
   openSheet(
    '<h3>'+esc(inp.tk||'سیگنال')+' · <span class="pill '+S0[1]+'">'+S0[0]+'</span></h3>'+
    '<div class="kv">'+
-     '<div class="k"><b>ورود</b><span>'+(inp.entry?fmtPrice(inp.entry):'—')+'</span></div>'+
-     '<div class="k"><b>استاپ</b><span>'+(inp.stop?fmtPrice(inp.stop):'—')+'</span></div>'+
+     '<div class="k"><b>ورود</b><span>'+(inp.entry?fmtPrice(inp.entry):'—')+(inp.mktE?' (قیمت بازار هنگام انتشار)':'')+'</span></div>'+
+     '<div class="k"><b>استاپ</b><span>'+(inp.stop?fmtPrice(inp.stop):'—')+
+       (inp.inh?' (از سیگنال قبلی '+esc(inp.tk)+'، '+jStampFa(new Date(inp.inh.t))+')':'')+'</span></div>'+
      '<div class="k"><b>تارگت‌ها</b><span>'+(inp.tps&&inp.tps.length?inp.tps.map(fmtPrice).join('، '):'—')+
        (inp.tpAssumed?' (فرضی)':'')+'</span></div>'+
      '<div class="k"><b>همه در تارگت اول</b><span class="'+(r1==null?'m':cls(r1))+'">'+(r1==null?'—':fmtR(r1))+'</span></div>'+

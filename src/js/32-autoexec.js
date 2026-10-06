@@ -199,13 +199,17 @@ async function audCandles(sym,iv,start,limit,quiet){
 const IVMS={'1m':60000,'3m':180000,'5m':300000,'30m':1800000,'1h':3600000};
 
 async function audOne(job,R){
-  const {p,inp,k}=job;
+  const {p,k}=job;let inp=job.inp;
   const pre=audPre(inp);
   if(pre){AUD[p.id]={k,st:'bad',why:pre,fin:true,at:Date.now()};return;}
   const start=Math.ceil(inp.t0/IVMS['5m'])*IVMS['5m'];   // فقط آینده‌ی بعد از انتشار
   let C=await audCandles(inp.tk,'5m',start,1000);
   const px0=C[0].o;
+  // ورودِ بازار: قیمتِ اولین کندلِ بعد از انتشار
+  if(inp.mktE){inp=audTps(Object.assign({},inp,{entry:px0}));
+    if((px0-inp.stop)*(inp.dir==='long'?1:-1)<=0){AUD[p.id]={k,st:'bad',why:'bad-stop',px0,e0:px0,fin:true,at:Date.now()};return;}}
   if(Math.abs(inp.entry-px0)/px0>0.3){AUD[p.id]={k,st:'bad',why:'px',px0,fin:true,at:Date.now()};return;}
+  if(inp.inh&&Math.abs(inp.entry-inp.stop)/inp.entry>0.3){AUD[p.id]={k,st:'bad',why:'far-sl',px0,fin:true,at:Date.now()};return;}
   let r=audWalk(inp,C,R);
   // 1000 کندل 5 دقیقه‌ای حدود 83 ساعت است؛ اگر کار تمام نشد، ادامه با کندل ساعتی
   const last=C[C.length-1];
@@ -229,7 +233,7 @@ async function audOne(job,R){
   if(r.amb){r.st='amb';r.fin=true;}
   delete r.amb;
   if(r.tAct&&r.st!=='amb'){try{r.xg=audXGrid(inp,C,r.tAct);}catch(e){}}
-  AUD[p.id]=Object.assign(r,{k,at:Date.now()});
+  AUD[p.id]=Object.assign(r,{k,at:Date.now()},inp.mktE?{e0:inp.entry}:{});
 }
 
 const AUDQ={on:false,n:0,done:0,fail:0,at:0,err:''};
@@ -660,11 +664,11 @@ function buildAudDiag(all){
          k==='no-stop'||k==='no-entry'||k==='no-ticker'?' — در فهرست پایین «اصلاح عددها» را بزن':'')));
     d.appendChild(ul);
     // متنِ سیگنال‌های بی‌استاپ/بی‌ورود برای فرستادن به سازنده، تا الگوی خواندنشان اضافه شود
-    const bad=all.filter(x=>x.r&&x.r.st==='bad'&&['no-stop','no-entry','px'].includes(x.r.why));
+    const bad=all.filter(x=>x.r&&x.r.st==='bad'&&['no-stop','no-entry','px','bad-stop','far-sl'].includes(x.r.why));
     if(bad.length){
       const cp=el('button','btn sm',ic('share')+'<span>کپی متن '+faN(bad.length)+' سیگنالِ ناقص</span>');
       cp.onclick=async()=>{
-        const txt=bad.slice(0,40).map((x,i)=>'#'+(i+1)+' ['+(AUD_WHY[x.r.why]||x.r.why)+']\n'+String(x.p.text||'').slice(0,600)).join('\n\n———\n\n');
+        const txt=bad.slice(0,40).map((x,i)=>'#'+(i+1)+' ['+(AUD_WHY[x.r.why]||x.r.why)+']\n'+String(x.p.origText||x.p.text||'').slice(0,600)).join('\n\n———\n\n');
         try{await navigator.clipboard.writeText(txt);toast('متن '+faN(Math.min(40,bad.length))+' سیگنال کپی شد؛ برای سازنده بفرست','ok');}
         catch(e){openSheet('<h3>متن سیگنال‌های ناقص</h3><textarea class="cptxt" readonly>'+esc(txt)+'</textarea>',sh=>{const ta=sh.querySelector('textarea');ta.focus();ta.select();});}
       };
@@ -966,8 +970,9 @@ function sheetAudPost(p){
   openSheet(
    '<h3>'+esc(inp.tk||'سیگنال')+' · <span class="pill '+S0[1]+'">'+S0[0]+'</span></h3>'+
    '<div class="kv">'+
-     '<div class="k"><b>ورود</b><span>'+(inp.entry?fmtPrice(inp.entry):'—')+'</span></div>'+
-     '<div class="k"><b>استاپ</b><span>'+(inp.stop?fmtPrice(inp.stop):'—')+'</span></div>'+
+     '<div class="k"><b>ورود</b><span>'+(inp.entry?fmtPrice(inp.entry):'—')+(inp.mktE?' (قیمت بازار هنگام انتشار)':'')+'</span></div>'+
+     '<div class="k"><b>استاپ</b><span>'+(inp.stop?fmtPrice(inp.stop):'—')+
+       (inp.inh?' (از سیگنال قبلی '+esc(inp.tk)+'، '+jStampFa(new Date(inp.inh.t))+')':'')+'</span></div>'+
      '<div class="k"><b>تارگت‌ها</b><span>'+(inp.tps&&inp.tps.length?inp.tps.map(fmtPrice).join('، '):'—')+
        (inp.tpAssumed?' (فرضی)':'')+'</span></div>'+
      '<div class="k"><b>همه در تارگت اول</b><span class="'+(r1==null?'m':cls(r1))+'">'+(r1==null?'—':fmtR(r1))+'</span></div>'+

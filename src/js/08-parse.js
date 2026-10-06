@@ -65,15 +65,26 @@ const RX={
   tier2:new RegExp('(?:پله\\s*(?:دوم|2)|پله\\s*بعد)[^\\d\\n]{0,25}?'+NUM,'i'),
   tgt:new RegExp('(?:تارگت|تی\\s*پی|هدف|\\btarget\\b|\\btp\\d?\\b)\\s*(?:رو|روی|:|：|=|-)?\\s*'+NUM,'i'),
   lev:new RegExp('(?:اهرم|لوریج|\\bleverage\\b|\\blev\\b)\\s*(?:رو|:|：|=|-)?\\s*(\\d{1,3})\\s*[xX]?','i'),
-  levx:/\b(\d{1,3})\s*[xX]\b/
+  levx:/\b(\d{1,3})\s*[xX]\b/,
+  trg:new RegExp('(?:تریگر|\\btrigger\\b)(?:\\s*ورود)?\\s*(?:رو|روی|:|：|=|-)?\\s*'+NUM,'i'),
+  brk:new RegExp('شکست\\s*(?:رو|روی|از)?\\s*'+NUM,'i'),
+  avg:new RegExp('(?:رو|روی|در)\\s*'+NUM+'\\s*میانگین','i')
 };
+/* پست‌هایی که شکل سیگنال دارند ولی سیگنال نیستند (از نمونه‌های واقعی کانال):
+   هشدار لیکوئید («🟢 #BTC Liquidated Short: $89.5K at $85444») خطِ خبرِ بازار است و نمادش
+   مالِ پست نیست؛ مدیریتِ پوزیشنِ باز («۳۵٪ سیو کنید»، «تعداد پوزیشن‌ها را کم می‌کنیم»)؛ و خبر. */
+const RX_LIQ=/^.*\bLiquidated\s+(?:Short|Long)\b.*$/gim;
+const RX_MGMT=/سیو[\s\u200c]*(?:کنید|می[\s\u200c]*کنید|کردیم|کردم|می[\s\u200c]*کنیم)|تعداد[\s\u200c]*پوزیشن|(?:پوزیشن|لانگ|شورت)[^\n]{0,30}?کم[\s\u200c]*(?:می[\s\u200c]*)?(?:کنید|کنیم|خواهم|کردم)/;
+const RX_NEWSY=/(?:^|[\s،.])(?:اخبار|خبر)/;
+/* «ورود مجازه»، «یک پله الان»: ورود با قیمت بازارِ لحظه‌ی انتشار (عددی نمی‌آید) */
+const RX_GO=/(?:ورود|لانگ|شورت)[^\n\d]{0,20}?مجاز|یک[\s\u200c]*پله[\s\u200c]*(?:الان|اینجا)/;
 /* اگر الگوی سفت بالا نخورد: بعد از کلیدواژه تا ۴۵ نویسه (حتی خطِ بعد) دنبال اولین عددی که
    «زمان» یا «پله» نیست (حد ضرر ۴ ساعته زیر 0.85، ورود ۲ پله‌ای) و پیش از آن کلیدواژه‌ی دیگری
    (تارگت، ورود، اهرم…) نیامده. «حد ضرر ۵ درصد» درصد است و بعد از ورود به قیمت تبدیل می‌شود. */
 const RX_KW={stop:'حد\\s*ضرر|حدضرر|استاپ\\s*لاس|استاپ|stop\\s*-?\\s*loss|\\bsl\\b',
   entry:'ورود|انتری|\\bentry\\b|\\bbuy\\b|خرید|بخر'};
 const RX_GAPSTOP=/تارگت|هدف|تی\s*پی|\btp\d?\b|\btarget\b|حد\s*ضرر|استاپ|\bsl\b|ورود|\bentry\b|اهرم|لوریج/i;
-const RX_NOTPX=/^[ \t]*(?:ساعت|روز|دقیقه|هفته|ماه|کندل|پله|مرحله|بار|[xX]\b|h\b|d\b|min\b)/i;
+const RX_NOTPX=/^[ \t]*(?:ساعت|روز|دقیقه|هفته|ماه|کندل|پله|مرحله|بار|میانگین|[xX]\b|h\b|d\b|min\b)/i;
 const RX_PCT=/^[ \t]*(?:%|٪|درصد)/;
 function kwNum(t,kw){
   const re=new RegExp(kw,'gi');let m;
@@ -113,9 +124,9 @@ function allNums(re,t){
 const PCACHE=new Map();
 function parseSignal(raw,id){
   if(id){const c=PCACHE.get(id);if(c&&c.v===SYMVER)return c.r;}
-  const t=normDig(raw||'');
-  const sm=t.match(RX.stop),em=t.match(RX.entry),am=t.match(RX.above),t2=t.match(RX.tier2),
-        lm=t.match(RX.lev)||t.match(RX.levx);
+  const t0=normDig(raw||''), t=t0.replace(RX_LIQ,'').trim(), liq=t!==t0.trim();
+  const sm=t.match(RX.stop),em=t.match(RX.entry),am=t.match(RX.above)||t.match(RX.trg)||t.match(RX.brk),
+        t2=t.match(RX.tier2)||t.match(RX.avg),lm=t.match(RX.lev)||t.match(RX.levx);
   const trig=am?cleanNum(am[1],am[2]):null;
   // «ورود ۲ پله‌ای»، «حد ضرر ۴ ساعته»: عددِ چسبیده به کلیدواژه قیمت نیست
   const okAt=m=>{if(!m)return false;
@@ -123,23 +134,31 @@ function parseSignal(raw,id){
     const after=t.slice(m.index+m[0].length);return !RX_NOTPX.test(after)&&!RX_PCT.test(after);};
   let entry=okAt(em)?cleanNum(em[1],em[2]):null;
   if(entry==null){const k=kwNum(t,RX_KW.entry);if(k&&k.v!=null)entry=k.v;}
+  const eOwn=entry;                                     // ورودِ صریح، نه تریگر
   if(entry==null&&trig!=null)entry=trig;
   const direction=/\bshort\b|شورت|فروش|ریزش/i.test(t)?'short':'long';
+  const dirSet=direction==='short'||/\blong\b|لانگ|خرید|بخر/i.test(t);
   let stop=okAt(sm)?cleanNum(sm[1],sm[2]):null;
   if(stop==null){const k=kwNum(t,RX_KW.stop);
     if(k&&k.v!=null)stop=k.v;
     else if(k&&k.pct>0&&k.pct<50&&entry)stop=+(entry*(1+(direction==='long'?-1:1)*k.pct/100)).toPrecision(8);}
   const r={ticker:detectTicker(t),direction,
     entry,trigger:trig,tier2:t2?cleanNum(t2[1],t2[2]):null,stop,
-    targets:allNums(RX.tgt,t),leverage:lm?cleanNum(lm[1]):null,hasNum:/\d/.test(t)};
+    targets:allNums(RX.tgt,t),leverage:lm?cleanNum(lm[1]):null,hasNum:/\d/.test(t),dirSet};
+  const go=RX_GO.test(t);
+  // ورود عددی نیامده ولی «ورود مجازه» یا فقط استاپ داده: ورود = قیمت بازارِ لحظه‌ی انتشار
+  r.mktEntry=entry==null&&trig==null&&(stop!=null||go);
   const mk=detectMarket(t,r.direction,r.leverage);
   r.market=mk.market; r.marketGuess=mk.guess;
   /* سیگنال یعنی عددِ ورود یا استاپ یا تریگر، یا دست‌کم جهتِ صریح (لانگ/شورت). قبلاً اسم ارز +
      یک عدد + کلمه‌ای مثل «هدف» کافی بود و خبرها («بیت‌کوین به 65 هزار رسید؛ هدف بعدی…») و
      اطلاعیه‌ها هم سیگنال حساب می‌شدند — هم در فهرست سیگنال‌ها و هم در کانال‌سنج. */
   const strong=entry!=null||r.stop!=null||trig!=null||/لانگ|شورت|\blong\b|\bshort\b/i.test(t);
-  r.isSignal=!!(r.ticker&&r.hasNum&&strong&&
-    /حد\s*ضرر|استاپ|ورود|پله|تارگت|هدف|اهرم|فیوچرز|اسپات|لانگ|شورت|\bentry\b|\bsl\b|\btp\b|\blong\b|\bshort\b/i.test(t));
+  r.isSignal=!!(r.ticker&&(r.hasNum||go)&&(strong||go)&&
+    /حد\s*ضرر|استاپ|ورود|پله|تارگت|هدف|اهرم|فیوچرز|اسپات|لانگ|شورت|تریگر|\bentry\b|\bsl\b|\btp\b|\blong\b|\bshort\b/i.test(t));
+  // مدیریتِ پوزیشن و خبر سیگنال تازه نیستند، مگر ورود و استاپِ کامل داشته باشند
+  if(r.isSignal&&(RX_MGMT.test(t)&&!(eOwn!=null&&stop!=null)||RX_NEWSY.test(t)&&stop==null))r.isSignal=false;
+  r.liq=liq;
   if(id)PCACHE.set(id,{v:SYMVER,r});
   return r;
 }

@@ -1,0 +1,83 @@
+/* پست‌های واقعی کانال که کانال‌سنج نمی‌خواند: هشدار لیکوئید، سیو سود، خبر، «تریگر/شکست X»،
+   «رو X میانگین»، «ورود مجازه» (ورود با قیمت بازار) و ارث‌بردنِ استاپ و تارگت از سیگنالِ قبلیِ همان نماد */
+const {pw}=require('./lib');const {chromium}=pw;const {route,seed}=require('./fixture');
+let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);};
+(async()=>{
+ const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:900}});await route(ctx);
+ const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
+ await p.addInitScript(seed);await p.goto('http://localhost:8899/index.html');await p.waitForTimeout(2000);
+
+ console.log('=== غیرسیگنال‌ها ===');
+ const ns=await p.evaluate(()=>{for(const s of ['BTC','ETH','XRP','LINK','LDO','WLD','ADA','HBAR','SUSHI'])SYMBOLS.add(s);SYMVER++;
+   return [
+   '🟢 #BTC Liquidated Short: $89.5K at $85444.00\n\n4 ساعته بالای 85400 میخواییم',
+   '🟢 #BTC Liquidated Short: $81.1K at $84012.50\n\nتارگت اول را داد مبارکه دوستان ✅',
+   '#ETH\n\nلانگ اتریوم 25-35 درصد سیو کنید\nنظرم 2800 بود که بهش نرسید',
+   '#BTC\n\nلانگ بیت رو 84000 اندازه 35 درصد سیو میکنید، اوردر ست کنید',
+   '#BTC\n\nبعد شکست 87300 لانگ هامونو کم میکنیم، باید سومین شدو را بزنه فعلا برا سل مونده',
+   'یکسری آلتکوینا بالا بیان مثل:\n\nXRP XLM DOGE\n\nطبق پلن تعداد پوزیشن هامو بعد شکست 87300 کم خواهم کرد.\nبرا بیت هم یه سل قبلا رو 90.6K با حد ضرر 93.5K دادم',
+   'یکسری اخبار بیرون اومده که شی جین‌پینگ بمحض ورود به امریکا تو 83700 بیت کوین خریده'
+   ].map(t=>parseSignal(t).isSignal);});
+ console.log('   ',ns.join(' '));
+ ok(!ns[0]&&!ns[1],'هشدار «Liquidated Short» سیگنال نیست (نمادِ خطِ لیکوئید مالِ پست نیست)');
+ ok(!ns[2]&&!ns[3],'«سیو کنید/میکنید» مدیریتِ پوزیشن است، نه سیگنال');
+ ok(!ns[4]&&!ns[5],'«لانگ‌ها را کم می‌کنیم» و «تعداد پوزیشن‌ها» سیگنال نیست');
+ ok(!ns[6],'خبر سیگنال نیست');
+ ok(await p.evaluate(()=>RX_RESULT.test('تارگت اول را داد مبارکه دوستان')),'«تارگت اول را داد» پستِ نتیجه است');
+
+ console.log('=== پیگیری‌ها ===');
+ const fs=await p.evaluate(()=>[
+   '#LDO\n\nتریگر ورود 0.41 یا 0.51 ست کنید',
+   '#BTC\n\nبرا ورود مجدد منتظر شکست 84500 تو 4 ساعته باشید',
+   '#HBAR\n\nیک پله الان و اگر پایینی زد رو 0.091 میانگین بزنید',
+   '#ADA\n\nورود مجدد مجازه، یک پله اینجا و اگر پایینی داد رو 0.24 میانگین بزنید.',
+   '#BTC\n\nمجدد با حد ضرر 81K ورود\nریسک یک درصد',
+   '#WLD\n\nورود جدید مجازید',
+   '#BTC\n\nاینجا ورود مجازه با حدضرر 81000\nنقطه ورود: زیر 83300'
+   ].map(t=>{const s=parseSignal(t);return [s.isSignal?1:0,s.entry,s.trigger,s.tier2,s.stop,s.mktEntry?'M':''].join('/');}));
+ console.log('   ',fs.join(' | '));
+ ok(fs[0]==='1/0.41/0.41///','«تریگر ورود 0.41» ← تریگر و ورود');
+ ok(fs[1]==='1/84500/84500///','«منتظر شکست 84500» ← تریگر');
+ ok(fs[2]==='1///0.091//M','«یک پله الان … رو 0.091 میانگین» ← ورود بازار، پله‌ی دوم 0.091');
+ ok(fs[3]==='1///0.24//M','«ورود مجازه … رو 0.24 میانگین» ← 0.24 ورود نیست، پله‌ی دوم است');
+ ok(fs[4]==='1////81000/M','«با حد ضرر 81K ورود» ← استاپ 81000، ورود بازار');
+ ok(fs[5]==='1/////M','«ورود جدید مجازید» بی‌عدد هم سیگنال است (ورود بازار)');
+ ok(fs[6]==='1/83300///81000/','سیگنال کامل دست نخورد');
+
+ console.log('=== ارث‌بردن استاپ و تارگت در کانال‌سنج ===');
+ const ih=await p.evaluate(()=>{
+   const H=36e5, t0=Date.now()-10*24*H;
+   const mk=(n,text,h)=>({id:'ccoineres/'+n,text,date:new Date(t0+h*H)});
+   const add=[mk(9001,'#SUSHI لانگ\nورود 0.25\nحد ضرر 0.22\nتارگت 0.3\nتارگت 0.35',0),
+     mk(9002,'#SUSHI\n\nمجدد بالای 0.26 ببنده ورود میکنیم',48),
+     mk(9003,'#SUSHI\n\nورود مجازه',72),
+     mk(9004,'#LINK\n\nورود مجازه',72),
+     mk(9005,'#ETH شورت\nورود 3000\nحد ضرر 3100\nتارگت 2800',0),
+     mk(9006,'#ETH\n\nتریگر 2950 ست کنید',24)];
+   POSTS.push(...add);KGEN++;
+   const I=id=>audInput(POSTS.find(x=>x.id===id));
+   const a=I('ccoineres/9002'),c=I('ccoineres/9003'),d=I('ccoineres/9004'),e=I('ccoineres/9006');
+   return {a:[a.entry,a.trig,a.stop,a.tps.join(','),a.inh&&a.inh.id],c:[c.entry,c.stop,c.mktE,audPre(c)],
+     d:[d.stop,audPre(d)],e:[e.dir,e.stop,e.tps.join(',')]};});
+ console.log('   ',JSON.stringify(ih));
+ ok(ih.a.join('/')==='0.26/0.26/0.22/0.3,0.35/ccoineres/9001','«بالای 0.26 ببنده ورود» استاپ 0.22 و تارگت‌ها را از سیگنال قبلی می‌گیرد');
+ ok(ih.c[0]===null&&ih.c[1]===0.22&&ih.c[2]===true&&ih.c[3]===null,'«ورود مجازه»: ورود بازار، استاپ ارثی، قابل سنجش');
+ ok(ih.d[0]===null&&ih.d[1]==='no-stop','بی سیگنالِ قبلی: همچنان «حد ضرر ندارد»');
+ ok(ih.e.join('/')==='short/3100/2800','جهتِ نگفته (شورت) هم از سیگنال قبلی می‌آید');
+
+ console.log('=== سنجشِ ورود بازار ===');
+ const ms=await p.evaluate(async()=>{
+   const p9=POSTS.find(x=>x.id==='ccoineres/9003'), inp=audInput(p9), R=audRules(), k=audKey(inp,R);
+   const t=Math.ceil(inp.t0/3e5)*3e5, C=[];
+   for(let i=0;i<300;i++){const v=i<100?0.27:0.27+(i-100)*0.0005;C.push({t:t+i*3e5,o:v,h:v+0.0002,l:v-0.0002,c:v,v:1});}
+   const keep=audCandles;audCandles=async()=>C;
+   try{await audOne({p:p9,inp,k},R);}finally{audCandles=keep;}
+   const a=AUD[p9.id], again=audInput(p9);
+   return {st:a.st,e0:a.e0,mode:a.mode,entry:again.entry,tps:again.tps.join(','),same:audKey(again,R)===a.k,
+     row:audRows().some(x=>x.p.id===p9.id&&x.r&&x.r.st==='win')};});
+ console.log('   ',JSON.stringify(ms));
+ ok(ms.e0===0.27&&ms.mode==='mkt','ورود = قیمت اولین کندل بعد از انتشار (0.27)، فوری');
+ ok(ms.entry===0.27&&ms.tps==='0.3,0.35'&&ms.same,'بعد از سنجش، ورودی همان ورود را دارد و کلید عوض نمی‌شود');
+ ok(ms.st==='win'&&ms.row,'نتیجه در فهرست کانال‌سنج: برد');
+ ok(errs.length===0,'بدون خطا '+errs.join('|'));
+ await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');})();
