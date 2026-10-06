@@ -164,17 +164,7 @@ function buildCard(p,lite){
   }
   if(lite){CARDS.set(p.id,card);return card;}
 
-  if(p.img){
-    const a=el('div','shot');a.setAttribute('role','button');a.setAttribute('aria-label','بزرگ‌نمایی تصویر');a.tabIndex=0;
-    const im=el('img');im.loading='lazy';im.decoding='async';im.alt='تصویر سیگنال';
-    a.onclick=()=>openLightbox(im);
-    a.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openLightbox(im);}};
-    im.onload=()=>a.classList.add('loaded');
-    im.onerror=()=>a.remove();
-    im.src=p.img;
-    if(im.complete&&im.naturalWidth)a.classList.add('loaded');
-    a.appendChild(im);card.appendChild(a);
-  }
+  if(p.img)card.appendChild(postShot(p,p.img,'تصویر سیگنال'));
   const body=el('div','body');
   if(p.reply&&(p.reply.text||p.reply.id))body.appendChild(buildReply(p));
   /* سیگنالی که ورود و استاپش خوانده شده، عددهایش همین پایین در خانه‌ها هست؛ متن خام پیش‌فرض
@@ -231,13 +221,7 @@ function buildReply(p){
       full.appendChild(bar);
     }
     full.appendChild(el('div','replytxt',linkify(esc(faN(src.text||'(بدون متن)')))));
-    if(src.img){
-      const a=el('div','shot');a.setAttribute('role','button');a.setAttribute('aria-label','بزرگ‌نمایی تصویر');a.tabIndex=0;
-      const im=el('img');im.loading='lazy';im.decoding='async';im.alt='تصویر پست اصلی';
-      im.onload=()=>a.classList.add('loaded');im.onerror=()=>a.remove();im.src=src.img;
-      a.onclick=()=>openLightbox(im);
-      a.appendChild(im);full.appendChild(a);
-    }
+    if(src.img)full.appendChild(postShot(src,src.img,'تصویر پست اصلی'));
     const go=el('button','mark ghost','رفتن به پست اصلی');
     go.onclick=()=>{
       { const bs=bucketOf(src); if(bs!==bucket)bucket=bs; }

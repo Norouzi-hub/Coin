@@ -647,7 +647,7 @@ function sheetImgFill(ids,need,i){
   openSheet('<h3>عددها از روی چارت'+(ids.length>1?' · '+faN(i+1)+' از '+faN(ids.length):'')+'</h3>'+
    '<div class="hint"><b dir="ltr">'+esc(tk)+'</b> · '+(p.date?jStampFa(p.date):'')+
      (dep?' · '+faN(dep)+' پیگیری منتظر همین عددهاست':'')+'</div>'+
-   (p.img?'<a class="imgfill" href="'+esc(p.img)+'" target="_blank" rel="noopener"><img src="'+esc(p.img)+'" alt="چارت"></a>':
+   (p.img?'<div id="ifImg" class="imgfill"></div>':
      '<div class="hint">تصویری ذخیره نشده — '+(p.link?'<a href="'+esc(p.link)+'" target="_blank" rel="noopener">پست را در تلگرام ببین</a>':'متن پست را ببین')+'</div>')+
    '<div class="audtxt">'+esc(p.origText||p.text||'')+'</div>'+
    '<div class="hint" id="ifPx"></div>'+
@@ -664,6 +664,7 @@ function sheetImgFill(ids,need,i){
    '<div class="srow"><button class="btn pri" id="ok">ثبت'+(i+1<ids.length?' و بعدی':'')+'</button>'+
      (i+1<ids.length?'<button class="btn" id="sk">بعدی</button>':'')+'<button class="btn" id="cx">بستن</button></div>',
    ()=>{
+     if(p.img)$('#ifImg').appendChild(postShot(p,p.img,'چارت'));
      $('#cx').onclick=fin;
      const nx=()=>i+1<ids.length?sheetImgFill(ids,need,i+1):fin();
      if($('#sk'))$('#sk').onclick=nx;

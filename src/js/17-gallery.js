@@ -8,6 +8,7 @@ function lbCollect(){
 }
 function openLightbox(img){
   lbList=lbCollect();
+  if(!lbList.includes(img))lbList=[img];          // تصویرِ داخل ورق (بیرون از نماها)
   lbAt=Math.max(0,lbList.indexOf(img));
   if(!lbList.length)return;
   const lb=$('#lb');
@@ -75,3 +76,76 @@ function wireLightbox(){
   });
 }
 
+
+/* ---- عکس پست‌ها، حتی وقتی CDN تلگرام باز نیست ----
+   عکس از telesco.pe می‌آید که روی بعضی شبکه‌ها فیلتر است، و آدرسش بعد از چند روز منقضی می‌شود.
+   پس سه قدم: ۱) مستقیم ۲) خودِ فایل از راه واسط‌ها (اول واسط خودت) ۳) آدرس تازه از صفحه‌ی همان
+   پست در تلگرام، و دوباره ۱ و ۲. اگر هیچ‌کدام نشد، جای عکس «دوباره» و «در تلگرام» می‌آید. */
+const IMGBLOB=new Map(), IMGFRESH=new Map();
+function imgViaRoutes(url){
+  if(!url||/^(data|blob):/.test(url))return Promise.resolve(null);
+  if(IMGBLOB.has(url))return IMGBLOB.get(url);
+  const pr=(async()=>{
+    for(const r of allRoutes().filter(r=>!r.unwrap&&r.id!=='direct')){
+      try{
+        const ctrl=new AbortController(), t=setTimeout(()=>ctrl.abort(),12000);
+        const res=await fetch(r.build(url),{signal:ctrl.signal});clearTimeout(t);
+        if(!res.ok)continue;
+        const b=await res.blob();
+        if(b.size<200||(b.type&&!/^image\/|octet-stream/.test(b.type)))continue;   // صفحه‌ی خطای واسط، نه عکس
+        return URL.createObjectURL(b.type&&/^image\//.test(b.type)?b:new Blob([b],{type:'image/jpeg'}));
+      }catch(e){}
+    }
+    return null;
+  })();
+  IMGBLOB.set(url,pr);
+  pr.then(u=>{if(!u)IMGBLOB.delete(url);});         // شکست را نگه نداریم؛ «دوباره» واقعاً دوباره امتحان کند
+  return pr;
+}
+function freshImgOf(p){
+  if(!p||!p.id||!/\/\d+$/.test(p.id))return Promise.resolve(null);
+  if(IMGFRESH.has(p.id))return IMGFRESH.get(p.id);
+  const pr=fetchVia('https://t.me/'+p.id+'?embed=1&mode=tme',{kind:'tg',quiet:true,timeout:11000,label:'تصویر پست '+p.id,
+      validate:t=>/tgme_widget_message/.test(String(t))})
+    .then(got=>{const m=String(got.data).replace(/&quot;|&#39;/g,"'")
+      .match(/tgme_widget_message_photo_wrap[^>]*?background-image:\s*url\(['"]?(https?:[^'")\s]+)/);return m?m[1]:null;})
+    .catch(()=>null);
+  IMGFRESH.set(p.id,pr);
+  pr.then(u=>{if(!u)IMGFRESH.delete(p.id);});
+  return pr;
+}
+/* قاب عکس (.shot) برای پست p؛ src پیش‌فرض p.img. با زدن، گالری باز می‌شود. */
+function postShot(p,src,alt){
+  const a=el('div','shot');a.setAttribute('role','button');a.setAttribute('aria-label','بزرگ‌نمایی تصویر');a.tabIndex=0;
+  const im=el('img');im.loading='lazy';im.decoding='async';im.alt=alt||'تصویر';
+  a.onclick=()=>{if(a.classList.contains('loaded'))openLightbox(im);};
+  a.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&a.classList.contains('loaded')){e.preventDefault();openLightbox(im);}};
+  im.onload=()=>{a.classList.add('loaded');a.classList.remove('noimg');};
+  let url=src||p.img, step=0;
+  const fail=()=>{
+    a.classList.add('noimg');
+    const box=el('div','noimgb','<span>'+ic('alert')+'تصویر باز نشد</span>');
+    const rt=el('button','btn xs','دوباره');rt.type='button';
+    rt.onclick=e=>{e.stopPropagation();box.remove();a.classList.remove('noimg');step=0;IMGFRESH.delete(p.id);im.removeAttribute('src');im.src=url;};
+    box.appendChild(rt);
+    if(p.link){const tg=el('a','btn xs','در تلگرام');tg.href=p.link;tg.target='_blank';tg.rel='noopener';tg.onclick=e=>e.stopPropagation();box.appendChild(tg);}
+    a.appendChild(box);
+  };
+  im.onerror=async()=>{
+    step++;
+    if(step===1){const u=await imgViaRoutes(url);if(u){im.src=u;return;}step=2;}
+    if(step===2){
+      const f=await freshImgOf(p);
+      if(f&&f!==url){
+        if(!src||src===p.img){p.img=f;try{savePostCache();}catch(e){}}
+        url=f;step=2;im.src=f;return;                  // بعد از آدرس تازه: مستقیم، و اگر نشد واسط
+      }
+    }
+    if(step===3){const u=await imgViaRoutes(url);if(u){im.src=u;return;}}
+    fail();
+  };
+  im.src=url;
+  if(im.complete&&im.naturalWidth)a.classList.add('loaded');
+  a.appendChild(im);
+  return a;
+}
