@@ -10,7 +10,6 @@ if(DB.settings&&DB.settings.feat&&DB.settings.feat.fx===false&&!lsGet('signaldes
 DB.positions.forEach(ensureBase);
 if(repairBase())save();
 if(migrateSpot())save();          // خریدهای اسپاتِ قدیمی به پوزیشن‌ها منتقل می‌شوند
-guideMigrate();                   // آموزش‌های قبلی یک‌بار پاک می‌شوند؛ دستورالعمل ترید جایشان می‌آید
 wire();
 applySettingsToForm();
 readSettings();
@@ -23,8 +22,13 @@ wireSync();
 wireFeed();
 // اول از سرور می‌گیریم تا این دستگاه با آخرین وضعیت شروع کند، نه با نسخه‌ی کهنه‌ی خودش
 if(syncOn())syncPull(true).catch(()=>{});
-wireLock();
-lockGate();                       // اگر رمز گذاشته شده، قبل از دیده شدن محتوا می‌پرسد
+// برگشت به برنامه بعد از بیش از ۳۰ ثانیه: آخرین وضعیت از همگام‌سازی
+let lastHidden=0;
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){lastHidden=Date.now();return;}
+  if(syncOn()&&lastHidden&&Date.now()-lastHidden>30000)syncPull(true).catch(()=>{});
+});
+try{localStorage.removeItem('signaldesk.lock.v1');}catch(e){}   // قفل ورود برداشته شد
 showOriginWarn();
 renderAll();
 persistStore().finally(()=>setTimeout(showBackupWarn,1500));

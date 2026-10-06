@@ -18,10 +18,6 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const clip=await p.evaluate(()=>{go('report',true);const a=[...document.querySelectorAll('#vReport .fb span')].filter(s=>s.scrollWidth>s.clientWidth+1).map(s=>s.textContent);
    go('signals',true);const b=[...document.querySelectorAll('#fbar .fb span')].filter(s=>s.scrollWidth>s.clientWidth+1).map(s=>s.textContent);return a.concat(b);});
  ok(!clip.length,'هیچ برچسب بریده‌ای در 360 پیکسل نیست '+clip);
- // 4) دسته با اسم خالی
- await p.evaluate(()=>sheetCats(null));await p.waitForTimeout(400);await p.click('#catAdd');await p.waitForTimeout(200);
- ok(await p.evaluate(()=>document.querySelector('#toast.on')?.textContent.includes('اسم دسته')&&document.activeElement.id==='catN'),'«ساختن» با اسم خالی پیغام می‌دهد و کادر اسم فوکوس می‌گیرد');
- await p.keyboard.press('Escape');await p.waitForTimeout(450);
  // 5) کارنامه با یک معامله
  const rep=await p.evaluate(()=>{go('report',true);repPeriod='all';renderReport();const t=document.querySelector('#repBody').textContent;return {inf:t.includes('∞'),best:t.includes('بهترین'),note:!!document.querySelector('#repBody .stnote')};});
  ok(!rep.inf&&!rep.best&&rep.note,'کارنامه‌ی یک‌معامله‌ای: بدون ∞ و بهترین/بدترین، با یادداشت نمونه‌ی کم '+JSON.stringify(rep));

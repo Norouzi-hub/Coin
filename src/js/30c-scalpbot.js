@@ -506,7 +506,7 @@ let BOTFIX=false, BOTTICK=false, BOTLAST=0;
 const BOTERR=new Map(), BOTPX=new Map();
 function botList(){
   if(!Array.isArray(DB.scalps))DB.scalps=[];
-  if(DB.scalps.some(s=>!s||s.v!==2)){DB.scalps=DB.scalps.map(s=>s&&s.v===2?s:botMigrate(s)).filter(Boolean);save();}
+  if(DB.scalps.some(s=>!s||s.v!==2)){DB.scalps=DB.scalps.filter(s=>s&&s.v===2);save();}   // فقط قالب فعلی
   if(!BOTFIX){BOTFIX=true;
     const loc=lsGet(BOTSTKEY)||{};
     for(const b of DB.scalps){const l=loc[b.id];if(l&&botMine(b)&&l.seq===b.st.seq&&l.lastT>b.st.lastT)b.st=l;}
@@ -514,23 +514,6 @@ function botList(){
   return DB.scalps;
 }
 function botLocSave(){const o={};for(const b of botList())if(botMine(b))o[b.id]=b.st;lsSet(BOTSTKEY,o);}
-/* جلسه‌های «اسکلپ زنده»ی نسخه‌ی قبل ← ربات رنج ثابت */
-function botMigrate(s){
-  if(!s||!s.tk||!(s.L>0&&s.H>s.L))return null;
-  const cfg=botCfg({mode:'fix',lev:s.lev,mg:s.mg,save:'none',L:s.L,H:s.H,d:s.d,first:s.first,fee:s.fee,slip:0});
-  const seen=(lsGet('signaldesk.scseen.v1')||{})[s.id];
-  const st=botInitSt(cfg,Math.ceil(((seen&&seen.t)||s.at||Date.now())/6e4)*6e4);
-  st.started=!!(s.st&&s.st.started);
-  const p=s.st&&s.st.pos;
-  if(p){const sg=p.side==='long'?1:-1, lq=1/cfg.lev-MMR;
-    st.pos={side:p.side,en:p.en,tp:sg>0?cfg.H:cfg.L,stop:cfg.d!=null?(sg>0?cfg.L-cfg.d:cfg.H+cfg.d):null,stop0:null,
-      liq:cfg.lev>1.05&&lq>0?p.en*(1-sg*lq):null,mid:null,t0:p.t||s.at,how:'lim',q:1,real:0,half:false,tr:null};
-    st.pos.stop0=st.pos.stop;st.pend=[];}
-  else st.pend=botPlan(cfg,null,st).orders;
-  const b={v:2,id:s.id,tk:s.tk,dev:DEVID,cfg,on:s.on!==false,at:s.at||Date.now(),st,trades:[],tot:botTot0()};
-  for(const x of s.trades||[])botBook(b,{side:x.side,en:x.en,ex:x.ex,t0:x.t0,t1:x.t1,how:'lim',by:x.by||'tp',half:false,roi:x.roi,usd:x.usd,tr:null});
-  return b;
-}
 function botNew(o){
   const cfg=botCfg(o), t0=Math.ceil(Date.now()/6e4)*6e4;
   const b={v:2,id:uid(),tk:o.tk,dev:DEVID,cfg,on:true,at:Date.now(),st:botInitSt(cfg,t0),trades:[],tot:botTot0()};

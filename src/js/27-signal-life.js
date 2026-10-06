@@ -489,10 +489,6 @@ function buildMark(p,sig,ov,isSig,dec,px){
   tray.appendChild(fileChip('book','آموزش',ls,
     ls?'برداشتن از آموزش‌ها':'نگه داشتن به‌عنوان آموزش',
     ()=>{ls?removeLesson(p.id):addLesson(p);}));
-  const cs=catsOf(p.id).map(catById);
-  tray.appendChild(fileChip('tag',cs.length?esc(cs[0].n)+(cs.length>1?' +'+(cs.length-1):''):'دسته',cs.length>0,
-    cs.length?'دسته‌ها: '+cs.map(c=>c.n).join('، '):'گذاشتن این پست در دسته‌ی خودت',
-    ()=>sheetCats(p)));
   row.appendChild(tray);
 
   // کلید «سیگنال یا نه» — بعد از تصمیم دیگر معنی ندارد، پس نمی‌آید
@@ -1023,10 +1019,9 @@ function renderFbar(){
   // 800 پست هر بار از نو bucketOf می‌گرفت.
   // همه‌ی شمارنده‌ها با فیلتر روز: «امروز» که روشن است، عددها هم مال امروزند
   let nLive=0,nSig=0,nNew=0,nRes=0,nArch=0,nExp=0;
-  const KN={sig:0,news:0,ann:0,res:0,note:0}, CN={}, dp=dayPass();
+  const KN={sig:0,news:0,ann:0,res:0,note:0}, dp=dayPass();
   for(const p of POSTS){
     if(dp&&!dp(p))continue;
-    for(const c of DB.pcat[p.id]||[])CN[c]=(CN[c]||0)+1;
     const bk=bucketOf(p);
     if(bk==='arch'){nArch++;continue;}
     if(bk==='exp'){nExp++;continue;}
@@ -1094,16 +1089,12 @@ function renderFbar(){
   /* ردیف نوع و دسته فقط در «همه»: خبر، اطلاع‌رسانی، نتیجه… و دسته‌هایی که خودت ساخته‌ای */
   if(bucket==='live'&&sigFilter==='all'){
     const row=el('div','frow');row.setAttribute('aria-label','نوع پست');
-    const cat=activeCat(), kind=cat?'':(KN[VIEW.kind]!=null?VIEW.kind:'all');
-    chip(row,'همه',nLive,kind==='all',()=>setView({kind:'all',cat:''}));
+    const kind=KN[VIEW.kind]!=null?VIEW.kind:'all';
+    chip(row,'همه',nLive,kind==='all',()=>setView({kind:'all'}));
     for(const k of ['sig','news','ann','res','note'])
-      chip(row,k==='sig'?'سیگنال':KIND_FA[k],KN[k],kind===k,()=>setView({kind:k,cat:''}));
-    row.appendChild(el('span','fsep'));
-    for(const c of DB.cats)
-      chip(row,ic('tag')+esc(c.n),CN[c.id]||0,cat===c.id,()=>setView({cat:cat===c.id?'':c.id}),'cat');
-    chip(row,ic('plus')+(DB.cats.length?'':'دسته‌ی من'),null,false,()=>sheetCats(null),'add').title='ساختن و مدیریت دسته‌ها';
+      chip(row,k==='sig'?'سیگنال':KIND_FA[k],KN[k],kind===k,()=>setView({kind:k}));
     bar.appendChild(row);
-    // چیپ روشن ممکن است بیرون از دید افقی باشد (مثلاً دسته‌ی آخر)؛ بی‌آنکه صفحه بالا-پایین برود جلو بیاوریمش
+    // چیپ روشن ممکن است بیرون از دید افقی باشد؛ بی‌آنکه صفحه بالا-پایین برود جلو بیاوریمش
     const onc=row.querySelector('.fc.on');
     if(onc)requestAnimationFrame(()=>{const r=row.getBoundingClientRect(),c=onc.getBoundingClientRect();
       if(c.left<r.left||c.right>r.right)row.scrollLeft+=c.left<r.left?c.left-r.left-8:c.right-r.right+8;});
@@ -1267,15 +1258,13 @@ function renderSignals(){
   const acc=F('accordion');
   let firstId=null, lastDay=null, sepEl=null, sepN=0;
   const closeSep=()=>{if(sepEl)sepEl.querySelector('.dsn').textContent=sepN+' پست';};
-  const dp=dayPass(), cat=activeCat(), kind=!cat&&bucket==='live'&&sigFilter==='all'&&VIEW.kind!=='all'?VIEW.kind:'';
+  const dp=dayPass(), kind=bucket==='live'&&sigFilter==='all'&&VIEW.kind!=='all'?VIEW.kind:'';
   // انیمیشن ورود کارت‌ها فقط وقتی فهرست واقعاً عوض شده (فیلتر، سطل، جستجو)، نه با هر بروزرسانی
-  const rk=[bucket,sigFilter,coinFilter,q,cat,VIEW.day,kind].join('|'), animate=rk!==RS_KEY;RS_KEY=rk;
+  const rk=[bucket,sigFilter,coinFilter,q,VIEW.day,kind].join('|'), animate=rk!==RS_KEY;RS_KEY=rk;
   for(const p of POSTS){
     if(dp&&!dp(p))continue;
     const sig=sigOf(p), bk=bucketOf(p);
-    // دسته‌ی خودت بر سطل‌ها می‌چربد: پستِ آرشیوشده هم در دسته‌اش دیده می‌شود
-    if(cat){if(!inCat(p.id,cat))continue;}
-    else if(bucket==='res'){if(bk!=='live'||postKind(p)!=='res')continue;}
+    if(bucket==='res'){if(bk!=='live'||postKind(p)!=='res')continue;}
     else if(bk!==bucket)continue;
     if(coinFilter&&(sig.ticker||'')!==coinFilter)continue;
     if(kind&&postKind(p)!==kind)continue;
@@ -1331,9 +1320,7 @@ function renderSignals(){
     const BK={res:'نتایج',exp:'منقضی',arch:'آرشیو'};
     // بخش‌های بالا (در انتظار/سیگنال‌ها/همه) خودشان روشن دیده می‌شوند؛ اینجا فقط چیزهایی که از چشم می‌افتند
     if(bucket!=='live'&&BK[bucket])tags.push([BK[bucket],()=>{bucket='live';}]);
-    const ac=activeCat();
-    if(ac)tags.push(['دسته: '+esc(catById(ac).n),()=>{VIEW.cat='';}]);
-    else if(bucket==='live'&&sigFilter==='all'&&VIEW.kind&&VIEW.kind!=='all')
+    if(bucket==='live'&&sigFilter==='all'&&VIEW.kind&&VIEW.kind!=='all')
       tags.push([VIEW.kind==='sig'?'سیگنال':(KIND_FA[VIEW.kind]||VIEW.kind),()=>{VIEW.kind='all';}]);
     if(DAY_FA[VIEW.day]&&VIEW.day!=='all')tags.push(['روز: '+DAY_FA[VIEW.day],()=>{VIEW.day='all';}]);
     if(coinFilter)tags.push(['فقط '+esc(coinFilter),()=>{coinFilter=null;}]);
@@ -1347,7 +1334,7 @@ function renderSignals(){
       }
       if(tags.length>1){const all=el('button','actall','همه را بردار');
         all.onclick=()=>{bucket='live';sigFilter='sig';coinFilter=null;query='';$('#q').value='';
-          setView({kind:'all',cat:'',day:'all'});};bar.appendChild(all);}
+          setView({kind:'all',day:'all'});};bar.appendChild(all);}
       list.appendChild(bar);
     }
   }
@@ -1357,7 +1344,6 @@ function renderSignals(){
       ?(bucket==='arch'?'آرشیو خالی است.<br>روی هر پستی دکمه‌ی «آرشیو» را بزن تا اینجا بیاید.'
         :bucket==='res'?'هنوز پست نتیجه‌ای نیامده.<br>پست‌هایی مثل «تارگت اول زد» یا «استاپ خورد» خودشان اینجا جمع می‌شوند؛ هر پست دیگری را هم با دکمه‌ی «نتیجه» می‌فرستی اینجا.'
         :coinFilter?'برای '+esc(coinFilter)+' چیزی نیست.<br>فیلتر ارز را بردار.'
-        :activeCat()?'این دسته هنوز خالی است'+(VIEW.day!=='all'?' (در '+DAY_FA[VIEW.day]+')':'')+'.<br>زیر هر پست دکمه‌ی «دسته» را بزن تا اینجا بیاید.'
         :VIEW.day!=='all'?'در «'+DAY_FA[VIEW.day]+'» پستی با این فیلتر نیست.<br>«همه‌ی روزها» را بزن'+(REACHED_END?'.':' یا پست‌های قدیمی‌تر را بخوان.')
         :bucket==='exp'?'سیگنال منقضی‌ای نیست.<br>سیگنال‌هایی که بیش از '+faN(S.staleDays||7)+' روز از آن‌ها گذشته خودشان اینجا می‌آیند.'
         :sigFilter==='new'?'سیگنال تازه‌ای منتظر تصمیم نیست.<br>سیگنال‌های بیش از '+faN(S.staleDays||7)+' روز در «منقضی» برای مرور مانده‌اند.'

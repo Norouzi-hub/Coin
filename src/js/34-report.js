@@ -60,23 +60,11 @@ function agg(list){
   r.expectancy=decided?r.pnl/decided:null;
   return r;
 }
-/* تقویم تب مستقل نیست: همان داده‌ی کارنامه است، فقط ماهانه‌چیده‌شده.
-   با نوار بالای کارنامه بین فهرست و تقویم جابه‌جا می‌شوی. */
-let repView='list';
 function renderReport(){
-  const cal=$('#calBody'), body0=$('#repBody');
-  const onCal=repView==='cal';
-  if(cal)cal.classList.toggle('hide',!onCal);
-  if(body0)body0.classList.toggle('hide',onCal);
-  const cb=$('#repCal');if(cb){cb.setAttribute('aria-pressed',onCal?'true':'false');cb.classList.toggle('on',onCal);}
-  /* فقط یک دکمه روشن: دوره‌ی انتخاب‌شده، یا «تقویم» وقتی تقویم باز است. قبلاً «ماهانه» از
-     خودِ HTML کلاس on داشت و هیچ‌وقت برداشته نمی‌شد؛ دو دکمه هم‌زمان روشن می‌ماندند. */
   $$('#vReport .fb[data-p]').forEach(b=>{
-    const on=!onCal&&b.dataset.p===repPeriod;
+    const on=b.dataset.p===repPeriod;
     b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');
   });
-  $$('#vReport .fseg .fb').forEach(b=>b.classList.toggle('dim',onCal));
-  if(onCal){renderCalendar();return;}
   renderReportList();
 }
 function renderReportList(){

@@ -33,7 +33,7 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
  // آموزش‌های قدیمی از نسخه‌ی قبل
  await p.addInitScript(()=>{if(sessionStorage.getItem('seeded'))return;sessionStorage.setItem('seeded','1');
    localStorage.setItem('signaldesk.v1',JSON.stringify({positions:[],decisions:{},settings:{},overrides:{},
-     lessons:{'ccoineres/100':{id:'ccoineres/100',title:'قدیمی ۱',text:'x',at:1},'ccoineres/101':{id:'ccoineres/101',title:'قدیمی ۲',text:'y',at:2}},
+     lessons:{},
      archived:{},results:{}}));});
  await p.goto('http://localhost:8899/index.html',{waitUntil:'domcontentloaded'});
  const key=await p.evaluate(()=>KEY);
@@ -41,8 +41,6 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
  await p.waitForTimeout(7000);
  const st=await p.evaluate(()=>({les:Object.values(DB.lessons).map(L=>({n:L.num,g:!!L.guide,o:L.ord,t:L.title,img:!!L.img,imgs:(L.imgs||[]).length,v:!!L.video})),
    bak:!!localStorage.getItem('signaldesk.lessons.bak'),list:guideList().length}));
- ok(!st.les.some(L=>!L.g),'آموزش‌های قدیمی پاک شدند');
- ok(st.bak,'یک نسخه‌ی پشتیبان از آموزش‌های قدیمی ماند');
  ok(st.les.length===9&&st.les.every(L=>L.g),'9 درس دستورالعمل خودکار از کانال آمد ('+st.les.length+')');
  const byN=Object.fromEntries(st.les.map(L=>[L.n,L]));
  ok(byN[54648]&&byN[54648].imgs===2,'درس 1 آلبوم دوعکسی دارد');

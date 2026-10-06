@@ -38,11 +38,10 @@ function wire(){
   $('#btnManual').onclick=()=>sheetEditPos(null);
   $$('#vReport .fb[data-p]').forEach(b=>b.onclick=()=>{
     if(b.dataset.p==='range')return sheetRange();
-    repView='list';repPeriod=b.dataset.p;
+    repPeriod=b.dataset.p;
     $$('#vReport .fb[data-p]').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
     renderReport();
   });
-  $('#repCal').onclick=()=>{repView=repView==='cal'?'list':'cal';renderReport();};
   // تنظیمات
   $('#btnWCopy').onclick=e=>copyWorker(e.currentTarget);
   $('#btnWTest').onclick=e=>testWorker(e.currentTarget);

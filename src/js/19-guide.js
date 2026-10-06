@@ -180,18 +180,6 @@ function findGuideIndex(posts){
   }
   return best;
 }
-function guideMigrate(){
-  if(lsGet(GUIDEKEY))return;
-  const old=Object.values(DB.lessons).filter(L=>!L.guide);
-  if(old.length){
-    // یک نسخه کنار می‌ماند؛ اگر اشتباهی بود از حافظه‌ی مرورگر برمی‌گردد
-    lsSet('signaldesk.lessons.bak',{at:Date.now(),lessons:DB.lessons});
-    for(const L of old)delete DB.lessons[L.id];
-    save();
-    logIt('info',faN(old.length)+' آموزشِ قبلی پاک شد تا دستورالعمل ترید جایش بیاید');
-  }
-  lsSet(GUIDEKEY,{at:Date.now(),cleared:old.length,ids:old.map(L=>L.id)});
-}
 /* فقط همان‌هایی که پاک شدند، با شناسه — نه «هر چه قدیمی‌تر است»، وگرنه آموزشی که روی
    دستگاه دیگر تازه اضافه شده ولی ساعتش عقب‌تر است بی‌صدا پاک می‌شد */
 function guidePurgeOld(){

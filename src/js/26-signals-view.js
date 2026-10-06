@@ -10,7 +10,8 @@ let bucket='live';
 /* فیلترهای صفحه‌ی پست‌ها روی همین دستگاه می‌مانند؛ هر بار همان‌جایی برمی‌گردی که بودی.
    kind: نوع پست در «همه» · cat: دسته‌ی ساخت خودت · day: all|today|yest|week|range */
 const VIEWKEY='signaldesk.view.v1';
-const VIEW=Object.assign({kind:'all',cat:'',day:'all',from:'',to:''},lsGet(VIEWKEY)||{});
+const VIEW=Object.assign({kind:'all',day:'all',from:'',to:''},lsGet(VIEWKEY)||{});
+delete VIEW.cat;                  // دسته‌های دلخواه برداشته شد
 if(['new','sig','all'].includes(VIEW.sf))sigFilter=VIEW.sf;
 if(['live','res','arch','exp'].includes(VIEW.bk))bucket=VIEW.bk;
 function setView(o){
@@ -31,74 +32,6 @@ function dayPass(){
   if(d==='today')a=b=t;else if(d==='yest')a=b=t-1;else if(d==='week'){a=t-6;b=t;}
   else{a=ymdNo(VIEW.from);b=ymdNo(VIEW.to);if(a!=null&&b!=null&&a>b)[a,b]=[b,a];}
   return p=>{if(!p.date)return false;const n=postDay(p);return (a==null||n>=a)&&(b==null||n<=b);};
-}
-/* دسته‌های خودت: هر پست می‌تواند در چند دسته باشد؛ پاک کردن دسته به پست‌ها دست نمی‌زند. */
-const catById=id=>DB.cats.find(c=>c.id===id);
-const catsOf=pid=>(DB.pcat[pid]||[]).filter(catById);
-const inCat=(pid,cid)=>(DB.pcat[pid]||[]).includes(cid);
-function setCat(pid,cid,on){
-  const a=new Set(DB.pcat[pid]||[]);on?a.add(cid):a.delete(cid);
-  if(a.size)DB.pcat[pid]=[...a];else delete DB.pcat[pid];
-  save();
-}
-function newCat(name){
-  name=(name||'').replace(/\s+/g,' ').trim().slice(0,24);
-  if(!name)return null;
-  const ex=DB.cats.find(c=>c.n===name);if(ex)return ex;
-  const c={id:'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),n:name};
-  DB.cats.push(c);save();return c;
-}
-function delCat(cid){
-  DB.cats=DB.cats.filter(c=>c.id!==cid);
-  for(const k of Object.keys(DB.pcat)){
-    const a=DB.pcat[k].filter(x=>x!==cid);if(a.length)DB.pcat[k]=a;else delete DB.pcat[k];}
-  if(VIEW.cat===cid)VIEW.cat='';
-  save();
-}
-/* دسته فقط در «همه» معنی دارد؛ دسته‌ای که پاک شده یا از دستگاه دیگری نیامده، نادیده گرفته می‌شود. */
-const activeCat=()=>bucket==='live'&&sigFilter==='all'&&VIEW.cat&&catById(VIEW.cat)?VIEW.cat:'';
-function sheetCats(p){
-  openSheet('<h3>'+ic('tag')+(p?'دسته‌ی این پست':'دسته‌های من')+'</h3>'+
-    '<div class="sub">'+(p
-      ?'پست را در یک یا چند دسته بگذار. دوباره بزنی، از آن دسته بیرون می‌آید.'
-      :'دسته بساز، اسمش را عوض کن یا پاکش کن. پست‌ها را با دکمه‌ی «دسته» زیر هر پست اضافه کن. پاک کردن دسته به خودِ پست‌ها دست نمی‌زند.')+'</div>'+
-    '<div class="catls" id="catls"></div>'+
-    '<div class="catnew"><input id="catN" maxlength="24" placeholder="اسم دسته‌ی تازه، مثلاً «بلندمدت»" autocomplete="off">'+
-    '<button class="btn pri sm" id="catAdd">'+ic('plus')+'<span>ساختن</span></button></div>'+
-    '<div class="srow"><button class="btn" id="cx">بستن</button></div>',
-  ()=>{
-    const ls=$('#catls');
-    const paint=()=>{
-      ls.innerHTML='';
-      if(!DB.cats.length){ls.appendChild(el('div','catempty','هنوز دسته‌ای نساخته‌ای.'));return;}
-      for(const c of DB.cats){
-        const n=Object.keys(DB.pcat).filter(k=>DB.pcat[k].includes(c.id)).length;
-        const r=el('div','catrow');
-        if(p){
-          const on=inCat(p.id,c.id);
-          const t=el('button','catt'+(on?' on':''),'<b>'+(on?ic('check'):'')+'</b><span>'+esc(c.n)+'</span><i>'+faN(n)+'</i>');
-          t.setAttribute('aria-pressed',on?'true':'false');
-          t.onclick=()=>{setCat(p.id,c.id,!on);paint();renderSignals();};
-          r.appendChild(t);
-        }else r.appendChild(el('div','catt','<b>'+ic('tag')+'</b><span>'+esc(c.n)+'</span><i>'+faN(n)+'</i>'));
-        const ed=el('button','btn xs',ic('edit'));ed.title='تغییر اسم';ed.setAttribute('aria-label','تغییر اسم');
-        ed.onclick=()=>{const v=prompt('اسم تازه‌ی دسته',c.n);if(v==null)return;
-          const nn=v.replace(/\s+/g,' ').trim().slice(0,24);if(!nn)return;c.n=nn;save();paint();renderSignals();};
-        const del=el('button','btn xs dgr',ic('trash'));del.title='پاک کردن دسته';del.setAttribute('aria-label','پاک کردن دسته');
-        del.onclick=()=>{if(!confirm('دسته‌ی «'+c.n+'» پاک شود؟ پست‌ها سر جایشان می‌مانند.'))return;
-          delCat(c.id);lsSet(VIEWKEY,VIEW);paint();renderSignals();};
-        r.appendChild(ed);r.appendChild(del);ls.appendChild(r);
-      }
-    };
-    paint();
-    const add=()=>{const c=newCat($('#catN').value);
-      if(!c){toast('اول اسم دسته را بنویس','info');$('#catN').focus();return;}   // قبلاً بی‌صدا هیچ کاری نمی‌کرد
-      $('#catN').value='';
-      if(p)setCat(p.id,c.id,true);paint();renderSignals();toast('دسته‌ی «'+esc(c.n)+'» آماده است','ok');};
-    $('#catAdd').onclick=add;
-    $('#catN').onkeydown=e=>{if(e.key==='Enter')add();};
-    $('#cx').onclick=closeSheet;
-  });
 }
 const isArch=id=>!!DB.archived[id];
 function setArch(id,on){

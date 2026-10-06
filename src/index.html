@@ -35,17 +35,6 @@
   <div class="lbhint" id="lbHint">دوبار بزن برای بزرگ‌نمایی</div>
 </div>
 
-<div id="lockv" class="hide" role="dialog" aria-label="قفل برنامه">
-  <div class="lockbox">
-    <div class="lockmark"></div>
-    <h3 id="lockTitle">رمز را وارد کن</h3>
-    <div class="lockdots" id="lockDots"></div>
-    <div class="lockmsg" id="lockMsg"></div>
-    <div class="pad" id="lockPad"></div>
-    <button class="lockforgot" id="lockForgot">رمز را فراموش کرده‌ام</button>
-  </div>
-</div>
-
 <header id="hdr">
   <div class="wrap">
     <div class="hrow">
@@ -158,12 +147,10 @@
         <div class="fside">
           <button class="fb fbucket wide hide" id="pRange" data-p="range" aria-pressed="false" title="بازه‌ی دلخواه">
             <span>بازه</span></button>
-          <button class="fb fbucket wide" id="repCal" aria-pressed="false"><span>تقویم</span></button>
         </div>
       </div>
     </div>
     <div id="repBody"></div>
-    <div id="calBody" class="hide"></div>
   </section>
 
   <!-- بازار: واچ‌لیست و اسپات -->
@@ -293,25 +280,6 @@
     </div>
     </details>
 
-    <details class="sec" data-sec="lock"><summary>قفل ورود</summary>
-    <div class="wsetup">
-      <div class="wtitle">وضعیت: <span id="lockState">خاموش</span></div>
-      <div class="srow">
-        <button class="btn" id="btnLockSet">گذاشتن رمز</button>
-        <button class="btn hide" id="btnLockOff">برداشتن قفل</button>
-      </div>
-      <div class="hint">
-        رمز 4 تا 8 رقمی. هر بار که برنامه را باز کنی — و اگر بیش از دو دقیقه ازش بیرون بروی —
-        پرسیده می‌شود.<br>
-        <b>صریح بگویم:</b> این برنامه تماماً داخل مرورگر اجرا می‌شود، پس این رمز
-        <b>پرده است نه قفل</b>. جلوی کسی که گوشی‌ات را برمی‌دارد را می‌گیرد، ولی کسی که
-        سورس صفحه را باز کند دورش می‌زند. اگر قفل واقعی می‌خواهی، همان حساب Cloudflare که
-        داری این کار را رایگان می‌کند.<br>
-        راه بازیابی ندارد: اگر فراموشش کنی، تنها راه پاک کردن همه‌ی داده‌هاست.
-        پس اول از «پشتیبان JSON» پایین خروجی بگیر.
-      </div>
-    </div>
-    </details>
 
     <details class="sec" data-sec="risk" open><summary>اندازه و ریسک</summary>
     <div class="grid">

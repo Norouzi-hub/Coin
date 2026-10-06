@@ -13,8 +13,7 @@ function dataCounts(d){
   return [['پوزیشن',n(d.positions)+n(d.spot)],['تصمیم',n(d.decisions)],['آموزش',n(d.lessons)],
           ['از این‌ها اسپات',spots],['منتظر',n(d.pending)],
           ['آرشیو',n(d.archived)],['نتایج',n(d.results)],['اصلاح دستی',n(d.overrides)],
-          ['ویرایشِ کانال',n(d.edits)],['حذفِ کانال',n(d.gone)],['برگشته از قدیمی',n(d.revived)],
-          ['دسته‌ی من',n(d.cats)],['پستِ دسته‌بندی‌شده',n(d.pcat)]];
+          ['ویرایشِ کانال',n(d.edits)],['حذفِ کانال',n(d.gone)],['برگشته از قدیمی',n(d.revived)]];
 }
 function applyBackup(d){
   DB.positions=(d.positions||[]).map(ensureBase);

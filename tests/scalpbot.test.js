@@ -154,13 +154,13 @@ const rng=t=>100*(1+0.03*Math.sin(2*Math.PI*t/(4*36e5)));
  ok(await p.evaluate(id=>botList().some(x=>x.id===id),id),'برگرداندنِ حذف');
  ok(await p.evaluate(()=>!DB.positions.some(x=>x.ticker==='RNG')),'به پوزیشن‌ها و کارنامه اضافه نشد');
 
- console.log('=== جلسه‌ی «اسکلپ زنده»ی نسخه‌ی قبل ← ربات رنج ثابت ===');
+ console.log('=== قالب قدیمیِ «اسکلپ زنده» دیگر خوانده نمی‌شود ===');
  const mg=await p.evaluate(()=>{const now=Date.now();
-   DB.scalps.push({id:'old1',tk:'TST',L:100,H:110,d:5,lev:10,mg:10,fee:0,first:'long',on:true,at:now-36e5,
-     st:{pos:{side:'short',en:110,t:now-6e5},started:true,prev:108},trades:[{side:'long',en:100,ex:110,t0:now-3e6,t1:now-6e5,win:true,roi:100,usd:10,by:'tp'}],n:1,w:1,l:0,roi:100,usd:10});
-   const b=botList().find(x=>x.id==='old1');
-   return b&&{v:b.v,mode:b.cfg.mode,L:b.cfg.L,H:b.cfg.H,pos:b.st.pos&&b.st.pos.side+'@'+b.st.pos.en+'>'+b.st.pos.tp+'/'+b.st.pos.stop,n:b.tot.n,usd:b.tot.usd};});
- ok(mg&&mg.v===2&&mg.mode==='fix'&&mg.L===100&&mg.H===110&&mg.pos==='short@110>100/115'&&mg.n===1&&mg.usd===10,'منتقل شد: رنج، شورتِ باز و تاریخچه ماند — '+JSON.stringify(mg));
+   DB.scalps.push({id:'old0',tk:'TST',L:100,H:110,d:5,lev:10,mg:10,on:true,at:now-36e5,st:{},trades:[]});
+   const gone=!botList().some(x=>x.id==='old0');
+   const b=botNew({mode:'fix',tk:'TST',lev:10,mg:10,save:'none',fee:0,slip:0,L:100,H:110,d:5,first:'long'});b.id='old1';save();
+   return {gone,v:b.v,mode:b.cfg.mode};});
+ ok(mg.gone&&mg.v===2&&mg.mode==='fix','جلسه‌ی قالب قدیم کنار رفت، بی‌خطا؛ ربات تازه ساخته می‌شود');
 
  console.log('=== ربات دستگاه دیگر ===');
  const tk=await p.evaluate(()=>{const b=botList().find(x=>x.id==='old1');b.dev='other-device';SWOPT.open='bots';SWOPT.botF={k:'all',s:'all'};renderScalp();

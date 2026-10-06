@@ -237,13 +237,6 @@ async function audOne(job,R){
 }
 
 const AUDQ={on:false,n:0,done:0,fail:0,at:0,err:''};
-/* پیش از این نسخه، شکستِ گرفتنِ مسیرِ قیمت نتیجه‌ی درست را با «کندل نیامد» عوض می‌کرد و بعد
-   از سه بار دیگر هرگز سنجیده نمی‌شد. یک بار شانسِ دوباره: همه‌ی «کندل نیامد»ها به صف برمی‌گردند. */
-if(!lsGet('signaldesk.audfix.v2')){
-  let n=0;for(const k in AUD){const a=AUD[k];if(a&&a.st==='bad'&&a.why==='nocandle'){a.tries=0;a.at=0;n++;}}
-  if(n)audSave();
-  lsSet('signaldesk.audfix.v2',1);
-}
 function audJobs(force,needPath){
   const R=audRules(), now=Date.now(), out=[];
   const paths=[];

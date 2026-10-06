@@ -123,7 +123,7 @@ const num=t=>Number(String(t).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.index
  });
  console.log('  تِرِی:',btn.tray.map(x=>x.l+'('+x.w+'×'+x.h+')').join(' '));
  console.log('  کنش‌ها:',btn.acts.map(x=>x.l+'('+x.w+')').join(' '));
- ok(btn.tray.length===4&&btn.icons===4,'چهار کلید «کجا برود» (آرشیو، نتیجه، آموزش، دسته)، هر کدام با آیکون');
+ ok(btn.tray.length===3&&btn.icons===3,'سه کلید «کجا برود» (آرشیو، نتیجه، آموزش)، هر کدام با آیکون');
  ok(new Set(btn.tray.map(x=>x.w)).size===1,'هر سه دقیقاً هم‌عرض‌اند');
  ok(new Set(btn.tray.map(x=>x.t)).size===1,'هر سه در یک خط‌اند');
  ok(Math.min(...btn.tray.map(x=>x.h))>=40,'ارتفاع لمسی کافی');

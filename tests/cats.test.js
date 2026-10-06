@@ -52,44 +52,11 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  await p.reload({waitUntil:'domcontentloaded'});await p.waitForTimeout(2500);
  ok(await ids()==='958,957,956','بعد از بارگذاری دوباره همان بازه و همان «همه»: '+await ids());
  await p.selectOption('#fbar .fday select','all');await p.waitForTimeout(150);
- console.log('=== دسته‌ی خودم ===');
- // روی کارت 959 دکمه‌ی دسته
+ console.log('=== دسته‌های دلخواه برداشته شد ===');
  await p.evaluate(()=>{S.feat.accordion=false;renderSignals();});
  const tray=await p.$$eval('#list .card[data-id$="/959"] .ftray .fchip',e=>e.map(x=>x.textContent));
- ok(tray.length===4&&tray[3]==='دسته','۴ کلید زیر پست، چهارمی «دسته»: '+tray);
- await p.$$eval('#list .card[data-id$="/959"] .ftray .fchip',e=>e[3].click());await p.waitForTimeout(400);
- await p.fill('#catN','مهم');await p.click('#catAdd');await p.waitForTimeout(150);
- ok(await p.$$eval('#catls .catt.on',e=>e.length)===1,'دسته ساخته شد و پست داخلش رفت');
- await p.fill('#catN','بلندمدت');await p.press('#catN','Enter');await p.waitForTimeout(150);
- await p.click('#cx');await p.waitForTimeout(450);
- // 957 هم به «مهم»
- await p.$$eval('#list .card[data-id$="/957"] .ftray .fchip',e=>e[3].click());await p.waitForTimeout(400);
- await p.$$eval('#catls .catt',e=>e.find(x=>x.textContent.includes('مهم')).click());await p.waitForTimeout(100);
- await p.click('#cx');await p.waitForTimeout(450);
- await clickFc('مهم');ok(await ids()==='959,957','دسته‌ی مهم: '+await ids());
- const lbl=await p.$eval('#list .card[data-id$="/959"] .ftray .fchip:nth-child(4)',e=>e.textContent);
- ok(lbl.includes('مهم')&&lbl.includes('+1'),'برچسب کلید دسته: '+lbl);
- // آرشیو کردن 957 — هنوز در دسته
- await p.evaluate(()=>{DB.archived[POSTS.find(x=>x.id.endsWith('/957')).id]=Date.now();save();renderSignals();});
- ok(await ids()==='959,957','پست آرشیوشده در دسته‌اش می‌ماند: '+await ids());
- // برداشتن 959 از دسته
- await p.$$eval('#list .card[data-id$="/959"] .ftray .fchip',e=>e[3].click());await p.waitForTimeout(400);
- await p.$$eval('#catls .catt',e=>e.find(x=>x.textContent.includes('مهم')).click());await p.waitForTimeout(100);
- await p.click('#cx');await p.waitForTimeout(450);
- ok(await ids()==='957','برداشتن از دسته: '+await ids());
- await p.reload({waitUntil:'domcontentloaded'});await p.waitForTimeout(2500);
- ok(await ids()==='957','بعد از بارگذاری دوباره دسته‌ی «مهم» هنوز انتخاب است: '+await ids());
- await p.screenshot({path:require('./lib').out('cats.png')});
- // مدیریت: پاک کردن دسته
- await p.$$eval('#fbar .fc.add',e=>e[0].click());await p.waitForTimeout(400);
- ok(await p.$$eval('#catls .catrow',e=>e.length)===2,'ورق مدیریت: ۲ دسته');
- await p.$$eval('#catls .catrow',e=>e.find(x=>x.textContent.includes('مهم')).querySelector('.dgr').click());await p.waitForTimeout(100);
- await p.click('#cx');await p.waitForTimeout(450);
- const blob=await p.evaluate(()=>({cats:DB.cats.map(c=>c.n),pcat:Object.keys(DB.pcat).length,view:VIEW.cat}));
- ok(blob.cats.join()==='بلندمدت'&&blob.pcat===1&&blob.view==='','پاک شد و فیلتر به «همه» برگشت: '+JSON.stringify(blob));
- ok(await ids()==='960,959,958,956,955','همه‌ی پست‌های فعال: '+await ids());
- const bk=await p.evaluate(()=>Object.keys(dbBlob()).includes('cats')&&Object.keys(dbBlob()).includes('pcat'));
- ok(bk,'دسته‌ها در پشتیبان و همگام‌سازی هستند');
+ ok(tray.length===3&&!tray.includes('دسته'),'۳ کلید زیر پست (آرشیو، نتیجه، آموزش): '+tray);
+ ok(await p.$$eval('#fbar .fc.add,#fbar .fsep',e=>e.length)===0,'نوار فیلتر بدون دسته');
  console.log(bad?'✗'+bad:'✔ همه درست');
  await b.close();
 })();
