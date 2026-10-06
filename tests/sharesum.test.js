@@ -20,7 +20,7 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
      mk('5','ADA','long',0.5,0.46,0.47,5,5)];
    save();renderAll();});
  await p.waitForTimeout(500);
- await p.click('.tab[data-v="report"]');await p.waitForTimeout(700);
+ await p.click('.tab[data-v="more"]');await p.click('.moreit[data-go="report"]');await p.waitForTimeout(700);
  const btns=await p.evaluate(()=>[...document.querySelectorAll('#repBody .btn')]
    .map(x=>x.textContent.trim()).filter(x=>x.includes('تصویر')));
  console.log('  دکمه‌ها:',btns.join(' | '));

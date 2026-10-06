@@ -1681,8 +1681,6 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
       <button class="tab" data-v="signals" role="tab" aria-selected="true" data-ic="trend"><span>سیگنال‌ها</span><span class="cnt g z" id="cSig">0</span></button>
       <button class="tab" data-v="positions" role="tab" aria-selected="false" data-ic="wallet"><span>پوزیشن‌ها</span><span class="cnt z" id="cPos">0</span></button>
       <button class="tab" data-v="audit" role="tab" aria-selected="false" data-ic="shield"><span>کانال‌سنج</span><span class="cnt z" id="cAud">0</span></button>
-      <button class="tab" data-v="scalp" role="tab" aria-selected="false" data-ic="bolt"><span>اسکلپ</span><span class="cnt g z" id="cScalp">0</span></button>
-      <button class="tab" data-v="report" role="tab" aria-selected="false" data-ic="bars"><span>کارنامه</span></button>
       <button class="tab" data-v="more" role="tab" aria-selected="false" data-ic="more"><span>سایر</span><span class="cnt z" id="cMore">0</span></button>
     </nav>
   </div>
@@ -1738,12 +1736,15 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
 
   <!-- اسکلپ: سنجش رنج و اجرای زنده -->
   <section id="vScalp" class="view hide">
+    <button class="crumb" data-go="more">سایر</button>
     <div id="scBody"></div>
   </section>
 
-  <!-- سایر: آموزش، تنظیمات -->
+  <!-- سایر: اسکلپ، کارنامه، آموزش، تنظیمات -->
   <section id="vMore" class="view hide">
     <div class="morelist">
+      <button class="moreit" data-go="scalp"><i data-ic="bolt"></i><span><b>اسکلپ</b><small>بررسی توکن، ربات‌ها، تست‌ها و گزارش</small></span><span class="cnt g z" id="cScalp">0</span></button>
+      <button class="moreit" data-go="report"><i data-ic="bars"></i><span><b>کارنامه</b><small>نتیجه‌ی معامله‌های خودت، روزانه و ماهانه</small></span></button>
       <button class="moreit" data-go="learn"><i data-ic="book"></i><span><b>آموزش</b><small>آموزش‌ها و دستورالعمل‌های کانال</small></span><span class="cnt g z" id="cLearn">0</span></button>
       <button class="moreit" data-go="settings"><i data-ic="sliders"></i><span><b>تنظیمات</b><small>اتصال، سرمایه و ریسک، همگام‌سازی، پشتیبان</small></span></button>
     </div>
@@ -1759,6 +1760,7 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
   </section>
 
   <section id="vReport" class="view hide">
+    <button class="crumb" data-go="more">سایر</button>
     <div class="tools">
       <div class="fbar">
         <div class="fseg" role="tablist" aria-label="دوره‌ی کارنامه">
@@ -12527,8 +12529,8 @@ function wireFeed(){
 /* ==================== ناوبری ==================== */
 let view='signals';
 const VIEWS=[['vSignals','signals'],['vPositions','positions'],['vScalp','scalp'],['vReport','report'],['vMore','more'],['vAudit','audit'],['vLearn','learn']];
-/* آموزش زیرِ «سایر» است: وقتی باز است، همان تب روشن می‌ماند. کانال‌سنج تب خودش را دارد. */
-const TAB_OF={learn:'more'};
+/* اسکلپ، کارنامه و آموزش زیرِ «سایر»اند: وقتی بازند، همان تب روشن می‌ماند. */
+const TAB_OF={scalp:'more',report:'more',learn:'more'};
 function go(v,noScroll){
   if(view===v&&noScroll)return;
   view=v;

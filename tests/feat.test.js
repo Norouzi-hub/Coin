@@ -79,7 +79,7 @@ const html = `<html><body>
     .some(x=>x.includes('بستن 50٪')) ? '❌ مانده' : '✅ رفت');
 
   console.log('=== بازه‌ی دلخواه کارنامه ===');
-  await p.evaluate(()=>document.querySelector('.tab[data-v="report"]').click()); await p.waitForTimeout(500);
+  await p.evaluate(()=>{document.querySelector('.tab[data-v="more"]').click();document.querySelector('.moreit[data-go="report"]').click();}); await p.waitForTimeout(500);
   console.log('  دکمه:', await p.$eval('#pRange', e => e.classList.contains('hide') ? 'پنهان ❌' : 'هست ✅'));
   await setF('range', false); await p.waitForTimeout(300);
   await p.evaluate(() => wire ? null : null);

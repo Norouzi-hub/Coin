@@ -1,8 +1,8 @@
 /* ==================== ناوبری ==================== */
 let view='signals';
 const VIEWS=[['vSignals','signals'],['vPositions','positions'],['vScalp','scalp'],['vReport','report'],['vMore','more'],['vAudit','audit'],['vLearn','learn']];
-/* آموزش زیرِ «سایر» است: وقتی باز است، همان تب روشن می‌ماند. کانال‌سنج تب خودش را دارد. */
-const TAB_OF={learn:'more'};
+/* اسکلپ، کارنامه و آموزش زیرِ «سایر»اند: وقتی بازند، همان تب روشن می‌ماند. */
+const TAB_OF={scalp:'more',report:'more',learn:'more'};
 function go(v,noScroll){
   if(view===v&&noScroll)return;
   view=v;

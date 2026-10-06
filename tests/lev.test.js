@@ -39,7 +39,7 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
  await p.screenshot({path:require('./lib').out('lev_manual.png')});
  await p.click('#cx');await p.waitForTimeout(300);
  // اهرم کانال
- await open(740);
+ await open(740);await p.waitForSelector('#f_auto',{timeout:5000});
  const s3=await p.evaluate(()=>({auto:document.getElementById('f_auto').checked,lev:document.getElementById('f_l').value}));
  ok(!s3.auto&&s3.lev==='5','اهرم 5 کانال دستی نشست، خودکار خاموش');
  await p.click('#ok');await p.waitForTimeout(300);

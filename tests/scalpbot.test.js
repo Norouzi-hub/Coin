@@ -16,9 +16,15 @@ const rng=t=>100*(1+0.03*Math.sin(2*Math.PI*t/(4*36e5)));
 
  console.log('=== ناوبری ===');
  const tabs=await p.evaluate(()=>[...document.querySelectorAll('.tab')].map(t=>t.dataset.v).join(','));
- ok(tabs==='signals,positions,audit,scalp,report,more','تب‌ها: '+tabs);
+ ok(tabs==='signals,positions,audit,more','تب‌ها: '+tabs);
  await p.click('.tab[data-v="more"]');await p.waitForTimeout(400);
- ok(await p.evaluate(()=>[...document.querySelectorAll('.moreit')].map(x=>x.dataset.go).join(',')==='learn,settings'),'منوی سایر: آموزش، تنظیمات');
+ ok(await p.evaluate(()=>[...document.querySelectorAll('.moreit')].map(x=>x.dataset.go).join(',')==='scalp,report,learn,settings'),'منوی سایر: اسکلپ، کارنامه، آموزش، تنظیمات');
+ for(const v of ['scalp','report']){
+   await p.click('.tab[data-v="more"]');await p.waitForTimeout(300);await p.click('.moreit[data-go="'+v+'"]');await p.waitForTimeout(500);
+   ok(await p.evaluate(v=>view===v&&document.querySelector('.tab[aria-selected="true"]').dataset.v==='more',v),v+' زیر «سایر» باز شد و تب سایر روشن ماند');
+   await p.click('#v'+(v==='scalp'?'Scalp':'Report')+' .crumb');await p.waitForTimeout(300);
+   ok(await p.evaluate(()=>view==='more'),'دکمه‌ی «سایر» برمی‌گرداند');
+ }
  await p.click('.tab[data-v="audit"]');await p.waitForTimeout(800);
  ok(await p.evaluate(()=>!document.querySelector('#vAudit').classList.contains('hide')&&document.querySelector('.tab[aria-selected="true"]').dataset.v==='audit'),'کانال‌سنج تب خودش را دارد');
 
