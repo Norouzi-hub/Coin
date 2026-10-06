@@ -104,7 +104,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const sh=await p.evaluate(()=>({img:!!document.querySelector('#sheet .imgfill img'),h:(document.querySelector('#sheet h3')||{}).textContent||'',
    dep:/(۲|2) پیگیری منتظر/.test((document.querySelector('#sheet .hint')||{}).textContent||'')}));
  ok(sh.img&&sh.dep,'برگه: تصویر چارت و «۲ پیگیری منتظر همین عددهاست»');
- await p.fill('#f_st','0.25');await p.fill('#f_tp','0.32، 0.36');
+ await p.fill('#f_st','0.25');await p.fill('#f_t1','0.32');await p.fill('#f_t2','0.36');
  await p.evaluate(()=>{AUDQ.at=Date.now();});
  await p.click('#sheet #ok');await p.waitForTimeout(300);
  const af=await p.evaluate(()=>{const P=id=>POSTS.find(x=>x.id===id);
@@ -115,5 +115,24 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(af.a[0]&&af.a[1]===0.25&&af.a[2]===null,'خودِ پست تصویری: ورود بازار، قابل سنجش');
  ok(af.b.join('/')==='0.25/0.32,0.36/ccoineres/9101/','پیگیری «ورود مجدد مجازه» استاپ و تارگت‌ها را از همان پست می‌گیرد');
  ok(af.c.join('/')==='0.3/0.25/0.32,0.36','پیگیری «تریگر 0.3» هم');
+ console.log('=== کارت سیگنال: عددها از روی چارت ===');
+ const cd=await p.evaluate(async()=>{
+   const H=36e5;SYMBOLS.add('ZIG');SYMVER++;POSTS.unshift({id:'ccoineres/9301',text:'#ZIG',date:new Date(Date.now()-H),img:'data:image/gif;base64,R0lGODlhAQABAAAAACw='});
+   KGEN++;go('signals',true);renderAll();await new Promise(r=>setTimeout(r,500));
+   const card=[...document.querySelectorAll('#list .card')].find(c=>/ZIG/.test(c.textContent));
+   if(card&&!card.classList.contains('accopen'))card.click();
+   await new Promise(r=>setTimeout(r,400));
+   const c2=[...document.querySelectorAll('#list .card')].find(c=>/ZIG/.test(c.textContent));
+   const b=c2&&[...c2.querySelectorAll('button')].find(x=>/عددها از روی چارت/.test(x.textContent));
+   if(b)b.click();await new Promise(r=>setTimeout(r,300));
+   return {sig:isSigPost(POSTS[0]),btn:!!b,f:['f_en','f_st','f_t1','f_t2','f_t3'].every(id=>!!document.getElementById(id))};});
+ console.log('   ',JSON.stringify(cd));
+ ok(cd.sig,'پستِ «#ZIG» + تصویر خودش سیگنال است');
+ ok(cd.btn&&cd.f,'روی کارت: «عددها از روی چارت» با ورود، حد ضرر، تارگت ۱، ۲ و ۳');
+ await p.fill('#f_en','0.048');await p.fill('#f_st','0.0256');await p.fill('#f_t1','0.0744');await p.fill('#f_t2','0.1819');await p.fill('#f_t3','0.495');
+ await p.click('#sheet #ok');await p.waitForTimeout(400);
+ const cz=await p.evaluate(()=>{const s=sigOf(POSTS[0]),I=planInputsOf(POSTS[0],s,OVERRIDE[POSTS[0].id],null);
+   return [I.entry,I.stop,s.targets.join(',')].join('/');});
+ ok(cz==='0.048/0.0256/0.0744,0.1819,0.495','کارت همان عددها را دارد (ورود/استاپ/سه تارگت)');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');})();

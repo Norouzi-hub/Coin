@@ -643,14 +643,16 @@ function audParentTxt(inp){
    («ورود مجدد مجازه») به آن تکیه دارند. عددها را یک بار از روی تصویر وارد کن؛ خودِ پست و همه‌ی
    پیگیری‌هایش سنجیده می‌شوند. ورودِ خالی = قیمت بازار در لحظه‌ی انتشار. */
 function sheetImgFill(ids,need,i){
+  const fin=()=>{closeSheet();renderAll();if(!AUDQ.on)audRun();};
   const p=POSTS.find(x=>x.id===ids[i]);
-  if(!p){if(i+1<ids.length)return sheetImgFill(ids,need,i+1);closeSheet();renderAll();audRun();return;}
+  if(!p){if(i+1<ids.length)return sheetImgFill(ids,need,i+1);fin();return;}
   const ov=OVERRIDE[p.id]||{}, g=p.origText?parseSignal(p.origText):parseSignal(p.text,p.id);
   const tk=ov.ticker||g.ticker||'', dir=ov.dir||g.direction||'long';
   const v=x=>x==null?'':x;
-  openSheet('<h3>تکمیل از روی چارت · '+faN(i+1)+' از '+faN(ids.length)+'</h3>'+
-   '<div class="hint"><b dir="ltr">'+esc(tk)+'</b> · '+(p.date?jStampFa(p.date):'')+' · '+
-     faN(need.get(p.id)||0)+' پیگیری منتظر همین عددهاست</div>'+
+  const tp0=ov.tps&&ov.tps.length?ov.tps:(g.targets||[]), dep=need.get(p.id)||0;
+  openSheet('<h3>عددها از روی چارت'+(ids.length>1?' · '+faN(i+1)+' از '+faN(ids.length):'')+'</h3>'+
+   '<div class="hint"><b dir="ltr">'+esc(tk)+'</b> · '+(p.date?jStampFa(p.date):'')+
+     (dep?' · '+faN(dep)+' پیگیری منتظر همین عددهاست':'')+'</div>'+
    (p.img?'<a class="imgfill" href="'+esc(p.img)+'" target="_blank" rel="noopener"><img src="'+esc(p.img)+'" alt="چارت"></a>':
      '<div class="hint">تصویری ذخیره نشده — '+(p.link?'<a href="'+esc(p.link)+'" target="_blank" rel="noopener">پست را در تلگرام ببین</a>':'متن پست را ببین')+'</div>')+
    '<div class="audtxt">'+esc(p.origText||p.text||'')+'</div>'+
@@ -661,14 +663,15 @@ function sheetImgFill(ids,need,i){
      fldHtml('en','ورود (خالی = قیمت انتشار)',v(ov.entry!=null?ov.entry:g.entry))+
    '</div><div class="grid" style="margin-top:8px">'+
      fldHtml('st','حد ضرر',v(ov.stop!=null?ov.stop:g.stop))+
-     '<div class="fld"><label for="f_tp">تارگت‌ها</label><input id="f_tp" dir="ltr" inputmode="decimal" placeholder="1.2, 1.35" value="'+
-       esc((ov.tps&&ov.tps.length?ov.tps:(g.targets||[])).join(', '))+'"></div>'+
+     fldHtml('t1','تارگت ۱',v(tp0[0]))+
+   '</div><div class="grid" style="margin-top:8px">'+
+     fldHtml('t2','تارگت ۲',v(tp0[1]))+fldHtml('t3','تارگت ۳',v(tp0[2]))+
    '</div>'+
    '<div class="srow"><button class="btn pri" id="ok">ثبت'+(i+1<ids.length?' و بعدی':'')+'</button>'+
      (i+1<ids.length?'<button class="btn" id="sk">بعدی</button>':'')+'<button class="btn" id="cx">بستن</button></div>',
    ()=>{
-     $('#cx').onclick=()=>{closeSheet();renderAll();audRun();};
-     const nx=()=>i+1<ids.length?sheetImgFill(ids,need,i+1):(closeSheet(),renderAll(),audRun());
+     $('#cx').onclick=fin;
+     const nx=()=>i+1<ids.length?sheetImgFill(ids,need,i+1):fin();
      if($('#sk'))$('#sk').onclick=nx;
      // قیمتِ لحظه‌ی انتشار، تا عددی که از چارت می‌خوانی با بازار مقایسه شود
      if(tk&&p.date)audCandles(tk,'5m',Math.ceil(+p.date/3e5)*3e5,1,true).then(C=>{
@@ -676,7 +679,7 @@ function sheetImgFill(ids,need,i){
      $('#ok').onclick=()=>{
        const st=num('f_st');
        if(!st){toast('حد ضرر را از روی چارت بنویس','err');return;}
-       const tps=normDig($('#f_tp').value||'').split(/[\s,،;/]+/).map(x=>parseFloat(x)).filter(x=>isFinite(x)&&x>0);
+       const tps=['f_t1','f_t2','f_t3'].map(num).filter(x=>x!=null);
        const o=Object.assign({},OVERRIDE[p.id],{sig:true,ticker:tk||undefined,dir:$('#f_d').value,stop:st});
        const en=num('f_en');if(en!=null)o.entry=en;else delete o.entry;
        if(tps.length)o.tps=tps;else delete o.tps;

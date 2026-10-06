@@ -504,6 +504,13 @@ function buildMark(p,sig,ov,isSig,dec,px){
       b.onclick=()=>{setOv(p,'sig',false,true);toast('از سیگنال‌ها برداشته شد','info');};
       sw.appendChild(b);
       if(ov.sig!=null)sw.appendChild(el('span','markhint','دستی علامت خورده'));
+      // کانال عددها را روی تصویر می‌دهد: همان‌جا واردشان کن (ورود، استاپ، تارگت ۱ تا ۳)
+      if(p.img){
+        const done=ov.stop!=null;
+        const c=el('button',done?'plink':'padd',ic(done?'check':'edit')+'<span>'+(done?'عددهای چارت ثبت شده':'عددها از روی چارت')+'</span>');
+        c.onclick=()=>sheetImgFill([p.id],new Map(),0);
+        sw.appendChild(c);
+      }
     }else{
       const b=el('button','padd',ic('plus')+'<span>افزودن به سیگنال‌ها</span>');
       b.title='نماد و اعداد را بده تا ماشین‌حساب رویش فعال شود';

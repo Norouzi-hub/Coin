@@ -171,8 +171,9 @@ const bareImg=(p,r)=>!!(p&&p.img&&r&&r.ticker&&
 function sigOf(p){
   let r=parseSignal(p.text,p.id);const ov=OVERRIDE[p.id];
   if(!r.isSignal&&bareImg(p,r))r=Object.assign({},r,{isSignal:true,imgOnly:true});
-  if(!ov||(ov.ticker==null&&ov.sig==null&&ov.market==null))return r;
+  if(!ov||(ov.ticker==null&&ov.sig==null&&ov.market==null&&!ov.tps))return r;
   const o=Object.assign({},r);
+  if(ov.tps&&ov.tps.length)o.targets=ov.tps.slice();
   if(ov.ticker)o.ticker=ov.ticker;
   if(ov.trigger!=null)o.trigger=ov.trigger;
   if(ov.sig!=null)o.isSignal=!!ov.sig;
