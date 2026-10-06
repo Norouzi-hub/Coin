@@ -68,7 +68,7 @@ const RX={
   levx:/\b(\d{1,3})\s*[xX]\b/,
   trg:new RegExp('(?:تریگر|\\btrigger\\b)(?:\\s*ورود)?\\s*(?:رو|روی|:|：|=|-)?\\s*'+NUM,'i'),
   brk:new RegExp('شکست\\s*(?:رو|روی|از)?\\s*'+NUM,'i'),
-  avg:new RegExp('(?:رو|روی|در)\\s*'+NUM+'\\s*میانگین','i')
+  avg:new RegExp('(?:رو|روی|در)\\s*'+NUM+'\\s*(?:میانگین|اضافه)','i')
 };
 /* پست‌هایی که شکل سیگنال دارند ولی سیگنال نیستند (از نمونه‌های واقعی کانال):
    هشدار لیکوئید («🟢 #BTC Liquidated Short: $89.5K at $85444») خطِ خبرِ بازار است و نمادش
@@ -84,7 +84,7 @@ const RX_GO=/(?:ورود|لانگ|شورت)[^\n\d]{0,20}?مجاز|یک[\s\u200c]
 const RX_KW={stop:'حد\\s*ضرر|حدضرر|استاپ\\s*لاس|استاپ|stop\\s*-?\\s*loss|\\bsl\\b',
   entry:'ورود|انتری|\\bentry\\b|\\bbuy\\b|خرید|بخر'};
 const RX_GAPSTOP=/تارگت|هدف|تی\s*پی|\btp\d?\b|\btarget\b|حد\s*ضرر|استاپ|\bsl\b|ورود|\bentry\b|اهرم|لوریج/i;
-const RX_NOTPX=/^[ \t]*(?:ساعت|روز|دقیقه|هفته|ماه|کندل|پله|مرحله|بار|میانگین|[xX]\b|h\b|d\b|min\b)/i;
+const RX_NOTPX=/^[ \t]*(?:ساعت|روز|دقیقه|هفته|ماه|کندل|پله|مرحله|بار|میانگین|اضافه|[xX]\b|h\b|d\b|min\b)/i;
 const RX_PCT=/^[ \t]*(?:%|٪|درصد)/;
 function kwNum(t,kw){
   const re=new RegExp(kw,'gi');let m;
@@ -137,7 +137,8 @@ function parseSignal(raw,id){
   const eOwn=entry;                                     // ورودِ صریح، نه تریگر
   if(entry==null&&trig!=null)entry=trig;
   const direction=/\bshort\b|شورت|فروش|ریزش/i.test(t)?'short':'long';
-  const dirSet=direction==='short'||/\blong\b|لانگ|خرید|بخر/i.test(t);
+  // «بالای X ببنده ورود» شکستِ رو به بالاست، یعنی لانگ
+  const dirSet=direction==='short'||/\blong\b|لانگ|خرید|بخر/i.test(t)||RX.above.test(t);
   let stop=okAt(sm)?cleanNum(sm[1],sm[2]):null;
   if(stop==null){const k=kwNum(t,RX_KW.stop);
     if(k&&k.v!=null)stop=k.v;
@@ -162,10 +163,14 @@ function parseSignal(raw,id){
   if(id)PCACHE.set(id,{v:SYMVER,r});
   return r;
 }
+/* سیگنالِ تصویری: کانال گاهی فقط «#MOVR» می‌نویسد و ورود و استاپ و تارگت روی چارتِ پیوست است */
+const bareImg=(p,r)=>!!(p&&p.img&&r&&r.ticker&&
+  normDig(p.origText||p.text||'').replace(/[#$][A-Za-z][A-Za-z0-9_]*/g,'').replace(/[\s.،:!🟢🔴✅]+/g,'').length<=12);
 /* نتیجه‌ی parseSignal کش می‌شود، پس هیچ‌وقت خودش را دست نمی‌زنیم؛ یک رونوشت برمی‌گردانیم
    که نماد و «سیگنال بودن» دستیِ کاربر رویش نشسته است. */
 function sigOf(p){
-  const r=parseSignal(p.text,p.id), ov=OVERRIDE[p.id];
+  let r=parseSignal(p.text,p.id);const ov=OVERRIDE[p.id];
+  if(!r.isSignal&&bareImg(p,r))r=Object.assign({},r,{isSignal:true,imgOnly:true});
   if(!ov||(ov.ticker==null&&ov.sig==null&&ov.market==null))return r;
   const o=Object.assign({},r);
   if(ov.ticker)o.ticker=ov.ticker;

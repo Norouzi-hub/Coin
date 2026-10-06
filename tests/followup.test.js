@@ -79,5 +79,41 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(ms.e0===0.27&&ms.mode==='mkt','ورود = قیمت اولین کندل بعد از انتشار (0.27)، فوری');
  ok(ms.entry===0.27&&ms.tps==='0.3,0.35'&&ms.same,'بعد از سنجش، ورودی همان ورود را دارد و کلید عوض نمی‌شود');
  ok(ms.st==='win'&&ms.row,'نتیجه در فهرست کانال‌سنج: برد');
+ console.log('=== سیگنال تصویری و تکمیل از روی چارت ===');
+ const im=await p.evaluate(async()=>{
+   const H=36e5, t0=Date.now()-8*24*H;
+   const mk=(n,text,h,img)=>Object.assign({id:'ccoineres/'+n,text,date:new Date(t0+h*H)},img?{img:'data:image/gif;base64,R0lGODlhAQABAAAAACw='}:{});
+   POSTS.push(mk(9101,'#ADA',0,1),mk(9102,'#ADA\n\nورود مجدد مجازه',30),mk(9103,'#ADA\n\nتریگر 0.3 ست کنید',40),
+     mk(9201,'#BTC لانگ\nورود 82000\nحد ضرر 81000\nتارگت 86000',0),
+     mk(9202,'#BTC شورت\nورود 90600\nحد ضرر 93500',20),
+     mk(9203,'#BTC\n\nاگر کندل یکساعته بالای 83500 بست ورود مجازه، ریسک یک درصد',30));
+   KGEN++;
+   const P=id=>POSTS.find(x=>x.id===id), I=id=>audInput(P(id)), R=audRules();
+   const a=I('ccoineres/9101'),b=I('ccoineres/9102'),c=I('ccoineres/9103'),btc=I('ccoineres/9203');
+   for(const id of ['ccoineres/9101','ccoineres/9102','ccoineres/9103']){const x=I(id);await audOne({p:P(id),inp:x,k:audKey(x,R)},R);}
+   return {pre:[audPre(a),audPre(b),audPre(c)],need:[a.need&&a.need.id,b.need&&b.need.id,c.need&&c.need.id],
+     btc:[btc.dir,btc.stop,btc.inh&&btc.inh.id],why:AUD['ccoineres/9102'].why};});
+ console.log('   ',JSON.stringify(im));
+ ok(im.pre.join()==='img-sl,img-sl,img-sl'&&im.need.every(x=>x==='ccoineres/9101'),'«#ADA» تصویری و پیگیری‌هایش: «عددها روی تصویر چارت است» با اشاره به همان پست');
+ ok(im.btc.join('/')==='long/81000/ccoineres/9201','«بالای 83500 بست ورود» لانگ است: از سیگنال شورتِ ناجور می‌گذرد و استاپ 81000 لانگ قبلی را می‌گیرد');
+ await p.evaluate(()=>{AUDOPEN=null;go('audit',true);renderAudit();});await p.waitForTimeout(400);
+ const fb=await p.evaluate(()=>{const b=[...document.querySelectorAll('#audBody .audiag button')].find(x=>/تکمیل از روی چارت/.test(x.textContent));
+   if(b)b.click();return b?b.textContent:null;});
+ await p.waitForTimeout(300);
+ ok(fb&&/۱|1/.test(fb),'دکمه‌ی «تکمیل از روی چارت (۱ پست)» در وضعیت سنجش');
+ const sh=await p.evaluate(()=>({img:!!document.querySelector('#sheet .imgfill img'),h:(document.querySelector('#sheet h3')||{}).textContent||'',
+   dep:/(۲|2) پیگیری منتظر/.test((document.querySelector('#sheet .hint')||{}).textContent||'')}));
+ ok(sh.img&&sh.dep,'برگه: تصویر چارت و «۲ پیگیری منتظر همین عددهاست»');
+ await p.fill('#f_st','0.25');await p.fill('#f_tp','0.32، 0.36');
+ await p.evaluate(()=>{AUDQ.at=Date.now();});
+ await p.click('#sheet #ok');await p.waitForTimeout(300);
+ const af=await p.evaluate(()=>{const P=id=>POSTS.find(x=>x.id===id);
+   const o=OVERRIDE['ccoineres/9101'], a=audInput(P('ccoineres/9101')), b=audInput(P('ccoineres/9102')), c=audInput(P('ccoineres/9103'));
+   return {o:[o.stop,o.tps.join(','),o.dir,o.sig],a:[a.mktE,a.stop,audPre(a)],b:[b.stop,b.tgs.join(','),b.inh&&b.inh.id,audPre(b)],c:[c.entry,c.stop,c.tps.join(',')]};});
+ console.log('   ',JSON.stringify(af));
+ ok(af.o.join('/')==='0.25/0.32,0.36/long/true','عددها ثبت شد (استاپ، تارگت‌ها، جهت)');
+ ok(af.a[0]&&af.a[1]===0.25&&af.a[2]===null,'خودِ پست تصویری: ورود بازار، قابل سنجش');
+ ok(af.b.join('/')==='0.25/0.32,0.36/ccoineres/9101/','پیگیری «ورود مجدد مجازه» استاپ و تارگت‌ها را از همان پست می‌گیرد');
+ ok(af.c.join('/')==='0.3/0.25/0.32,0.36','پیگیری «تریگر 0.3» هم');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');})();

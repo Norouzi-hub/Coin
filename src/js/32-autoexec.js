@@ -633,6 +633,60 @@ function renderAudit(){
 /* پنل «وضعیت سنجش»: جواب مستقیمِ «چرا کانال‌سنج سیگنال‌ها را نمی‌خواند؟»
    چند پست سیگنال شناخته شد، چند تا سنجیده شد، بقیه به چه دلیل نه، و آخرین خطای شبکه.
    دکمه‌ی آزمایش، از هر منبع کندلِ بیت‌کوین را می‌گیرد تا معلوم شود کدام از مسیرِ تو باز است. */
+/* برای سازنده: سیگنالِ اصلی‌ای که استاپ از آن آمد (یا باید می‌آمد) هم کنار پیگیری کپی شود */
+function audParentTxt(inp){
+  const ref=inp&&(inp.inh||inp.need);if(!ref||ref.id==null)return '';
+  const q=POSTS.find(x=>x.id===ref.id);if(!q)return '';
+  return '\n↳ سیگنال اصلی'+(q.img?' (تصویری)':'')+': '+String(q.origText||q.text||'').slice(0,200).replace(/\n+/g,' ');
+}
+/* «تکمیل از روی چارت»: کانال سیگنال اصلی را تصویر می‌دهد («#MOVR» + چارت) و پیگیری‌ها
+   («ورود مجدد مجازه») به آن تکیه دارند. عددها را یک بار از روی تصویر وارد کن؛ خودِ پست و همه‌ی
+   پیگیری‌هایش سنجیده می‌شوند. ورودِ خالی = قیمت بازار در لحظه‌ی انتشار. */
+function sheetImgFill(ids,need,i){
+  const p=POSTS.find(x=>x.id===ids[i]);
+  if(!p){if(i+1<ids.length)return sheetImgFill(ids,need,i+1);closeSheet();renderAll();audRun();return;}
+  const ov=OVERRIDE[p.id]||{}, g=p.origText?parseSignal(p.origText):parseSignal(p.text,p.id);
+  const tk=ov.ticker||g.ticker||'', dir=ov.dir||g.direction||'long';
+  const v=x=>x==null?'':x;
+  openSheet('<h3>تکمیل از روی چارت · '+faN(i+1)+' از '+faN(ids.length)+'</h3>'+
+   '<div class="hint"><b dir="ltr">'+esc(tk)+'</b> · '+(p.date?jStampFa(p.date):'')+' · '+
+     faN(need.get(p.id)||0)+' پیگیری منتظر همین عددهاست</div>'+
+   (p.img?'<a class="imgfill" href="'+esc(p.img)+'" target="_blank" rel="noopener"><img src="'+esc(p.img)+'" alt="چارت"></a>':
+     '<div class="hint">تصویری ذخیره نشده — '+(p.link?'<a href="'+esc(p.link)+'" target="_blank" rel="noopener">پست را در تلگرام ببین</a>':'متن پست را ببین')+'</div>')+
+   '<div class="audtxt">'+esc(p.origText||p.text||'')+'</div>'+
+   '<div class="hint" id="ifPx"></div>'+
+   '<div class="grid" style="margin-top:8px">'+
+     '<div class="fld"><label>جهت</label><select id="f_d"><option value="long"'+(dir==='long'?' selected':'')+'>لانگ</option>'+
+       '<option value="short"'+(dir==='short'?' selected':'')+'>شورت</option></select></div>'+
+     fldHtml('en','ورود (خالی = قیمت انتشار)',v(ov.entry!=null?ov.entry:g.entry))+
+   '</div><div class="grid" style="margin-top:8px">'+
+     fldHtml('st','حد ضرر',v(ov.stop!=null?ov.stop:g.stop))+
+     '<div class="fld"><label for="f_tp">تارگت‌ها</label><input id="f_tp" dir="ltr" inputmode="decimal" placeholder="1.2, 1.35" value="'+
+       esc((ov.tps&&ov.tps.length?ov.tps:(g.targets||[])).join(', '))+'"></div>'+
+   '</div>'+
+   '<div class="srow"><button class="btn pri" id="ok">ثبت'+(i+1<ids.length?' و بعدی':'')+'</button>'+
+     (i+1<ids.length?'<button class="btn" id="sk">بعدی</button>':'')+'<button class="btn" id="cx">بستن</button></div>',
+   ()=>{
+     $('#cx').onclick=()=>{closeSheet();renderAll();audRun();};
+     const nx=()=>i+1<ids.length?sheetImgFill(ids,need,i+1):(closeSheet(),renderAll(),audRun());
+     if($('#sk'))$('#sk').onclick=nx;
+     // قیمتِ لحظه‌ی انتشار، تا عددی که از چارت می‌خوانی با بازار مقایسه شود
+     if(tk&&p.date)audCandles(tk,'5m',Math.ceil(+p.date/3e5)*3e5,1,true).then(C=>{
+       const n=$('#ifPx');if(n&&C&&C[0])n.innerHTML='قیمت بازار هنگام انتشار: <b dir="ltr">'+fmtPrice(C[0].o)+'</b>';}).catch(()=>{});
+     $('#ok').onclick=()=>{
+       const st=num('f_st');
+       if(!st){toast('حد ضرر را از روی چارت بنویس','err');return;}
+       const tps=normDig($('#f_tp').value||'').split(/[\s,،;/]+/).map(x=>parseFloat(x)).filter(x=>isFinite(x)&&x>0);
+       const o=Object.assign({},OVERRIDE[p.id],{sig:true,ticker:tk||undefined,dir:$('#f_d').value,stop:st});
+       const en=num('f_en');if(en!=null)o.entry=en;else delete o.entry;
+       if(tps.length)o.tps=tps;else delete o.tps;
+       if(!o.ticker)delete o.ticker;
+       OVERRIDE[p.id]=o;DB.overrides=OVERRIDE;save();PCACHE.delete(p.id);
+       toast('عددهای '+(tk||'سیگنال')+' ثبت شد','ok');
+       nx();
+     };
+   });
+}
 function buildAudDiag(all){
   const nSig=POSTS.filter(p=>bucketOf(p)!=='les'&&postKind(p)==='sig').length;
   let done=0,open=0,todo=0;const why={};
@@ -661,14 +715,24 @@ function buildAudDiag(all){
     for(const [k,n] of Object.entries(why).sort((a,b)=>b[1]-a[1]))
       ul.appendChild(el('li',null,'<b>'+faN(n)+'</b> '+esc(AUD_WHY[k]||k)+
         (k==='nocandle'?' — «آزمایش اتصال» را بزن':
+         k==='img-sl'?' — «تکمیل از روی چارت» را بزن':
          k==='no-stop'||k==='no-entry'||k==='no-ticker'?' — در فهرست پایین «اصلاح عددها» را بزن':'')));
     d.appendChild(ul);
+    // پست‌های تصویری که پیگیری‌ها منتظر عددهایشان‌اند؛ پرتکرارترین اول
+    const need=new Map();
+    for(const x of all)if(x.r&&x.r.st==='bad'&&x.r.why==='img-sl'&&x.inp.need)need.set(x.inp.need.id,(need.get(x.inp.need.id)||0)+(x.p.id===x.inp.need.id?0:1));
+    if(need.size){
+      const ids=[...need.entries()].sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+      const fb=el('button','btn sm pri',ic('edit')+'<span>تکمیل از روی چارت ('+faN(ids.length)+' پست)</span>');
+      fb.onclick=()=>sheetImgFill(ids,need,0);
+      const r=el('div','srow');r.appendChild(fb);d.appendChild(r);
+    }
     // متنِ سیگنال‌های بی‌استاپ/بی‌ورود برای فرستادن به سازنده، تا الگوی خواندنشان اضافه شود
-    const bad=all.filter(x=>x.r&&x.r.st==='bad'&&['no-stop','no-entry','px','bad-stop','far-sl'].includes(x.r.why));
+    const bad=all.filter(x=>x.r&&x.r.st==='bad'&&['no-stop','no-entry','px','bad-stop','far-sl','img-sl'].includes(x.r.why));
     if(bad.length){
       const cp=el('button','btn sm',ic('share')+'<span>کپی متن '+faN(bad.length)+' سیگنالِ ناقص</span>');
       cp.onclick=async()=>{
-        const txt=bad.slice(0,40).map((x,i)=>'#'+(i+1)+' ['+(AUD_WHY[x.r.why]||x.r.why)+']\n'+String(x.p.origText||x.p.text||'').slice(0,600)).join('\n\n———\n\n');
+        const txt=bad.slice(0,40).map((x,i)=>'#'+(i+1)+' ['+(AUD_WHY[x.r.why]||x.r.why)+']\n'+String(x.p.origText||x.p.text||'').slice(0,600)+audParentTxt(x.inp)).join('\n\n———\n\n');
         try{await navigator.clipboard.writeText(txt);toast('متن '+faN(Math.min(40,bad.length))+' سیگنال کپی شد؛ برای سازنده بفرست','ok');}
         catch(e){openSheet('<h3>متن سیگنال‌های ناقص</h3><textarea class="cptxt" readonly>'+esc(txt)+'</textarea>',sh=>{const ta=sh.querySelector('textarea');ta.focus();ta.select();});}
       };

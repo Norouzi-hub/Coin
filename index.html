@@ -574,6 +574,8 @@ html{overscroll-behavior-y:contain}
 .audtl time{display:block;font-size:12px;color:var(--tx3);font-variant-numeric:tabular-nums}
 .audtxt,.atxt{white-space:pre-wrap;font-size:12.5px;line-height:1.9;color:var(--tx2)}
 .audtxt{background:var(--inset);border-radius:var(--r2);padding:10px 12px}
+.imgfill{display:block;margin:8px 0;border-radius:var(--r2);overflow:hidden;background:var(--inset)}
+.imgfill img{display:block;width:100%;max-height:46vh;object-fit:contain}
 tr.tap{cursor:pointer}
 tr.tap:hover td{background:var(--card2)}
 .panelhead b{font-size:15px}
@@ -2746,7 +2748,7 @@ const RX={
   levx:/\b(\d{1,3})\s*[xX]\b/,
   trg:new RegExp('(?:تریگر|\\btrigger\\b)(?:\\s*ورود)?\\s*(?:رو|روی|:|：|=|-)?\\s*'+NUM,'i'),
   brk:new RegExp('شکست\\s*(?:رو|روی|از)?\\s*'+NUM,'i'),
-  avg:new RegExp('(?:رو|روی|در)\\s*'+NUM+'\\s*میانگین','i')
+  avg:new RegExp('(?:رو|روی|در)\\s*'+NUM+'\\s*(?:میانگین|اضافه)','i')
 };
 /* پست‌هایی که شکل سیگنال دارند ولی سیگنال نیستند (از نمونه‌های واقعی کانال):
    هشدار لیکوئید («🟢 #BTC Liquidated Short: $89.5K at $85444») خطِ خبرِ بازار است و نمادش
@@ -2762,7 +2764,7 @@ const RX_GO=/(?:ورود|لانگ|شورت)[^\n\d]{0,20}?مجاز|یک[\s\u200c]
 const RX_KW={stop:'حد\\s*ضرر|حدضرر|استاپ\\s*لاس|استاپ|stop\\s*-?\\s*loss|\\bsl\\b',
   entry:'ورود|انتری|\\bentry\\b|\\bbuy\\b|خرید|بخر'};
 const RX_GAPSTOP=/تارگت|هدف|تی\s*پی|\btp\d?\b|\btarget\b|حد\s*ضرر|استاپ|\bsl\b|ورود|\bentry\b|اهرم|لوریج/i;
-const RX_NOTPX=/^[ \t]*(?:ساعت|روز|دقیقه|هفته|ماه|کندل|پله|مرحله|بار|میانگین|[xX]\b|h\b|d\b|min\b)/i;
+const RX_NOTPX=/^[ \t]*(?:ساعت|روز|دقیقه|هفته|ماه|کندل|پله|مرحله|بار|میانگین|اضافه|[xX]\b|h\b|d\b|min\b)/i;
 const RX_PCT=/^[ \t]*(?:%|٪|درصد)/;
 function kwNum(t,kw){
   const re=new RegExp(kw,'gi');let m;
@@ -2815,7 +2817,8 @@ function parseSignal(raw,id){
   const eOwn=entry;                                     // ورودِ صریح، نه تریگر
   if(entry==null&&trig!=null)entry=trig;
   const direction=/\bshort\b|شورت|فروش|ریزش/i.test(t)?'short':'long';
-  const dirSet=direction==='short'||/\blong\b|لانگ|خرید|بخر/i.test(t);
+  // «بالای X ببنده ورود» شکستِ رو به بالاست، یعنی لانگ
+  const dirSet=direction==='short'||/\blong\b|لانگ|خرید|بخر/i.test(t)||RX.above.test(t);
   let stop=okAt(sm)?cleanNum(sm[1],sm[2]):null;
   if(stop==null){const k=kwNum(t,RX_KW.stop);
     if(k&&k.v!=null)stop=k.v;
@@ -2840,10 +2843,14 @@ function parseSignal(raw,id){
   if(id)PCACHE.set(id,{v:SYMVER,r});
   return r;
 }
+/* سیگنالِ تصویری: کانال گاهی فقط «#MOVR» می‌نویسد و ورود و استاپ و تارگت روی چارتِ پیوست است */
+const bareImg=(p,r)=>!!(p&&p.img&&r&&r.ticker&&
+  normDig(p.origText||p.text||'').replace(/[#$][A-Za-z][A-Za-z0-9_]*/g,'').replace(/[\s.،:!🟢🔴✅]+/g,'').length<=12);
 /* نتیجه‌ی parseSignal کش می‌شود، پس هیچ‌وقت خودش را دست نمی‌زنیم؛ یک رونوشت برمی‌گردانیم
    که نماد و «سیگنال بودن» دستیِ کاربر رویش نشسته است. */
 function sigOf(p){
-  const r=parseSignal(p.text,p.id), ov=OVERRIDE[p.id];
+  let r=parseSignal(p.text,p.id);const ov=OVERRIDE[p.id];
+  if(!r.isSignal&&bareImg(p,r))r=Object.assign({},r,{isSignal:true,imgOnly:true});
   if(!ov||(ov.ticker==null&&ov.sig==null&&ov.market==null))return r;
   const o=Object.assign({},r);
   if(ov.ticker)o.ticker=ov.ticker;
@@ -7743,6 +7750,7 @@ const AUD_WHY={
   'no-date':'زمان انتشار معلوم نیست',
   'bad-stop':'استاپ با جهت معامله نمی‌خواند',
   'px':'قیمتِ اعلامی با قیمت بازار در لحظه‌ی انتشار بیش از 30٪ فاصله دارد — احتمالاً نماد اشتباه خوانده شده',
+  'img-sl':'عددهای سیگنالِ اصلی روی تصویر چارت است',
   'nocandle':'کندلِ این نماد از هیچ منبعی نیامد',
   'far-sl':'استاپِ گرفته‌شده از سیگنالِ قبلیِ همین نماد بیش از 30٪ با ورود فاصله دارد'
 };
@@ -7751,28 +7759,42 @@ const AUD_NONE={timeout:'قیمت در مهلت ورود به نقطه‌ی ور
   inval:'قبل از فعال شدنِ ورود، قیمت از استاپ گذشت'};
 
 /* پست‌های پیگیریِ کانال («ورود مجدد مجازید»، «تریگر 0.0133 ست کنید»، «اگر 4 ساعته بالای 83700
-   بست ورود مجازه») استاپ و تارگت را تکرار نمی‌کنند؛ همان‌های آخرین سیگنالِ استاپ‌دارِ همین
-   نماد (تا ۴۵ روز پیش) معتبر است. نمایه یک بار ساخته می‌شود، نه برای هر پست. */
+   بست ورود مجازه») استاپ و تارگت را تکرار نمی‌کنند؛ مالِ سیگنالِ اصلیِ همین نماد است.
+   از جدید به قدیم (تا ۴۵ روز) می‌گردیم: اولین سیگنالِ استاپ‌داری که با ورود و جهتِ پیگیری
+   جور است. پیگیری‌های بی‌استاپ رد می‌شوند؛ ولی اگر به پستِ تصویریِ بی‌عدد رسیدیم («#MOVR» +
+   چارت)، عددها روی همان تصویر است: need برمی‌گردد تا کاربر یک بار از روی چارت واردشان کند.
+   نمایه یک بار ساخته می‌شود، نه برای هر پست. */
 let PREVIX=null,PREVV='';
-function prevSigOf(p,tk){
+function sigIdx(){
   const v=POSTS.length+'|'+(POSTS[0]&&POSTS[0].id)+'|'+SYMVER+'|'+KGEN;
-  if(v!==PREVV){
-    PREVV=v;PREVIX=new Map();
-    for(const q of POSTS){
-      if(!q.date)continue;
-      const ov=OVERRIDE[q.id]||{}, g=q.origText?parseSignal(q.origText):parseSignal(q.text,q.id);
-      const t=ov.ticker||g.ticker, st=ov.stop!=null?ov.stop:g.stop;
-      if(!t||!st||!(ov.sig!=null?ov.sig:g.isSignal)||(ov.sig!==true&&isRes(q)))continue;
-      if(!PREVIX.has(t))PREVIX.set(t,[]);
-      PREVIX.get(t).push({t:+q.date,id:q.id,stop:st,tps:g.targets||[],dir:ov.dir||g.direction});
-    }
-    for(const l of PREVIX.values())l.sort((a,b)=>a.t-b.t);
+  if(v===PREVV)return PREVIX;
+  PREVV=v;PREVIX=new Map();
+  for(const q of POSTS){
+    if(!q.date)continue;
+    const ov=OVERRIDE[q.id]||{}, g=q.origText?parseSignal(q.origText):parseSignal(q.text,q.id);
+    const t=ov.ticker||g.ticker;
+    if(!t||!(ov.sig!=null?ov.sig:(g.isSignal||bareImg(q,g)))||(ov.sig!==true&&isRes(q)))continue;
+    if(!PREVIX.has(t))PREVIX.set(t,[]);
+    PREVIX.get(t).push({t:+q.date,id:q.id,stop:ov.stop!=null?ov.stop:g.stop,
+      tps:ov.tps&&ov.tps.length?ov.tps:(g.targets||[]),dir:ov.dir||g.direction,img:!!q.img});
   }
-  const l=PREVIX.get(tk), t0=p.date?+p.date:0;
+  for(const l of PREVIX.values())l.sort((a,b)=>b.t-a.t);        // جدید به قدیم
+  return PREVIX;
+}
+function prevSigOf(p,tk,E,dir){
+  const l=sigIdx().get(tk), t0=p.date?+p.date:0;
   if(!l||!t0)return null;
-  let best=null;
-  for(const x of l){if(x.t>=t0)break;if(x.id!==p.id&&t0-x.t<=45*DAY)best=x;}
-  return best;
+  for(const x of l){
+    if(x.t>=t0||x.id===p.id)continue;
+    if(t0-x.t>45*DAY)break;
+    if(x.stop){
+      const d=dir||(E?(E>x.stop?'long':'short'):x.dir);
+      if(E&&(E-x.stop)*(d==='long'?1:-1)<=0)continue;            // با این ورود و جهت نمی‌خواند
+      return {id:x.id,t:x.t,stop:x.stop,tps:x.tps,dir:d};
+    }
+    if(x.img)return {need:x.id,t:x.t};
+  }
+  return null;
 }
 /* تارگت‌های در جهتِ سود از ورود؛ اگر کانال نداده، تارگت اولِ تنظیماتِ خودت (به R) فرض و صریح نوشته می‌شود */
 function audTps(inp){
@@ -7794,23 +7816,32 @@ function audInput(p){
   const ov=OVERRIDE[p.id]||{};
   const base=p.origText?parseSignal(p.origText):parseSignal(p.text,p.id);
   const sig=Object.assign({},base);
+  if(!sig.isSignal&&bareImg(p,sig))sig.isSignal=true;
   if(ov.ticker)sig.ticker=ov.ticker;
   if(ov.sig!=null)sig.isSignal=!!ov.sig;
   if(ov.market){sig.market=ov.market;sig.marketGuess=false;}
   if(ov.trigger!=null)sig.trigger=ov.trigger;
   if(!sig.isSignal)return null;
   if(ov.sig!==true&&isRes(p))return null;      // پستِ نتیجه سیگنالِ تازه نیست
-  const inh=sig.stop==null&&ov.stop==null&&sig.ticker?prevSigOf(p,sig.ticker):null;
-  if(inh){
-    sig.stop=inh.stop;
-    if(!sig.dirSet)sig.direction=inh.dir;
-    if(!(sig.targets||[]).length)sig.targets=inh.tps;
+  if(ov.tps&&ov.tps.length)sig.targets=ov.tps;
+  let inh=null,need=null;
+  if(sig.stop==null&&ov.stop==null&&sig.ticker){
+    // پستِ تصویریِ خودش: عددها روی چارت است، نه در سیگنالِ قبلی
+    if(p.img&&sig.entry==null&&sig.trigger==null&&!sig.mktEntry)need={id:p.id,t:p.date?+p.date:0};
+    else{
+      const E0=ov.entry!=null?ov.entry:(sig.entry!=null?sig.entry:sig.trigger);
+      const q=prevSigOf(p,sig.ticker,E0,ov.dir||(sig.dirSet?sig.direction:null));
+      if(q&&q.stop){inh=q;sig.stop=q.stop;if(!ov.dir)sig.direction=q.dir;
+        if(!(sig.targets||[]).length)sig.targets=q.tps;}
+      else if(q)need={id:q.need,t:q.t};
+    }
   }
   const I=planInputsOf(p,sig,ov,null);
-  const mktE=!I.entry&&ov.entry==null&&!!sig.mktEntry;
+  // ورود عددی نیست ولی استاپ هست (از متن، از تو، یا از سیگنال قبلی): ورود بازار
+  const mktE=!I.entry&&ov.entry==null&&(!!sig.mktEntry||!!I.stop);
   const inp={tk:sig.ticker||null,dir:I.dir,entry:I.entry||null,trig:sig.trigger!=null?sig.trigger:null,
     stop:I.stop||null,tgs:sig.targets||[],mkt:I.market,t0:p.date?+p.date:null,
-    mktE,inh:inh?{id:inh.id,t:inh.t}:null};
+    mktE,inh:inh?{id:inh.id,t:inh.t}:null,need};
   audTps(inp);
   const a=mktE?AUD[p.id]:null;
   if(a&&a.e0&&a.k===audKey(inp,audRules())){inp.entry=a.e0;audTps(inp);}
@@ -7821,6 +7852,7 @@ const audKey=(inp,R)=>JSON.stringify([inp.tk,inp.dir,inp.mktE?'mkt':inp.entry,in
   R.days,R.entryDays,R.tol]);
 function audPre(inp){
   if(!inp.tk)return 'no-ticker';
+  if(!inp.stop&&inp.need)return 'img-sl';
   if(!inp.entry&&!inp.mktE)return 'no-entry';
   if(!inp.stop)return 'no-stop';
   if(!inp.t0)return 'no-date';
@@ -10981,6 +11013,60 @@ function renderAudit(){
 /* پنل «وضعیت سنجش»: جواب مستقیمِ «چرا کانال‌سنج سیگنال‌ها را نمی‌خواند؟»
    چند پست سیگنال شناخته شد، چند تا سنجیده شد، بقیه به چه دلیل نه، و آخرین خطای شبکه.
    دکمه‌ی آزمایش، از هر منبع کندلِ بیت‌کوین را می‌گیرد تا معلوم شود کدام از مسیرِ تو باز است. */
+/* برای سازنده: سیگنالِ اصلی‌ای که استاپ از آن آمد (یا باید می‌آمد) هم کنار پیگیری کپی شود */
+function audParentTxt(inp){
+  const ref=inp&&(inp.inh||inp.need);if(!ref||ref.id==null)return '';
+  const q=POSTS.find(x=>x.id===ref.id);if(!q)return '';
+  return '\n↳ سیگنال اصلی'+(q.img?' (تصویری)':'')+': '+String(q.origText||q.text||'').slice(0,200).replace(/\n+/g,' ');
+}
+/* «تکمیل از روی چارت»: کانال سیگنال اصلی را تصویر می‌دهد («#MOVR» + چارت) و پیگیری‌ها
+   («ورود مجدد مجازه») به آن تکیه دارند. عددها را یک بار از روی تصویر وارد کن؛ خودِ پست و همه‌ی
+   پیگیری‌هایش سنجیده می‌شوند. ورودِ خالی = قیمت بازار در لحظه‌ی انتشار. */
+function sheetImgFill(ids,need,i){
+  const p=POSTS.find(x=>x.id===ids[i]);
+  if(!p){if(i+1<ids.length)return sheetImgFill(ids,need,i+1);closeSheet();renderAll();audRun();return;}
+  const ov=OVERRIDE[p.id]||{}, g=p.origText?parseSignal(p.origText):parseSignal(p.text,p.id);
+  const tk=ov.ticker||g.ticker||'', dir=ov.dir||g.direction||'long';
+  const v=x=>x==null?'':x;
+  openSheet('<h3>تکمیل از روی چارت · '+faN(i+1)+' از '+faN(ids.length)+'</h3>'+
+   '<div class="hint"><b dir="ltr">'+esc(tk)+'</b> · '+(p.date?jStampFa(p.date):'')+' · '+
+     faN(need.get(p.id)||0)+' پیگیری منتظر همین عددهاست</div>'+
+   (p.img?'<a class="imgfill" href="'+esc(p.img)+'" target="_blank" rel="noopener"><img src="'+esc(p.img)+'" alt="چارت"></a>':
+     '<div class="hint">تصویری ذخیره نشده — '+(p.link?'<a href="'+esc(p.link)+'" target="_blank" rel="noopener">پست را در تلگرام ببین</a>':'متن پست را ببین')+'</div>')+
+   '<div class="audtxt">'+esc(p.origText||p.text||'')+'</div>'+
+   '<div class="hint" id="ifPx"></div>'+
+   '<div class="grid" style="margin-top:8px">'+
+     '<div class="fld"><label>جهت</label><select id="f_d"><option value="long"'+(dir==='long'?' selected':'')+'>لانگ</option>'+
+       '<option value="short"'+(dir==='short'?' selected':'')+'>شورت</option></select></div>'+
+     fldHtml('en','ورود (خالی = قیمت انتشار)',v(ov.entry!=null?ov.entry:g.entry))+
+   '</div><div class="grid" style="margin-top:8px">'+
+     fldHtml('st','حد ضرر',v(ov.stop!=null?ov.stop:g.stop))+
+     '<div class="fld"><label for="f_tp">تارگت‌ها</label><input id="f_tp" dir="ltr" inputmode="decimal" placeholder="1.2, 1.35" value="'+
+       esc((ov.tps&&ov.tps.length?ov.tps:(g.targets||[])).join(', '))+'"></div>'+
+   '</div>'+
+   '<div class="srow"><button class="btn pri" id="ok">ثبت'+(i+1<ids.length?' و بعدی':'')+'</button>'+
+     (i+1<ids.length?'<button class="btn" id="sk">بعدی</button>':'')+'<button class="btn" id="cx">بستن</button></div>',
+   ()=>{
+     $('#cx').onclick=()=>{closeSheet();renderAll();audRun();};
+     const nx=()=>i+1<ids.length?sheetImgFill(ids,need,i+1):(closeSheet(),renderAll(),audRun());
+     if($('#sk'))$('#sk').onclick=nx;
+     // قیمتِ لحظه‌ی انتشار، تا عددی که از چارت می‌خوانی با بازار مقایسه شود
+     if(tk&&p.date)audCandles(tk,'5m',Math.ceil(+p.date/3e5)*3e5,1,true).then(C=>{
+       const n=$('#ifPx');if(n&&C&&C[0])n.innerHTML='قیمت بازار هنگام انتشار: <b dir="ltr">'+fmtPrice(C[0].o)+'</b>';}).catch(()=>{});
+     $('#ok').onclick=()=>{
+       const st=num('f_st');
+       if(!st){toast('حد ضرر را از روی چارت بنویس','err');return;}
+       const tps=normDig($('#f_tp').value||'').split(/[\s,،;/]+/).map(x=>parseFloat(x)).filter(x=>isFinite(x)&&x>0);
+       const o=Object.assign({},OVERRIDE[p.id],{sig:true,ticker:tk||undefined,dir:$('#f_d').value,stop:st});
+       const en=num('f_en');if(en!=null)o.entry=en;else delete o.entry;
+       if(tps.length)o.tps=tps;else delete o.tps;
+       if(!o.ticker)delete o.ticker;
+       OVERRIDE[p.id]=o;DB.overrides=OVERRIDE;save();PCACHE.delete(p.id);
+       toast('عددهای '+(tk||'سیگنال')+' ثبت شد','ok');
+       nx();
+     };
+   });
+}
 function buildAudDiag(all){
   const nSig=POSTS.filter(p=>bucketOf(p)!=='les'&&postKind(p)==='sig').length;
   let done=0,open=0,todo=0;const why={};
@@ -11009,14 +11095,24 @@ function buildAudDiag(all){
     for(const [k,n] of Object.entries(why).sort((a,b)=>b[1]-a[1]))
       ul.appendChild(el('li',null,'<b>'+faN(n)+'</b> '+esc(AUD_WHY[k]||k)+
         (k==='nocandle'?' — «آزمایش اتصال» را بزن':
+         k==='img-sl'?' — «تکمیل از روی چارت» را بزن':
          k==='no-stop'||k==='no-entry'||k==='no-ticker'?' — در فهرست پایین «اصلاح عددها» را بزن':'')));
     d.appendChild(ul);
+    // پست‌های تصویری که پیگیری‌ها منتظر عددهایشان‌اند؛ پرتکرارترین اول
+    const need=new Map();
+    for(const x of all)if(x.r&&x.r.st==='bad'&&x.r.why==='img-sl'&&x.inp.need)need.set(x.inp.need.id,(need.get(x.inp.need.id)||0)+(x.p.id===x.inp.need.id?0:1));
+    if(need.size){
+      const ids=[...need.entries()].sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+      const fb=el('button','btn sm pri',ic('edit')+'<span>تکمیل از روی چارت ('+faN(ids.length)+' پست)</span>');
+      fb.onclick=()=>sheetImgFill(ids,need,0);
+      const r=el('div','srow');r.appendChild(fb);d.appendChild(r);
+    }
     // متنِ سیگنال‌های بی‌استاپ/بی‌ورود برای فرستادن به سازنده، تا الگوی خواندنشان اضافه شود
-    const bad=all.filter(x=>x.r&&x.r.st==='bad'&&['no-stop','no-entry','px','bad-stop','far-sl'].includes(x.r.why));
+    const bad=all.filter(x=>x.r&&x.r.st==='bad'&&['no-stop','no-entry','px','bad-stop','far-sl','img-sl'].includes(x.r.why));
     if(bad.length){
       const cp=el('button','btn sm',ic('share')+'<span>کپی متن '+faN(bad.length)+' سیگنالِ ناقص</span>');
       cp.onclick=async()=>{
-        const txt=bad.slice(0,40).map((x,i)=>'#'+(i+1)+' ['+(AUD_WHY[x.r.why]||x.r.why)+']\n'+String(x.p.origText||x.p.text||'').slice(0,600)).join('\n\n———\n\n');
+        const txt=bad.slice(0,40).map((x,i)=>'#'+(i+1)+' ['+(AUD_WHY[x.r.why]||x.r.why)+']\n'+String(x.p.origText||x.p.text||'').slice(0,600)+audParentTxt(x.inp)).join('\n\n———\n\n');
         try{await navigator.clipboard.writeText(txt);toast('متن '+faN(Math.min(40,bad.length))+' سیگنال کپی شد؛ برای سازنده بفرست','ok');}
         catch(e){openSheet('<h3>متن سیگنال‌های ناقص</h3><textarea class="cptxt" readonly>'+esc(txt)+'</textarea>',sh=>{const ta=sh.querySelector('textarea');ta.focus();ta.select();});}
       };

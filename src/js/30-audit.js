@@ -19,6 +19,7 @@ const AUD_WHY={
   'no-date':'زمان انتشار معلوم نیست',
   'bad-stop':'استاپ با جهت معامله نمی‌خواند',
   'px':'قیمتِ اعلامی با قیمت بازار در لحظه‌ی انتشار بیش از 30٪ فاصله دارد — احتمالاً نماد اشتباه خوانده شده',
+  'img-sl':'عددهای سیگنالِ اصلی روی تصویر چارت است',
   'nocandle':'کندلِ این نماد از هیچ منبعی نیامد',
   'far-sl':'استاپِ گرفته‌شده از سیگنالِ قبلیِ همین نماد بیش از 30٪ با ورود فاصله دارد'
 };
@@ -27,28 +28,42 @@ const AUD_NONE={timeout:'قیمت در مهلت ورود به نقطه‌ی ور
   inval:'قبل از فعال شدنِ ورود، قیمت از استاپ گذشت'};
 
 /* پست‌های پیگیریِ کانال («ورود مجدد مجازید»، «تریگر 0.0133 ست کنید»، «اگر 4 ساعته بالای 83700
-   بست ورود مجازه») استاپ و تارگت را تکرار نمی‌کنند؛ همان‌های آخرین سیگنالِ استاپ‌دارِ همین
-   نماد (تا ۴۵ روز پیش) معتبر است. نمایه یک بار ساخته می‌شود، نه برای هر پست. */
+   بست ورود مجازه») استاپ و تارگت را تکرار نمی‌کنند؛ مالِ سیگنالِ اصلیِ همین نماد است.
+   از جدید به قدیم (تا ۴۵ روز) می‌گردیم: اولین سیگنالِ استاپ‌داری که با ورود و جهتِ پیگیری
+   جور است. پیگیری‌های بی‌استاپ رد می‌شوند؛ ولی اگر به پستِ تصویریِ بی‌عدد رسیدیم («#MOVR» +
+   چارت)، عددها روی همان تصویر است: need برمی‌گردد تا کاربر یک بار از روی چارت واردشان کند.
+   نمایه یک بار ساخته می‌شود، نه برای هر پست. */
 let PREVIX=null,PREVV='';
-function prevSigOf(p,tk){
+function sigIdx(){
   const v=POSTS.length+'|'+(POSTS[0]&&POSTS[0].id)+'|'+SYMVER+'|'+KGEN;
-  if(v!==PREVV){
-    PREVV=v;PREVIX=new Map();
-    for(const q of POSTS){
-      if(!q.date)continue;
-      const ov=OVERRIDE[q.id]||{}, g=q.origText?parseSignal(q.origText):parseSignal(q.text,q.id);
-      const t=ov.ticker||g.ticker, st=ov.stop!=null?ov.stop:g.stop;
-      if(!t||!st||!(ov.sig!=null?ov.sig:g.isSignal)||(ov.sig!==true&&isRes(q)))continue;
-      if(!PREVIX.has(t))PREVIX.set(t,[]);
-      PREVIX.get(t).push({t:+q.date,id:q.id,stop:st,tps:g.targets||[],dir:ov.dir||g.direction});
-    }
-    for(const l of PREVIX.values())l.sort((a,b)=>a.t-b.t);
+  if(v===PREVV)return PREVIX;
+  PREVV=v;PREVIX=new Map();
+  for(const q of POSTS){
+    if(!q.date)continue;
+    const ov=OVERRIDE[q.id]||{}, g=q.origText?parseSignal(q.origText):parseSignal(q.text,q.id);
+    const t=ov.ticker||g.ticker;
+    if(!t||!(ov.sig!=null?ov.sig:(g.isSignal||bareImg(q,g)))||(ov.sig!==true&&isRes(q)))continue;
+    if(!PREVIX.has(t))PREVIX.set(t,[]);
+    PREVIX.get(t).push({t:+q.date,id:q.id,stop:ov.stop!=null?ov.stop:g.stop,
+      tps:ov.tps&&ov.tps.length?ov.tps:(g.targets||[]),dir:ov.dir||g.direction,img:!!q.img});
   }
-  const l=PREVIX.get(tk), t0=p.date?+p.date:0;
+  for(const l of PREVIX.values())l.sort((a,b)=>b.t-a.t);        // جدید به قدیم
+  return PREVIX;
+}
+function prevSigOf(p,tk,E,dir){
+  const l=sigIdx().get(tk), t0=p.date?+p.date:0;
   if(!l||!t0)return null;
-  let best=null;
-  for(const x of l){if(x.t>=t0)break;if(x.id!==p.id&&t0-x.t<=45*DAY)best=x;}
-  return best;
+  for(const x of l){
+    if(x.t>=t0||x.id===p.id)continue;
+    if(t0-x.t>45*DAY)break;
+    if(x.stop){
+      const d=dir||(E?(E>x.stop?'long':'short'):x.dir);
+      if(E&&(E-x.stop)*(d==='long'?1:-1)<=0)continue;            // با این ورود و جهت نمی‌خواند
+      return {id:x.id,t:x.t,stop:x.stop,tps:x.tps,dir:d};
+    }
+    if(x.img)return {need:x.id,t:x.t};
+  }
+  return null;
 }
 /* تارگت‌های در جهتِ سود از ورود؛ اگر کانال نداده، تارگت اولِ تنظیماتِ خودت (به R) فرض و صریح نوشته می‌شود */
 function audTps(inp){
@@ -70,23 +85,32 @@ function audInput(p){
   const ov=OVERRIDE[p.id]||{};
   const base=p.origText?parseSignal(p.origText):parseSignal(p.text,p.id);
   const sig=Object.assign({},base);
+  if(!sig.isSignal&&bareImg(p,sig))sig.isSignal=true;
   if(ov.ticker)sig.ticker=ov.ticker;
   if(ov.sig!=null)sig.isSignal=!!ov.sig;
   if(ov.market){sig.market=ov.market;sig.marketGuess=false;}
   if(ov.trigger!=null)sig.trigger=ov.trigger;
   if(!sig.isSignal)return null;
   if(ov.sig!==true&&isRes(p))return null;      // پستِ نتیجه سیگنالِ تازه نیست
-  const inh=sig.stop==null&&ov.stop==null&&sig.ticker?prevSigOf(p,sig.ticker):null;
-  if(inh){
-    sig.stop=inh.stop;
-    if(!sig.dirSet)sig.direction=inh.dir;
-    if(!(sig.targets||[]).length)sig.targets=inh.tps;
+  if(ov.tps&&ov.tps.length)sig.targets=ov.tps;
+  let inh=null,need=null;
+  if(sig.stop==null&&ov.stop==null&&sig.ticker){
+    // پستِ تصویریِ خودش: عددها روی چارت است، نه در سیگنالِ قبلی
+    if(p.img&&sig.entry==null&&sig.trigger==null&&!sig.mktEntry)need={id:p.id,t:p.date?+p.date:0};
+    else{
+      const E0=ov.entry!=null?ov.entry:(sig.entry!=null?sig.entry:sig.trigger);
+      const q=prevSigOf(p,sig.ticker,E0,ov.dir||(sig.dirSet?sig.direction:null));
+      if(q&&q.stop){inh=q;sig.stop=q.stop;if(!ov.dir)sig.direction=q.dir;
+        if(!(sig.targets||[]).length)sig.targets=q.tps;}
+      else if(q)need={id:q.need,t:q.t};
+    }
   }
   const I=planInputsOf(p,sig,ov,null);
-  const mktE=!I.entry&&ov.entry==null&&!!sig.mktEntry;
+  // ورود عددی نیست ولی استاپ هست (از متن، از تو، یا از سیگنال قبلی): ورود بازار
+  const mktE=!I.entry&&ov.entry==null&&(!!sig.mktEntry||!!I.stop);
   const inp={tk:sig.ticker||null,dir:I.dir,entry:I.entry||null,trig:sig.trigger!=null?sig.trigger:null,
     stop:I.stop||null,tgs:sig.targets||[],mkt:I.market,t0:p.date?+p.date:null,
-    mktE,inh:inh?{id:inh.id,t:inh.t}:null};
+    mktE,inh:inh?{id:inh.id,t:inh.t}:null,need};
   audTps(inp);
   const a=mktE?AUD[p.id]:null;
   if(a&&a.e0&&a.k===audKey(inp,audRules())){inp.entry=a.e0;audTps(inp);}
@@ -97,6 +121,7 @@ const audKey=(inp,R)=>JSON.stringify([inp.tk,inp.dir,inp.mktE?'mkt':inp.entry,in
   R.days,R.entryDays,R.tol]);
 function audPre(inp){
   if(!inp.tk)return 'no-ticker';
+  if(!inp.stop&&inp.need)return 'img-sl';
   if(!inp.entry&&!inp.mktE)return 'no-entry';
   if(!inp.stop)return 'no-stop';
   if(!inp.t0)return 'no-date';

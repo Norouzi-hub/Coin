@@ -557,6 +557,8 @@ html{overscroll-behavior-y:contain}
 .audtl time{display:block;font-size:12px;color:var(--tx3);font-variant-numeric:tabular-nums}
 .audtxt,.atxt{white-space:pre-wrap;font-size:12.5px;line-height:1.9;color:var(--tx2)}
 .audtxt{background:var(--inset);border-radius:var(--r2);padding:10px 12px}
+.imgfill{display:block;margin:8px 0;border-radius:var(--r2);overflow:hidden;background:var(--inset)}
+.imgfill img{display:block;width:100%;max-height:46vh;object-fit:contain}
 tr.tap{cursor:pointer}
 tr.tap:hover td{background:var(--card2)}
 .panelhead b{font-size:15px}
