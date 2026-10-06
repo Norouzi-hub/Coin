@@ -102,7 +102,7 @@ const channelHtml=()=>'<html><body>'+POSTS_SRC.map(x=>mkPost(...x)).join('')+'</
  ok(ui.badge==='2','نشان تب: 2 ادعای نادرست');
  const sel=await p.evaluate(()=>{const x=[...document.querySelectorAll('#audBody .st')];
    const g=l=>{const s=x.find(q=>q.querySelector('b').textContent===l);return s?s.querySelector('span').textContent:null;};
-   return {w:g('گزارشِ بردها'),l:g('اعترافِ باخت‌ها')};});
+   const v=g('گزارش برد / باخت')||'';return {w:v.split(' / ')[0],l:v.split(' / ')[1]};});
  console.log('  گزارش بردها:',sel.w,'· اعتراف باخت‌ها:',sel.l);
  ok(sel.l==='0٪','ادعای دروغِ برد روی باختِ ETH «اعتراف به باخت» شمرده نمی‌شود');
 

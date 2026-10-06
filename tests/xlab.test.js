@@ -42,24 +42,31 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(Math.abs(xg.f[0]-0.24)<0.02&&xg.f[1]===24,'تارگت ۱ با سقف ۲۴ ساعت: هنوز نرسیده، روی حدود ۱۰۲.۴ بسته ← حدود +۰.۲۴R');
 
  console.log('=== کانال‌سنج: خروج کوتاه، فیلتر، اهرم ایزوله، سیگنال‌های ناقص ===');
- await p.evaluate(()=>{AUDOPEN='خروج کوتاه';go('audit',true);});
+ await p.evaluate(()=>{AUDOPEN='خروج';XSEL.v='short';go('audit',true);});
  await p.waitForFunction(()=>!AUDQ.on&&AUDQ.at>0,{timeout:90000});await p.waitForTimeout(500);
  await p.evaluate(()=>renderAudit());await p.waitForTimeout(300);
- const ui=await p.evaluate(()=>{const xl=document.querySelector('#audBody [data-acc="خروج کوتاه"]');
+ const ui=await p.evaluate(()=>{const xl=document.querySelector('#audBody [data-acc="خروج"]');
    return {xl:!!xl,tab:xl?xl.querySelectorAll('.xtab tbody tr').length:0,txt:xl?xl.textContent:'',
      sd:[...document.querySelectorAll('.audf .catchip')].some(b=>/تا 10٪/.test(b.textContent)),
      iso:[...document.querySelectorAll('#audBody .ar2')].some(x=>/ایزوله تا \d+x/.test(x.textContent)),
      cp:[...document.querySelectorAll('#audBody .audiag button')].some(x=>/کپی متن/.test(x.textContent)),
      xg:Object.values(AUD).filter(a=>a.xg).length};});
  console.log('   ',JSON.stringify(Object.assign({},ui,{txt:ui.txt.slice(0,120)})));
- ok(ui.xl&&ui.tab===5,'پنل «خروج کوتاه» با جدول ۵ نوع خروج');
+ ok(ui.xl&&ui.tab===5,'پنل «خروج» (نمای خروج کوتاه) با جدول ۵ نوع خروج');
  ok(ui.xg>=1&&/اهرم امن در ایزوله/.test(ui.txt),'جدولِ سیگنال‌ها ساخته شد و اهرم امن ایزوله برای استاپ کانال/۷۵٪/۵۰٪');
  ok(ui.sd,'فیلتر «فاصله‌ی استاپ» (تا ۵/۱۰/۱۵/۲۵٪)');
  ok(ui.iso,'در فهرست سیگنال‌ها: فاصله‌ی استاپ و «ایزوله تا Nx»');
  ok(ui.cp,'دکمه‌ی «کپی متن سیگنال‌های ناقص» در وضعیت سنجش');
- await p.evaluate(()=>document.querySelector('#audBody [data-acc="خروج کوتاه"] [data-h="5"]').click());await p.waitForTimeout(100);
- ok(await p.evaluate(()=>XSEL.h===5&&document.querySelector('#audBody [data-acc="خروج کوتاه"] [data-h="5"]').classList.contains('on')),'انتخاب سقف زمان');
- const xe=await p.$('#audBody [data-acc="خروج کوتاه"]');if(xe)await xe.screenshot({path:out('xlab.png')});
+ await p.evaluate(()=>document.querySelector('#audBody [data-acc="خروج"] [data-h="5"]').click());await p.waitForTimeout(100);
+ ok(await p.evaluate(()=>XSEL.h===5&&document.querySelector('#audBody [data-acc="خروج"] [data-h="5"]').classList.contains('on')),'انتخاب سقف زمان');
+ const sv=await p.evaluate(()=>{const P=document.querySelector('#audBody [data-acc="خروج"]');
+   const vis=()=>[...P.querySelectorAll(':scope>.xview')].filter(w=>!w.hidden).map(w=>w.dataset.v).join();
+   const a=vis();P.querySelector('.xseg [data-v="pb"]').click();const b=vis(), lab=P.querySelectorAll('.labr').length;
+   P.querySelector('.xseg [data-v="short"]').click();
+   return {a,b,lab,acc:[...document.querySelectorAll('#audBody [data-acc]')].map(x=>x.dataset.acc)};});
+ ok(sv.a==='short'&&sv.b==='pb'&&sv.lab===5,'یک پنل «خروج» با دو نما: خروج کوتاه ⇄ سبک‌های پله‌ای');
+ ok(!sv.acc.includes('آزمایشگاه خروج')&&!sv.acc.includes('خروج کوتاه')&&!sv.acc.includes('نمادها'),'بخش‌ها: '+sv.acc.join('، '));
+ const xe=await p.$('#audBody [data-acc="خروج"]');if(xe)await xe.screenshot({path:out('xlab.png')});
  await p.evaluate(()=>{AF.maxSd=1;afSave();renderAudit();});await p.waitForTimeout(200);
  ok(await p.evaluate(()=>audFilter(audRows()).every(x=>stopPctOf(x.inp)<=1)),'فیلتر فاصله‌ی استاپ فقط سیگنال‌های با استاپ نزدیک را نگه می‌دارد');
  await p.evaluate(()=>{AF.maxSd=0;afSave();});

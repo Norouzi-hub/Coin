@@ -63,14 +63,14 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  await p.evaluate(()=>[...document.querySelectorAll('.swp .btn')].find(x=>/سنجش نوسان/.test(x.textContent)).click());
  for(let i=0;i<120&&await p.evaluate(()=>SWQ.on);i++)await p.waitForTimeout(500);
  const agg=await p.evaluate(()=>({n:Object.keys(SWING).length,stats:[...document.querySelectorAll('.swp .stats .st b')].map(x=>x.textContent),items:document.querySelectorAll('.swp .swit').length}));
- ok(agg.n>=3&&agg.stats.includes('میانگین لمس تارگت ۱')&&agg.items>=1,'بعد از دکمه: جمع‌بندی و پرنوسان‌ترین‌ها ('+agg.n+')');
+ ok(agg.n>=3&&agg.stats.includes('افت پیش از سود')&&agg.stats.includes('نزدیک استاپ')&&agg.stats.length===3&&agg.items>=1,'بعد از دکمه: فقط افت پیش از سود و نزدیک استاپ، و فهرست ('+agg.n+')');
  await p.evaluate(()=>document.querySelector('.swp .swit').click());await p.waitForTimeout(500);
  ok(await p.evaluate(()=>/لمس تارگت ۱|نزدیک استاپ/.test(document.querySelector('#sheet').textContent)&&!!document.querySelector('#sheet .swsvg')),'جزئیات یک سیگنال با نمودار');
  await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
 
  console.log('=== تایم‌فریم دستی (تب اسکلپ) ===');
- await p.evaluate(()=>[...document.querySelectorAll('#audBody .swp .btn')].find(x=>/تب اسکلپ/.test(x.textContent)).click());await p.waitForTimeout(500);
- ok(await p.evaluate(()=>view==='scalp'&&scView()==='opt'&&!!document.querySelector('.swtf')),'«تنظیم اهرم، باند و تایم‌فریم» تب اسکلپ را روی صفحه‌ی «تنظیم» آورد');
+ await p.evaluate(()=>{SWOPT.open='opt';swOptSave();go('scalp');});await p.waitForTimeout(500);
+ ok(await p.evaluate(()=>view==='scalp'&&scView()==='opt'&&!!document.querySelector('.swtf')),'تنظیم تایم‌فریم در تب اسکلپ، صفحه‌ی «تنظیم»');
  await p.evaluate(()=>[...document.querySelectorAll('.swtf .pbc')].find(b=>b.textContent==='۳ دقیقه').click());await p.waitForTimeout(300);
  ok(await p.evaluate(()=>SWOPT.tf==='3m'&&/کندل ۳ دقیقه/.test(document.querySelector('#scBody .scsum').textContent)),'۳ دقیقه انتخاب شد (در خلاصه‌ی بالای تب)');
  await p.evaluate(()=>go('audit',true));await p.waitForTimeout(600);

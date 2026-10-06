@@ -133,7 +133,7 @@ function audXGrid(inp,C,tAct){
 const XT_FA=['تارگت ۱ کانال','+۱٪','+۱.۵٪','+۲٪','+۳٪'], XK_FA=['استاپ کانال','۷۵٪ فاصله','۵۰٪ فاصله'],
   XH_FA=['۱ ساعت','۲ ساعت','۴ ساعت','۸ ساعت','۲۴ ساعت','۳ روز'];
 const XSELKEY='signaldesk.xsel.v1';
-const XSEL=Object.assign({k:0,h:2},lsGet(XSELKEY)||{});
+const XSEL=Object.assign({k:0,h:2,v:'short'},lsGet(XSELKEY)||{});
 let XLABAUTO=false;
 function xStat(G,ki,ti,hi){
   const i=xgIdx(ki,ti,hi);let n=0,sum=0,w=0,hs=0;
@@ -150,7 +150,7 @@ function buildShortLab(rows){
   if(fin.length>G.length){
     c.appendChild(el('div','rwarn warn',faN(fin.length-G.length)+' سیگنالِ سنجیده‌شده هنوز جدول خروج کوتاه ندارد'+(AUDQ.on?' — در حال محاسبه…':'؛ یک بار دیگر با کندل سنجیده می‌شوند.')));
     // فقط وقتی همین بخش باز است (سنجش دوباره سنگین است و کل تب را از نو می‌سازد)
-    if(!XLABAUTO&&!AUDQ.on&&AUDOPEN==='خروج کوتاه'){XLABAUTO=true;setTimeout(()=>audRun(false,true),600);}
+    if(!XLABAUTO&&!AUDQ.on&&AUDOPEN==='خروج'){XLABAUTO=true;setTimeout(()=>audRun(false,true),600);}
   }
   if(!G.length){c.appendChild(el('div','hint','هنوز سیگنالی با جدول خروج کوتاه نیست.'));return c;}
   const body=el('div');c.appendChild(body);
@@ -199,7 +199,7 @@ function buildExitLab(rows){
   if(miss){
     c.appendChild(el('div','rwarn warn',faN(miss)+' سیگنالِ سنجیده‌شده هنوز مسیر قیمت ندارد'+
       (AUDQ.on?' — در حال محاسبه…':'؛ یک بار دیگر با کندل سنجیده می‌شوند.')));
-    if(!LABAUTO&&!AUDQ.on){LABAUTO=true;setTimeout(()=>audRun(false,true),400);}
+    if(!LABAUTO&&!AUDQ.on&&AUDOPEN==='خروج'){LABAUTO=true;setTimeout(()=>audRun(false,true),400);}
   }
   const cur=pbDefault();
   const res=PB_IDS.map(id=>({id,def:pbDef(id),st:pbStats(pbDef(id),rows)}));
@@ -252,6 +252,28 @@ function buildExitLab(rows){
   return c;
 }
 let LABOPEN=false;
+/* «خروج کوتاه» و «آزمایشگاه خروج» یک پنل‌اند با دو نما؛ هر دو یک سؤال را جواب می‌دهند:
+   روی همین سیگنال‌ها، کدام قاعده‌ی خروج بهتر جواب داده. نمای انتخابی یادش می‌ماند. */
+function buildExitPanel(rows){
+  const c=el('div','panel lab xlab');
+  c.appendChild(el('div','panelhead','<b>'+ic('flag')+'خروج: کدام قاعده بهتر جواب داده</b>'));
+  const seg=el('div','afopts xseg');
+  seg.innerHTML='<button class="catchip" data-v="short">خروج کوتاه · پول کمتر درگیر</button><button class="catchip" data-v="pb">سبک‌های پله‌ای</button>';
+  c.appendChild(seg);
+  for(const [v,n] of [['short',buildShortLab(rows)],['pb',buildExitLab(rows)]]){
+    const h=n.querySelector(':scope>.panelhead');if(h)h.remove();
+    const w=el('div','xview');w.dataset.v=v;
+    while(n.firstChild)w.appendChild(n.firstChild);
+    c.appendChild(w);
+  }
+  const show=()=>{
+    c.querySelectorAll(':scope>.xview').forEach(w=>w.hidden=w.dataset.v!==XSEL.v);
+    seg.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===XSEL.v));
+  };
+  seg.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{XSEL.v=b.dataset.v;lsSet(XSELKEY,XSEL);show();});
+  show();
+  return c;
+}
 
 /* ---- نقشه‌ی خروج روی پوزیشن ---- */
 function pbTps(p){

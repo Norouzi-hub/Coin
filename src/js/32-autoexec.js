@@ -505,6 +505,9 @@ const stHtml=(l,v,c,sub)=>'<div class="st"><b>'+l+'</b><span class="'+(c||'')+'"
 /* ---- آکاردئونِ کانال‌سنج: فقط یک بخش باز؛ بقیه فقط سربرگشان دیده می‌شود ---- */
 const AUDOPENKEY='signaldesk.audopen.v1';
 let AUDOPEN=lsGet(AUDOPENKEY);if(AUDOPEN==null)AUDOPEN='کارنامه‌ی کانال';
+// بخش‌هایی که یکی شدند یا رفتند
+if(AUDOPEN==='آزمایشگاه خروج'||AUDOPEN==='خروج کوتاه')AUDOPEN='خروج';
+else if(AUDOPEN==='نمادها')AUDOPEN='';
 function audAcc(n,name){
   n.dataset.acc=name;
   if(n.tagName==='DETAILS'){
@@ -620,9 +623,7 @@ function renderAudit(){
   safe('نوسان‌سنج',()=>buildSwingPanel(rows));
   safe('صحت‌سنجی',()=>buildVerify(all));
   safe('شما در برابر کانال',()=>buildVsChannel(rows));
-  safe('آزمایشگاه خروج',()=>buildExitLab(rows));
-  safe('خروج کوتاه',()=>buildShortLab(rows));
-  safe('نمادها',()=>buildCoinTable(rows));
+  safe('خروج',()=>buildExitPanel(rows));
   safe('فهرست سیگنال‌ها',()=>buildAudList(rows));
 
   paintAudProgress();
@@ -818,62 +819,54 @@ function buildAudFilter(all){
   return d;
 }
 
-/* ادعاها، گزارش‌دهی گزینشی، ویرایش و حذف */
+/* صحت‌سنجی، جمع‌وجور: یک جمله‌ی نتیجه و سه عدد؛ فهرست‌ها (ادعاهای نادرست، ویرایش و حذف) زیر «جزئیات» */
 function buildVerify(all){
   const c=el('div','panel');
-  c.appendChild(el('div','panelhead','<b>صحت‌سنجی کانال</b>'));
+  c.appendChild(el('div','panelhead','<b>صحت‌سنجی: کانال راست می‌گوید؟</b>'));
   const claims=claimsAll();
-  const ok=claims.filter(x=>x.vd.v==='ok'), no=claims.filter(x=>x.vd.v==='no'), unk=claims.filter(x=>x.vd.v==='?');
-  const g=el('div','stats');
-  // گزینشی: از سیگنال‌های قطعیِ دست‌کم سه‌روزه، برای چندتا پست نتیجه آمد؟
+  const ok=claims.filter(x=>x.vd.v==='ok'), no=claims.filter(x=>x.vd.v==='no');
   /* «گزارش شد» یعنی کانال راستش را گفته: برای برد، ادعایی که کندل تأییدش کرد؛ برای
-     باخت، پستی که صریحاً گفته استاپ خورد. ادعای دروغِ برد روی یک باخت، گزارشِ آن باخت
-     نیست — برعکسش است، و جدا در «ادعای نادرست» شمرده می‌شود. */
+     باخت، پستی که صریحاً گفته استاپ خورد. فقط سیگنال‌های قطعیِ دست‌کم سه‌روزه. */
   const toldWin=new Set(claims.filter(x=>x.tg&&x.vd.v==='ok'&&(x.c.kind==='tp'||x.c.kind==='be')).map(x=>x.tg.p.id));
   const toldLoss=new Set(claims.filter(x=>x.tg&&x.c.kind==='sl').map(x=>x.tg.p.id));
   const old=all.filter(x=>x.r&&x.inp.t0&&Date.now()-x.inp.t0>3*DAY);
   const W=old.filter(x=>x.r.st==='win'), L=old.filter(x=>x.r.st==='loss');
   const wc=W.filter(x=>toldWin.has(x.p.id)).length, lc=L.filter(x=>toldLoss.has(x.p.id)).length;
   const pw=W.length?wc/W.length*100:null, pl=L.length?lc/L.length*100:null;
-  g.innerHTML=
-    stHtml('ادعای درست',faN(ok.length),ok.length?'u':'m','با کندل تأیید شد')+
-    stHtml('ادعای نادرست',faN(no.length),no.length?'d':'m','با کندل رد شد')+
-    stHtml('نامعلوم',faN(unk.length),'m','سیگنال اصلی پیدا/سنجیده نشد')+
-    stHtml('گزارشِ بردها',pw==null?'—':faN(pw.toFixed(0))+'٪','',faN(wc)+' از '+faN(W.length)+' — ادعای درست')+
-    stHtml('اعترافِ باخت‌ها',pl==null?'—':faN(pl.toFixed(0))+'٪','',faN(lc)+' از '+faN(L.length)+' — «استاپ خورد»')+
-    stHtml('ویرایش / حذف',faN(Object.keys(DB.edits).length)+' / '+faN(Object.keys(DB.gone).length),
-      Object.values(DB.edits).some(e=>e.nums)||Object.keys(DB.gone).length?'d':'m',
-      faN(Object.values(DB.edits).filter(e=>e.nums).length)+' ویرایشِ عدد');
-  c.appendChild(g);
-  // تفسیرِ گزارش گزینشی — فقط وقتی داده‌ی کافی هست
-  if(W.length>=5&&L.length>=5&&pw!=null&&pl!=null){
-    const gap=pw-pl;
-    c.appendChild(el('div','flag '+(gap>30?'d':gap>15?'w':'u'),'<i>'+(gap>30?'!':'✓')+'</i><span>'+
-      (gap>30?'کانال برای بردها خیلی بیشتر از باخت‌ها پست نتیجه می‌گذارد — تصویری که از بیرون دیده می‌شود بهتر از واقعیت است.'
-      :gap>15?'کانال بردها را کمی بیشتر از باخت‌ها گزارش می‌کند.'
-      :'کانال برد و باخت را تقریباً به یک اندازه گزارش می‌کند.')+'</span>'));
-  }else c.appendChild(el('div','hint','برای قضاوت درباره‌ی گزارش‌دهی گزینشی دست‌کم 5 برد و 5 باختِ قطعیِ قدیمی‌تر از سه روز لازم است.'));
-  if(no.length){
-    c.appendChild(el('div','sechd','ادعاهای نادرست'));
-    for(const x of no.slice(0,8))c.appendChild(claimRow(x));
-  }
   const ed=Object.entries(DB.edits).filter(([,e])=>e.nums).sort((a,b)=>b[1].at-a[1].at);
   const gone=Object.entries(DB.gone).sort((a,b)=>b[1].at-a[1].at);
-  if(ed.length||gone.length){
-    c.appendChild(el('div','sechd','ویرایش و حذف'));
+  const enough=W.length>=5&&L.length>=5, gap=enough?pw-pl:0;
+  const bad=no.length>ok.length*0.2||gap>30||ed.length+gone.length>=3, warn=no.length||gap>15||ed.length||gone.length;
+  const verdict=!claims.length&&!enough?'هنوز داده‌ی کافی نیست.'
+    :bad?'احتیاط: '+[no.length?faN(no.length)+' ادعای نادرست':'',gap>30?'بردها خیلی بیشتر از باخت‌ها گزارش می‌شوند':'',
+        ed.length+gone.length?faN(ed.length+gone.length)+' پستِ ویرایش‌شده/حذف‌شده':''].filter(Boolean).join('، ')+'.'
+    :warn?'تقریباً قابل اعتماد، با چند مورد مشکوک.':'تا اینجا گزارش‌های کانال با قیمت واقعی جور است.';
+  c.appendChild(el('div','flag '+(bad?'d':warn?'w':'u'),'<i>'+(bad?'!':'✓')+'</i><span>'+verdict+'</span>'));
+  const g=el('div','stats');
+  g.innerHTML=
+    stHtml('ادعای نادرست',faN(no.length),no.length?'d':'u','از '+faN(ok.length+no.length)+' ادعای سنجیده')+
+    stHtml('گزارش برد / باخت',pw==null||pl==null?'—':faN(pw.toFixed(0))+'٪ / '+faN(pl.toFixed(0))+'٪',enough&&gap>15?'d':'m',
+      enough?'چند درصد بردها و باخت‌ها را خودش گفت':'دست‌کم ۵ برد و ۵ باخت لازم است')+
+    stHtml('ویرایش عدد / حذف',faN(ed.length)+' / '+faN(gone.length),ed.length||gone.length?'d':'m','پست بعد از انتشار عوض شد');
+  c.appendChild(g);
+  if(no.length||ed.length||gone.length){
+    const d=el('details','sec sub2');
+    d.innerHTML='<summary>جزئیات</summary>';
+    for(const x of no.slice(0,8))d.appendChild(claimRow(x));
     for(const [id,e] of ed.slice(0,6)){
       const r=el('button','arow');
       r.innerHTML='<span class="pill lose">عدد عوض شد</span><span class="atx">'+esc((e.old||'').slice(0,70))+'</span>';
       r.onclick=()=>{const p=POSTS.find(x=>x.id===id);if(p)sheetAudPost(p);};
-      c.appendChild(r);
+      d.appendChild(r);
     }
     for(const [id] of gone.slice(0,6)){
       const p=POSTS.find(x=>x.id===id);
       const r=el('button','arow');
       r.innerHTML='<span class="pill lose">حذف شد</span><span class="atx">'+esc(p?(p.text||'').slice(0,70):id)+'</span>';
       r.onclick=()=>{if(p)sheetAudPost(p);};
-      c.appendChild(r);
+      d.appendChild(r);
     }
+    c.appendChild(d);
   }
   return c;
 }
@@ -935,28 +928,6 @@ function buildVsChannel(rows){
       '</td><td class="num" style="color:var(--'+(v.r>=0?'up':'dn')+')">'+fmtR(v.r)+'</td></tr>').join('');
     tb.appendChild(b);c.appendChild(tWrap(tb));
   }
-  return c;
-}
-function buildCoinTable(rows){
-  const m=new Map();
-  for(const x of rows){
-    if(!x.r||!['win','loss','exp'].includes(x.r.st)||x.R==null)continue;
-    const o=m.get(x.inp.tk)||{n:0,w:0,l:0,r:0};
-    o.n++;if(x.r.st==='win')o.w++;if(x.r.st==='loss')o.l++;o.r+=x.R;m.set(x.inp.tk,o);
-  }
-  const c=el('div','panel');
-  c.appendChild(el('div','panelhead','<b>به تفکیک نماد</b>'));
-  if(!m.size){c.appendChild(el('div','hint','هنوز چیزی قطعی نشده.'));return c;}
-  const tb=el('table','tp');
-  tb.innerHTML='<thead><tr><th>نماد</th><th>تعداد</th><th>برد</th><th>باخت</th><th>مجموع R</th></tr></thead>';
-  const b=el('tbody');
-  b.innerHTML=[...m].sort((a,b)=>b[1].n-a[1].n||b[1].r-a[1].r).slice(0,15).map(([k,v])=>
-    '<tr class="tap" data-s="'+esc(k)+'"><td>'+esc(k)+'</td><td class="num">'+faN(v.n)+'</td><td class="num">'+faN(v.w)+
-    '</td><td class="num">'+faN(v.l)+'</td><td class="num" style="color:var(--'+(v.r>=0?'up':'dn')+')">'+fmtR(v.r)+'</td></tr>').join('');
-  b.onclick=e=>{const tr=e.target.closest('tr[data-s]');if(!tr)return;
-    AF.sym=AF.sym===tr.dataset.s?'':tr.dataset.s;afSave();renderAudit();window.scrollTo({top:0,behavior:'smooth'});};
-  tb.appendChild(b);c.appendChild(tWrap(tb));
-  c.appendChild(el('div','hint','روی هر ردیف بزن تا کل کارنامه فقط برای همان نماد حساب شود.'));
   return c;
 }
 function buildAudList(rows){
