@@ -485,7 +485,8 @@ function buildMark(p,sig,ov,isSig,dec,px){
       sw.appendChild(b);
       if(ov.sig!=null)sw.appendChild(el('span','markhint','دستی علامت خورده'));
       // کانال عددها را روی تصویر می‌دهد: همان‌جا واردشان کن (ورود، استاپ، تارگت ۱ تا ۳)
-      if(p.img){
+      // فقط وقتی عددها از متن خوانده نشده (یا خودت از چارت وارد کرده‌ای)؛ وگرنه شلوغی بی‌فایده
+      if(p.img&&(sig.stop==null||ov.stop!=null)){
         const done=ov.stop!=null;
         const c=el('button',done?'plink':'padd',ic(done?'check':'edit')+'<span>'+(done?'عددهای چارت ثبت شده':'عددها از روی چارت')+'</span>');
         c.onclick=()=>sheetImgFill([p.id],new Map(),0);

@@ -29,14 +29,11 @@ function d2j(jdn){
   else { jy-=1; k+=179; if(r.leap===1)k+=1; }
   return {jy,jm:7+div_(k,30),jd:k%30+1};
 }
-const isJLeap=jy=>jalCal(jy).leap===0;
-const jMonthLen=(jy,jm)=>jm<=6?31:(jm<=11?30:(isJLeap(jy)?30:29));
 const GF=new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:TZ});
 function jParts(d){const [y,m,dd]=GF.format(d).split('-').map(Number);return d2j(g2d(y,m,dd));}
 function jKey(d){const p=jParts(d);return p.jy+'-'+String(p.jm).padStart(2,'0')+'-'+String(p.jd).padStart(2,'0');}
 function jWeekday(jy,jm,jd){const g=d2g(j2d(jy,jm,jd));return (new Date(Date.UTC(g.gy,g.gm-1,g.gd)).getUTCDay()+1)%7;}
 const J_M=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
-const J_D=['ش','ی','د','س','چ','پ','ج'];
 const TF=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:TZ});
 function jStamp(d){const p=jParts(d);return p.jy+'/'+String(p.jm).padStart(2,'0')+'/'+String(p.jd).padStart(2,'0')+' '+TF.format(d);}
 /* تقویمِ نمایش از تنظیمات: j شمسی · g میلادی · jg هر دو. خروجی CSV همیشه شمسی می‌ماند (jStamp). */

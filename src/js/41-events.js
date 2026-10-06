@@ -59,6 +59,7 @@ function wire(){
   const wsx=$('#wSetup');
   if(wsx&&!proxyList().length&&!goodFor('tg'))wsx.open=true;
   $('#btnSet').onclick=()=>openPanel('setVeil');
+  $('#setX').innerHTML=ic('x');          // بدون این، دکمه‌ی بستن تنظیمات یک مربع خالی بود
   $('#setX').onclick=()=>closePanel('setVeil');
   $('#setDone').onclick=()=>closePanel('setVeil');
   $('#setVeil').onclick=e=>{if(e.target===$('#setVeil'))closePanel('setVeil');};

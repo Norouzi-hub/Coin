@@ -872,14 +872,7 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .panel.acc.shut>.panelhead .chev{transform:rotate(-45deg)}
 .panel.acc>.panelhead .markhint{margin-inline-start:auto}
 .panel.acc.shut{padding-top:12px;padding-bottom:12px}
-.swsec{margin-top:10px;border:1px solid var(--line);border-radius:14px;background:var(--inset);overflow:hidden}
-.swsh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;padding:12px 14px;font:inherit;color:var(--tx);background:none;border:0;cursor:pointer;text-align:start}
-.swsh b{font-size:14px}
-.swsh span{font-size:12px;color:var(--tx3);flex:1;min-width:0}
-.swsh .chev{flex:none;width:8px;height:8px;border-inline-end:2px solid var(--tx3);border-bottom:2px solid var(--tx3);transform:rotate(-45deg);transition:transform .2s}
-.swsec.on .swsh .chev{transform:rotate(135deg)}
-.swsb{padding:0 14px 14px}
-.swsb .tgl{font-size:12px;color:var(--tx3);margin-top:12px}
+.tgl{font-size:12px;color:var(--tx3);margin-top:12px}
 .swtf{margin-top:6px}
 .swsug{margin-top:10px;padding:10px 12px;border-radius:12px;border:1px dashed color-mix(in srgb,var(--gold) 45%,var(--line));font-size:12.5px;line-height:1.9;color:var(--tx2)}
 .swsug>b{color:var(--gold)}
@@ -910,7 +903,6 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .sctr td span.num{white-space:nowrap}
 .sctr td.u{color:var(--up)}.sctr td.d{color:var(--dn)}
 .swp .swopt{margin-top:10px}
-.swtok{margin-top:6px}
 .swsvg{display:block;width:100%;height:auto;margin:8px 0 2px;border-radius:10px;background:var(--inset)}
 .swsvg .swp{stroke:var(--tx);stroke-width:1.4;vector-effect:non-scaling-stroke}
 .swsvg .swl{stroke-width:1;vector-effect:non-scaling-stroke}
@@ -930,7 +922,6 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .swlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;margin-top:8px}
 .swit{display:block;text-align:start;font:inherit;color:inherit;padding:10px;border-radius:12px;background:var(--inset);border:1px solid var(--line);cursor:pointer}
 .swit:active{transform:scale(.99)}
-.swl1{font-size:11.5px;color:var(--tx2);line-height:1.7}
 .stats .st span.w{color:var(--warn)}
 .gatebox{display:flex;gap:9px;align-items:flex-start;margin-top:12px;padding:10px 12px;border-radius:12px;font-size:12.5px;line-height:1.8;
   color:var(--dn);background:color-mix(in srgb,var(--dn) 8%,var(--card));border:1px solid color-mix(in srgb,var(--dn) 40%,var(--line))}
@@ -1432,8 +1423,6 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 .crumb .ic{width:16px;height:16px}
 /* ---- اسکلپ زنده ---- */
 .sclive{margin-top:6px}
-.schd{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.schd b{font-size:15px;color:var(--tx)}.schd span{font-size:12px;color:var(--tx3);font-weight:700}
 .scard{margin:10px 0}
 .scard.off{opacity:.72}
 .scard .ladder{margin-top:6px}

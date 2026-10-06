@@ -519,6 +519,8 @@ function audAcc(n,name){
   head.setAttribute('role','button');head.tabIndex=0;head.setAttribute('aria-expanded',shut?'false':'true');
   head.addEventListener('click',e=>{if(e.target.closest('button,a,input,select,label,.infob'))return;audAccToggle(n,name);});
   head.addEventListener('keydown',e=>{if(e.target===head&&(e.key==='Enter'||e.key===' ')){e.preventDefault();audAccToggle(n,name);}});
+  // بسته که هست، کلِ کادر (نه فقط نوار ۲۶ پیکسلیِ عنوان) جای زدن است
+  n.addEventListener('click',e=>{if(n.classList.contains('shut')&&!head.contains(e.target))audAccToggle(n,name);});
 }
 function audAccToggle(n,name){
   const y0=n.getBoundingClientRect().top, open=n.classList.contains('shut');
@@ -613,10 +615,11 @@ function renderAudit(){
   return sc;
   });
 
-  safe('نوسان‌سنج',()=>buildSwingPanel(rows));
-  safe('صحت‌سنجی',()=>buildVerify(all));
-  safe('شما در برابر کانال',()=>buildVsChannel(rows));
+  // ترتیب به اهمیت برای هدفِ «خروج کوتاه در ایزوله»: خروج، بعد افت پیش از سود
   safe('خروج',()=>buildExitPanel(rows));
+  safe('نوسان‌سنج',()=>buildSwingPanel(rows));
+  safe('شما در برابر کانال',()=>buildVsChannel(rows));
+  safe('صحت‌سنجی',()=>buildVerify(all));
   safe('فهرست سیگنال‌ها',()=>buildAudList(rows));
 
   paintAudProgress();

@@ -53,8 +53,12 @@ function sigIdx(){
 function prevSigOf(p,tk,E,dir){
   const l=sigIdx().get(tk), t0=p.date?+p.date:0;
   if(!l||!t0)return null;
-  for(const x of l){
-    if(x.t>=t0||x.id===p.id)continue;
+  // فهرست جدید→قدیم است: با جستجوی دودویی از اولین سیگنالِ قدیمی‌تر از t0 شروع کن (نه از اول)
+  let lo=0,hi=l.length;
+  while(lo<hi){const m=(lo+hi)>>1;if(l[m].t>=t0)lo=m+1;else hi=m;}
+  for(let i=lo;i<l.length;i++){
+    const x=l[i];
+    if(x.id===p.id)continue;
     if(t0-x.t>45*DAY)break;
     if(x.stop){
       const d=dir||(E?(E>x.stop?'long':'short'):x.dir);

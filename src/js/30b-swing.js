@@ -364,15 +364,6 @@ function swSvg(sp,lines,h){
 }
 const swLines=pr=>[{v:0,c:'e'},{v:pr.aP,c:'b'},{v:-pr.aP,c:'b'},{v:pr.tpP,c:'t'},{v:pr.stopP,c:'s'}];
 const swLegend='<div class="swleg"><i class="t"></i>تارگت ۱<i class="e"></i>ورود<i class="b"></i>باند<i class="s"></i>استاپ</div>';
-function swLine(pr){
-  if(!pr||!pr.act)return '';
-  const bits=[];
-  if(pr.tpR!=null)bits.push(faN(pr.tpN)+' بار تارگت ۱');
-  bits.push(faN(pr.nearN)+' بار نزدیک استاپ');
-  if(pr.tpN)bits.push(faN(pr.beN)+' بار برگشت به ورود');
-  bits.push(faN(pr.flips)+' بار ±'+fmtNum(pr.aP)+'٪');
-  return bits.join(' · ');
-}
 const z0=v=>Math.abs(v)<0.005?0:v;         // «−0.00٪» نشان داده نشود
 const fmtNum=v=>v==null||!isFinite(v)?'—':String(+(+v).toFixed(v<1?2:1));
 
@@ -380,22 +371,6 @@ const fmtNum=v=>v==null||!isFinite(v)?'—':String(+(+v).toFixed(v<1?2:1));
    تب اسکلپ: دو بخشِ آکاردئونی (فقط یکی باز): تنظیم‌ها، بررسی توکن و سناریوی دستی.
    کانال‌سنج: فقط نوسانِ سیگنال‌های کانال (با همان تنظیم‌ها). */
 const swRerender=()=>{if(view==='scalp')renderScalp();else if(view==='audit')renderAudit();};
-function swSection(id,title,sub,bodyFn){
-  const open=SWOPT.open===id;
-  const w=el('div','swsec'+(open?' on':''));w.dataset.id=id;
-  const h=el('button','swsh','<b>'+title+'</b>'+(sub?'<span>'+sub+'</span>':'')+'<i class="chev"></i>');
-  h.type='button';h.setAttribute('aria-expanded',open?'true':'false');
-  h.onclick=()=>{
-    const y0=h.getBoundingClientRect().top;
-    SWOPT.open=open?'':id;swOptSave();swRerender();
-    // سربرگِ زده‌شده سر جایش بماند (رندر دوباره‌ی تب صفحه را نپراند)
-    const nh=document.querySelector('.swsec[data-id="'+id+'"] .swsh');
-    if(nh){const dy=nh.getBoundingClientRect().top-y0;if(Math.abs(dy)>0.5)window.scrollBy(0,dy);}
-  };
-  w.appendChild(h);
-  if(open){const b=el('div','swsb');bodyFn(b);w.appendChild(b);}
-  return w;
-}
 /* پنل نوسان‌سنج در کانال‌سنج (تب اسکلپ صفحه‌های خودش را دارد: 30c-scalpbot.js) */
 function buildSwingPanel(rows){
   const c=el('div','panel swp');

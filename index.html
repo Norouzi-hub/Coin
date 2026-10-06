@@ -889,14 +889,7 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .panel.acc.shut>.panelhead .chev{transform:rotate(-45deg)}
 .panel.acc>.panelhead .markhint{margin-inline-start:auto}
 .panel.acc.shut{padding-top:12px;padding-bottom:12px}
-.swsec{margin-top:10px;border:1px solid var(--line);border-radius:14px;background:var(--inset);overflow:hidden}
-.swsh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;padding:12px 14px;font:inherit;color:var(--tx);background:none;border:0;cursor:pointer;text-align:start}
-.swsh b{font-size:14px}
-.swsh span{font-size:12px;color:var(--tx3);flex:1;min-width:0}
-.swsh .chev{flex:none;width:8px;height:8px;border-inline-end:2px solid var(--tx3);border-bottom:2px solid var(--tx3);transform:rotate(-45deg);transition:transform .2s}
-.swsec.on .swsh .chev{transform:rotate(135deg)}
-.swsb{padding:0 14px 14px}
-.swsb .tgl{font-size:12px;color:var(--tx3);margin-top:12px}
+.tgl{font-size:12px;color:var(--tx3);margin-top:12px}
 .swtf{margin-top:6px}
 .swsug{margin-top:10px;padding:10px 12px;border-radius:12px;border:1px dashed color-mix(in srgb,var(--gold) 45%,var(--line));font-size:12.5px;line-height:1.9;color:var(--tx2)}
 .swsug>b{color:var(--gold)}
@@ -927,7 +920,6 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .sctr td span.num{white-space:nowrap}
 .sctr td.u{color:var(--up)}.sctr td.d{color:var(--dn)}
 .swp .swopt{margin-top:10px}
-.swtok{margin-top:6px}
 .swsvg{display:block;width:100%;height:auto;margin:8px 0 2px;border-radius:10px;background:var(--inset)}
 .swsvg .swp{stroke:var(--tx);stroke-width:1.4;vector-effect:non-scaling-stroke}
 .swsvg .swl{stroke-width:1;vector-effect:non-scaling-stroke}
@@ -947,7 +939,6 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .swlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;margin-top:8px}
 .swit{display:block;text-align:start;font:inherit;color:inherit;padding:10px;border-radius:12px;background:var(--inset);border:1px solid var(--line);cursor:pointer}
 .swit:active{transform:scale(.99)}
-.swl1{font-size:11.5px;color:var(--tx2);line-height:1.7}
 .stats .st span.w{color:var(--warn)}
 .gatebox{display:flex;gap:9px;align-items:flex-start;margin-top:12px;padding:10px 12px;border-radius:12px;font-size:12.5px;line-height:1.8;
   color:var(--dn);background:color-mix(in srgb,var(--dn) 8%,var(--card));border:1px solid color-mix(in srgb,var(--dn) 40%,var(--line))}
@@ -1449,8 +1440,6 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 .crumb .ic{width:16px;height:16px}
 /* ---- اسکلپ زنده ---- */
 .sclive{margin-top:6px}
-.schd{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.schd b{font-size:15px;color:var(--tx)}.schd span{font-size:12px;color:var(--tx3);font-weight:700}
 .scard{margin:10px 0}
 .scard.off{opacity:.72}
 .scard .ladder{margin-top:6px}
@@ -2086,14 +2075,11 @@ function d2j(jdn){
   else { jy-=1; k+=179; if(r.leap===1)k+=1; }
   return {jy,jm:7+div_(k,30),jd:k%30+1};
 }
-const isJLeap=jy=>jalCal(jy).leap===0;
-const jMonthLen=(jy,jm)=>jm<=6?31:(jm<=11?30:(isJLeap(jy)?30:29));
 const GF=new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:TZ});
 function jParts(d){const [y,m,dd]=GF.format(d).split('-').map(Number);return d2j(g2d(y,m,dd));}
 function jKey(d){const p=jParts(d);return p.jy+'-'+String(p.jm).padStart(2,'0')+'-'+String(p.jd).padStart(2,'0');}
 function jWeekday(jy,jm,jd){const g=d2g(j2d(jy,jm,jd));return (new Date(Date.UTC(g.gy,g.gm-1,g.gd)).getUTCDay()+1)%7;}
 const J_M=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
-const J_D=['ش','ی','د','س','چ','پ','ج'];
 const TF=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:TZ});
 function jStamp(d){const p=jParts(d);return p.jy+'/'+String(p.jm).padStart(2,'0')+'/'+String(p.jd).padStart(2,'0')+' '+TF.format(d);}
 /* تقویمِ نمایش از تنظیمات: j شمسی · g میلادی · jg هر دو. خروجی CSV همیشه شمسی می‌ماند (jStamp). */
@@ -3353,10 +3339,6 @@ function addPending(p,sig,trigger,px){
     at:Date.now(),hit:null});
   save();renderAll();
   toast('منتظر '+fmtPrice(trigger)+' ماند','ok');
-}
-function dropPending(id){
-  DB.pending=DB.pending.filter(x=>x.id!==id);
-  save();renderAll();toast('سفارش منتظر برداشته شد','info');
 }
 /* سفارش منتظری که تا قدیمی شدنِ سیگنالش نرسیده، دیگر منتظرش نیستیم */
 function pendingStale(w){
@@ -5563,7 +5545,8 @@ function buildMark(p,sig,ov,isSig,dec,px){
       sw.appendChild(b);
       if(ov.sig!=null)sw.appendChild(el('span','markhint','دستی علامت خورده'));
       // کانال عددها را روی تصویر می‌دهد: همان‌جا واردشان کن (ورود، استاپ، تارگت ۱ تا ۳)
-      if(p.img){
+      // فقط وقتی عددها از متن خوانده نشده (یا خودت از چارت وارد کرده‌ای)؛ وگرنه شلوغی بی‌فایده
+      if(p.img&&(sig.stop==null||ov.stop!=null)){
         const done=ov.stop!=null;
         const c=el('button',done?'plink':'padd',ic(done?'check':'edit')+'<span>'+(done?'عددهای چارت ثبت شده':'عددها از روی چارت')+'</span>');
         c.onclick=()=>sheetImgFill([p.id],new Map(),0);
@@ -6537,7 +6520,6 @@ async function shBgSet(file){
   await shBgLoad();
   return true;
 }
-function shBgClear(){SHBG.src=null;SHBG.img=null;try{localStorage.removeItem(SHBGKEY);}catch(e){}}
 /* زمینه‌ی کارت: رنگ ساده، یا عکس + لایه‌ی تیره. خروجی می‌گوید عکس کشیده شد یا نه. */
 function shDrawBg(c,W,H,acc,heroY,o){
   c.fillStyle=SH.bg;c.fillRect(0,0,W,H);
@@ -7550,8 +7532,12 @@ function sigIdx(){
 function prevSigOf(p,tk,E,dir){
   const l=sigIdx().get(tk), t0=p.date?+p.date:0;
   if(!l||!t0)return null;
-  for(const x of l){
-    if(x.t>=t0||x.id===p.id)continue;
+  // فهرست جدید→قدیم است: با جستجوی دودویی از اولین سیگنالِ قدیمی‌تر از t0 شروع کن (نه از اول)
+  let lo=0,hi=l.length;
+  while(lo<hi){const m=(lo+hi)>>1;if(l[m].t>=t0)lo=m+1;else hi=m;}
+  for(let i=lo;i<l.length;i++){
+    const x=l[i];
+    if(x.id===p.id)continue;
     if(t0-x.t>45*DAY)break;
     if(x.stop){
       const d=dir||(E?(E>x.stop?'long':'short'):x.dir);
@@ -8292,15 +8278,6 @@ function swSvg(sp,lines,h){
 }
 const swLines=pr=>[{v:0,c:'e'},{v:pr.aP,c:'b'},{v:-pr.aP,c:'b'},{v:pr.tpP,c:'t'},{v:pr.stopP,c:'s'}];
 const swLegend='<div class="swleg"><i class="t"></i>تارگت ۱<i class="e"></i>ورود<i class="b"></i>باند<i class="s"></i>استاپ</div>';
-function swLine(pr){
-  if(!pr||!pr.act)return '';
-  const bits=[];
-  if(pr.tpR!=null)bits.push(faN(pr.tpN)+' بار تارگت ۱');
-  bits.push(faN(pr.nearN)+' بار نزدیک استاپ');
-  if(pr.tpN)bits.push(faN(pr.beN)+' بار برگشت به ورود');
-  bits.push(faN(pr.flips)+' بار ±'+fmtNum(pr.aP)+'٪');
-  return bits.join(' · ');
-}
 const z0=v=>Math.abs(v)<0.005?0:v;         // «−0.00٪» نشان داده نشود
 const fmtNum=v=>v==null||!isFinite(v)?'—':String(+(+v).toFixed(v<1?2:1));
 
@@ -8308,22 +8285,6 @@ const fmtNum=v=>v==null||!isFinite(v)?'—':String(+(+v).toFixed(v<1?2:1));
    تب اسکلپ: دو بخشِ آکاردئونی (فقط یکی باز): تنظیم‌ها، بررسی توکن و سناریوی دستی.
    کانال‌سنج: فقط نوسانِ سیگنال‌های کانال (با همان تنظیم‌ها). */
 const swRerender=()=>{if(view==='scalp')renderScalp();else if(view==='audit')renderAudit();};
-function swSection(id,title,sub,bodyFn){
-  const open=SWOPT.open===id;
-  const w=el('div','swsec'+(open?' on':''));w.dataset.id=id;
-  const h=el('button','swsh','<b>'+title+'</b>'+(sub?'<span>'+sub+'</span>':'')+'<i class="chev"></i>');
-  h.type='button';h.setAttribute('aria-expanded',open?'true':'false');
-  h.onclick=()=>{
-    const y0=h.getBoundingClientRect().top;
-    SWOPT.open=open?'':id;swOptSave();swRerender();
-    // سربرگِ زده‌شده سر جایش بماند (رندر دوباره‌ی تب صفحه را نپراند)
-    const nh=document.querySelector('.swsec[data-id="'+id+'"] .swsh');
-    if(nh){const dy=nh.getBoundingClientRect().top-y0;if(Math.abs(dy)>0.5)window.scrollBy(0,dy);}
-  };
-  w.appendChild(h);
-  if(open){const b=el('div','swsb');bodyFn(b);w.appendChild(b);}
-  return w;
-}
 /* پنل نوسان‌سنج در کانال‌سنج (تب اسکلپ صفحه‌های خودش را دارد: 30c-scalpbot.js) */
 function buildSwingPanel(rows){
   const c=el('div','panel swp');
@@ -10632,6 +10593,8 @@ function audAcc(n,name){
   head.setAttribute('role','button');head.tabIndex=0;head.setAttribute('aria-expanded',shut?'false':'true');
   head.addEventListener('click',e=>{if(e.target.closest('button,a,input,select,label,.infob'))return;audAccToggle(n,name);});
   head.addEventListener('keydown',e=>{if(e.target===head&&(e.key==='Enter'||e.key===' ')){e.preventDefault();audAccToggle(n,name);}});
+  // بسته که هست، کلِ کادر (نه فقط نوار ۲۶ پیکسلیِ عنوان) جای زدن است
+  n.addEventListener('click',e=>{if(n.classList.contains('shut')&&!head.contains(e.target))audAccToggle(n,name);});
 }
 function audAccToggle(n,name){
   const y0=n.getBoundingClientRect().top, open=n.classList.contains('shut');
@@ -10726,10 +10689,11 @@ function renderAudit(){
   return sc;
   });
 
-  safe('نوسان‌سنج',()=>buildSwingPanel(rows));
-  safe('صحت‌سنجی',()=>buildVerify(all));
-  safe('شما در برابر کانال',()=>buildVsChannel(rows));
+  // ترتیب به اهمیت برای هدفِ «خروج کوتاه در ایزوله»: خروج، بعد افت پیش از سود
   safe('خروج',()=>buildExitPanel(rows));
+  safe('نوسان‌سنج',()=>buildSwingPanel(rows));
+  safe('شما در برابر کانال',()=>buildVsChannel(rows));
+  safe('صحت‌سنجی',()=>buildVerify(all));
   safe('فهرست سیگنال‌ها',()=>buildAudList(rows));
 
   paintAudProgress();
@@ -12870,6 +12834,7 @@ function wire(){
   const wsx=$('#wSetup');
   if(wsx&&!proxyList().length&&!goodFor('tg'))wsx.open=true;
   $('#btnSet').onclick=()=>openPanel('setVeil');
+  $('#setX').innerHTML=ic('x');          // بدون این، دکمه‌ی بستن تنظیمات یک مربع خالی بود
   $('#setX').onclick=()=>closePanel('setVeil');
   $('#setDone').onclick=()=>closePanel('setVeil');
   $('#setVeil').onclick=e=>{if(e.target===$('#setVeil'))closePanel('setVeil');};

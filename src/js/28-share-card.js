@@ -39,7 +39,6 @@ async function shBgSet(file){
   await shBgLoad();
   return true;
 }
-function shBgClear(){SHBG.src=null;SHBG.img=null;try{localStorage.removeItem(SHBGKEY);}catch(e){}}
 /* زمینه‌ی کارت: رنگ ساده، یا عکس + لایه‌ی تیره. خروجی می‌گوید عکس کشیده شد یا نه. */
 function shDrawBg(c,W,H,acc,heroY,o){
   c.fillStyle=SH.bg;c.fillRect(0,0,W,H);

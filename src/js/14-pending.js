@@ -14,10 +14,6 @@ function addPending(p,sig,trigger,px){
   save();renderAll();
   toast('منتظر '+fmtPrice(trigger)+' ماند','ok');
 }
-function dropPending(id){
-  DB.pending=DB.pending.filter(x=>x.id!==id);
-  save();renderAll();toast('سفارش منتظر برداشته شد','info');
-}
 /* سفارش منتظری که تا قدیمی شدنِ سیگنالش نرسیده، دیگر منتظرش نیستیم */
 function pendingStale(w){
   if(w.hit)return false;
