@@ -231,7 +231,8 @@ html.busy .prog{opacity:1}
   .tabs{position:fixed;z-index:60;inset-inline:10px;bottom:calc(8px + env(safe-area-inset-bottom,0px));margin:0;
     background:var(--glass);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);
     box-shadow:0 18px 40px -12px rgba(0,0,0,.6);border-radius:20px}
-  .tab{flex-direction:column;gap:2px;font-size:12.5px;padding:7px 2px}
+  /* شش تب (کانال‌سنج هم): هم‌عرض و بی‌اسکرول */
+  .tab{flex-direction:column;gap:2px;font-size:12.5px;padding:7px 0;min-width:0;flex:1 1 0}
   .tab .ic{width:22px;height:22px}
   /* منوی پایین موقع اسکرول به پایین کنار می‌رود و با اسکرول به بالا برمی‌گردد */
   .tabs{transition:transform .3s var(--ease),opacity .3s var(--ease)}
@@ -1753,6 +1754,7 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
       <span class="ind" id="tabInd"></span>
       <button class="tab" data-v="signals" role="tab" aria-selected="true" data-ic="trend"><span>سیگنال‌ها</span><span class="cnt g z" id="cSig">0</span></button>
       <button class="tab" data-v="positions" role="tab" aria-selected="false" data-ic="wallet"><span>پوزیشن‌ها</span><span class="cnt z" id="cPos">0</span></button>
+      <button class="tab" data-v="audit" role="tab" aria-selected="false" data-ic="shield"><span>کانال‌سنج</span><span class="cnt z" id="cAud">0</span></button>
       <button class="tab" data-v="scalp" role="tab" aria-selected="false" data-ic="bolt"><span>اسکلپ</span><span class="cnt g z" id="cScalp">0</span></button>
       <button class="tab" data-v="report" role="tab" aria-selected="false" data-ic="bars"><span>کارنامه</span></button>
       <button class="tab" data-v="more" role="tab" aria-selected="false" data-ic="more"><span>سایر</span><span class="cnt z" id="cMore">0</span></button>
@@ -1813,10 +1815,9 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
     <div id="scBody"></div>
   </section>
 
-  <!-- سایر: کانال‌سنج، آموزش، تنظیمات -->
+  <!-- سایر: آموزش، تنظیمات -->
   <section id="vMore" class="view hide">
     <div class="morelist">
-      <button class="moreit" data-go="audit"><i data-ic="shield"></i><span><b>کانال‌سنج</b><small>نتیجه‌ی واقعیِ سیگنال‌های کانال، صحت‌سنجی و نوسان سیگنال‌ها</small></span><span class="cnt z" id="cAud">0</span></button>
       <button class="moreit" data-go="learn"><i data-ic="book"></i><span><b>آموزش</b><small>آموزش‌ها و دستورالعمل‌های کانال</small></span><span class="cnt g z" id="cLearn">0</span></button>
       <button class="moreit" data-go="settings"><i data-ic="sliders"></i><span><b>تنظیمات</b><small>اتصال، سرمایه و ریسک، همگام‌سازی، پشتیبان</small></span></button>
     </div>
@@ -1855,7 +1856,6 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
   <!-- آموزش -->
   <!-- کانال‌سنج: نتیجه‌ی واقعیِ همه‌ی سیگنال‌های کانال -->
   <section id="vAudit" class="view hide">
-    <button class="crumb" data-go="more">سایر</button>
     <div id="audBody"></div>
   </section>
 
@@ -12987,8 +12987,8 @@ function wireFeed(){
 /* ==================== ناوبری ==================== */
 let view='signals';
 const VIEWS=[['vSignals','signals'],['vPositions','positions'],['vScalp','scalp'],['vReport','report'],['vMore','more'],['vAudit','audit'],['vLearn','learn']];
-/* کانال‌سنج و آموزش زیرِ «سایر»اند: وقتی بازند، همان تب روشن می‌ماند */
-const TAB_OF={audit:'more',learn:'more'};
+/* آموزش زیرِ «سایر» است: وقتی باز است، همان تب روشن می‌ماند. کانال‌سنج تب خودش را دارد. */
+const TAB_OF={learn:'more'};
 function go(v,noScroll){
   if(view===v&&noScroll)return;
   view=v;
@@ -13023,9 +13023,9 @@ function moveInd(scroll){
   if(l>=box.scrollLeft&&r<=box.scrollLeft+box.clientWidth)return;  // همین حالا دیده می‌شود
   try{t.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});}catch(e){}
 }
-/* نشانِ «سایر» = ادعاهای نادرستِ کانال + آموزش‌های نخوانده (هر دو بعد از رنگ شدنِ خودشان) */
+/* نشانِ «سایر» = آموزش‌های نخوانده (بعد از رنگ شدنِ خودش) */
 function paintMoreBadge(){
-  const n=['#cAud','#cLearn'].reduce((s,id)=>{const b=$(id);return s+(b&&+b.dataset.n||0);},0);
+  const n=['#cLearn'].reduce((s,id)=>{const b=$(id);return s+(b&&+b.dataset.n||0);},0);
   const b=$('#cMore');if(b){b.textContent=faN(n);b.classList.toggle('z',!n);}
 }
 function renderAll(){

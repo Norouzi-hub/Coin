@@ -38,7 +38,7 @@ async function run(open){
   return r.abort();});
  await p.goto('http://localhost:8899/index.html',{waitUntil:'load'});
  await p.waitForTimeout(4000);
- await p.click('.tab[data-v="more"]');await p.click('.moreit[data-go="audit"]');
+ await p.click('.tab[data-v="audit"]');
  await p.waitForFunction(()=>!AUDQ.on&&AUDQ.at>0,{timeout:90000});
  await p.waitForTimeout(500);
  const st=await p.evaluate(()=>{const o={};for(const x of POSTS){const a=AUD[x.id];if(a)o[x.id.split('/').pop()]=a.st+(a.why?':'+a.why:'');}return o;});

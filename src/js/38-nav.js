@@ -1,8 +1,8 @@
 /* ==================== ناوبری ==================== */
 let view='signals';
 const VIEWS=[['vSignals','signals'],['vPositions','positions'],['vScalp','scalp'],['vReport','report'],['vMore','more'],['vAudit','audit'],['vLearn','learn']];
-/* کانال‌سنج و آموزش زیرِ «سایر»اند: وقتی بازند، همان تب روشن می‌ماند */
-const TAB_OF={audit:'more',learn:'more'};
+/* آموزش زیرِ «سایر» است: وقتی باز است، همان تب روشن می‌ماند. کانال‌سنج تب خودش را دارد. */
+const TAB_OF={learn:'more'};
 function go(v,noScroll){
   if(view===v&&noScroll)return;
   view=v;
@@ -37,9 +37,9 @@ function moveInd(scroll){
   if(l>=box.scrollLeft&&r<=box.scrollLeft+box.clientWidth)return;  // همین حالا دیده می‌شود
   try{t.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});}catch(e){}
 }
-/* نشانِ «سایر» = ادعاهای نادرستِ کانال + آموزش‌های نخوانده (هر دو بعد از رنگ شدنِ خودشان) */
+/* نشانِ «سایر» = آموزش‌های نخوانده (بعد از رنگ شدنِ خودش) */
 function paintMoreBadge(){
-  const n=['#cAud','#cLearn'].reduce((s,id)=>{const b=$(id);return s+(b&&+b.dataset.n||0);},0);
+  const n=['#cLearn'].reduce((s,id)=>{const b=$(id);return s+(b&&+b.dataset.n||0);},0);
   const b=$('#cMore');if(b){b.textContent=faN(n);b.classList.toggle('z',!n);}
 }
 function renderAll(){

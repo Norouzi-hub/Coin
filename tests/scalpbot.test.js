@@ -16,13 +16,11 @@ const rng=t=>100*(1+0.03*Math.sin(2*Math.PI*t/(4*36e5)));
 
  console.log('=== ناوبری ===');
  const tabs=await p.evaluate(()=>[...document.querySelectorAll('.tab')].map(t=>t.dataset.v).join(','));
- ok(tabs==='signals,positions,scalp,report,more','تب‌ها: '+tabs);
+ ok(tabs==='signals,positions,audit,scalp,report,more','تب‌ها: '+tabs);
  await p.click('.tab[data-v="more"]');await p.waitForTimeout(400);
- ok(await p.evaluate(()=>[...document.querySelectorAll('.moreit')].map(x=>x.dataset.go).join(',')==='audit,learn,settings'),'منوی سایر: کانال‌سنج، آموزش، تنظیمات');
- await p.click('.moreit[data-go="audit"]');await p.waitForTimeout(800);
- ok(await p.evaluate(()=>!document.querySelector('#vAudit').classList.contains('hide')&&document.querySelector('.tab[aria-selected="true"]').dataset.v==='more'),'کانال‌سنج زیر سایر');
- await p.click('#vAudit .crumb');await p.waitForTimeout(300);
- ok(await p.evaluate(()=>!document.querySelector('#vMore').classList.contains('hide')),'برگشت به سایر');
+ ok(await p.evaluate(()=>[...document.querySelectorAll('.moreit')].map(x=>x.dataset.go).join(',')==='learn,settings'),'منوی سایر: آموزش، تنظیمات');
+ await p.click('.tab[data-v="audit"]');await p.waitForTimeout(800);
+ ok(await p.evaluate(()=>!document.querySelector('#vAudit').classList.contains('hide')&&document.querySelector('.tab[aria-selected="true"]').dataset.v==='audit'),'کانال‌سنج تب خودش را دارد');
 
  console.log('=== موتور: ورود بازار، سیو سود نصف، ریسک‌فری، استاپ ===');
  // مسیر قیمت → کندل ۱ دقیقه‌ای؛ رنجِ ثابتِ ساختگی ۱۰۰ ⇄ ۱۱۰ با باند ۲٪ و «درجا»

@@ -60,7 +60,7 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
  const badge=await p.$eval('#cLearn',e=>e.classList.contains('z')?'':e.textContent);
  ok(badge==='9','نشان تب: 9 درس نخوانده');
  const fit=await p.evaluate(()=>{const n=document.getElementById('tabs');return n.scrollWidth<=n.clientWidth+1;});
- ok(fit,'5 تب در عرض 360 جا می‌شوند');
+ ok(fit,'6 تب در عرض 360 جا می‌شوند');
  await p.click('.tab[data-v="more"]');await p.click('.moreit[data-go="learn"]');await p.waitForTimeout(500);
  const g=await p.evaluate(()=>({cards:[...document.querySelectorAll('.gcard')].map(c=>c.querySelector('.gttl').textContent),
    prog:document.querySelector('.gprog span').textContent,warn:!!document.querySelector('.gwarn')}));
