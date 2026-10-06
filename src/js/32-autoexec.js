@@ -152,19 +152,20 @@ const AUD_SRC=[
    u:(s,iv,st,l)=>{const f=Math.floor(st/1000),sec={'1m':60,'5m':300,'30m':1800,'1h':3600}[iv];
      return 'https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair='+s+'_USDT&interval='+iv+'&from='+f+'&to='+(f+sec*(l-1));},
    iv:{'1m':'1m','5m':'5m','30m':'30m','1h':'1h'},max:1000,
-   p:d=>d.map(k=>({t:+k[0]*1000,o:+k[5],h:+k[3],l:+k[4],c:+k[2]}))},
+   p:d=>d.map(k=>({t:+k[0]*1000,o:+k[5],h:+k[3],l:+k[4],c:+k[2],v:+k[6]||+k[1]||0}))},
   {n:'KuCoin',
    u:(s,iv,st,l)=>{const f=Math.floor(st/1000),sec={'1min':60,'3min':180,'5min':300,'30min':1800,'1hour':3600}[iv];
      return 'https://api.kucoin.com/api/v1/market/candles?type='+iv+'&symbol='+s+'-USDT&startAt='+f+'&endAt='+(f+sec*l);},
    iv:{'1m':'1min','3m':'3min','5m':'5min','30m':'30min','1h':'1hour'},max:1500,ok:d=>d&&Array.isArray(d.data),
-   p:d=>d.data.map(k=>({t:+k[0]*1000,o:+k[1],h:+k[3],l:+k[4],c:+k[2]}))},
+   p:d=>d.data.map(k=>({t:+k[0]*1000,o:+k[1],h:+k[3],l:+k[4],c:+k[2],v:+k[5]||0}))},
   {n:'Bitget',
    u:(s,iv,st,l)=>{const ms={'1min':6e4,'3min':18e4,'5min':3e5,'30min':18e5,'1h':36e5}[iv];
      return 'https://api.bitget.com/api/v2/spot/market/candles?symbol='+s+'USDT&granularity='+iv+'&startTime='+st+'&endTime='+(st+ms*l)+'&limit='+l;},
    iv:{'1m':'1min','3m':'3min','5m':'5min','30m':'30min','1h':'1h'},max:1000,ok:d=>d&&Array.isArray(d.data),
-   p:d=>d.data.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]}))}
+   p:d=>d.data.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]||0}))}
 ];
-const audParse=(src,d)=>src.p?src.p(d):d.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]}));
+// v: حجم (برای اندیکاتورهای اسکلپ: VWAP و حجم نسبی)
+const audParse=(src,d)=>src.p?src.p(d):d.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]||0}));
 async function audCandles(sym,iv,start,limit,quiet){
   /* اول منبعی که برای همین نماد جواب داده، بعد منبعی که آخرین بار برای هر نمادی جواب داده
      (اگر بایننس از مسیرِ تو بسته است، برای هر سیگنال از نو امتحانش نکنیم) */

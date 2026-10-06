@@ -98,7 +98,7 @@ const rng=t=>100*(1+0.03*Math.sin(2*Math.PI*t/(4*36e5)));
  ok(bt.look.some(x=>x.startsWith('long'))&&bt.look.some(x=>x.startsWith('short')),'هم لانگ و هم شورت گرفت: '+bt.look.join(' '));
 
  console.log('=== رابط: تب اسکلپ و تست خودکار ===');
- await p.evaluate(()=>{SWOPT.open='bt';SWOPT.btN=1;SWOPT.days=1;SWOPT.tf='5m';SWOPT.lev=10;SWOPT.roi=20;swOptSave();go('scalp',true);});await p.waitForTimeout(500);
+ await p.evaluate(()=>{SWOPT.style='range';SWOPT.open='bt';SWOPT.btN=1;SWOPT.days=1;SWOPT.tf='5m';SWOPT.lev=10;SWOPT.roi=20;swOptSave();go('scalp',true);});await p.waitForTimeout(500);
  const secs=await p.evaluate(()=>[...document.querySelectorAll('#scBody .swsec')].map(x=>x.dataset.id+':'+(x.classList.contains('on')?1:0)).join(','));
  ok(secs==='opt:0,tok:0,bt:1','سه بخش: تنظیم‌ها، بررسی توکن، تست خودکار ('+secs+')');
  await p.evaluate(()=>{const i=document.querySelector('#btTk');i.value='rng';i.dispatchEvent(new Event('change'));document.querySelector('#btGo').click();});

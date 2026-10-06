@@ -14,7 +14,14 @@
    کندل قرمز اول سقف بعد کف. */
 const SWKEY='signaldesk.swing.v1', SWOPTKEY='signaldesk.swopt.v1';
 const SWING=lsGet(SWKEY)||{};                   // شناسه‌ی پست ← {k, at, prof}
-const SWOPT=Object.assign({lev:10,roi:20,win:'sig',near:0.75,hys:0.5,days:3,tk:'',tf:'5m',dir:'long',me:'',mt:'',ms:'',mg:'',open:'tok'},lsGet(SWOPTKEY)||{});
+const SWOPT=Object.assign({lev:10,roi:20,win:'sig',near:0.75,hys:0.5,days:3,tk:'',tf:'5m',dir:'auto',me:'',mt:'',ms:'',mg:'',open:'tok',
+  style:'scalp',tmax:60,tearly:20,miss:2,flt:{}},lsGet(SWOPTKEY)||{});
+/* سبک: اسکلپ (اندیکاتورها، حداکثر حدود یک ساعت) یا رنج (کف و سقف چند ساعت تا چند روز) */
+const SW_STYLE={scalp:'اسکلپ (تا ۱ ساعت)',range:'رنج (ساعت‌ها تا روزها)'};
+const swScalp=()=>SWOPT.style!=='range';
+/* چند شرطِ تأیید می‌تواند رد شود و باز هم وارد شود (۹۹ = بدون تأیید) */
+const SW_MISS={0:'هیچ (همه برقرار)',1:'۱ شرط',2:'۲ شرط',3:'۳ شرط',99:'بی‌محدودیت (بدون تأیید)'};
+const swMissTxt=m=>+m>=99?'بدون تأیید':+m===0?'همه‌ی شرط‌ها':'حداکثر '+faN(m)+' شرطِ رد';
 /* تایم‌فریم: کوچک‌تر یعنی ترتیبِ بالا و پایینِ داخل هر کندل دقیق‌تر، ولی کندل بیشتر و کندتر */
 const SW_TF={'1m':'۱ دقیقه','3m':'۳ دقیقه','5m':'۵ دقیقه','30m':'۳۰ دقیقه','1h':'۱ ساعت'};
 const SW_TFBASE={'3m':'1m','30m':'5m'};        // اگر هیچ منبعی این را نداشت، از کوچک‌تر ساخته می‌شود
@@ -260,8 +267,8 @@ function manualProfile(C,o,sc){
 function swAggr(C,ms){
   const out=[];
   for(const k of C){const t=Math.floor(k.t/ms)*ms, b=out[out.length-1];
-    if(b&&b.t===t){b.h=Math.max(b.h,k.h);b.l=Math.min(b.l,k.l);b.c=k.c;}
-    else out.push({t,o:k.o,h:k.h,l:k.l,c:k.c});}
+    if(b&&b.t===t){b.h=Math.max(b.h,k.h);b.l=Math.min(b.l,k.l);b.c=k.c;b.v+=k.v||0;}
+    else out.push({t,o:k.o,h:k.h,l:k.l,c:k.c,v:k.v||0});}
   return out;
 }
 async function swCandlesTf(tk,tf,from,to,stop,x){
@@ -403,12 +410,35 @@ function buildSwingPanel(rows,mode){
   }
 
   // ── تنظیم‌ها ──
-  c.appendChild(swSection('opt','تنظیم‌ها','اهرم '+fmtNum(o.lev)+'x · باند '+fmtNum(o.roi)+'٪ · '+SW_TF[o.tf||'5m']+' · '+SW_WIN[o.win],b=>{
+  c.appendChild(swSection('opt','تنظیم‌ها',SW_STYLE[swScalp()?'scalp':'range']+' · اهرم '+fmtNum(o.lev)+'x · '+SW_TF[o.tf||'5m']+
+    (swScalp()?' · حداکثر '+faN(o.tmax)+' دقیقه · '+swMissTxt(o.miss):' · باند '+fmtNum(o.roi)+'٪'),b=>{
+    b.appendChild(el('div','tgl','سبک'));
+    const sy=el('div','pbpick');
+    for(const [k,v] of Object.entries(SW_STYLE)){const x=el('button','pbc'+((swScalp()?'scalp':'range')===k?' on':''),v);x.type='button';
+      x.setAttribute('aria-pressed',(swScalp()?'scalp':'range')===k);x.onclick=()=>{o.style=k;if(k==='scalp'&&IVMS[o.tf]>3e5)o.tf='1m';swOptSave();SWCOIN=null;swRerender();};sy.appendChild(x);}
+    b.appendChild(sy);
+    b.appendChild(el('div','hint',swScalp()?'اسکلپ: تصمیم با اندیکاتورها (بولینگر، RSI، EMA، VWAP، حجم، بیت‌کوین) روی کندل کوتاه؛ تارگت به اندازه‌ی نوسانِ یک ساعت؛ اگر تا سقف زمان نرسید، بسته می‌شود.'
+      :'رنج: کف و سقفِ برگشت‌های چند ساعت تا چند روز اخیر؛ روی کف لانگ، روی سقف شورت. معامله‌ها ممکن است ساعت‌ها باز بمانند.'));
     const g=el('div','grid swopt');
     g.innerHTML='<div class="fld"><label>اهرم</label><input id="swLev" type="number" min="1" max="125" step="1" inputmode="decimal" value="'+o.lev+'"></div>'+
       '<div class="fld"><label>باند روی مارجین (٪)</label><input id="swRoi" type="number" min="1" max="500" step="1" inputmode="decimal" value="'+o.roi+'"></div>'+
       '<div class="fld"><label>بازه‌ی سیگنال</label><select id="swWin">'+Object.entries(SW_WIN).map(([k,v])=>'<option value="'+k+'"'+(o.win===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div>';
     b.appendChild(g);
+    if(swScalp()){
+      const g2=el('div','grid swopt');
+      const opt=(id,m,v)=>'<select id="'+id+'">'+Object.entries(m).map(([k,t])=>'<option value="'+k+'"'+(String(k)===String(v)?' selected':'')+'>'+t+'</option>').join('')+'</select>';
+      g2.innerHTML='<div class="fld"><label>حداکثر نگه‌داری</label>'+opt('swTmax',{15:'۱۵ دقیقه',30:'۳۰ دقیقه',60:'۶۰ دقیقه',90:'۹۰ دقیقه',120:'۱۲۰ دقیقه'},o.tmax)+'</div>'+
+        '<div class="fld"><label>خروج زود</label>'+opt('swTearly',{0:'خاموش',10:'۱۰ دقیقه در ضرر',20:'۲۰ دقیقه در ضرر',30:'۳۰ دقیقه در ضرر'},o.tearly)+'</div>'+
+        '<div class="fld"><label>حداکثر شرطِ ردشده</label>'+opt('swMiss',SW_MISS,o.miss)+'</div>';
+      b.appendChild(g2);
+      b.appendChild(el('div','tgl','شرط‌های تأیید (هر کدام یک امتیاز)'));
+      const fl=el('div','pbpick scflt');
+      for(const [k,v] of Object.entries(SC_FLT)){const on=(o.flt||{})[k]!==false, x=el('button','pbc'+(on?' on':''),v);x.type='button';x.dataset.k=k;
+        x.setAttribute('aria-pressed',on);x.onclick=()=>{o.flt=Object.assign({},o.flt);o.flt[k]=!on?true:false;swOptSave();swRerender();};fl.appendChild(x);}
+      b.appendChild(fl);
+      b.appendChild(el('div','hint','«خروج زود»: اگر بعد از این مدت هنوز در سود نبود، همان‌جا بسته می‌شود. در «تست خودکار» اثر هر شرط جدا نشان داده می‌شود؛ شرطی که کمک نکرد را خاموش کن.'));
+      g2.querySelectorAll('select').forEach(i=>i.onchange=()=>{o.tmax=+$('#swTmax').value||60;o.tearly=+$('#swTearly').value||0;o.miss=+$('#swMiss').value;swOptSave();swRerender();});
+    }
     b.appendChild(el('div','tgl','تایم‌فریم کندل'));
     const tf=el('div','pbpick swtf');
     for(const [k,v] of Object.entries(SW_TF)){const x=el('button','pbc'+((o.tf||'5m')===k?' on':''),v);x.type='button';
@@ -431,8 +461,8 @@ function buildSwingPanel(rows,mode){
     b.innerHTML='<div class="grid swopt">'+
       '<div class="fld"><label>نماد</label><input id="swTk" dir="ltr" list="swTkL" placeholder="مثلاً SOL" value="'+esc(o.tk||'')+'">'+
         '<datalist id="swTkL">'+tks.map(t=>'<option value="'+esc(t)+'">').join('')+'</datalist></div>'+
-      '<div class="fld"><label>دوره</label><select id="swDays"><option value="0.5">۱۲ ساعت اخیر</option><option value="1">۱ روز اخیر</option><option value="3">۳ روز اخیر</option><option value="7">۷ روز اخیر</option></select></div>'+
-      '<div class="fld"><label>جهت</label><select id="swDir"><option value="long">لانگ</option><option value="short">شورت</option></select></div>'+
+      (swScalp()?'':'<div class="fld"><label>دوره</label><select id="swDays"><option value="0.5">۱۲ ساعت اخیر</option><option value="1">۱ روز اخیر</option><option value="3">۳ روز اخیر</option><option value="7">۷ روز اخیر</option></select></div>')+
+      '<div class="fld"><label>جهت</label><select id="swDir"><option value="auto">خودکار (از کارت)</option><option value="long">لانگ</option><option value="short">شورت</option></select></div>'+
       '<div class="fld"><label>نقطه‌ی ورود</label><input id="swMe" dir="ltr" inputmode="decimal" placeholder="خالی = فقط نوسان توکن" value="'+esc(o.me||'')+'"></div>'+
       '<div class="fld"><label>تارگت ۱</label><input id="swMt" dir="ltr" inputmode="decimal" placeholder="خالی = +باند" value="'+esc(o.mt||'')+'"></div>'+
       '<div class="fld"><label>حد ضرر</label><input id="swMs" dir="ltr" inputmode="decimal" placeholder="خالی = −باند" value="'+esc(o.ms||'')+'"></div>'+
@@ -440,8 +470,8 @@ function buildSwingPanel(rows,mode){
       '</div><div class="srow"><button class="btn pri" id="swTkGo">'+ic('search')+'<span>بسنج</span></button>'+
       '<button class="btn" id="swClr">پاک کردن ورود</button></div><div id="swCoin"></div>';
     setTimeout(()=>{
-      $('#swDays').value=String(o.days||3);$('#swDir').value=o.dir||'long';
-      const read=()=>{o.tk=String($('#swTk').value||'').trim().toUpperCase().replace(/USDT$/,'');o.days=+$('#swDays').value||3;
+      if($('#swDays'))$('#swDays').value=String(o.days||3);$('#swDir').value=o.dir||'auto';
+      const read=()=>{o.tk=String($('#swTk').value||'').trim().toUpperCase().replace(/USDT$/,'');if($('#swDays'))o.days=+$('#swDays').value||3;
         o.dir=$('#swDir').value;o.me=$('#swMe').value.trim();o.mt=$('#swMt').value.trim();o.ms=$('#swMs').value.trim();o.mg=$('#swMg').value.trim();swOptSave();
         if(SWCOIN)paintSwCoin();};
       b.querySelectorAll('input,select').forEach(i=>i.onchange=read);
@@ -451,12 +481,27 @@ function buildSwingPanel(rows,mode){
         if(!/^[A-Z0-9]{2,15}$/.test(o.tk))return toast('نماد را بنویس، مثلاً SOL','err');
         const go=e.currentTarget;btnBusy(go,true,'در حال گرفتن کندل');
         try{
-          const to=Date.now(), C=await swCandlesTf(o.tk,o.tf||'5m',to-o.days*864e5,to);
-          if(!C.length)throw new Error('empty');
-          const oo=Object.assign({},o), pr=coinProfile(C,oo);
+          const oo=Object.assign({},o);let C,sd=null,ser=null;
+          if(swScalp()){
+            // اسکلپ: کندل ۱ دقیقه‌ایِ ۲۶ ساعت اخیر (و بیت‌کوین برای شرطش)، تصمیم روی آخرین کندلِ بسته
+            const to=Date.now(), from=to-SC_HIST;
+            const X=(await ccGet(o.tk,'1m',from,to,{maxReq:4})).filter(k=>k.t>=from);
+            if(!X.length)throw new Error('empty');
+            let BX=null;
+            if((o.flt||{}).btc!==false&&o.tk!=='BTC')BX=(await ccGet('BTC','1m',from,to,{maxReq:4}).catch(()=>[])).filter(k=>k.t>=from);
+            ser=scSeries(X,6e4,o.tf||'1m',BX);
+            sd=scDecide(ser.at(Math.floor(to/ser.tfms)*ser.tfms),scOpt(oo));
+            C=ser.TF;
+          }else{
+            const to=Date.now();C=await swCandlesTf(o.tk,o.tf||'5m',to-o.days*864e5,to);
+            if(!C.length)throw new Error('empty');
+          }
+          const pr=coinProfile(C,oo);
+          // جهت «خودکار»: همان که کارت می‌گوید (یا اگر صبر است، سمتی که قیمت به آن نزدیک‌تر است)
+          if(oo.dir!=='long'&&oo.dir!=='short')oo.dir=sd?sd.side:(swDecide(pr,oo).side||'long');
           const sc=o.me?manualScenario(oo,null):null;
           const mp=sc?manualProfile(C,oo,sc):null;
-          SWCOIN={tk:o.tk,o:oo,pr,sc,mp,at:Date.now()};
+          SWCOIN={tk:o.tk,o:oo,pr,sc,mp,sd,ser,at:Date.now()};
           paintSwCoin();
         }catch(err){toast('کندل '+o.tk+' نیامد'+(AUDQ.err?' — '+AUDQ.err:''),'err');}
         btnBusy(go,false);
@@ -578,13 +623,13 @@ let SWCOIN=null;
 function paintSwCoin(){
   const box=$('#swCoin');if(!box)return;
   if(!SWCOIN||!SWCOIN.pr){box.innerHTML='';return;}
-  const {tk,o,pr,sc,mp}=SWCOIN;
+  const {tk,o,pr,sc,mp,sd,ser}=SWCOIN;
   const k=(l,v,c,sub)=>stHtml(l,v,c,sub);
   const lev=o.lev;
   let h='';
-  // ── تصمیم ساده (اول از همه) ──
-  const dec=swDecide(pr,o);
-  h+=swDecideHtml(dec,pr,o);
+  // ── تصمیم ساده (اول از همه): اسکلپ با اندیکاتورها، یا رنج ──
+  const dec=sd?Object.assign({},sd,{entry:sd.plan.en,tp:sd.plan.tp,stop:sd.plan.stop}):swDecide(pr,o);
+  h+=sd?scDecideHtml(sd,o)+scIndHtml(sd,ser):swDecideHtml(dec,pr,o);
   // ── سناریوی دستی ──
   if(sc){
     const sign=sc.dir==='long'?1:-1, pct=v=>(v-sc.entry)*sign/sc.entry*100;
@@ -648,7 +693,7 @@ function paintSwCoin(){
   if(dbt)dbt.onclick=()=>{SWOPT.btTk=tk;SWOPT.open='bt';swOptSave();swRerender();btRun([tk]);
     setTimeout(()=>{const n=document.querySelector('.swsec[data-id="bt"]');if(n)n.scrollIntoView({block:'start',behavior:'smooth'});},60);};
   const dbo=$('#swDecBot');
-  if(dbo)dbo.onclick=()=>botStartSheet({mode:'auto',tk});
+  if(dbo)dbo.onclick=()=>botStartSheet({mode:sd?'scalp':'auto',tk});
   const sl=$('#swScLive');
   if(sl&&sc)sl.onclick=()=>{const c=scalpCfg(sc,o);botStartSheet({mode:'fix',tk,first:sc.dir,L:c.L,H:c.H,d:c.d,lev:c.lev,mg:swMg()});};
   const use=(dir,e,t)=>{const fx=v=>String(+(+v).toPrecision(6));

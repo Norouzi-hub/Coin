@@ -45,7 +45,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(ag.join(' ')==='00:00:10:16:9:15.5 00:30:16:18:15:17.5','۸ کندل ۵ دقیقه‌ای → ۲ کندل ۳۰ دقیقه‌ای (باز/سقف/کف/بسته درست): '+ag.join(' '));
 
  console.log('=== رابط: آکاردئون کانال‌سنج ===');
- await p.evaluate(()=>{AF.noLate=false;localStorage.removeItem('signaldesk.audopen.v1');AUDOPEN='کارنامه‌ی کانال';go('audit',true);});
+ await p.evaluate(()=>{AF.noLate=false;SWOPT.style='range';swOptSave();localStorage.removeItem('signaldesk.audopen.v1');AUDOPEN='کارنامه‌ی کانال';go('audit',true);});
  await p.waitForTimeout(6000);                      // کانال‌سنج خودش سیگنال‌ها را می‌سنجد (کار قبلی)
  const acc=await p.evaluate(()=>[...document.querySelectorAll('#audBody .panel.acc')].map(x=>x.dataset.acc+':'+(x.classList.contains('shut')?0:1)));
  console.log('   ',acc.join(' | '));
