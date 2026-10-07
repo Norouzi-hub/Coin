@@ -80,8 +80,11 @@ function autoReport(ev,snap){
     save();renderAll();toast('برگشت؛ اجرای خودکار این پوزیشن خاموش شد','info');
   });
   const bad=ev.some(e=>e.k==='stop'||e.k==='liq');
-  try{if(navigator.vibrate)navigator.vibrate(bad?[200,80,200]:[120,60,120]);}catch(e){}
-  if(F('notify'))notify('میز سیگنال',msg,'auto'+ids.join(','));
+  // پیغامِ «برگرداندن» همین بالاست؛ مشاور فقط در مرکز اعلان ثبت می‌کند، صدا می‌زند و اعلان گوشی می‌دهد
+  advise('auto:'+ids.join(',')+':'+Date.now(),{cat:'pos',pri:bad?'hi':'mid',title:msg,silent:true,act:{t:'pos',id:ids[0]}});
+  advBeep(bad?'hi':'mid');
+  try{if(advCfg().vib&&!advQuiet()&&navigator.vibrate)navigator.vibrate(bad?[200,80,200]:[120,60,120]);}catch(e){}
+  if(F('notify'))sysNotify('میز سیگنال',msg,'auto'+ids.join(','),{act:{t:'pos',id:ids[0]}});
 }
 /* با هر قیمت تازه: پوزیشن‌هایی که تازه سنجیده شده‌اند با قیمت زنده، بقیه (فاصله‌ی طولانی) با کندل.
    خروجی: آیا کاری انجام شد (تا هشدارهای همین لحظه روی پیغامِ «برگرداندن» ننشینند) */

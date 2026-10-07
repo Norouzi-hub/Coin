@@ -29,6 +29,7 @@ document.addEventListener('visibilitychange',()=>{
   if(syncOn()&&lastHidden&&Date.now()-lastHidden>30000)syncPull(true).catch(()=>{});
 });
 try{localStorage.removeItem('signaldesk.lock.v1');}catch(e){}   // قفل ورود برداشته شد
+setTimeout(adviseTick,5000);        // مشاور: اولین سنجش کمی بعد از بالا آمدن، بعد هر دقیقه
 showOriginWarn();
 renderAll();
 persistStore().finally(()=>setTimeout(showBackupWarn,1500));

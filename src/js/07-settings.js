@@ -5,7 +5,7 @@ const FEAT={
   summary:{on:true, t:'نوار خلاصه', d:'بالای سیگنال‌ها: سیگنال امروز، پوزیشن باز، سود/ضرر و فاصله تا حد ضرر روزانه'},
   accordion:{on:true,t:'کارت‌های آکاردئونی', d:'فقط یک کارت باز می‌ماند؛ زدن روی کارتی دیگر، قبلی را می‌بندد تا صفحه شلوغ نشود'},
   quick:  {on:true, t:'ورود سریع',  d:'دکمه‌ی ورود با مبلغ پیش‌فرض، بدون باز کردن فرم'},
-  notify: {on:false,t:'اعلان سیگنال تازه', d:'وقتی سیگنال تازه بیاید، نوتیفیکیشن مرورگر'},
+  notify: {on:false,t:'اعلان گوشی', d:'سیگنال تازه، هشدارها و پیشنهادهای مشاور به‌صورت اعلانِ گوشی (وقتی برنامه در پس‌زمینه است)'},
   alerts: {on:true, t:'هشدار استاپ و تارگت', d:'روی پوزیشن‌های باز، نزدیک شدن قیمت به استاپ یا رسیدن به تارگت'},
   autoexec:{on:true,t:'اجرای خودکار استاپ و نقشه', d:'استاپ بخورد، پوزیشن خودش بسته می‌شود؛ تارگت برسد، پله‌ی نقشه‌ی خروج (بستن سهم و جابه‌جایی استاپ) خودش ثبت می‌شود. به صرافی سفارش نمی‌فرستد'},
   tpclose:{on:true, t:'بستن روی تارگت', d:'دکمه‌ی بستن نصف پوزیشن روی تارگت، بدون پر کردن فرم'},
@@ -52,6 +52,7 @@ function applySettingsToForm(){
   $('#sRisk').value=S.risk; $('#sMaxLev').value=S.maxLev; $('#sDaily').value=S.daily;
   $('#sMode').value=S.mode; $('#sStale').value=S.staleDays||7; $('#sCal').value=calMode(); $('#sPb').value=pbDefault(); $('#sR').value=S.rMul.join(', '); $('#sFee').value=S.fee; $('#sAuto').value=S.auto;
   $('#sSlip').value=S.slip; $('#sFund').value=S.fund; $('#sOpenRisk').value=S.openRisk;
+  if(typeof advApplyForm==='function')advApplyForm();
   $('#sRiskUsd').value=S.riskUsd>0?S.riskUsd:''; $('#sIsoSd').value=S.isoMaxSd||15;
   $('#sBeAt').value=S.beAt>0?S.beAt:''; $('#sTrail').value=S.trail>0?S.trail:''; $('#sMaxHold').value=S.maxHold>0?S.maxHold:'';
   $('#sGoal').value=S.goal>0?S.goal:''; $('#sLossLock').value=S.lossLock!=null?S.lossLock:2; $('#sMaxOpen').value=S.maxOpen!=null?S.maxOpen:3;

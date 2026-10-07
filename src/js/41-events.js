@@ -59,13 +59,16 @@ function wire(){
   const wsx=$('#wSetup');
   if(wsx&&!proxyList().length&&!goodFor('tg'))wsx.open=true;
   $('#btnSet').onclick=()=>openPanel('setVeil');
+  $('#btnBell').onclick=sheetAdvice;paintBell();
   $('#setX').innerHTML=ic('x');          // بدون این، دکمه‌ی بستن تنظیمات یک مربع خالی بود
   $('#setX').onclick=()=>closePanel('setVeil');
   $('#setDone').onclick=()=>closePanel('setVeil');
   $('#setVeil').onclick=e=>{if(e.target===$('#setVeil'))closePanel('setVeil');};
   $('#veil').onclick=e=>{if(e.target===$('#veil'))closeSheet();};
-  for(const id of ['sProxy','sChannel','sAcct','sCap','sAmts','sRisk','sMaxLev','sDaily','sMode','sR','sFee','sSlip','sFund','sOpenRisk','sAuto','sStale','sCal','sPb'])
+  for(const id of ['sProxy','sChannel','sAcct','sCap','sAmts','sRisk','sMaxLev','sDaily','sMode','sR','sFee','sSlip','sFund','sOpenRisk','sAuto','sStale','sCal','sPb',
+    'sRiskUsd','sIsoSd','sBeAt','sTrail','sMaxHold','sLossLock','sMaxOpen','sGoal'])
     $('#'+id).onchange=()=>{readSettings();renderAll();};
+  wireAdvForm();
   wireIO();
   linkLabels(document.getElementById('setVeil'));
   wirePTR();setHdrH();addEventListener('resize',setHdrH);

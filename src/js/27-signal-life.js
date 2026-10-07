@@ -1428,8 +1428,8 @@ function showStatus(){
 /* نوار «تازه رسید»: بعد از هر بروزرسانی می‌گوید چند سیگنال جدید آمده */
 let incT=null;
 function showIncoming(nNew,nSig){
-  if(F('notify')&&nSig>0&&document.hidden)
-    notify('میز سیگنال',faN(nSig)+' سیگنال تازه در @'+S.channel,'newsig');
+  // اعلانِ هر سیگنال تازه (با جزئیات ایزوله) را مشاور می‌دهد
+  if(nSig>0)setTimeout(adviseTick,300);
   const b=$('#incoming');
   clearTimeout(incT);
   if(!nNew){b.classList.add('hide');return;}

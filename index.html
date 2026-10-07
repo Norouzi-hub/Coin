@@ -1543,6 +1543,25 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .daystrip i{aspect-ratio:1;border-radius:3px;background:var(--inset);border:1px solid var(--line)}
 .daystrip i.u{background:var(--up);border-color:transparent}.daystrip i.d{background:var(--dn);border-color:transparent}
 .whyagg{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+/* مرکز اعلان (15b-advisor.js) */
+.bellb{position:relative}
+.bellb .cnt{position:absolute;top:-4px;inset-inline-end:-4px;min-width:18px;height:18px;padding:0 5px;border-radius:99px;
+  background:var(--dn);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.advlist{display:flex;flex-direction:column;gap:6px;margin:10px 0;max-height:60vh;overflow:auto}
+.advit{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:12px;background:var(--inset);border:1px solid var(--line)}
+.advit.new{border-color:color-mix(in srgb,var(--gold) 45%,transparent)}
+.advit.p-hi .advic{color:var(--gold)}.advit.p-lo .advic{color:var(--tx3)}
+.advic{flex:none;color:var(--tx2)}.advic .ic{width:18px;height:18px}
+.advb{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:12.5px;line-height:1.8}
+.advb b{font-size:13.5px;color:var(--tx)}.advb span{color:var(--tx2);white-space:pre-line}.advb small{color:var(--tx3);font-size:11.5px}
+.acats{display:flex;flex-wrap:wrap;gap:4px 14px}
+/* سربرگ با زنگوله: روی گوشی دکمه‌ها کمی کوچک‌تر، نام برنامه یک‌خطی؛ خیلی باریک فقط نشان */
+@media (max-width:699px){
+  .hrow{gap:6px}
+  .ibtn,.rbtn{width:36px;height:36px;border-radius:12px}
+  .bname b{white-space:nowrap;font-size:15.5px}
+}
+@media (max-width:360px){.bname{display:none}}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -1699,6 +1718,7 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
           <b id="ringT"></b>
         </span>
       </button>
+      <button class="ibtn bellb" id="btnBell" aria-label="اعلان‌ها"></button>
       <button class="ibtn" id="btnSet" aria-label="تنظیمات"></button>
       <button class="btn pri rbtn" id="btnRef"></button>
     </div>
@@ -1866,6 +1886,23 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
     </details>
     </details>
 
+    <details class="sec" data-sec="adv"><summary>اعلان و پیشنهاد</summary>
+    <div class="wsetup">
+      <label class="autotog"><input type="checkbox" id="aOn"><span>مشاور روشن — هر دقیقه وضعیت را می‌سنجد و پیشنهاد می‌دهد</span></label>
+      <label class="autotog"><input type="checkbox" id="aSound"><span>صدا (سه لحن: مهم، معمولی، نکته)</span></label>
+      <div class="fld"><label for="aVol">بلندی صدا</label><input type="range" id="aVol" min="0.1" max="1" step="0.1"></div>
+      <label class="autotog"><input type="checkbox" id="aVib"><span>لرزش گوشی</span></label>
+      <label class="autotog"><input type="checkbox" id="aSys"><span>اعلان گوشی (وقتی برنامه در پس‌زمینه است)</span></label>
+      <div class="fld"><label for="aQuiet">ساعت سکوت (مثلاً 23-8)</label><input id="aQuiet" dir="ltr" placeholder="خالی = همیشه صدا"></div>
+      <div class="tgl">چه پیشنهادهایی</div>
+      <div class="acats" id="aCats"></div>
+      <div class="srow"><button class="btn sm" id="aTest">آزمایش صدا</button></div>
+      <div class="hint">پیشنهادها در زنگوله‌ی بالای صفحه می‌مانند. تا وقتی برنامه باز یا در پس‌زمینه است می‌آیند؛
+        وقتی کاملاً بسته باشد مرورگر چیزی اجرا نمی‌کند — برای آن حالت «هشدار تلگرام» ورکر هست.
+        در ساعت سکوت فقط صدا و لرزش خاموش است.</div>
+    </div>
+    </details>
+
     <details class="sec" data-sec="feat"><summary>امکانات</summary>
     <div class="wsetup">
       <div id="featList"></div>
@@ -2021,6 +2058,7 @@ const ICO={
   search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   x:'<path d="M6 6l12 12M18 6 6 18"/>',
   edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+  bell:'<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
   trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
   check:'<path d="m5 12.5 4.5 4.5L19 7"/>',
   alert:'<path d="M12 8v5M12 16.4v.2"/><circle cx="12" cy="12" r="9"/>',
@@ -2519,7 +2557,7 @@ const FEAT={
   summary:{on:true, t:'نوار خلاصه', d:'بالای سیگنال‌ها: سیگنال امروز، پوزیشن باز، سود/ضرر و فاصله تا حد ضرر روزانه'},
   accordion:{on:true,t:'کارت‌های آکاردئونی', d:'فقط یک کارت باز می‌ماند؛ زدن روی کارتی دیگر، قبلی را می‌بندد تا صفحه شلوغ نشود'},
   quick:  {on:true, t:'ورود سریع',  d:'دکمه‌ی ورود با مبلغ پیش‌فرض، بدون باز کردن فرم'},
-  notify: {on:false,t:'اعلان سیگنال تازه', d:'وقتی سیگنال تازه بیاید، نوتیفیکیشن مرورگر'},
+  notify: {on:false,t:'اعلان گوشی', d:'سیگنال تازه، هشدارها و پیشنهادهای مشاور به‌صورت اعلانِ گوشی (وقتی برنامه در پس‌زمینه است)'},
   alerts: {on:true, t:'هشدار استاپ و تارگت', d:'روی پوزیشن‌های باز، نزدیک شدن قیمت به استاپ یا رسیدن به تارگت'},
   autoexec:{on:true,t:'اجرای خودکار استاپ و نقشه', d:'استاپ بخورد، پوزیشن خودش بسته می‌شود؛ تارگت برسد، پله‌ی نقشه‌ی خروج (بستن سهم و جابه‌جایی استاپ) خودش ثبت می‌شود. به صرافی سفارش نمی‌فرستد'},
   tpclose:{on:true, t:'بستن روی تارگت', d:'دکمه‌ی بستن نصف پوزیشن روی تارگت، بدون پر کردن فرم'},
@@ -2566,6 +2604,7 @@ function applySettingsToForm(){
   $('#sRisk').value=S.risk; $('#sMaxLev').value=S.maxLev; $('#sDaily').value=S.daily;
   $('#sMode').value=S.mode; $('#sStale').value=S.staleDays||7; $('#sCal').value=calMode(); $('#sPb').value=pbDefault(); $('#sR').value=S.rMul.join(', '); $('#sFee').value=S.fee; $('#sAuto').value=S.auto;
   $('#sSlip').value=S.slip; $('#sFund').value=S.fund; $('#sOpenRisk').value=S.openRisk;
+  if(typeof advApplyForm==='function')advApplyForm();
   $('#sRiskUsd').value=S.riskUsd>0?S.riskUsd:''; $('#sIsoSd').value=S.isoMaxSd||15;
   $('#sBeAt').value=S.beAt>0?S.beAt:''; $('#sTrail').value=S.trail>0?S.trail:''; $('#sMaxHold').value=S.maxHold>0?S.maxHold:'';
   $('#sGoal').value=S.goal>0?S.goal:''; $('#sLossLock').value=S.lossLock!=null?S.lossLock:2; $('#sMaxOpen').value=S.maxOpen!=null?S.maxOpen:3;
@@ -3410,7 +3449,7 @@ async function pendCloseCheck(w){
     if(!(w.side==='up'?k.c>=w.trigger:k.c<=w.trigger)){save();return;}
     w.hit=Date.now();
     const msg=w.ticker+': کندل '+TF_FA[w.tf]+' '+(w.side==='up'?'بالای':'زیر')+' '+fmtPrice(w.trigger)+' بسته شد ('+fmtPrice(k.c)+')';
-    toast(msg,'ok');if(F('notify'))notify('میز سیگنال',msg,'trg'+w.id);
+    advise('pend:'+w.id,{cat:'sig',pri:'hi',title:msg,act:{t:'pend'}})||toast(msg,'ok');
     save();renderAll();
   }catch(e){}
 }
@@ -3436,8 +3475,7 @@ function checkPending(){
     if(!reached)continue;
     w.hit=Date.now();
     const msg=w.ticker+(w.kind==='tier2'?' به پله‌ی دوم رسید (':' به تریگر ورود رسید (')+fmtPrice(w.trigger)+')';
-    toast(msg,'ok');
-    if(F('notify'))notify('میز سیگنال',msg,'trg'+w.id);
+    advise('pend:'+w.id,{cat:'sig',pri:'hi',title:msg,act:{t:'pend'}})||toast(msg,'ok');
   }
   if(DB.pending.some(w=>w.hit))save();
 }
@@ -3469,11 +3507,8 @@ async function askNotify(){
   const r=await Notification.requestPermission();
   if(r!=='granted'){S.feat.notify=false;toast('اجازه داده نشد','info');applySettingsToForm();}
 }
-function notify(title,body,tag){
-  if(!canNotify())return false;
-  try{new Notification(title,{body,tag,icon:'icons/icon-192.png',badge:'icons/favicon-32.png'});return true;}
-  catch(e){return false;}
-}
+// روی اندروید «new Notification» کار نمی‌کند؛ sysNotify (15b-advisor.js) از راه سرویس‌ورکر می‌فرستد
+function notify(title,body,tag){return sysNotify(title,body,tag);}
 /* هر هشدار فقط یک بار — حالا روی دستگاه می‌ماند، پس با هر بار باز کردن برنامه تکرار نمی‌شود.
    کلیدِ استاپ شامل عدد استاپ است: اگر استاپ را جابجا کنی، هشدار تازه دوباره فعال می‌شود. */
 const ALKEY='signaldesk.alerted.v1';
@@ -3499,9 +3534,8 @@ function alertState(p,px){
 function fireAlert(key,msg,kind){
   if(ALERTED.has(key))return;
   ALERTED.add(key);alSave();
-  toast(msg,kind);
-  try{if(navigator.vibrate)navigator.vibrate(kind==='err'?[200,80,200]:120);}catch(e){}
-  if(F('notify'))notify('میز سیگنال',msg,key);
+  // از راه مشاور: در مرکز اعلان می‌ماند، با صدا و لرزش و اعلان گوشی
+  if(!advise('al:'+key,{cat:'pos',pri:kind==='err'||kind==='ok'?'hi':'mid',title:msg,act:{t:'pos',id:key.split(':')[0]}}))toast(msg,kind);
 }
 function checkAlerts(){
   if(!F('alerts'))return;
@@ -3535,6 +3569,230 @@ function checkAlerts(){
   }
 }
 
+/* ==================== مشاور: اعلان و پیشنهاد، با صدا ====================
+   برنامه هر دقیقه وضعیت را می‌سنجد و هر جا کاری برای انجام دادن هست، یک «پیشنهاد» می‌دهد:
+   سیگنال تازه‌ی مناسب ایزوله، رسیدن قیمت به ورود، مهلت پوزیشن، ریسک‌فری، لیکوئید پیش از استاپ،
+   حد ضرر روزانه، باخت‌های پیاپی، پیگیری‌های کانال، گزارش هفتگی، هدف ماهانه و نکته‌ی روز.
+   هر پیشنهاد: در «مرکز اعلان» (زنگوله‌ی بالای صفحه) می‌ماند، پیغام کوتاه، صدا (سه لحن برای سه
+   اهمیت)، لرزش، و اعلان گوشی اگر اجازه داده باشی. ساعت سکوت: فقط صدا و لرزش خاموش می‌شود.
+   محدودیت مرورگر: وقتی برنامه کاملاً بسته است، صفحه‌ای نیست که بسنجد؛ برای آن حالت هشدار
+   تلگرامِ ورکر هست (استاپ و تارگت). تا وقتی برنامه باز یا در پس‌زمینه است، پیشنهادها می‌آیند. */
+
+const ADVKEY='signaldesk.adv.v1';
+const ADV=Object.assign({items:[],seen:{},read:0},lsGet(ADVKEY)||{});
+const advSave=()=>{ADV.items=ADV.items.slice(0,120);
+  const cut=Date.now()-30*864e5;for(const k in ADV.seen)if(ADV.seen[k]<cut)delete ADV.seen[k];
+  lsSet(ADVKEY,ADV);};
+const ADV_DEF={on:true,sound:true,vol:0.7,vib:true,quiet:'',cats:{sig:true,pos:true,risk:true,rep:true,tip:true}};
+const advCfg=()=>{const c=Object.assign({},ADV_DEF,S.adv||{});c.cats=Object.assign({},ADV_DEF.cats,(S.adv||{}).cats||{});return c;};
+const ADV_CAT={sig:'سیگنال',pos:'پوزیشن',risk:'ریسک',rep:'گزارش',tip:'نکته'};
+const ADV_IC={sig:'trend',pos:'wallet',risk:'shield',rep:'bars',tip:'info'};
+
+/* ---- صدا: بی‌فایل، با Web Audio (مرورگر اجازه‌ی پخش را فقط بعد از اولین لمس می‌دهد) ---- */
+let ACTX=null;
+function advAudio(){
+  try{if(!ACTX){const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;ACTX=new A();}
+    if(ACTX.state==='suspended')ACTX.resume();}catch(e){return null;}
+  return ACTX;
+}
+['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,()=>{if(advCfg().sound)advAudio();},{once:true,passive:true}));
+const ADV_TONES={hi:[[880,0],[1175,0.16],[1568,0.32]],mid:[[784,0],[1046,0.14]],lo:[[660,0]]};
+let BEEPAT=0;
+function advBeep(pri,force){
+  const c=advCfg();if(!force&&(!c.sound||advQuiet()))return;
+  if(!force&&Date.now()-BEEPAT<3000)return;           // چند پیشنهادِ هم‌زمان: یک صدا، نه رگبار
+  BEEPAT=Date.now();
+  const a=advAudio();if(!a)return;
+  const v=Math.max(0.05,Math.min(1,+c.vol||0.7))*0.25, t0=a.currentTime+0.02;
+  for(const [f,dt] of ADV_TONES[pri]||ADV_TONES.mid){
+    const o=a.createOscillator(), g=a.createGain();
+    o.type='sine';o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001,t0+dt);g.gain.exponentialRampToValueAtTime(v,t0+dt+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+dt+0.42);
+    o.connect(g).connect(a.destination);o.start(t0+dt);o.stop(t0+dt+0.45);
+  }
+}
+/* ساعت سکوت به شکل «23-8» (از ۲۳ تا ۸ صبح) */
+function advQuiet(){
+  const m=String(advCfg().quiet||'').match(/^\s*(\d{1,2})\s*[-–تا]+\s*(\d{1,2})\s*$/);if(!m)return false;
+  const a=+m[1]%24,b=+m[2]%24,h=new Date().getHours();
+  return a<b?h>=a&&h<b:h>=a||h<b;
+}
+
+/* ---- اعلان گوشی: روی اندروید فقط از راه سرویس‌ورکر کار می‌کند ---- */
+function sysNotify(title,body,tag,data){
+  if(!canNotify())return false;
+  const opt={body,tag,renotify:true,icon:'icons/icon-192.png',badge:'icons/favicon-32.png',data:data||{},vibrate:advCfg().vib&&!advQuiet()?[120,60,120]:undefined};
+  if(navigator.serviceWorker&&navigator.serviceWorker.controller){
+    navigator.serviceWorker.ready.then(r=>r.showNotification(title,opt)).catch(()=>{try{new Notification(title,opt);}catch(e){}});
+    return true;
+  }
+  try{new Notification(title,opt);return true;}catch(e){return false;}
+}
+
+/* ---- پیشنهاد دادن: key جلوی تکرار را می‌گیرد؛ cool (میلی‌ثانیه) یعنی بعد از این مدت دوباره مجاز ---- */
+function advise(key,o){
+  const c=advCfg();
+  if(!c.on||!c.cats[o.cat||'tip'])return false;
+  const last=ADV.seen[key];
+  if(last&&(!o.cool||Date.now()-last<o.cool))return false;
+  ADV.seen[key]=Date.now();
+  const it={id:uid(),key,t:Date.now(),cat:o.cat||'tip',pri:o.pri||'mid',title:o.title,body:o.body||'',act:o.act||null};
+  ADV.items.unshift(it);advSave();paintBell();
+  if(!o.silent){
+    if(it.pri!=='lo')toast(esc(o.title),o.pri==='hi'?'ok':'info');   // نکته‌ها فقط در زنگوله، بی‌پیغام
+    advBeep(it.pri);
+    if(c.vib&&!advQuiet()){try{if(navigator.vibrate)navigator.vibrate(it.pri==='hi'?[160,70,160]:90);}catch(e){}}
+    if(F('notify')&&(document.hidden||it.pri==='hi'))sysNotify('میز سیگنال · '+ADV_CAT[it.cat],o.title+(o.body?'\n'+o.body:''),key,{act:o.act});
+  }
+  return true;
+}
+const advUnread=()=>ADV.items.filter(x=>x.t>(ADV.read||0)).length;
+function paintBell(){
+  const b=$('#btnBell');if(!b)return;
+  const n=advUnread();
+  b.innerHTML=ic('bell')+(n?'<span class="cnt">'+faN(Math.min(99,n))+'</span>':'');
+  b.setAttribute('aria-label','اعلان‌ها'+(n?' — '+n+' تازه':''));
+}
+/* کار هر پیشنهاد: باز کردن همان سیگنال / پوزیشن / کانال‌سنج */
+function advDo(act){
+  if(!act)return;
+  closeSheet();
+  if(act.t==='sig'){bucket='live';sigFilter='all';ACCOPEN=act.id;go('signals');
+    setTimeout(()=>{const c=CARDS.get(act.id);if(c)c.scrollIntoView({behavior:'smooth',block:'center'});},300);}
+  else if(act.t==='pos'){posFilter='open';POSOPEN.add(act.id);go('positions');
+    setTimeout(()=>{const n=document.getElementById('pos-'+act.id);if(n)n.scrollIntoView({behavior:'smooth',block:'center'});},300);}
+  else if(act.t==='pend'){posFilter='pending';go('positions');}
+  else if(act.t==='view'){if(act.acc){AUDOPEN=act.acc;lsSet(AUDOPENKEY,AUDOPEN);}go(act.v);}
+  else if(act.t==='set'){openPanel('setVeil');}
+}
+function sheetAdvice(){
+  const paint=box=>{
+    const L=ADV.items;
+    box.innerHTML=L.length?'':'<div class="hint">هنوز پیشنهادی نیست. برنامه هر دقیقه وضعیت را می‌سنجد.</div>';
+    for(const it of L.slice(0,60)){
+      const r=el('div','advit p-'+it.pri+(it.t>(ADV.read||0)?' new':''));
+      r.innerHTML='<i class="advic">'+ic(ADV_IC[it.cat]||'info')+'</i><div class="advb"><b>'+esc(it.title)+'</b>'+
+        (it.body?'<span>'+esc(it.body)+'</span>':'')+'<small>'+ADV_CAT[it.cat]+' · '+relTime(new Date(it.t))+'</small></div>';
+      if(it.act){const g=el('button','btn xs','باز کن');g.onclick=()=>advDo(it.act);r.appendChild(g);}
+      box.appendChild(r);
+    }
+  };
+  openSheet('<h3>'+ic('bell')+'اعلان‌ها و پیشنهادها</h3><div class="advlist" id="advL"></div>'+
+    '<div class="srow"><button class="btn sm" id="advTest">'+ic('bell')+'<span>آزمایش صدا</span></button>'+
+    '<button class="btn sm" id="advSet">'+ic('sliders')+'<span>تنظیم اعلان</span></button>'+
+    '<button class="btn sm" id="advClr">پاک کردن</button><button class="btn" id="cx">بستن</button></div>',
+  ()=>{
+    paint($('#advL'));
+    ADV.read=Date.now();advSave();paintBell();
+    $('#cx').onclick=closeSheet;
+    $('#advTest').onclick=()=>{advBeep('hi',true);setTimeout(()=>advBeep('mid',true),900);setTimeout(()=>advBeep('lo',true),1600);};
+    $('#advSet').onclick=()=>{closeSheet();openPanel('setVeil');setTimeout(()=>{const d=document.querySelector('#setVeil details[data-sec="adv"]');if(d){d.open=true;d.scrollIntoView({block:'start'});}},250);};
+    $('#advClr').onclick=()=>{ADV.items=[];advSave();paint($('#advL'));paintBell();};
+  });
+}
+
+/* ==================== قانون‌های پیشنهاد ==================== */
+const dayK=()=>jKey(new Date());
+function advRulesFast(){
+  const now=Date.now();
+  // سیگنال تازه‌ی مناسب ایزوله (تا ۳ ساعت بعد از انتشار، تصمیم‌نگرفته، دیر نرسیده)
+  for(const p of POSTS){
+    if(!p.date||now-p.date>3*36e5)break;
+    if(!isOpenSig(p)||decisionOf(p.id))continue;
+    const sig=sigOf(p), ov=OVERRIDE[p.id]||{}, px=PRICES.get(sig.ticker), I=planInputsOf(p,sig,ov,px);
+    if(longTermOf(p,sig,I)){advise('sig:'+p.id,{cat:'sig',pri:'lo',title:'سیگنال بلندمدت: '+(sig.ticker||'')+' — برای ایزوله‌ی کوتاه‌مدت مناسب نیست',
+      body:longTermOf(p,sig,I),act:{t:'sig',id:p.id}});continue;}
+    const E=I.entry||px, lt=lateOf(I,sig.targets,px);
+    let body='';
+    if(!I.spot&&E&&I.stop){const pl=xRulePlan(I.dir,E,I.stop,sig.targets), z=isoSize(E,pl?pl.stop:I.stop);
+      if(z)body='ایزوله '+z.lev+'x · مارجین '+fmtUsd(z.margin)+(pl?' · استاپ '+fmtPrice(pl.stop)+' · هدف '+fmtPrice(pl.tp)+' · تا '+XH_FA[pl.r.h]:'');}
+    const h=histLine(p).replace(/<[^>]+>/g,'');
+    if(!lt)advise('sig:'+p.id,{cat:'sig',pri:'hi',title:'سیگنال تازه: '+(sig.ticker||'')+' '+(I.spot?'اسپات':I.dir==='long'?'لانگ':'شورت'),
+      body:[body,h?'سابقه: '+h:''].filter(Boolean).join('\n'),act:{t:'sig',id:p.id}});
+    // قیمت به ورود رسید (برای سیگنالی که منتظر برگشت به ورود بود)
+    if(I.entry&&px!=null&&Math.abs(px-I.entry)/I.entry<0.002&&now-p.date>5*60000)
+      advise('near:'+p.id,{cat:'sig',pri:'hi',title:(sig.ticker||'')+' به نقطه‌ی ورود رسید ('+fmtPrice(I.entry)+')',act:{t:'sig',id:p.id}});
+  }
+  // پوزیشن‌های باز
+  for(const p of DB.positions){
+    if(p.status!=='open')continue;
+    const px=pxOf(p), dl=posDeadline(p);
+    if(dl&&now>=dl)advise('dl:'+p.id,{cat:'pos',pri:'hi',title:p.ticker+': مهلت پوزیشن تمام شد — طبق قاعده ببند',act:{t:'pos',id:p.id}});
+    else if(dl&&dl-now<30*60000)advise('dl30:'+p.id,{cat:'pos',pri:'mid',title:p.ticker+': ۳۰ دقیقه تا پایان مهلت پوزیشن',act:{t:'pos',id:p.id}});
+    if(liqBeforeStop(p))advise('liq:'+p.id+':'+p.stop+':'+p.lev,{cat:'risk',pri:'hi',title:p.ticker+': لیکوئید پیش از استاپ است',body:'اهرم را کم کن یا استاپ را نزدیک‌تر بیاور.',act:{t:'pos',id:p.id}});
+    if(px!=null&&p.stop&&!(+S.beAt>0)){
+      const sign=p.dir==='long'?1:-1, R=Math.abs(p.entry-p.stop);
+      if((p.entry-p.stop)*sign>0&&(px-p.entry)*sign>=R)
+        advise('be:'+p.id,{cat:'pos',pri:'mid',title:p.ticker+' یک R در سود است — استاپ را ریسک‌فری کن',body:'استاپ هنوز زیر ورود است؛ با جابه‌جایی روی ورود، دیگر باختی در کار نیست.',act:{t:'pos',id:p.id}});
+    }
+    for(const f of followsFor(p))advise('fw:'+f.q.id,{cat:'pos',pri:'hi',title:'کانال درباره‌ی '+p.ticker+': '+followTag(f.f),act:{t:'pos',id:p.id}});
+  }
+}
+function advRulesSlow(){
+  const d=dayK();
+  // ریسک: حد ضرر روزانه، باخت پیاپی، هم‌جهت
+  const m=moneyNow(), lim=(+S.acct||0)*(+S.daily||0)/100;
+  if(m&&lim>0&&m.left>0&&m.left<lim*0.25)advise('daily:'+d,{cat:'risk',pri:'hi',title:'نزدیک حد ضرر روزانه: فقط '+fmtUsd(m.left)+' مانده',body:'امروز با احتیاط؛ یا اصلاً وارد نشو.'});
+  if(m&&m.left<=0)advise('dailyx:'+d,{cat:'risk',pri:'hi',title:'به حد ضرر روزانه رسیدی — امروز ورود تازه نه'});
+  const lk=lossLockOn();
+  if(lk)advise('lock:'+d,{cat:'risk',pri:'hi',title:faN(lk.n)+' باخت پیاپی — تا فردا استراحت',body:'قانون خودت (تنظیمات › قفل بعد از باخت پیاپی).'});
+  for(const dir of ['long','short']){const n=sameDirOf(dir).length;
+    if(n>=3)advise('same:'+dir+':'+n+':'+d,{cat:'risk',pri:'mid',title:faN(n)+' پوزیشن '+(dir==='long'?'لانگ':'شورت')+' هم‌زمان',body:'همه به حرکت بیت‌کوین وابسته‌اند؛ یکی را ببند یا استاپ‌ها را نزدیک کن.',act:{t:'view',v:'positions'}});}
+  // گزارش هفتگی: جمعه‌ها از ساعت ۱۸
+  const now=new Date();
+  if(now.getDay()===5&&now.getHours()>=18)advise('week:'+d,{cat:'rep',pri:'lo',title:'گزارش هفتگی',body:weekText(weekSummary()),act:{t:'view',v:'report'}});
+  // هدف ماهانه
+  if(+S.goal>0){const mk=thisMonthKey(), pnl=DB.positions.filter(p=>p.status==='closed'&&p.closedAt&&monthKeyOf(p.closedAt)===mk).reduce((s,p)=>s+(posMetrics(p).pnl||0),0);
+    if(pnl>=(+S.acct||0)*S.goal/100)advise('goal:'+mk,{cat:'rep',pri:'mid',title:'به هدف این ماه رسیدی 🎯',body:fmtUsd(pnl)+' — حالا حفظ سود مهم‌تر از سود بیشتر است.',act:{t:'view',v:'report'}});}
+  // نکته‌ی روز از داده‌ی کانال‌سنج (یک بار در روز)
+  try{
+    const rows=audFilter(audRows());
+    const hb=groupBy(rows,x=>Math.floor(new Date(x.inp.t0).getHours()/4)), kd=groupBy(rows,x=>sigKindOf(x.p,x.inp));
+    const best=(mp,lab)=>{let b=null;for(const [k,o] of mp)if(o.n>=5&&(!b||o.r/o.n>b.o.r/b.o.n))b={k,o};return b?{t:lab(b.k),o:b.o}:null;};
+    const HB=['۰ تا ۴','۴ تا ۸','۸ تا ۱۲','۱۲ تا ۱۶','۱۶ تا ۲۰','۲۰ تا ۲۴'];
+    const a=best(hb,k=>'سیگنال‌های ساعت '+HB[k]), b=best(kd,k=>SIGKIND_FA[k]);
+    const pick=[a,b].filter(Boolean).sort((x,y)=>y.o.r/y.o.n-x.o.r/x.o.n)[0];
+    if(pick&&pick.o.r/pick.o.n>0)advise('tipd:'+d,{cat:'tip',pri:'lo',title:'نکته‌ی امروز: '+pick.t+' بهتر بوده‌اند',
+      body:faN(pick.o.n)+' سیگنال، میانگین '+fmtR(pick.o.r/pick.o.n)+(xRule()?' با قاعده‌ی من':''),act:{t:'view',v:'audit',acc:'سرمایه و الگوها'}});
+    // ماه اخیر کانال بدتر شد
+    const mm=groupBy(rows,x=>{const p=jParts(new Date(x.inp.t0));return p.jy*100+p.jm;}), ks=[...mm.keys()].sort();
+    if(ks.length>=2){const x=mm.get(ks[ks.length-1]), y=mm.get(ks[ks.length-2]);
+      if(x.n>=5&&y.n>=5&&x.r/x.n<y.r/y.n-0.3)advise('chq:'+ks[ks.length-1],{cat:'tip',pri:'mid',title:'کیفیت کانال این ماه افت کرده',
+        body:fmtR(x.r/x.n)+' در برابر '+fmtR(y.r/y.n)+' ماه قبل، برای هر سیگنال',act:{t:'view',v:'audit',acc:'سرمایه و الگوها'}});}
+  }catch(e){}
+  // راه‌اندازی: قاعده و ریسک دلاری
+  if(!xRule())advise('tip:rule',{cat:'tip',pri:'lo',title:'قاعده‌ی خروج کوتاه را انتخاب کن',body:'کانال‌سنج › خروج › روی یک ردیف بزن؛ روی هر سیگنال آماده می‌آید.',act:{t:'view',v:'audit',acc:'خروج'}});
+  if(!(+S.riskUsd>0))advise('tip:riskusd',{cat:'tip',pri:'lo',title:'ریسک دلاری هر معامله را مشخص کن',body:'تنظیمات › اندازه و ریسک › «ریسک هر معامله‌ی ایزوله».',act:{t:'set'}});
+}
+/* ---- فرم تنظیمات «اعلان و پیشنهاد» ---- */
+function advApplyForm(){
+  const c=advCfg();if(!$('#aOn'))return;
+  $('#aOn').checked=c.on;$('#aSound').checked=c.sound;$('#aVol').value=c.vol;$('#aVib').checked=c.vib;
+  $('#aSys').checked=F('notify');$('#aQuiet').value=c.quiet||'';
+  $('#aCats').innerHTML=Object.entries(ADV_CAT).map(([k,v])=>'<label class="autotog"><input type="checkbox" data-cat="'+k+'"'+(c.cats[k]?' checked':'')+'><span>'+ic(ADV_IC[k])+v+'</span></label>').join('');
+  $('#aCats').querySelectorAll('input').forEach(i=>i.onchange=advReadForm);
+}
+function advReadForm(){
+  const cats={};$('#aCats').querySelectorAll('input[data-cat]').forEach(i=>cats[i.dataset.cat]=i.checked);
+  S.adv={on:$('#aOn').checked,sound:$('#aSound').checked,vol:+$('#aVol').value||0.7,vib:$('#aVib').checked,
+    quiet:($('#aQuiet').value||'').trim(),cats};
+  DB.settings=Object.assign({},S);save();
+}
+function wireAdvForm(){
+  if(!$('#aOn'))return;
+  advApplyForm();
+  ['aOn','aSound','aVol','aVib','aQuiet'].forEach(id=>$('#'+id).onchange=()=>{advReadForm();if(id==='aSound'&&$('#aSound').checked){advAudio();advBeep('mid',true);}});
+  $('#aSys').onchange=()=>{const fc=$('#feat_notify');if(fc)fc.checked=$('#aSys').checked;readSettings();renderAll();};
+  $('#aTest').onclick=()=>{advAudio();advBeep('hi',true);setTimeout(()=>advBeep('mid',true),900);setTimeout(()=>advBeep('lo',true),1600);};
+}
+let ADVSLOW=0;
+function adviseTick(){
+  if(!BOOTED||!advCfg().on)return;
+  try{advRulesFast();}catch(e){logIt('err','مشاور: '+(e&&e.message||e));}
+  if(Date.now()-ADVSLOW>5*60000){ADVSLOW=Date.now();try{advRulesSlow();}catch(e){logIt('err','مشاور: '+(e&&e.message||e));}}
+}
+setInterval(adviseTick,60000);
 /* ==================== همگام‌سازی بین دستگاه‌ها ==================== */
 /* داده روی ورکر خودت نگه داشته می‌شود، نه جای دیگر. هر نوشتن یک شماره‌ی نسخه جلو می‌برد؛
    اگر دستگاه دیگری وسط کار نوشته باشد سرور 409 می‌دهد. آن وقت دو طرف رکوردبه‌رکورد ادغام
@@ -6567,8 +6825,8 @@ function showStatus(){
 /* نوار «تازه رسید»: بعد از هر بروزرسانی می‌گوید چند سیگنال جدید آمده */
 let incT=null;
 function showIncoming(nNew,nSig){
-  if(F('notify')&&nSig>0&&document.hidden)
-    notify('میز سیگنال',faN(nSig)+' سیگنال تازه در @'+S.channel,'newsig');
+  // اعلانِ هر سیگنال تازه (با جزئیات ایزوله) را مشاور می‌دهد
+  if(nSig>0)setTimeout(adviseTick,300);
   const b=$('#incoming');
   clearTimeout(incT);
   if(!nNew){b.classList.add('hide');return;}
@@ -10545,8 +10803,11 @@ function autoReport(ev,snap){
     save();renderAll();toast('برگشت؛ اجرای خودکار این پوزیشن خاموش شد','info');
   });
   const bad=ev.some(e=>e.k==='stop'||e.k==='liq');
-  try{if(navigator.vibrate)navigator.vibrate(bad?[200,80,200]:[120,60,120]);}catch(e){}
-  if(F('notify'))notify('میز سیگنال',msg,'auto'+ids.join(','));
+  // پیغامِ «برگرداندن» همین بالاست؛ مشاور فقط در مرکز اعلان ثبت می‌کند، صدا می‌زند و اعلان گوشی می‌دهد
+  advise('auto:'+ids.join(',')+':'+Date.now(),{cat:'pos',pri:bad?'hi':'mid',title:msg,silent:true,act:{t:'pos',id:ids[0]}});
+  advBeep(bad?'hi':'mid');
+  try{if(advCfg().vib&&!advQuiet()&&navigator.vibrate)navigator.vibrate(bad?[200,80,200]:[120,60,120]);}catch(e){}
+  if(F('notify'))sysNotify('میز سیگنال',msg,'auto'+ids.join(','),{act:{t:'pos',id:ids[0]}});
 }
 /* با هر قیمت تازه: پوزیشن‌هایی که تازه سنجیده شده‌اند با قیمت زنده، بقیه (فاصله‌ی طولانی) با کندل.
    خروجی: آیا کاری انجام شد (تا هشدارهای همین لحظه روی پیغامِ «برگرداندن» ننشینند) */
@@ -13437,13 +13698,16 @@ function wire(){
   const wsx=$('#wSetup');
   if(wsx&&!proxyList().length&&!goodFor('tg'))wsx.open=true;
   $('#btnSet').onclick=()=>openPanel('setVeil');
+  $('#btnBell').onclick=sheetAdvice;paintBell();
   $('#setX').innerHTML=ic('x');          // بدون این، دکمه‌ی بستن تنظیمات یک مربع خالی بود
   $('#setX').onclick=()=>closePanel('setVeil');
   $('#setDone').onclick=()=>closePanel('setVeil');
   $('#setVeil').onclick=e=>{if(e.target===$('#setVeil'))closePanel('setVeil');};
   $('#veil').onclick=e=>{if(e.target===$('#veil'))closeSheet();};
-  for(const id of ['sProxy','sChannel','sAcct','sCap','sAmts','sRisk','sMaxLev','sDaily','sMode','sR','sFee','sSlip','sFund','sOpenRisk','sAuto','sStale','sCal','sPb'])
+  for(const id of ['sProxy','sChannel','sAcct','sCap','sAmts','sRisk','sMaxLev','sDaily','sMode','sR','sFee','sSlip','sFund','sOpenRisk','sAuto','sStale','sCal','sPb',
+    'sRiskUsd','sIsoSd','sBeAt','sTrail','sMaxHold','sLossLock','sMaxOpen','sGoal'])
     $('#'+id).onchange=()=>{readSettings();renderAll();};
+  wireAdvForm();
   wireIO();
   linkLabels(document.getElementById('setVeil'));
   wirePTR();setHdrH();addEventListener('resize',setHdrH);
@@ -13566,6 +13830,7 @@ document.addEventListener('visibilitychange',()=>{
   if(syncOn()&&lastHidden&&Date.now()-lastHidden>30000)syncPull(true).catch(()=>{});
 });
 try{localStorage.removeItem('signaldesk.lock.v1');}catch(e){}   // قفل ورود برداشته شد
+setTimeout(adviseTick,5000);        // مشاور: اولین سنجش کمی بعد از بالا آمدن، بعد هر دقیقه
 showOriginWarn();
 renderAll();
 persistStore().finally(()=>setTimeout(showBackupWarn,1500));

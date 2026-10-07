@@ -1526,3 +1526,22 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .daystrip i{aspect-ratio:1;border-radius:3px;background:var(--inset);border:1px solid var(--line)}
 .daystrip i.u{background:var(--up);border-color:transparent}.daystrip i.d{background:var(--dn);border-color:transparent}
 .whyagg{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+/* مرکز اعلان (15b-advisor.js) */
+.bellb{position:relative}
+.bellb .cnt{position:absolute;top:-4px;inset-inline-end:-4px;min-width:18px;height:18px;padding:0 5px;border-radius:99px;
+  background:var(--dn);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.advlist{display:flex;flex-direction:column;gap:6px;margin:10px 0;max-height:60vh;overflow:auto}
+.advit{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:12px;background:var(--inset);border:1px solid var(--line)}
+.advit.new{border-color:color-mix(in srgb,var(--gold) 45%,transparent)}
+.advit.p-hi .advic{color:var(--gold)}.advit.p-lo .advic{color:var(--tx3)}
+.advic{flex:none;color:var(--tx2)}.advic .ic{width:18px;height:18px}
+.advb{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:12.5px;line-height:1.8}
+.advb b{font-size:13.5px;color:var(--tx)}.advb span{color:var(--tx2);white-space:pre-line}.advb small{color:var(--tx3);font-size:11.5px}
+.acats{display:flex;flex-wrap:wrap;gap:4px 14px}
+/* سربرگ با زنگوله: روی گوشی دکمه‌ها کمی کوچک‌تر، نام برنامه یک‌خطی؛ خیلی باریک فقط نشان */
+@media (max-width:699px){
+  .hrow{gap:6px}
+  .ibtn,.rbtn{width:36px;height:36px;border-radius:12px}
+  .bname b{white-space:nowrap;font-size:15.5px}
+}
+@media (max-width:360px){.bname{display:none}}

@@ -31,7 +31,7 @@ async function pendCloseCheck(w){
     if(!(w.side==='up'?k.c>=w.trigger:k.c<=w.trigger)){save();return;}
     w.hit=Date.now();
     const msg=w.ticker+': کندل '+TF_FA[w.tf]+' '+(w.side==='up'?'بالای':'زیر')+' '+fmtPrice(w.trigger)+' بسته شد ('+fmtPrice(k.c)+')';
-    toast(msg,'ok');if(F('notify'))notify('میز سیگنال',msg,'trg'+w.id);
+    advise('pend:'+w.id,{cat:'sig',pri:'hi',title:msg,act:{t:'pend'}})||toast(msg,'ok');
     save();renderAll();
   }catch(e){}
 }
@@ -57,8 +57,7 @@ function checkPending(){
     if(!reached)continue;
     w.hit=Date.now();
     const msg=w.ticker+(w.kind==='tier2'?' به پله‌ی دوم رسید (':' به تریگر ورود رسید (')+fmtPrice(w.trigger)+')';
-    toast(msg,'ok');
-    if(F('notify'))notify('میز سیگنال',msg,'trg'+w.id);
+    advise('pend:'+w.id,{cat:'sig',pri:'hi',title:msg,act:{t:'pend'}})||toast(msg,'ok');
   }
   if(DB.pending.some(w=>w.hit))save();
 }

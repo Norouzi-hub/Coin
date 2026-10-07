@@ -12,11 +12,8 @@ async function askNotify(){
   const r=await Notification.requestPermission();
   if(r!=='granted'){S.feat.notify=false;toast('اجازه داده نشد','info');applySettingsToForm();}
 }
-function notify(title,body,tag){
-  if(!canNotify())return false;
-  try{new Notification(title,{body,tag,icon:'icons/icon-192.png',badge:'icons/favicon-32.png'});return true;}
-  catch(e){return false;}
-}
+// روی اندروید «new Notification» کار نمی‌کند؛ sysNotify (15b-advisor.js) از راه سرویس‌ورکر می‌فرستد
+function notify(title,body,tag){return sysNotify(title,body,tag);}
 /* هر هشدار فقط یک بار — حالا روی دستگاه می‌ماند، پس با هر بار باز کردن برنامه تکرار نمی‌شود.
    کلیدِ استاپ شامل عدد استاپ است: اگر استاپ را جابجا کنی، هشدار تازه دوباره فعال می‌شود. */
 const ALKEY='signaldesk.alerted.v1';
@@ -42,9 +39,8 @@ function alertState(p,px){
 function fireAlert(key,msg,kind){
   if(ALERTED.has(key))return;
   ALERTED.add(key);alSave();
-  toast(msg,kind);
-  try{if(navigator.vibrate)navigator.vibrate(kind==='err'?[200,80,200]:120);}catch(e){}
-  if(F('notify'))notify('میز سیگنال',msg,key);
+  // از راه مشاور: در مرکز اعلان می‌ماند، با صدا و لرزش و اعلان گوشی
+  if(!advise('al:'+key,{cat:'pos',pri:kind==='err'||kind==='ok'?'hi':'mid',title:msg,act:{t:'pos',id:key.split(':')[0]}}))toast(msg,kind);
 }
 function checkAlerts(){
   if(!F('alerts'))return;

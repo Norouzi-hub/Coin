@@ -9,6 +9,7 @@ const ICO={
   search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   x:'<path d="M6 6l12 12M18 6 6 18"/>',
   edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+  bell:'<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
   trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
   check:'<path d="m5 12.5 4.5 4.5L19 7"/>',
   alert:'<path d="M12 8v5M12 16.4v.2"/><circle cx="12" cy="12" r="9"/>',

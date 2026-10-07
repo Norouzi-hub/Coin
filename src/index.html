@@ -51,6 +51,7 @@
           <b id="ringT"></b>
         </span>
       </button>
+      <button class="ibtn bellb" id="btnBell" aria-label="اعلان‌ها"></button>
       <button class="ibtn" id="btnSet" aria-label="تنظیمات"></button>
       <button class="btn pri rbtn" id="btnRef"></button>
     </div>
@@ -216,6 +217,23 @@
         <li>آدرسی که می‌دهد را بردار و اینجا در کادر بالا بنویس، با <b dir="ltr">/?url={url}</b> آخرش.</li>
       </ol>
     </details>
+    </details>
+
+    <details class="sec" data-sec="adv"><summary>اعلان و پیشنهاد</summary>
+    <div class="wsetup">
+      <label class="autotog"><input type="checkbox" id="aOn"><span>مشاور روشن — هر دقیقه وضعیت را می‌سنجد و پیشنهاد می‌دهد</span></label>
+      <label class="autotog"><input type="checkbox" id="aSound"><span>صدا (سه لحن: مهم، معمولی، نکته)</span></label>
+      <div class="fld"><label for="aVol">بلندی صدا</label><input type="range" id="aVol" min="0.1" max="1" step="0.1"></div>
+      <label class="autotog"><input type="checkbox" id="aVib"><span>لرزش گوشی</span></label>
+      <label class="autotog"><input type="checkbox" id="aSys"><span>اعلان گوشی (وقتی برنامه در پس‌زمینه است)</span></label>
+      <div class="fld"><label for="aQuiet">ساعت سکوت (مثلاً 23-8)</label><input id="aQuiet" dir="ltr" placeholder="خالی = همیشه صدا"></div>
+      <div class="tgl">چه پیشنهادهایی</div>
+      <div class="acats" id="aCats"></div>
+      <div class="srow"><button class="btn sm" id="aTest">آزمایش صدا</button></div>
+      <div class="hint">پیشنهادها در زنگوله‌ی بالای صفحه می‌مانند. تا وقتی برنامه باز یا در پس‌زمینه است می‌آیند؛
+        وقتی کاملاً بسته باشد مرورگر چیزی اجرا نمی‌کند — برای آن حالت «هشدار تلگرام» ورکر هست.
+        در ساعت سکوت فقط صدا و لرزش خاموش است.</div>
+    </div>
     </details>
 
     <details class="sec" data-sec="feat"><summary>امکانات</summary>
