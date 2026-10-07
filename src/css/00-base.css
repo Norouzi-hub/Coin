@@ -1575,7 +1575,7 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .flag.vline small{display:block;color:var(--tx3);font-size:11.5px;margin-top:2px}
 .flag.vline em{font-style:normal;color:var(--gold);font-size:12px;white-space:nowrap;align-self:center;margin-inline-start:auto}
 /* حال بازار در «الان چه کنم؟» و رویدادهای هر ارز (31c-market.js) */
-.mkt{display:flex;flex-direction:column;gap:6px;padding:9px 10px;border-radius:12px;background:var(--inset);border:1px solid var(--line)}
+.mkst{display:flex;flex-direction:column;gap:6px;padding:9px 10px;border-radius:12px;background:var(--inset);border:1px solid var(--line)}
 .mkh{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
 .mkh b{display:flex;align-items:center;gap:5px}.mkh b .ic{width:15px;height:15px;color:var(--gold)}
 .mkh small{color:var(--tx3);font-size:11px}

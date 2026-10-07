@@ -12,7 +12,7 @@ const AS_RULES={
   high7:{dir:'long',t:'شکست سقف 7 روزه'}, high30:{dir:'long',t:'شکست سقف 30 روزه'},
   maDn:{dir:'short',t:'تقاطع نزولی MA20/50 (4 ساعته)'}, maUp:{dir:'long',t:'تقاطع صعودی MA20/50 (4 ساعته)'}
 };
-const AS_HOLD=24, AS_MINN=10, AS_KEY='signaldesk.autosig.v1';
+const AS_HOLD=24, AS_FRESH=4, AS_MINN=10, AS_KEY='signaldesk.autosig.v1';
 /* رویدادها در هر کندل (برای سنجش گذشته)؛ هر قاعده روی هر ارز حداکثر یک بار در ۲۴ ساعت */
 function asTriggers(C){
   const H=36e5, out=[], last={}, n=C.length;
@@ -68,7 +68,7 @@ function asCoin(tk,C){
     const w=asWalk(C,i,pl);
     if(w){const o=res[k]||(res[k]={n:0,w:0,r:0,fn:0,fw:0,fr:0});o.n++;o.r+=w.R;if(w.R>0)o.w++;
       if(okReg){o.fn++;o.fr+=w.R;if(w.R>0)o.fw++;}}
-    if(end-(C[i].t+36e5)<=3*36e5)live.push({tk,k,i,t:C[i].t+36e5});
+    if(end-(C[i].t+36e5)<=AS_FRESH*36e5)live.push({tk,k,i,t:C[i].t+36e5});
   }
   return {res,live};
 }
@@ -113,15 +113,15 @@ function asRuleStats(){
 }
 /* پیشنهادهای امروز: رویداد تازه + قاعده‌ای که در گذشته سود داده + فیلتر حال بازار (اگر بهترش کرده) */
 function asSuggestions(){
-  const st=asRuleStats(), reg=MKT?regOfBtc(MKT.btc):null, out=[];let rej=0;
+  const st=asRuleStats(), reg=MKT?regOfBtc(MKT.btc):null, out=[];let rej=0,rejBad=0,rejReg=0;
   for(const x of AS.live||[]){
     const s=st[x.k], dir=AS_RULES[x.k].dir;
-    if(!s||!s.ok){rej++;continue;}
-    if(s.useF&&((dir==='short'&&reg==='bull')||(dir==='long'&&reg==='bear'))){rej++;continue;}
+    if(!s||!s.ok){rej++;rejBad++;continue;}
+    if(s.useF&&((dir==='short'&&reg==='bull')||(dir==='long'&&reg==='bear'))){rej++;rejReg++;continue;}
     out.push(Object.assign({},x,{s,dir}));
   }
   out.sort((a,b)=>b.s.avg-a.s.avg||b.t-a.t);
-  return {list:out,rej};
+  return {list:out,rej,rejBad,rejReg,st};
 }
 function asPost(x){
   return {id:'auto/'+x.tk+'/'+x.k+'/'+x.t,num:0,text:'پیشنهاد برنامه: '+AS_RULES[x.k].t+' · #'+x.tk,date:new Date(x.t),link:null,img:null,auto:true};
@@ -147,12 +147,24 @@ function asHtml(){
       '<div class="glact">'+(z?'<button class="btn sm ok" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
       '<button class="btn sm side" data-a="copy" title="برای اپ صرافی">'+ic('share')+'</button></div></div>';
   }
-  if(AS.at&&!sg.list.length)h+='<div class="hint">الان رویدادی با قاعده‌ی سودده نیست'+(sg.rej?' ('+faN(sg.rej)+' رویداد تازه بود، ولی قاعده‌اش در گذشته سود نداده یا خلاف حال بازار است)':'')+'.</div>';
+  if(AS.at&&!sg.list.length)h+=asWhyNone(sg);
   else if(sg.rej)h+='<div class="hint">'+faN(sg.rej)+' رویداد دیگر کنار رفت (قاعده‌اش در گذشته سود نداده یا خلاف حال بازار است).</div>';
   h+='<div class="srow"><button class="btn sm" data-asrules="1">'+ic('bars')+'<span>کارنامه‌ی قاعده‌ها</span></button>'+
     '<button class="btn sm" data-asrun="1"'+(ASQ.on?' disabled':'')+'>'+ic('refresh')+'<span>بررسی دوباره</span></button></div>'+
     '<div class="hint">قاعده‌های ساده‌ی تکنیکال، سنجیده روی حدود 40 روز گذشته‌ی '+faN(Object.keys(AS.coins||{}).length)+' ارز پرحجم؛ سود گذشته تضمین آینده نیست. اندازه با «ریسک هر معامله».</div></div>';
   return h;
+}
+/* چرا الان پیشنهادی نیست؟ سه حالت، با عدد */
+function asWhyNone(sg){
+  const R=Object.entries(sg.st).map(([k,a])=>Object.assign({k},a));
+  const good=R.filter(a=>a.ok).sort((a,b)=>b.avg-a.avg);
+  const best=R.filter(a=>a.N>=AS_MINN).sort((a,b)=>b.avg-a.avg)[0];
+  const nm=a=>esc(AS_RULES[a.k].t)+' ('+(AS_RULES[a.k].dir==='long'?'لانگ':'شورت')+'، '+faN(a.N)+' بار، <span class="'+cls(a.avg)+'">'+fmtR(a.avg)+'</span>)';
+  if(!good.length)return '<div class="hint">الان پیشنهادی نمی‌دهم: در 40 روز گذشته هیچ قاعده‌ای بعد از کارمزد سود نداده'+
+    (best?' — بهترینش '+nm(best):'')+'. یعنی این روزها شکست‌ها و تقاطع‌ها ادامه پیدا نکرده‌اند؛ معامله روی آن‌ها شرط‌بندی است.</div>';
+  return '<div class="hint">قاعده‌های سودده: '+good.map(nm).join('، ')+'. الان روی هیچ ارزی رویداد تازه‌ای (در '+faN(AS_FRESH)+' ساعت اخیر) نداشته‌اند'+
+    (sg.rejReg?'، یا '+faN(sg.rejReg)+' رویدادشان خلاف حال بازار بود':'')+'؛ هر نیم ساعت دوباره بررسی می‌شود.'+
+    (sg.rejBad?' '+faN(sg.rejBad)+' رویداد تازه‌ی دیگر مال قاعده‌هایی بود که سود نداده‌اند.':'')+'</div>';
 }
 function asWire(g){
   const sg=asSuggestions();

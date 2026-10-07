@@ -49,5 +49,24 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  await p.evaluate(()=>closeSheet());
  const off=await p.evaluate(()=>{S.feat.autosig=false;renderAll();const r=!document.querySelector('#glance .assec');S.feat.autosig=true;return r;});
  ok(off,'کلید امکانات «پیشنهاد سیگنال از بازار» خاموشش می‌کند');
+ console.log('=== چرا پیشنهادی نیست؟ ===');
+ const why=await p.evaluate(()=>{const now=Date.now();
+   AS.live=[];const a=asHtml();
+   AS.coins={ASA:{low7:{n:14,w:4,r:-3,fn:14,fw:4,fr:-3}}};const b=asHtml();
+   return {a:(a.match(/<div class="hint">([^<]*(?:<[^>]+>[^<]*)*?)<\/div>/)||[])[0]||a.slice(0,300),b};});
+ ok(/قاعده‌های سودده: شکست کف 7 روزه \(شورت، 17 بار/.test(why.a.replace(/<[^>]+>/g,''))&&/رویداد تازه‌ای/.test(why.a),'قاعده‌ی سودده هست ولی رویداد تازه ندارد ← همین را می‌گوید');
+ ok(/هیچ قاعده‌ای بعد از کارمزد سود نداده/.test(why.b)&&/بهترینش شکست کف 7 روزه/.test(why.b),'هیچ قاعده‌ای سودده نیست ← می‌گوید و بهترینش را نشان می‌دهد');
+
+ console.log('=== پیگیری بی‌استاپ: استاپ از سیگنال قبلی ===');
+ const ih=await p.evaluate(()=>{const now=Date.now();['IHX','NSX'].forEach(t=>{SYMBOLS.add(t);PRICES.set(t,t==='IHX'?10:5);});SYMVER++;
+   POSTS.unshift({id:'ccoineres/97301',num:97301,text:'#IHX لانگ\nورود 10\nحد ضرر 9.6\nتارگت 11',date:new Date(now-5*36e5),link:'x'});
+   POSTS.unshift({id:'ccoineres/97302',num:97302,text:'#NSX لانگ ورود 5',date:new Date(now-2*36e5),link:'x'});
+   POSTS.unshift({id:'ccoineres/97303',num:97303,text:'#IHX ورود مجدد 10 مجازه',date:new Date(now-36e5),link:'x'});
+   DB.decisions['ccoineres/97301']={action:'skipped',at:now};KGEN++;S.lossLock=0;renderAll();paintGlance();
+   const G=document.getElementById('glance'), it=[...G.querySelectorAll('.glsig')].find(x=>/IHX/.test(x.textContent));
+   return {it:it&&it.textContent||'',ns:[...G.querySelectorAll('.glsig')].some(x=>/NSX/.test(x.textContent)),skip:(G.querySelector('.glskip')||{}).textContent||''};});
+ console.log('   ',ih.it.slice(0,120),'|',ih.skip.slice(0,80));
+ ok(/استاپ 9.6 \(4٪\) از سیگنال قبلی/.test(ih.it)&&/ایزوله/.test(ih.it),'«ورود مجدد» IHX با استاپ 9.6 از سیگنال قبلی و دکمه‌ی ایزوله');
+ ok(!ih.ns&&/1 سیگنال بی‌استاپ/.test(ih.skip),'NSX بی‌استاپ در فهرست نیست، فقط شمرده شد');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');})();

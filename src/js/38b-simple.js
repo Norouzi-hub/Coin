@@ -10,27 +10,33 @@ let GLSHUT=!!lsGet(GLKEY), GLALL=false;
 /* سیگنال‌های قابل گرفتن: تصمیم‌نگرفته، منقضی‌نشده، نه بلندمدت، نه «دیر رسیدی». همه‌شان، نه فقط چهار تا،
    با عددها و دکمه‌ی اقدام، تا همین‌جا بررسی و وارد شوی. دیر رسیده‌ها و بلندمدت‌ها فقط شمرده می‌شوند. */
 function glanceData(){
-  const now=Date.now(), take=[];let late=0,lt=0;
+  const now=Date.now(), take=[];let late=0,lt=0,nost=0;
   for(const p of POSTS){
     if(!p.date||now-p.date>(+S.staleDays||7)*864e5)break;
     if(!isOpenSig(p)||decisionOf(p.id)||bucketOf(p)!=='live')continue;
     const sig=sigOf(p), ov=OVERRIDE[p.id]||{}, px=PRICES.get(sig.ticker), I=planInputsOf(p,sig,ov,px);
     if(longTermOf(p,sig,I)){lt++;continue;}
     if(lateOf(I,sig.targets,px)){late++;continue;}
+    // پیگیری («ورود مجدد») استاپ ندارد: همان استاپی که کانال‌سنج از سیگنال قبلیِ همین نماد برمی‌دارد
+    let ov2=ov;
+    if(!I.stop&&!I.spot){const inp=audInput(p);
+      if(inp&&inp.inh&&inp.stop){I.stop=inp.stop;I.stopInh=true;ov2=Object.assign({},ov,{stop:inp.stop});}}
+    // بی‌استاپ برای ایزوله‌ی کوتاه‌مدت قابل گرفتن نیست؛ فقط شمرده می‌شود
+    if(!I.stop&&!I.spot){nost++;continue;}
     const E=I.entry||px;
     let z=null,pl=null;if(!I.spot&&E&&I.stop){pl=xRulePlan(I.dir,E,I.stop,sig.targets);z=isoSize(E,pl?pl.stop:I.stop);}
-    take.push({p,sig,ov,px,I,tk:sig.ticker,dir:I.dir,z,pl});
+    take.push({p,sig,ov:ov2,px,I,tk:sig.ticker,dir:I.dir,z,pl});
   }
   let dl=null;
   for(const q of DB.positions){const d=posDeadline(q);if(d&&(!dl||d<dl.t))dl={t:d,p:q};}
-  return {take,late,lt,dl,open:openPos().length,unread:advUnread(),lock:lossLockOn()};
+  return {take,late,lt,nost,dl,open:openPos().length,unread:advUnread(),lock:lossLockOn()};
 }
 function glSigHtml(x,i){
   const {p,sig,I,px,z,pl}=x, E=I.entry, sd=E&&I.stop?Math.abs(E-I.stop)/E*100:null;
   const tps=(sig.targets||[]).filter(t=>E&&(t-E)*(x.dir==='long'?1:-1)>0).slice(0,3);
   const far=px&&E?(px-E)/E*100*(x.dir==='long'?1:-1):null;     // مثبت: قیمت از ورود به سمت سود رفته
   const nums=[E?'ورود <b dir="ltr">'+fmtPrice(E)+'</b>':(sig.trigger!=null?'تریگر <b dir="ltr">'+fmtPrice(sig.trigger)+'</b>':'ورود بازار'),
-    I.stop?'استاپ <b dir="ltr">'+fmtPrice(I.stop)+'</b>'+(sd!=null?' ('+fmtNum(sd)+'٪)':''):'<span class="d">بی‌استاپ</span>',
+    I.stop?'استاپ <b dir="ltr">'+fmtPrice(I.stop)+'</b>'+(sd!=null?' ('+fmtNum(sd)+'٪)':'')+(I.stopInh?' <span class="m">از سیگنال قبلی</span>':''):'<span class="d">بی‌استاپ</span>',
     tps.length?'تارگت <b dir="ltr">'+tps.map(fmtPrice).join(' / ')+'</b>':''].filter(Boolean).join(' · ');
   const now=px!=null?'قیمت الان <b dir="ltr">'+fmtPrice(px)+'</b>'+(far!=null?' · <span class="'+(Math.abs(far)<0.3?'u':far>0?'w':'m')+'">'+
     (Math.abs(far)<0.3?'روی ورود':far>0?fmtNum(far)+'٪ جلوتر از ورود':fmtNum(-far)+'٪ مانده تا ورود')+'</span>':''):'';
@@ -73,7 +79,7 @@ function paintGlance(){
     const list=GLALL?d.take:d.take.slice(0,GLMAX);
     list.forEach((x,i)=>h+=glSigHtml(x,i));
     if(d.take.length>list.length)h+='<button class="btn sm glmore" data-more="1">'+faN(d.take.length-list.length)+' سیگنال دیگر</button>';
-    if(d.late||d.lt)h+='<div class="hint glskip">'+[d.late?faN(d.late)+' سیگنال دیر رسیده (قیمت بیش از نیمی از راه تا تارگت 1 را رفته)':'',
+    if(d.late||d.lt||d.nost)h+='<div class="hint glskip">'+[d.nost?faN(d.nost)+' سیگنال بی‌استاپ (نه در متن، نه از سیگنال قبلی؛ برای ایزوله نه)':'',d.late?faN(d.late)+' سیگنال دیر رسیده (قیمت بیش از نیمی از راه تا تارگت 1 را رفته)':'',
       d.lt?faN(d.lt)+' سیگنال بلندمدت (اسپات یا استاپ دورتر از '+fmtNum(isoMaxSd())+'٪)':''].filter(Boolean).join(' · ')+' — در فهرست «در انتظار» هستند.</div>';
     if(d.dl)h+='<button class="glit" data-pos="'+esc(d.dl.p.id)+'"><b dir="ltr">'+esc(d.dl.p.ticker)+'</b><span>'+ic('clock')+(d.dl.t<=Date.now()?'مهلت گذشت — ببند':fmtLeft(d.dl.t-Date.now())+' تا پایان مهلت')+'</span></button>';
     if(d.unread)h+='<button class="glit" data-bell="1">'+ic('bell')+'<span>'+faN(d.unread)+' پیشنهاد تازه از مشاور</span></button>';

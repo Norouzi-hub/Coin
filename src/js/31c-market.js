@@ -71,7 +71,7 @@ function mktHtml(m,dirs){
   const mx=Math.max(...m.bins)||1;
   const bars=m.bins.map((v,i)=>'<i class="'+(i<5?'d':i>5?'u':'m')+'" style="height:'+Math.max(2,Math.round(v/mx*26))+'px" title="'+MK_BIN_FA[i]+': '+faN(v)+'"></i>').join('');
   const pu=m.up/m.n*100, pd=m.down/m.n*100;
-  let h='<div class="mkt"><div class="mkh"><b>'+ic('trend')+'حال بازار · '+MK_REG_FA[m.reg]+'</b><small>'+ageTxt(m.at)+'</small></div>'+
+  let h='<div class="mkst"><div class="mkh"><b>'+ic('trend')+'حال بازار · '+MK_REG_FA[m.reg]+'</b><small>'+ageTxt(m.at)+'</small></div>'+
     '<div class="mkbars">'+bars+'</div>'+
     '<div class="mkline"><i class="u" style="width:'+pu.toFixed(1)+'%"></i><i class="m" style="width:'+(100-pu-pd).toFixed(1)+'%"></i><i class="d" style="width:'+pd.toFixed(1)+'%"></i></div>'+
     '<div class="mknum"><span class="u">صعودی '+faN(m.up)+'</span><span>میانه '+fmtPct(m.med)+(m.btc!=null?' · بیت‌کوین <b class="'+cls(m.btc)+'">'+fmtPct(m.btc)+'</b>':'')+'</span><span class="d">نزولی '+faN(m.down)+'</span></div>';
