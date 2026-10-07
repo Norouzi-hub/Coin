@@ -35,7 +35,7 @@ function applyPrices(m,srcName,route,ms,extra){
    ticker/price می‌آید؛ ورود با آن قیمت ثبت می‌شد و مارک پرایسِ واقعی بلافاصله از هدف رد بود.
    هر 6 ساعت فهرستشان از ticker/24hr (بی معامله در 24 ساعت) گرفته می‌شود؛ قیمتشان از بایننس کنار
    می‌رود و برای نمادهایی که لازم داریم از صرافی دیگر (تکی) گرفته می‌شود. نماد در فهرست نمادها می‌ماند. */
-const PXDKEY='signaldesk.pxdead.v1', PXBAD=new Set(), PXFILL=new Map();
+const PXDKEY='signaldesk.pxdead.v1', PXBAD=new Set(), PXFILL=new Map(), PXOTHER=new Set();
 let PXDEAD=lsGet(PXDKEY)||{at:0,list:[]}, PXDBUSY=null;
 async function pxDeadLoad(){
   if(PXDEAD.at&&Date.now()-PXDEAD.at<6*36e5)return PXDEAD;
@@ -65,22 +65,28 @@ const PX_ONE=[
   [t=>'https://api.mexc.com/api/v3/ticker/price?symbol='+t+'USDT',d=>+d.price],
   [t=>'https://api.gateio.ws/api/v4/spot/tickers?currency_pair='+t+'_USDT',d=>Array.isArray(d)&&d[0]?+d[0].last:NaN],
   [t=>'https://api.kucoin.com/api/v1/market/orderbook/level1?symbol='+t+'-USDT',d=>d&&d.data?+d.data.price:NaN],
+  [t=>'https://api.bitget.com/api/v2/spot/market/tickers?symbol='+t+'USDT',d=>d&&Array.isArray(d.data)&&d.data[0]?+d.data[0].lastPr:NaN],
+  [t=>'https://www.okx.com/api/v5/market/ticker?instId='+t+'-USDT',d=>d&&Array.isArray(d.data)&&d.data[0]?+d.data[0].last:NaN],
   [t=>'https://fapi.binance.com/fapi/v1/premiumIndex?symbol='+t+'USDT',d=>+d.markPrice]];
 async function pxOne(t){
-  const c=PXFILL.get(t);if(c&&Date.now()-c.at<PX_TTL)return c.px;
+  // پیدانشده: تا 10 دقیقه دوباره امتحان نمی‌شود
+  const c=PXFILL.get(t);if(c&&Date.now()-c.at<(c.px?PX_TTL:10*60000))return c.px;
   for(const [u,p] of PX_ONE){try{const got=await fetchVia(u(t),{json:true,timeout:7000,kind:'px',quiet:true,minLen:12,label:'قیمت '+t,validate:d=>p(d)>0});
     const px=p(got.data);if(px>0){PXFILL.set(t,{px,at:Date.now()});return px;}}catch(e){}}
   PXFILL.set(t,{px:null,at:Date.now()});return null;
 }
-/* قیمت‌های بایننس بی نمادهای مرده، با پرکردن نمادهای لازم از صرافی دیگر */
-async function pxFixDead(m){
-  if(!PXDEAD.at)await Promise.race([pxDeadLoad(),new Promise(r=>setTimeout(r,5000))]);
-  else if(Date.now()-PXDEAD.at>6*36e5)pxDeadLoad();
-  const dead=(PXDEAD.list||[]).filter(k=>m.has(k));if(!dead.length)return [];
-  for(const k of dead)m.delete(k);
-  const need=pxNeed(),todo=dead.filter(k=>need.has(k));
+/* قیمت‌های صرافی اصلی، بی نمادهای مرده‌ی بایننس؛ هر نماد لازمی که در فهرست نیست (مرده، یا ارزی مثل
+   ZIG که اصلاً در آن صرافی نیست) تکی از صرافی‌های دیگر پر می‌شود */
+async function pxFix(m,src){
+  let dead=[];
+  if(src==='Binance'){
+    if(!PXDEAD.at)await Promise.race([pxDeadLoad(),new Promise(r=>setTimeout(r,5000))]);
+    else if(Date.now()-PXDEAD.at>6*36e5)pxDeadLoad();
+    dead=(PXDEAD.list||[]).filter(k=>m.has(k));for(const k of dead)m.delete(k);
+  }
+  const todo=[...pxNeed()].filter(k=>/^[A-Z0-9]{2,15}$/.test(k)&&!m.has(k)).slice(0,12);
   const got=await Promise.all(todo.map(k=>pxOne(k).catch(()=>null)));
-  todo.forEach((k,i)=>{if(got[i]>0)m.set(k,got[i]);});
+  todo.forEach((k,i)=>{if(got[i]>0){m.set(k,got[i]);PXOTHER.add(k);}});
   return dead;
 }
 /* ---- مارک پرایس فیوچرز ---- */
@@ -158,7 +164,7 @@ async function loadPrices(force){
           // مارک همان موقع شروع شده؛ اگر زود رسید با قیمت اسپات یک‌جا بررسی می‌شود
           await Promise.race([markP,new Promise(r=>setTimeout(r,1500))]);
           const late=!MARK_AT||Date.now()-MARK_AT>PX_TTL;
-          let dead=null;if(s.n==='Binance'){try{dead=await pxFixDead(m);}catch(e){}}
+          let dead=null;try{dead=await pxFix(m,s.n);}catch(e){}
           applyPrices(m,s.n,got.route,got.ms,dead);
           if(late)markP.then(ok=>{if(ok)onMarks();});
           return true;
