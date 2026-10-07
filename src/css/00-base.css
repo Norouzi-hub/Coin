@@ -1600,7 +1600,7 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rdsc{font-size:12px;font-weight:800}.rdsc.u{color:var(--up)}.rdsc.d{color:var(--dn)}
 .rdwhy{display:flex;flex-wrap:wrap;gap:4px}.rdwhy .pill{font-size:11px}
 .rdit.weak{opacity:.72}
-.rdwait .u{color:var(--up)}.rdwait .d{color:var(--dn)}
+.rdwait .u,.rdwait .win{color:var(--up)}.rdwait .d,.rdwait .lose{color:var(--dn)}
 /* رادار: کارنامه و ستاره‌ها */
 .rdpan{display:flex;flex-direction:column;gap:6px;padding:9px 10px;border-radius:12px;background:var(--inset);border:1px solid var(--line)}
 .rdtab{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:3px}
@@ -1616,3 +1616,9 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rdtodo{margin-top:4px}
 .rdwts{display:flex;flex-wrap:wrap;gap:4px;padding:6px 0}.rdwts .pill{font-size:11px}
 .rdflow b{color:var(--tx)}
+.rdv{margin-bottom:2px}.rdcnt{font-size:12px;color:var(--tx2);font-weight:700}
+.rbrow{display:flex;flex-direction:column;gap:4px;padding:8px 10px;border-radius:12px;background:var(--inset);border:1px solid var(--line)}
+.rbh{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.rbh small{color:var(--tx3);font-size:11px}.rbh>b:last-child{margin-inline-start:auto}
+.rbsum{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:12.5px;padding:8px 10px;border-radius:12px;background:var(--inset);border:1px solid var(--line)}
+.mkwhy summary{font-size:11.5px;color:var(--tx3);cursor:pointer;margin-top:6px}.mkwhy .hint{margin-top:4px}.mkwhy .u{color:var(--up)}.mkwhy .d{color:var(--dn)}
+.rblog td:first-child{width:auto;font-size:11px;text-align:start}

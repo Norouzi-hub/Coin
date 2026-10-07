@@ -91,3 +91,25 @@ function loadPxCache(){
 }
 function savePxCache(){lsSet(PXKEY,{at:PX_AT,src:priceSrc,m:[...PRICES]});}
 
+/* انبار بزرگ (IndexedDB) برای تاریخچه‌ی کندل و جریان پولِ رادار: localStorage برای چند مگابایت
+   کندل جا ندارد. اگر مرورگر IndexedDB نداد (حالت خصوصی)، فقط در حافظه‌ی همین بار می‌ماند. */
+const IDBM=new Map();let IDBP=null;
+function idbOpen(){
+  if(IDBP)return IDBP;
+  IDBP=new Promise(res=>{try{const r=indexedDB.open('signaldesk',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('kv');
+    r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);r.onblocked=()=>res(null);}catch(e){res(null);}});
+  return IDBP;
+}
+async function idbGet(k){
+  if(IDBM.has(k))return IDBM.get(k);
+  const db=await idbOpen();if(!db)return null;
+  return new Promise(res=>{try{const q=db.transaction('kv').objectStore('kv').get(k);
+    q.onsuccess=()=>{const v=q.result==null?null:q.result;if(v!=null&&IDBM.size<12)IDBM.set(k,v);res(v);};q.onerror=()=>res(null);}catch(e){res(null);}});
+}
+async function idbSet(k,v){
+  IDBM.delete(k);
+  const db=await idbOpen();if(!db){IDBM.set(k,v);return false;}
+  return new Promise(res=>{try{const tx=db.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);
+    tx.oncomplete=()=>res(true);tx.onerror=()=>{IDBM.set(k,v);res(false);};}catch(e){IDBM.set(k,v);res(false);}});
+}

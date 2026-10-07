@@ -1,22 +1,32 @@
-/* ==================== رادار بازار: ۲۰ تا ۱۰۰ ارز اول، لانگ یا شورت، با امتیاز، رتبه و کارنامه ====================
-   ۱۲ عامل برای هر ارز (بی استیبل‌کوین و توکن‌های بسته‌بندی‌شده):
-   - قیمت (کندل یک‌ساعته‌ی ~41 روز): روند 4 و 1 ساعته (EMA20/50)، MACD، RSI، شکست 7 روزه، حجم نسبی،
-     روند بیت‌کوین، فاصله از میانگین
-   - جریان پول (فیوچرز بایننس، 1 ساعته، ~20 روز؛ همان داده‌ی جدول‌های کوین‌گلس): نهنگ‌ها در برابر مردم
-     (نسبت پوزیشن تریدرهای بزرگ ÷ نسبت حساب‌های همه)، ازدحام مردم (برعکس)، خرید/فروش تهاجمی، Open Interest همراه قیمت
-   وزن‌ها دستی نیستند: روی 60٪ اولِ دوره یاد گرفته می‌شوند (شیب هر عامل نسبت به حرکت 12 ساعت بعد، با
-   کوچک‌سازی برای نمونه‌ی کم) و کارنامه فقط روی 40٪ آخر سنجیده می‌شود (بیرون از یادگیری).
-   نقشه‌ی هر معامله: استاپ 1.5×ATR، هدف تارگت اول تنظیمات، ریسک‌فری بعد از +1R، حداکثر 24 ساعت، بعد از کارمزد.
-   کارنامه به تفکیک جهت، شدت امتیاز و حال بازار (بیت‌کوین 24 ساعت قبل) ← ستاره و «کار امروز». */
-const RD_KEY='signaldesk.radar.v2', RD_TH=30;
-const RD_W0={t4:20,t1:15,macd:15,rsi:10,brk:10,vol:10,btc:15,ext:5,whale:0,crowd:0,taker:0,oi:0};
-const RD_FLOW=['whale','crowd','taker','oi'];
-const RD_FA={t4:'روند 4 ساعته',t1:'روند 1 ساعته',macd:'MACD',rsi:'RSI',brk:'شکست 7 روزه',vol:'حجم',btc:'بیت‌کوین',ext:'فاصله از میانگین',
-  whale:'نهنگ‌ها در برابر مردم',crowd:'ازدحام مردم',taker:'خرید/فروش تهاجمی',oi:'Open Interest'};
+/* ==================== رادار بازار: ارزهای اول بازار، لانگ یا شورت، با احتمال و کارنامه‌ی صادق ====================
+   داده (برای هر ارز، بی استیبل‌کوین و توکن‌های بسته‌بندی‌شده):
+   - کندل یک‌ساعته‌ی ~125 روز (3000 کندل) در IndexedDB؛ بار اول کامل، بعد فقط کندل‌های تازه
+   - جریان پول از فیوچرز بایننس (همان داده‌ی جدول‌های کوین‌گلس)؛ بایننس فقط ~20 روز اخیر را می‌دهد،
+     پس هر بار که می‌گیریم روی گوشی جمع می‌شود تا تاریخچه‌اش کم‌کم بلند شود
+   17 عامل: روند 4 و 1 ساعته، MACD، RSI، شکست 7 روزه، حجم، روند بیت‌کوین، فاصله از میانگین، قدرت نسبی
+   به بیت‌کوین (7 روز)، روند روزانه (EMA50)، فشردگی نوسان، نهنگ‌ها در برابر مردم، ازدحام مردم، خرید/فروش
+   تهاجمی، OI همراه قیمت، و حال بازار (صعودی/نزولی).
+   مدل: رگرسیون لجستیک (با کوچک‌سازی L2)، جدا برای لانگ و شورت، مستقیم روی نتیجه‌ی همان معامله‌ای که
+   پیشنهاد می‌شود (استاپ 1.5×ATR، هدف تارگت اول، ریسک‌فری بعد از +1R، حداکثر 24 ساعت، بعد از کارمزد):
+   «آیا سود داد؟». همه‌ی عامل‌ها با هم سنجیده می‌شوند، پس عامل‌های هم‌معنی دوبار شمرده نمی‌شوند.
+   امتیاز = صدک احتمال مدل در گذشته (امتیاز 90 = از 90٪ لحظه‌های گذشته امیدوارکننده‌تر)؛ سیگنال از 70 به بالا.
+   کارنامه‌ی صادق: آزمون پیش‌رونده (یادگیری روی گذشته، سنجش روی دوره‌ی بعد، سه بار)، برای هر ارز در هر
+   لحظه فقط یک معامله‌ی باز، و ستاره از «بدترین حالت محتمل» (کران پایین 90٪، با خوشه‌بندی روزانه چون
+   ارزها با هم بالا و پایین می‌روند). */
+const RD_KEY='signaldesk.radar.v3', RD_HIST=3000, RD_STEP=10, RD_MAX=100, RD_MIN=70;
+const RD_FEAT=['t4','t1','macd','rsi','brk','vol','btc','ext','rs','d50','volc','whale','crowd','taker','oi','rbull','rbear'];
+const RD_FLOW=['whale','crowd','taker','oi'], RD_NOSIGN=['volc','rbull','rbear'];
+const RD_FA={t4:'روند 4 ساعته',t1:'روند 1 ساعته',macd:'MACD',rsi:'RSI',brk:'شکست 7 روزه',vol:'حجم',btc:'روند بیت‌کوین',ext:'فاصله از میانگین',
+  rs:'قدرت نسبی به بیت‌کوین',d50:'روند روزانه',volc:'فشردگی نوسان',
+  whale:'نهنگ‌ها در برابر مردم',crowd:'ازدحام مردم',taker:'خرید/فروش تهاجمی',oi:'Open Interest',rbull:'بازار صعودی',rbear:'بازار نزولی'};
+const RD_B=['70-85','85-95','95+'];
 const RD_SKIP=/^(USDT|USDC|FDUSD|TUSD|DAI|BUSD|USDP|USDD|USDE|SUSDE|USDS|PYUSD|USD0|USD1|RLUSD|EURC|EURT|PAXG|XAUT|WBTC|WETH|WBETH|STETH|WSTETH|WEETH|CBBTC|BTCB|RETH|METH|LEO|BSC-USD|BFUSD|USDF)$/;
-let RD=(()=>{const a=lsGet(RD_KEY);return a&&a.v===2?a:{v:2,at:0,n:20,coins:{},calib:{},W:null,wn:0,fund:{},rank:[],reg:null};})();
-const RDQ={on:false,done:0,n:0};
-const rdW=()=>RD.W||RD_W0;
+const rdEmpty=()=>({v:3,at:0,n:0,coins:{},calib:{},rel:null,M:null,fund:{},rank:[],reg:null,nflow:0,ns:0});
+let RD=(()=>{const a=lsGet(RD_KEY);return a&&a.v===3?a:rdEmpty();})();
+const RDQ={on:false,done:0,n:0,msg:''};
+const RDS=new Map();                       // نمونه‌های هر ارز (فقط در حافظه‌ی همین بار)
+const rdSave=()=>lsSet(RD_KEY,RD);
+const rdYield=()=>new Promise(r=>setTimeout(r,0));
 
 /* ---- اندیکاتورها (آرایه‌ای، یک بار برای همه‌ی کندل‌ها) ---- */
 function emaArr(a,n){const k=2/(n+1),o=new Array(a.length);let e=a[0];for(let i=0;i<a.length;i++){e=i?a[i]*k+e*(1-k):a[0];o[i]=e;}return o;}
@@ -29,24 +39,28 @@ const clamp1=v=>Math.max(-1,Math.min(1,v));
 /* حال بازار در هر لحظه: تغییر 24 ساعته‌ی بیت‌کوین (نزولی ≤ −2٪، صعودی ≥ +2٪) */
 function rdRegMap(B){if(!B||!B.length)return null;const m=new Map(B.map(k=>[k.t,k.c]));
   return t=>{const a=m.get(t-24*36e5),b=m.get(t);return a&&b?regOfBtc((b/a-1)*100):null;};}
-/* همه‌ی سری‌های لازم؛ 4 ساعته فقط از کندل‌های کاملِ گذشته؛ جریان پول با یک ساعت تأخیر (بی نگاه به آینده) */
+/* همه‌ی سری‌های لازم؛ 4 ساعته و روزانه فقط از کندل‌های کاملِ گذشته (بی نگاه به آینده) */
 function rdPrep(C,B,FL){
   const H=36e5,c=C.map(k=>k.c),v=C.map(k=>k.v||0);
   const e20=emaArr(c,20),e50=emaArr(c,50),m12=emaArr(c,12),m26=emaArr(c,26);
   const macd=c.map((_,i)=>m12[i]-m26[i]),sig=emaArr(macd,9),hist=macd.map((x,i)=>x-sig[i]),rsi=rsiArr(c,14);
   const F=swAggr(C,4*H),f=F.map(k=>k.c),f20=emaArr(f,20),f50=emaArr(f,50),fIdx=new Map(F.map((k,j)=>[k.t,j]));
-  let bt=null;
+  const D=swAggr(C,24*H),d50=emaArr(D.map(k=>k.c),50),dIdx=new Map(D.map((k,j)=>[k.t,j]));
+  // ATR (میانگین ساده‌ی 14 TR) و جمع تجمعی TR برای «فشردگی نوسان»
+  const tr=C.map((k,i)=>i?Math.max(k.h-k.l,Math.abs(k.h-C[i-1].c),Math.abs(k.l-C[i-1].c)):k.h-k.l), pre=[0];
+  for(let i=0;i<tr.length;i++)pre.push(pre[i]+tr[i]);
+  let bt=null,bc=null;
   if(B&&B.length>250&&B!==C){const BF=swAggr(B,4*H),bf=BF.map(k=>k.c),b20=emaArr(bf,20),b50=emaArr(bf,50);
-    bt=new Map(BF.map((k,j)=>[k.t,j>=50?clamp1((b20[j]-b50[j])/b50[j]/0.01):null]));}
-  return {C,c,v,e20,e50,hist,rsi,F,f20,f50,fIdx,bt,FL:FL||null,reg:rdRegMap(B||C)};
+    bt=new Map(BF.map((k,j)=>[k.t,j>=50?clamp1((b20[j]-b50[j])/b50[j]/0.01):null]));bc=new Map(B.map(k=>[k.t,k.c]));}
+  return {C,c,v,e20,e50,hist,rsi,F,f20,f50,fIdx,D,d50,dIdx,pre,bt,bc,FL:FL||null,reg:rdRegMap(B||C)};
 }
-/* عامل‌ها در کندل i (بسته‌شده): هر کدام −1..+1، یا null اگر داده نیست */
+/* عامل‌ها در کندل i (بسته‌شده): هر کدام حدود −1..+1، یا null اگر داده نیست */
 function rdParts(P,i){
-  const {C,c,v,e20,e50,hist,rsi,f20,f50,fIdx,bt,FL}=P, H=36e5;
+  const {C,c,v,e20,e50,hist,rsi,f20,f50,fIdx,D,d50,dIdx,pre,bt,bc,FL}=P, H=36e5;
   if(i<200)return null;
   const j=fIdx.get(Math.floor((C[i].t+H)/(4*H))*4*H-4*H);
   if(j==null||j<50)return null;
-  const atr=asAtr(C,i);if(!atr)return null;
+  const atr=(pre[i+1]-pre[i-13])/14;if(!(atr>0))return null;
   const p={};
   p.t4=clamp1((f20[j]-f50[j])/f50[j]/0.01);
   p.t1=(Math.sign(c[i]-e50[i])+Math.sign(e20[i]-e50[i]))/2;
@@ -58,7 +72,17 @@ function rdParts(P,i){
   p.vol=Math.sign(c[i]-c[i-3])*(rv>=1.5?1:Math.max(0,(rv-1)/0.5));
   p.btc=bt?(bt.get(Math.floor((C[i].t+H)/(4*H))*4*H-4*H)??0):0;
   const ex=(c[i]-e20[i])/atr;p.ext=Math.abs(ex)>3?-Math.sign(ex):0;
-  const m={rsi:r,rv,atrPct:atr/c[i]*100};
+  // قدرت نسبی: بازده 7 روزه منهای بیت‌کوین (10٪ اختلاف = کامل)
+  p.rs=null;let rsv=null;
+  if(bc){const b0=bc.get(C[i-168].t),b1=bc.get(C[i].t);if(b0&&b1){rsv=(c[i]/c[i-168]-b1/b0)*100;p.rs=clamp1(rsv/10);}}
+  // روند روزانه: فاصله از EMA50 روزانه‌ی آخرین روز کامل
+  const jd=dIdx.get(Math.floor((C[i].t+H)/(24*H))*24*H-24*H);
+  p.d50=jd!=null&&jd>=50?clamp1((c[i]/d50[jd]-1)/0.1):null;
+  // فشردگی نوسان: ATR الان در برابر میانگین 30 روز (+ یعنی آرام‌تر از معمول)
+  let vr=null;p.volc=null;
+  if(i>=720){const avg=(pre[i+1]-pre[i-719])/720;if(avg>0){vr=atr/avg;p.volc=clamp1((1-vr)/0.5);}}
+  const g=P.reg?P.reg(C[i].t):null;p.rbull=g==='bull'?1:0;p.rbear=g==='bear'?1:0;
+  const m={rsi:r,rv,atrPct:atr/c[i]*100,rsv,vr};
   // جریان پول: مقدارِ ساعتِ همان کندل (منتشرشده تا بسته شدنش)
   const t=C[i].t;
   for(const k of RD_FLOW)p[k]=null;
@@ -74,62 +98,124 @@ function rdParts(P,i){
   }
   return {p,m};
 }
-const rdNet=(p,W)=>{let s=0;for(const k in W)if(p[k]!=null)s+=W[k]*p[k];return Math.round(s);};
-function rdScore(P,i,W){const r=rdParts(P,i);if(!r)return null;return Object.assign({net:rdNet(r.p,W||rdW()),parts:r.p},r.m);}
-const rdDir=net=>net>=RD_TH?'long':net<=-RD_TH?'short':'wait';
-const rdBucket=a=>a>=60?'60+':a>=45?'45-60':'30-45';
+const rdVec=p=>RD_FEAT.map(k=>p[k]==null?0:p[k]);
+const rdBucket=s=>s>=95?'95+':s>=85?'85-95':'70-85';
 /* معامله با ریسک‌فری: بعد از +1R استاپ به ورود (از کندل بعد) */
 function rdWalk(C,i,pl){
   const sign=pl.dir==='long'?1:-1, cost=(2*(+S.fee||0)+(+S.slip||0))/100/pl.sd, R1=pl.E*(1+sign*pl.sd);
   let be=false;
   for(let j=i+1;j<C.length&&j<=i+AS_HOLD;j++){
     const k=C[j], stop=be?pl.E:pl.SL;
-    if(sign>0?k.l<=stop:k.h>=stop)return {R:(be?0:-1)-cost,how:be?'be':'sl'};
-    if(sign>0?k.h>=pl.TP:k.l<=pl.TP)return {R:pl.rr-cost,how:'tp'};
+    if(sign>0?k.l<=stop:k.h>=stop)return {R:(be?0:-1)-cost,j,how:be?'be':'sl'};
+    if(sign>0?k.h>=pl.TP:k.l<=pl.TP)return {R:pl.rr-cost,j,how:'tp'};
     if(!be&&(sign>0?k.h>=R1:k.l<=R1))be=true;
   }
   const end=Math.min(C.length-1,i+AS_HOLD);if(end<i+AS_HOLD)return null;
-  return {R:(C[end].c-pl.E)*sign/(pl.E*pl.sd)-cost,how:'time'};
+  return {R:(C[end].c-pl.E)*sign/(pl.E*pl.sd)-cost,j:end,how:'time'};
 }
-/* یادگیری وزن‌ها (60٪ اول هر ارز): شیب هر عامل نسبت به حرکت 12 ساعت بعد (به ATR)، کوچک‌شده برای نمونه‌ی کم */
-function rdLearn(Ps){
-  const S0={};
-  for(const P of Ps){const C=P.C, split=Math.floor(C.length*0.6);
-    for(let i=210;i<split&&i<C.length-13;i+=2){
-      const r=rdParts(P,i);if(!r)continue;const atr=asAtr(C,i);if(!atr)continue;
-      const fr=Math.max(-4,Math.min(4,(P.c[i+12]-P.c[i])/atr));
-      for(const k in r.p){const x=r.p[k];if(x==null||x===0)continue;const o=S0[k]||(S0[k]={xy:0,xx:0,n:0});o.xy+=x*fr;o.xx+=x*x;o.n++;}
-    }}
-  const W={};let tot=0,n=0;
-  for(const k of Object.keys(RD_W0)){const o=S0[k];if(!o||o.xx<=0){W[k]=0;continue;}
-    W[k]=(o.xy/o.xx)*(o.n/(o.n+300));tot+=Math.abs(W[k]);n=Math.max(n,o.n);}
-  if(tot<1e-6)return {W:RD_W0,n:0};
-  for(const k in W)W[k]=+(W[k]/tot*100).toFixed(1);
-  return {W,n};
+/* نمونه‌های یک ارز: هر 2 ساعت، عامل‌ها و نتیجه‌ی معامله‌ی لانگ و شورت از همان لحظه */
+function rdSamples(P,tk){
+  const C=P.C,H=36e5,F=RD_FEAT.length,last=C[C.length-1].t+H>Date.now()?C.length-2:C.length-1;
+  const t=[],X=[],R={long:[],short:[]},J={long:[],short:[]},G=[];
+  for(let i=210;i<=last-AS_HOLD;i+=2){
+    const r=rdParts(P,i);if(!r)continue;
+    const w={};
+    for(const d of ['long','short']){const pl=asPlan(C,i,d);w[d]=pl&&rdWalk(C,i,pl);}
+    if(!w.long||!w.short)continue;
+    t.push(C[i].t);X.push(...rdVec(r.p));G.push(P.reg?P.reg(C[i].t):null);
+    for(const d of ['long','short']){R[d].push(w[d].R);J[d].push(C[w[d].j].t);}
+  }
+  return {tk,t,X:Float32Array.from(X),R,J,G,F};
 }
-/* کارنامه (40٪ آخر، بیرون از یادگیری): جهت × شدت × حال بازار */
-function rdCalib(Ps,W,cal){
-  const add=(k,R)=>{const o=cal[k]||(cal[k]={n:0,w:0,r:0});o.n++;o.r+=R;if(R>0)o.w++;};
-  for(const P of Ps){const C=P.C, split=Math.floor(C.length*0.6);
-    for(let i=Math.max(210,split);i<C.length-25;i+=2){
-      const r=rdParts(P,i);if(!r)continue;const net=rdNet(r.p,W),d=rdDir(net);if(d==='wait')continue;
-      const pl=asPlan(C,i,d);if(!pl)continue;const w=rdWalk(C,i,pl);if(!w)continue;
-      const b=rdBucket(Math.abs(net)), g=P.reg&&P.reg(C[i].t);
-      add(d+'|'+b,w.R);add(d,w.R);if(g){add(d+'|'+g+'|'+b,w.R);add(d+'|'+g,w.R);}
-    }}
-  return cal;
+/* حال الانِ یک ارز (آخرین کندل بسته) و نقشه‌ی هر دو جهت */
+function rdLiveOf(P){
+  const C=P.C,H=36e5,i=C[C.length-1].t+H>Date.now()?C.length-2:C.length-1;
+  const r=rdParts(P,i);if(!r)return null;
+  return {t:C[i].t,x:rdVec(r.p),parts:r.p,m:r.m,px:P.c[i],flow:!!P.FL,pl:{long:asPlan(C,i,'long'),short:asPlan(C,i,'short')}};
 }
-// سازگاری: سنجش ساده‌ی یک ارز با وزن فعلی (تست‌های قدیمی)
-function rdBacktest(P,cal){
-  const C=P.C,W=rdW();
-  for(let i=210;i<C.length-25;i+=2){const s=rdScore(P,i,W);if(!s)continue;const d=rdDir(s.net);if(d==='wait')continue;
-    const pl=asPlan(C,i,d);if(!pl)continue;const w=asWalk(C,i,pl);if(!w)continue;
-    const k=d+'|'+rdBucket(Math.abs(s.net)),o=cal[k]||(cal[k]={n:0,w:0,r:0});o.n++;o.r+=w.R;if(w.R>0)o.w++;}
+const rdPlanAt=(pl,E)=>{if(!pl)return null;E=E>0?E:pl.E;const s=pl.dir==='long'?1:-1;
+  return {dir:pl.dir,E,SL:+(E*(1-s*pl.sd)).toPrecision(8),TP:+(E*(1+s*pl.sd*pl.rr)).toPrecision(8),sd:pl.sd,rr:pl.rr};};
+
+/* ---- رگرسیون لجستیک با L2 (نیوتن) ---- */
+function rdSolve(A,b,K){
+  const M=Array.from({length:K},(_,i)=>{const r=new Array(K+1);for(let j=0;j<K;j++)r[j]=A[i*K+j];r[K]=b[i];return r;});
+  for(let c=0;c<K;c++){let p=c;for(let r=c+1;r<K;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;
+    if(Math.abs(M[p][c])<1e-12)return null;[M[c],M[p]]=[M[p],M[c]];
+    for(let r=0;r<K;r++)if(r!==c){const f=M[r][c]/M[c][c];if(f)for(let j=c;j<=K;j++)M[r][j]-=f*M[c][j];}}
+  return M.map((r,i)=>r[K]/r[i]);
 }
-/* ستاره از میانگین R (حداقل 30 نمونه) */
-function rdStars(o){if(!o||o.n<30)return 0;const a=o.r/o.n;return a<=0?1:a<0.1?2:a<0.2?3:a<0.35?4:5;}
+const rdSig=z=>1/(1+Math.exp(-z));
+function rdPred(M,X,o){if(!M)return null;const w=M.w,F=w.length-1;let z=w[F];for(let k=0;k<F;k++)z+=w[k]*X[o+k];return rdSig(z);}
+/* صدک احتمال در میان پیش‌بینی‌های دوره‌ی یادگیری: 0..100 */
+function rdPct(M,p){if(!M||p==null)return 0;const q=M.q;let lo=0,hi=q.length;while(lo<hi){const m=(lo+hi)>>1;if(q[m]<=p)lo=m+1;else hi=m;}return Math.max(0,lo-1);}
+/* یادگیری روی نمونه‌هایی که معامله‌شان پیش از tEnd تمام شده (بی نشت از دوره‌ی سنجش) */
+function rdFit(SS,d,tEnd){
+  const F=RD_FEAT.length,K=F+1,rows=[];
+  for(const s of SS)for(let q=0;q<s.t.length;q++)if(s.J[d][q]<tEnd)rows.push(s,q);
+  const n=rows.length/2;if(n<300)return null;
+  const step=Math.max(1,Math.ceil(n/40000)), lam=0.02*n/step;
+  const w=new Float64Array(K);
+  for(let it=0;it<7;it++){
+    const g=new Float64Array(K),A=new Float64Array(K*K),x=new Float64Array(K);x[F]=1;
+    for(let r=0;r<rows.length;r+=2*step){const s=rows[r],q=rows[r+1],o=q*F,X=s.X;
+      let z=w[F];for(let k=0;k<F;k++){x[k]=X[o+k];z+=w[k]*x[k];}
+      const p=rdSig(z),e=p-(s.R[d][q]>0?1:0),v=Math.max(p*(1-p),1e-6);
+      for(let a=0;a<K;a++){const xa=x[a];if(!xa)continue;g[a]+=e*xa;for(let b=a;b<K;b++)if(x[b])A[a*K+b]+=v*xa*x[b];}}
+    for(let a=0;a<F;a++){g[a]+=lam*w[a];A[a*K+a]+=lam;}A[F*K+F]+=1e-6;
+    for(let a=0;a<K;a++)for(let b=0;b<a;b++)A[a*K+b]=A[b*K+a];
+    const dw=rdSolve(A,g,K);if(!dw)break;let mx=0;
+    for(let a=0;a<K;a++){w[a]-=dw[a];mx=Math.max(mx,Math.abs(dw[a]));}
+    if(mx<1e-4)break;
+  }
+  const M={w:Array.from(w,x=>+x.toFixed(5)),n};
+  const ps=[];for(let r=0;r<rows.length;r+=2*Math.max(1,Math.ceil(n/6000)))ps.push(rdPred(M,rows[r].X,rows[r+1]*F));
+  ps.sort((a,b)=>a-b);M.q=Array.from({length:101},(_,k)=>+ps[Math.min(ps.length-1,Math.floor(k/100*(ps.length-1)))].toFixed(5));
+  return M;
+}
+/* ---- کارنامه‌ی صادق ---- */
+function rdAdd(cal,k,R,t){const o=cal[k]||(cal[k]={n:0,w:0,r:0,d:{}});o.n++;o.r+=R;if(R>0)o.w++;
+  const day=Math.floor(t/864e5),x=o.d[day]||(o.d[day]=[0,0]);x[0]+=R;x[1]++;}
+/* میانگین و کران پایین 90٪ با خوشه‌بندی روزانه (معامله‌های یک روز با هم حرکت می‌کنند) */
+function rdSum(o){const D=Object.values(o.d),G=D.length,m=o.r/o.n;let v=0;for(const [r,n] of D)v+=(r-n*m)**2;
+  const se=G>1?Math.sqrt(v*G/(G-1))/o.n:Infinity;return {n:o.n,w:o.w,r:+o.r.toFixed(3),g:G,lb:+(m-1.2816*se).toFixed(3)};}
+/* سنجش یک دوره با مدلی که آن دوره را ندیده: برای هر ارز در هر لحظه فقط یک معامله‌ی باز */
+function rdEvalFold(SS,M,a,b,cal,rel,busy){
+  const F=RD_FEAT.length;
+  for(const s of SS){let free=busy.get(s.tk)||0;
+    for(let q=0;q<s.t.length;q++){const t=s.t[q];if(t<a||t>=b)continue;
+      const o=q*F,pL=rdPred(M.long,s.X,o),pS=rdPred(M.short,s.X,o);
+      for(const [d,p] of [['long',pL],['short',pS]]){const bi=Math.min(5,Math.max(0,Math.floor(p*10)-2)),x=rel[d][bi];x[0]++;x[1]+=p;if(s.R[d][q]>0)x[2]++;
+        rdAdd(cal,'base|'+d,s.R[d][q],t);}
+      const sL=rdPct(M.long,pL),sS=rdPct(M.short,pS),d=sL>=sS?'long':'short',sc=Math.max(sL,sS);
+      if(sc<RD_MIN||t<free)continue;
+      const R=s.R[d][q],bk=rdBucket(sc),g=s.G[q];free=s.J[d][q];
+      rdAdd(cal,d,R,t);rdAdd(cal,d+'|'+bk,R,t);if(g){rdAdd(cal,d+'|'+g,R,t);rdAdd(cal,d+'|'+g+'|'+bk,R,t);}
+    }
+    busy.set(s.tk,free);}
+}
+/* آزمون پیش‌رونده روی نیمه‌ی دوم (سه دوره) + مدل نهایی روی همه برای الان */
+async function rdModel(){
+  const SS=[...RDS.values()].filter(s=>s.t.length);if(!SS.length)return false;
+  let t0=Infinity,t1=-Infinity;for(const s of SS){t0=Math.min(t0,s.t[0]);t1=Math.max(t1,s.t[s.t.length-1]);}
+  const cut=[0.5,2/3,5/6,1].map(f=>t0+(t1-t0)*f);cut[3]=t1+1;
+  const cal={},rel={long:Array.from({length:6},()=>[0,0,0]),short:Array.from({length:6},()=>[0,0,0])},busy=new Map();
+  for(let k=0;k<3;k++){
+    RDQ.msg='سنجش دوره‌ی '+(k+1)+' از 3…';rdPaintProg();await rdYield();
+    const M={long:rdFit(SS,'long',cut[k])};await rdYield();M.short=rdFit(SS,'short',cut[k]);
+    if(M.long&&M.short)rdEvalFold(SS,M,cut[k],cut[k+1],cal,rel,busy);
+  }
+  RDQ.msg='یادگیری مدل نهایی…';rdPaintProg();await rdYield();
+  const ML=rdFit(SS,'long',Infinity);await rdYield();const MS=rdFit(SS,'short',Infinity);
+  RDQ.msg='';
+  if(!ML||!MS)return false;
+  const C2={};for(const k in cal)C2[k]=rdSum(cal[k]);
+  Object.assign(RD,{M:{long:ML,short:MS},calib:C2,rel,ns:SS.reduce((s,x)=>s+x.t.length,0),span:[t0,t1],ncoin:SS.length});
+  return true;
+}
+/* ستاره از کارنامه‌ی بیرون از یادگیری: 0 = نمونه‌ی کم، 1 = زیان، 2 = سود ولی شاید شانس، 3+ = حتی در بدترین حالت محتمل سود */
+function rdStars(o){if(!o||o.n<20||(o.g||0)<5)return 0;const a=o.r/o.n;return a<=0?1:o.lb<=0?2:o.lb<0.1?3:o.lb<0.25?4:5;}
 const rdStarHtml=s=>s?'<span class="rdst s'+s+'" title="'+s+' از 5">'+'★'.repeat(s)+'<i>'+'☆'.repeat(5-s)+'</i></span>':'<span class="rdst s0">نمونه‌ی کم</span>';
-const rdCell=o=>{if(!o||!o.n)return '<small>—</small>';const a=Math.round(o.r/o.n*100)/100||0;return rdStarHtml(rdStars(o))+'<small><b class="'+cls(a)+'" dir="ltr">'+(a?fmtR(a):'0.00R')+'</b></small><small>'+faN(Math.round(o.w/o.n*100))+'٪ برد</small><small class="n">'+faN(o.n)+' بار</small>';};
+const rdCell=o=>{if(!o||!o.n)return '<small>—</small>';const a=Math.round(o.r/o.n*100)/100||0;return rdStarHtml(rdStars(o))+'<small><b class="'+cls(a)+'" dir="ltr">'+(a?fmtR(a):'0.00R')+'</b></small><small>'+faN(Math.round(o.w/o.n*100))+'٪ برد</small><small class="n">'+faN(o.n)+' بار</small><small class="n">'+faN(o.g||0)+' روز</small>';};
 
 /* ---- فهرست ارزها: ارزش بازار (CoinGecko، روزی یک بار)، وگرنه حجم ---- */
 const RDCAP_KEY='signaldesk.mcap.v1';
@@ -151,150 +237,216 @@ async function rdFundLoad(){
   try{const got=await fetchVia('https://fapi.binance.com/fapi/v1/premiumIndex',{json:true,timeout:10000,kind:'px',quiet:true,label:'فاندینگ',validate:d=>Array.isArray(d)&&d.length>20});
     const m={};for(const x of got.data)if(/USDT$/.test(x.symbol))m[x.symbol.slice(0,-4)]=+x.lastFundingRate*100;return m;}catch(e){return null;}
 }
-/* جریان پول از فیوچرز بایننس: 4 سری یک‌ساعته (~20 روز)، نیم ساعت در حافظه؛ ارز بی‌فیوچرز ← null */
-const RDFL=new Map();
-async function rdFlow(tk){
-  const c=RDFL.get(tk);if(c&&Date.now()-c.at<30*60000)return c.fl;
-  const H=36e5, base='https://fapi.binance.com/futures/data/', q='?symbol='+tk+'USDT&period=1h&limit=500';
-  const get=async(path,f)=>{try{const got=await fetchVia(base+path+q,{json:true,timeout:12000,kind:'px',quiet:true,label:'جریان '+tk,validate:d=>Array.isArray(d)});
-      const m=new Map();for(const x of got.data){const v=+x[f];if(v>0)m.set(Math.floor(+x.timestamp/H)*H,v);}return m.size?m:null;}catch(e){return null;}};
-  const [top,glob,taker,oi]=await Promise.all([get('topLongShortPositionRatio','longShortRatio'),get('globalLongShortAccountRatio','longShortRatio'),
-    get('takerlongshortRatio','buySellRatio'),get('openInterestHist','sumOpenInterestValue')]);
-  const fl=top||glob||taker||oi?{top,glob,taker,oi}:null;
-  RDFL.set(tk,{at:Date.now(),fl});
-  return fl;
+/* کندل یک‌ساعته‌ی ~125 روز در IndexedDB؛ fresh=false یعنی بی شبکه، فقط اگر چیزی ذخیره نیست */
+async function rdCandles(tk,fresh){
+  const H=36e5,key='rdc:'+tk,now=Date.now(),from=Math.floor((now-RD_HIST*H)/H)*H;
+  const st=await idbGet(key);let rows=st&&Array.isArray(st.rows)?st.rows:[];
+  const needOld=!(st&&st.noOld)&&(!rows.length||rows[0][0]>from+48*H);
+  if(rows.length&&!fresh&&!needOld)return rows.map(r=>({t:r[0],o:r[1],h:r[2],l:r[3],c:r[4],v:r[5]}));
+  const m=new Map(rows.map(r=>[r[0],r]));let noOld=!!(st&&st.noOld),got=0;
+  const pull=async(a,b)=>{for(let t=a;t<b;t+=1000*H){const C=await audCandles(tk,'1h',t,1000,true);got+=C.length;
+    for(const k of C)m.set(k.t,[k.t,k.o,k.h,k.l,k.c,k.v||0]);if(C.length<900)break;}};
+  try{
+    if(needOld){const end=rows.length?rows[0][0]:now;await pull(from,end);
+      const first=Math.min(...m.keys());if(first>from+48*H)noOld=true;}   // ارز تازه: قدیمی‌تر از این ندارد
+    const last=m.size?Math.max(...m.keys()):from;
+    if(now-last>H||now-(st&&st.at||0)>5*60000)await pull(last,now);   // کندل آخرِ ذخیره‌شده شاید نیمه بوده
+  }catch(e){if(!m.size)throw e;}
+  rows=[...m.values()].sort((a,b)=>a[0]-b[0]).filter(r=>r[0]>=from-24*H);
+  if(got)await idbSet(key,{rows,noOld,at:now});
+  return rows.map(r=>({t:r[0],o:r[1],h:r[2],l:r[3],c:r[4],v:r[5]}));
 }
-async function rdScan(force){
+/* جریان پول از فیوچرز بایننس: 4 سری یک‌ساعته؛ هر بار روی تاریخچه‌ی ذخیره‌شده اضافه می‌شود (تا 180 روز) */
+const RD_FLS=[['top','topLongShortPositionRatio','longShortRatio'],['glob','globalLongShortAccountRatio','longShortRatio'],
+  ['taker','takerlongshortRatio','buySellRatio'],['oi','openInterestHist','sumOpenInterestValue']];
+async function rdFlow(tk,fresh){
+  const H=36e5,key='rdf:'+tk,now=Date.now(),st=await idbGet(key)||{};
+  const toMaps=o=>{if(!o||o.none)return null;const fl={};let any=false;for(const [k] of RD_FLS){fl[k]=o[k]&&o[k].length?new Map(o[k]):null;if(fl[k])any=true;}return any?fl:null;};
+  if(st.at&&(!fresh||(st.none&&now-st.at<864e5)||now-st.at<20*60000))return toMaps(st);
+  const base='https://fapi.binance.com/futures/data/';
+  const get=async(path,f,lim)=>{try{const got=await fetchVia(base+path+'?symbol='+tk+'USDT&period=1h&limit='+lim,{json:true,timeout:12000,kind:'px',quiet:true,label:'جریان '+tk,validate:d=>Array.isArray(d)});
+      const out=[];for(const x of got.data){const v=+x[f];if(v>0)out.push([Math.floor(+x.timestamp/H)*H,v]);}return out;}catch(e){return null;}};
+  const res=await Promise.all(RD_FLS.map(([k,path,f])=>{const a=st[k],last=a&&a.length?a[a.length-1][0]:0;
+    return get(path,f,last?Math.max(30,Math.min(500,Math.ceil((now-last)/H)+3)):500);}));
+  if(res.every(r=>r===null))return toMaps(st);                       // شبکه نبود: همان ذخیره
+  const keep=now-180*864e5,o={at:now};let any=false;
+  RD_FLS.forEach(([k],n)=>{const m=new Map(st[k]||[]);for(const [t,v] of res[n]||[])m.set(t,v);
+    o[k]=[...m].filter(x=>x[0]>=keep).sort((a,b)=>a[0]-b[0]);if(o[k].length)any=true;});
+  if(!any)o.none=true;
+  await idbSet(key,o);
+  return toMaps(o);
+}
+/* بررسی پله‌پله: «more» = ده ارز بعدی، «refresh» = تازه کردن همه‌ی ارزهای بررسی‌شده (ده‌تا‌ده‌تا) */
+async function rdScan(mode){
   if(RDQ.on)return;
-  if(!force&&Date.now()-RD.at<30*60000&&RD.rank.length)return;
-  await rdCapLoad();
-  const U=rdUniverse(RD.n||20);
-  Object.assign(RDQ,{on:true,done:0,n:U.length});rdPaintProg();
-  let B=null;try{B=await mkCandles('BTC');}catch(e){}
-  const fundP=rdFundLoad();
-  const Ps={}, q=U.slice();
-  const worker=async()=>{while(q.length){const tk=q.shift();
-    try{const [C,FL]=await Promise.all([tk==='BTC'&&B?B:mkCandles(tk),rdFlow(tk)]);
-      if(C&&C.length>300)Ps[tk]=rdPrep(C,B||C,FL);}
-    catch(e){}
-    RDQ.done++;rdPaintProg();}};
-  await Promise.all([worker(),worker()]);
-  const all=Object.values(Ps), L=rdLearn(all), cal=rdCalib(all,L.W,{});
-  const coins={}, regNow=B?rdRegMap(B)(B[B.length-1].t):null;
-  for(const [tk,P] of Object.entries(Ps)){
-    const i=P.C.length-1, r=rdParts(P,i);if(!r)continue;
-    const net=rdNet(r.p,L.W), d=rdDir(net);
-    coins[tk]=Object.assign({net,dir:d,parts:r.p,px:P.c[i],flow:!!P.FL,
-      pl:d==='wait'?null:asPlan(P.C,i,d,PRICES.get(tk)||P.c[i])},r.m);
-  }
-  const fund=await fundP;
-  RD=Object.assign(RD,{v:2,at:Date.now(),coins,calib:cal,W:L.W,wn:L.n,fund:fund||RD.fund||{},rank:U.filter(t=>coins[t]),reg:regNow,
-    nflow:Object.values(Ps).filter(P=>P.FL).length});
-  lsSet(RD_KEY,RD);RDQ.on=false;
+  mode=mode||'refresh';
+  const want=mode==='more'?Math.min(RD_MAX,(RD.n||0)+RD_STEP):Math.max(RD.n||0,RD_STEP);
+  Object.assign(RDQ,{on:true,done:0,n:0,msg:'فهرست ارزها…'});rdPaintProg();
+  try{
+    await rdCapLoad();
+    const U=rdUniverse(want), fresh=tk=>mode!=='more'||!RDS.has(tk);
+    RDQ.n=U.length;RDQ.msg='';
+    let B=null;try{B=await rdCandles('BTC',true);}catch(e){}
+    if(B&&B.length>30){const H=36e5,k=B[B.length-1].t+H>Date.now()?B.length-2:B.length-1;RD.reg=rdRegMap(B)(B[k].t)||RD.reg;}
+    const fundP=rdFundLoad();
+    const one=async tk=>{
+      if(!fresh(tk)&&RDS.has(tk))return;
+      try{const [C,FL]=await Promise.all([tk==='BTC'&&B?B:rdCandles(tk,fresh(tk)),rdFlow(tk,fresh(tk))]);
+        if(C&&C.length>300){const P=rdPrep(C,B||C,FL),s=rdSamples(P,tk);s.live=rdLiveOf(P);RDS.set(tk,s);}}
+      catch(e){}
+    };
+    for(let a=0;a<U.length;a+=RD_STEP){
+      const q=U.slice(a,a+RD_STEP);
+      const worker=async()=>{while(q.length){const tk=q.shift();await one(tk);RDQ.done++;rdPaintProg();}};
+      await Promise.all([worker(),worker(),worker()]);
+      // مدل: بار اول بعد از همان ده ارز اول (تا زود چیزی دیده شود)، و آخر کار روی همه؛ در میانه همان مدل قبلی
+      if(!RD.M||a+RD_STEP>=U.length)await rdModel();
+      rdLive(U);
+      if(view==='signals')renderSignals();
+    }
+    RD.fund=(await fundP)||RD.fund||{};
+    rdLive(U);RD.at=Date.now();rdSave();
+    try{rbLogAuto();}catch(e){}
+  }finally{RDQ.on=false;RDQ.msg='';}
   if(view==='signals')renderSignals();
 }
-const rdPaintProg=()=>{const b=$('#rdProg');if(b)b.textContent=RDQ.on?'در حال بررسی '+faN(RDQ.done)+' از '+faN(RDQ.n)+' ارز…':(RD.at?ageTxt(RD.at):'');};
-/* رتبه‌ی هر ارز: کارنامه‌ی همان جهت و شدت در همان حال بازار (اگر 30 نمونه دارد)، وگرنه بی‌حال بازار */
+/* حال الانِ ارزها با مدل فعلی */
+function rdLive(U){
+  const M=RD.M,coins={},rank=[];
+  for(const tk of U){const s=RDS.get(tk);const L=s&&s.live;if(!L){if(RD.coins[tk]){coins[tk]=RD.coins[tk];rank.push(tk);}continue;}
+    const pL=M?rdPred(M.long,L.x,0):null,pS=M?rdPred(M.short,L.x,0):null,sL=rdPct(M&&M.long,pL),sS=rdPct(M&&M.short,pS);
+    const d=sL>=sS?'long':'short',sc=Math.max(sL,sS),dir=M&&sc>=RD_MIN?d:'wait';
+    coins[tk]=Object.assign({dir,best:d,sc,sL,sS,p:d==='long'?pL:pS,parts:L.parts,px:L.px,t:L.t,flow:L.flow,
+      pl:dir==='wait'?null:rdPlanAt(L.pl[d],PRICES.get(tk)||L.px)},L.m);
+    rank.push(tk);}
+  RD.coins=coins;RD.rank=rank;RD.n=Math.max(RD.n||0,Math.min(U.length,RD_MAX));
+  RD.nflow=rank.filter(t=>coins[t].flow).length;
+}
+const rdPaintProg=()=>{const b=$('#rdProg');if(b)b.textContent=RDQ.on?(RDQ.msg||'در حال بررسی '+faN(RDQ.done)+' از '+faN(RDQ.n)+' ارز…'):(RD.at?ageTxt(RD.at):'');};
+/* رتبه‌ی هر ارز: کارنامه‌ی همان جهت و شدت در همان حال بازار (اگر بس است)، وگرنه بی حال بازار */
 function rdRate(x){
   if(x.dir==='wait')return null;
-  const b=rdBucket(Math.abs(x.net)), c1=RD.reg?RD.calib[x.dir+'|'+RD.reg+'|'+b]:null, c2=RD.calib[x.dir+'|'+b];
-  const o=c1&&c1.n>=30?c1:c2;return o?{o,stars:rdStars(o),exp:o.n>=20?o.r/o.n:null,reg:o===c1}:null;
+  const b=rdBucket(x.sc), c1=RD.reg?RD.calib[x.dir+'|'+RD.reg+'|'+b]:null, c2=RD.calib[x.dir+'|'+b];
+  const o=rdStars(c1)?c1:c2;return o?{o,stars:rdStars(o),exp:o.n?o.r/o.n:null,lb:o.lb,reg:o===c1}:null;
 }
 function rdList(){
   const out=[];
   for(const tk of RD.rank){const x=RD.coins[tk];if(!x)continue;
     const rt=rdRate(x), exp=rt?rt.exp:null;
-    out.push(Object.assign({tk,rt,cb:rt&&rt.o,exp,stars:rt?rt.stars:0,ok:exp!=null&&exp>0.03&&(rt.stars>=3)},x));}
-  out.sort((a,b)=>(b.ok-a.ok)||(b.stars-a.stars)||((b.exp??-9)-(a.exp??-9))||(Math.abs(b.net)-Math.abs(a.net)));
+    out.push(Object.assign({tk,rt,cb:rt&&rt.o,exp,stars:rt?rt.stars:0,ok:!!rt&&rt.stars>=3},x));}
+  out.sort((a,b)=>(b.ok-a.ok)||(b.stars-a.stars)||(((b.rt&&b.rt.lb)??-9)-((a.rt&&a.rt.lb)??-9))||(b.sc-a.sc));
   return out;
 }
 const rdCount=()=>rdList().filter(x=>x.ok).length;
+/* دلیل‌ها: سهم هر عامل در احتمالِ همان جهت (وزن × مقدار)؛ ✓ یعنی به نفع این معامله */
 function rdReasons(x){
-  const W=rdW(), want=x.dir==='short'?-1:1, it=[];
-  for(const k of Object.keys(RD_W0)){const v=x.parts[k];if(v==null||Math.abs(v)<0.25||!W[k])continue;
-    const eff=Math.sign(W[k]*v);           // اثر واقعی روی امتیاز (وزن منفی یعنی برعکس عمل کرده)
+  const d=x.dir==='wait'?x.best:x.dir, M=RD.M&&RD.M[d], it=[];if(!M)return it;
+  RD_FEAT.forEach((k,n)=>{const v=x.parts[k];if(v==null||Math.abs(v)<0.25)return;const c=M.w[n]*v;if(Math.abs(c)<0.02)return;
     let t=RD_FA[k];
-    if(k==='t4'||k==='t1'||k==='btc')t+=v>0?' صعودی':' نزولی';
+    if(k==='t4'||k==='t1'||k==='btc'||k==='d50')t+=v>0?' صعودی':' نزولی';
     else if(k==='macd')t+=v>0?' مثبت':' منفی';
     else if(k==='rsi')t+=' '+fmtNum(x.rsi)+(x.rsi>75?' (اشباع خرید)':x.rsi<25?' (اشباع فروش)':'');
     else if(k==='brk')t=v>0?'شکست سقف 7 روزه':'شکست کف 7 روزه';
     else if(k==='vol')t='حجم '+fmtNum(x.rv)+' برابر میانگین '+(v>0?'با رشد':'با ریزش');
     else if(k==='ext')t='خیلی دور از میانگین';
+    else if(k==='rs')t=(v>0?'قوی‌تر':'ضعیف‌تر')+' از بیت‌کوین ('+fmtPct(x.rsv)+' در 7 روز)';
+    else if(k==='volc')t=v>0?'نوسان آرام‌تر از معمول':'نوسان تندتر از معمول';
     else if(k==='whale')t=v>0?'نهنگ‌ها لانگ‌تر از مردم':'نهنگ‌ها شورت‌تر از مردم';
     else if(k==='crowd')t=v>0?'مردم بیشتر شورت‌اند':'مردم بیش از حد لانگ‌اند';
     else if(k==='taker')t=v>0?'خرید تهاجمی غالب':'فروش تهاجمی غالب';
     else if(k==='oi')t='OI '+fmtPct(x.doi)+' با قیمت '+fmtPct(x.dp);
-    it.push({t,good:x.dir==='wait'?null:eff===want,w:Math.round(Math.abs(W[k]*v))});
-  }
+    it.push({t,good:x.dir==='wait'?null:c>0,w:Math.abs(c)});});
   return it.sort((a,b)=>b.w-a.w).slice(0,8);
 }
 const RDREG_FA={bull:'صعودی',flat:'خنثی',bear:'نزولی'};
 /* پنل «کارنامه و کار امروز»: لانگ و شورت در هر شدت امتیاز، در کل و در حال بازار امروز */
 function rdPanelHtml(){
-  const cal=RD.calib||{}, reg=RD.reg, B=['30-45','45-60','60+'];
+  const cal=RD.calib||{}, reg=RD.reg;
   if(!Object.keys(cal).length)return '';
-  let h='<div class="rdpan"><div class="mkh"><b>'+ic('bars')+'کارنامه‌ی سیگنال‌ها</b><small>40٪ آخرِ دوره، بیرون از یادگیری</small></div>';
-  const tbl=(title,pre)=>'<div class="sechd">'+title+'</div><table class="rdtab"><thead><tr><th></th><th>همه</th>'+B.map(b=>'<th dir="ltr">'+b+'</th>').join('')+'</tr></thead><tbody>'+
-    ['long','short'].map(d=>'<tr><td><span class="pill '+d+'">'+(d==='long'?'لانگ':'شورت')+'</span></td><td>'+rdCell(cal[d+pre])+'</td>'+B.map(b=>'<td>'+rdCell(cal[d+pre+'|'+b])+'</td>').join('')+'</tr>').join('')+'</tbody></table>'+
-    '<div class="hint rdcap">ستون‌ها: شدت امتیاز. هر خانه: ستاره، میانگین R بعد از کارمزد، درصد برد، تعداد.</div>';
+  const sp=RD.span?Math.round((RD.span[1]-RD.span[0])/864e5/2):0;
+  let h='<div class="rdpan"><div class="mkh"><b>'+ic('bars')+'کارنامه‌ی سیگنال‌ها</b><small>'+(sp?faN(sp)+' روز آخر، ':'')+'بیرون از یادگیری</small></div>';
+  const tbl=(title,pre)=>'<div class="sechd">'+title+'</div><table class="rdtab"><thead><tr><th></th><th>همه</th>'+RD_B.map(b=>'<th dir="ltr">'+b+'</th>').join('')+'</tr></thead><tbody>'+
+    ['long','short'].map(d=>'<tr><td><span class="pill '+d+'">'+(d==='long'?'لانگ':'شورت')+'</span></td><td>'+rdCell(cal[d+pre])+'</td>'+RD_B.map(b=>'<td>'+rdCell(cal[d+pre+'|'+b])+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
   if(reg)h+=tbl('در بازار '+RDREG_FA[reg]+' (مثل الان'+(MKT&&MKT.btc!=null?': بیت‌کوین '+fmtPct(MKT.btc)+' در 24 ساعت':'')+')','|'+reg);
   h+=tbl('در همه‌ی حال‌های بازار','');
-  // کار امروز: بهترین دسته‌ی جهت×شدت در حال بازار امروز
+  const bl=cal['base|long'],bs=cal['base|short'];
+  h+='<div class="hint rdcap">ستون‌ها: امتیاز (صدک؛ 90 یعنی از 90٪ لحظه‌های گذشته امیدوارکننده‌تر). هر خانه: ستاره، میانگین R بعد از کارمزد، درصد برد، تعداد معامله و روزها. '+
+    '<b>ستاره‌ی 3 به بالا</b> یعنی حتی در بدترین حالتِ محتمل (90٪) سودده بوده؛ 2 ستاره یعنی سود داده ولی ممکن است شانس باشد.'+
+    (bl&&bs?' برای مقایسه، معامله در هر لحظه بی‌انتخاب: لانگ <b class="'+cls(bl.r/bl.n)+'" dir="ltr">'+fmtR(bl.r/bl.n)+'</b>، شورت <b class="'+cls(bs.r/bs.n)+'" dir="ltr">'+fmtR(bs.r/bs.n)+'</b>.':'')+'</div>';
+  // کار امروز: دسته‌های جهت×شدت که در حال بازار امروز (یا در کل) بدترین حالتشان هم سود است
   const cand=[];
-  for(const d of ['long','short'])for(const b of B){const o=reg?cal[d+'|'+reg+'|'+b]:null, p=o&&o.n>=30?o:cal[d+'|'+b];
-    if(p&&p.n>=30)cand.push({d,b,o:p,a:p.r/p.n,reg:p===o});}
-  cand.sort((x,y)=>y.a-x.a);
-  const good=cand.filter(x=>x.a>0.1), bad=['long','short'].filter(d=>{const o=reg?cal[d+'|'+reg]:cal[d];return o&&o.n>=30&&o.r/o.n<=0;});
+  for(const d of ['long','short'])for(const b of RD_B){const o=reg?cal[d+'|'+reg+'|'+b]:null, p=rdStars(o)?o:cal[d+'|'+b];
+    if(rdStars(p)>=3)cand.push({d,b,o:p,a:p.r/p.n});}
+  cand.sort((x,y)=>y.o.lb-x.o.lb);
+  const bad=['long','short'].filter(d=>{const o=reg&&rdStars(cal[d+'|'+reg])?cal[d+'|'+reg]:cal[d];return rdStars(o)===1;});
   const nm=x=>'<b>'+(x.d==='long'?'لانگ':'شورت')+'‌های امتیاز <bdi dir="ltr">'+x.b+'</bdi></b> ('+faN(rdStars(x.o))+' ستاره، '+faN(Math.round(x.o.w/x.o.n*100))+'٪ برد، <bdi dir="ltr">'+fmtR(x.a)+'</bdi>)';
-  h+='<div class="flag '+(good.length?'u':'w')+' rdtodo"><i>'+(good.length?'✓':'!')+'</i><span><b>کار امروز:</b> '+
-    (good.length?'فقط '+good.slice(0,2).map(nm).join(' و ')+'.':'هیچ دسته‌ای در این حال بازار سابقه‌ی خوب ندارد — صبر کن یا ریسک را خیلی کم کن.')+
+  h+='<div class="flag '+(cand.length?'u':'w')+' rdtodo"><i>'+(cand.length?'✓':'!')+'</i><span><b>کار امروز:</b> '+
+    (cand.length?'فقط '+cand.slice(0,2).map(nm).join(' و ')+'.':'هیچ دسته‌ای هنوز سابقه‌ی مطمئن (3 ستاره) ندارد — صبر کن، با «تست» امتحان کن یا ارزهای بیشتری بررسی کن.')+
     (bad.length?' '+bad.map(d=>(d==='long'?'لانگ':'شورت')).join(' و ')+' در این حال بازار زیان داده؛ نگیر.':'')+'</span></div>';
-  // وزن‌های یادگرفته
-  const W=rdW(), ks=Object.keys(RD_W0).filter(k=>W[k]).sort((a,b)=>Math.abs(W[b])-Math.abs(W[a]));
-  h+='<details class="sec sub2"><summary>وزن عامل‌ها (یادگرفته از 60٪ اول، '+faN(RD.wn||0)+' نمونه)</summary><div class="rdwts">'+
-    ks.map(k=>'<span class="pill '+(W[k]>0?'mut':'lose')+'">'+esc(RD_FA[k])+' '+(W[k]>0?'':'(برعکس) ')+faN(Math.abs(Math.round(W[k])))+'</span>').join('')+
-    (Object.keys(RD_W0).filter(k=>!W[k]).length?'<div class="hint">بی‌اثر یا بی‌داده: '+Object.keys(RD_W0).filter(k=>!W[k]).map(k=>esc(RD_FA[k])).join('، ')+'</div>':'')+'</div></details>';
+  // صداقت مدل: احتمالی که گفت در برابر آنچه شد
+  if(RD.rel){const lab=['زیر 30٪','30-40٪','40-50٪','50-60٪','60-70٪','70٪+'];
+    h+='<details class="sec sub2"><summary>صداقت مدل: گفت چقدر، شد چقدر</summary><table class="rdtab rdrel"><thead><tr><th>مدل گفت</th><th>لانگ: شد</th><th>شورت: شد</th></tr></thead><tbody>'+
+      lab.map((l,i)=>{const c=d=>{const x=RD.rel[d][i];return x[0]>=30?'<b>'+faN(Math.round(x[2]/x[0]*100))+'٪</b><small class="n">'+faN(x[0])+' بار</small>':'<small>—</small>';};
+        return RD.rel.long[i][0]>=30||RD.rel.short[i][0]>=30?'<tr><td dir="ltr">'+l+'</td><td>'+c('long')+'</td><td>'+c('short')+'</td></tr>':'';}).join('')+
+      '</tbody></table><div class="hint">اگر ستون «شد» نزدیک «گفت» است و با آن بالا می‌رود، مدل واقعاً چیزی می‌فهمد؛ اگر همه یکی است، عامل‌ها پیش‌بینی ندارند.</div></details>';}
+  // وزن‌های یادگرفته (برای شورت، علامت عامل‌های جهت‌دار برعکس می‌شود تا «+» یعنی به نفع همان معامله)
+  if(RD.M){h+='<details class="sec sub2"><summary>وزن عامل‌ها (یادگرفته از '+faN(RD.ns||0)+' نمونه'+(RD.ncoin?' در '+faN(RD.ncoin)+' ارز':'')+')</summary><div class="rdwts">';
+    for(const d of ['long','short']){const w=RD.M[d].w,ks=RD_FEAT.map((k,n)=>[k,d==='short'&&!RD_NOSIGN.includes(k)?-w[n]:w[n]]).filter(x=>Math.abs(x[1])>=0.02).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+      h+='<div><b>'+(d==='long'?'لانگ':'شورت')+':</b> '+(ks.length?ks.map(([k,v])=>'<span class="pill '+(v>0?'mut':'lose')+'">'+esc(RD_FA[k])+' <bdi dir="ltr">'+(v>0?'+':'−')+Math.abs(v).toFixed(2)+'</bdi></span>').join(''):'هیچ عاملی اثر روشن نداشت')+'</div>';}
+    h+='<div class="hint">«+» یعنی این عامل به نفع همین جهت بوده؛ «−» یعنی برعکسِ انتظار عمل کرده. عامل‌های کم‌اثر نشان داده نمی‌شوند.</div></div></details>';}
   return h+'</div>';
 }
+function rdRowHtml(x,i){
+  const z=x.pl?isoSize(x.pl.E,x.pl.SL):null, f=RD.fund&&RD.fund[x.tk], R=rdReasons(x), dn=x.dir==='long'?'لانگ':'شورت';
+  return '<div class="glsig rdit'+(x.ok?'':' weak')+'" data-rd="'+esc(x.tk)+'"><div class="glit"><span class="rdrk">'+faN(i+1)+'</span><b dir="ltr">'+esc(x.tk)+'</b><span class="pill '+x.dir+'">'+dn+'</span>'+
+      '<span class="rdsc '+(x.dir==='long'?'u':'d')+'">امتیاز '+faN(x.sc)+'</span>'+rdStarHtml(x.stars)+'</div>'+
+    (x.cb?'<div class="glnum glh2">سابقه‌ی '+dn+'‌های امتیاز '+rdBucket(x.sc)+(x.rt.reg?' در بازار '+RDREG_FA[RD.reg]:'')+': '+faN(x.cb.n)+' بار در '+faN(x.cb.g||0)+' روز، '+faN(Math.round(x.cb.w/x.cb.n*100))+'٪ برد، میانگین <b class="'+cls(x.cb.r/x.cb.n)+'" dir="ltr">'+fmtR(x.cb.r/x.cb.n)+'</b>'+
+      (x.cb.lb!=null&&isFinite(x.cb.lb)?'، بدترین حالت محتمل <b class="'+cls(x.cb.lb)+'" dir="ltr">'+fmtR(x.cb.lb)+'</b>':'')+'</div>':'')+
+    (x.p!=null?'<div class="glnum">احتمال سود به گفته‌ی مدل: <b>'+faN(Math.round(x.p*100))+'٪</b></div>':'')+
+    (x.wl!=null||x.rl!=null||x.tb!=null?'<div class="glnum rdflow">'+[x.wl!=null?'نهنگ‌ها <b>'+faN(Math.round(x.wl))+'٪</b> لانگ':'',x.rl!=null?'مردم <b>'+faN(Math.round(x.rl))+'٪</b> لانگ':'',
+      x.tb!=null?'خرید تهاجمی <b>'+faN(Math.round(x.tb))+'٪</b>':'',x.doi!=null?'OI <b class="'+cls(x.doi)+'">'+fmtPct(x.doi)+'</b> (6 ساعت)':''].filter(Boolean).join(' · ')+'</div>':'')+
+    '<div class="glnum rdwhy">'+R.map(r=>'<span class="pill '+(r.good==null?'mut':r.good?'win':'lose')+'">'+(r.good?'✓ ':r.good===false?'✗ ':'')+esc(r.t)+'</span>').join('')+
+      (f!=null&&Math.abs(f)>=0.03?'<span class="pill mut" title="فاندینگ فیوچرز؛ در امتیاز نیست">فاندینگ '+fmtNum(f)+'٪ '+(f>0?'(لانگ‌ها شلوغ)':'(شورت‌ها شلوغ)')+'</span>':'')+
+      (!x.flow?'<span class="pill mut">بی داده‌ی فیوچرز بایننس</span>':'')+'</div>'+
+    (x.pl?'<div class="glnum">ورود <b dir="ltr">'+fmtPrice(x.pl.E)+'</b> · استاپ <b dir="ltr">'+fmtPrice(x.pl.SL)+'</b> ('+fmtNum(x.pl.sd*100)+'٪) · هدف <b dir="ltr">'+fmtPrice(x.pl.TP)+'</b> · ریسک‌فری در <bdi dir="ltr">+1R</bdi> · حداکثر '+faN(AS_HOLD)+' ساعت</div>':'')+
+    '<div class="glact">'+(z?'<button class="btn sm ok" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
+      (x.pl?'<button class="btn sm" data-a="test" title="معامله‌ی آزمایشی: مثل واقعی دنبال می‌شود، بی پول">'+ic('flag')+'<span>تست</span></button>':'')+
+      '<button class="btn sm side" data-a="copy" title="برای اپ صرافی">'+ic('share')+'</button></div></div>';
+}
+let RDV=(()=>{try{return localStorage.getItem('signaldesk.rdview')||'sig';}catch(e){return 'sig';}})();
 function rdHtml(){
-  const L=rdList(), act=L.filter(x=>x.dir!=='wait'), wait=L.filter(x=>x.dir==='wait');
+  const L=rdList(), act=L.filter(x=>x.dir!=='wait'), wait=L.filter(x=>x.dir==='wait'), ob=rbOpen();
   let h='<div class="glh"><b>'+ic('trend')+'رادار بازار</b><span>'+(L.length?faN(L.filter(x=>x.ok).length)+' فرصت با رتبه‌ی خوب از '+faN(L.length)+' ارز':'')+'</span></div><div class="glb">';
-  h+='<div class="rdbar"><div class="pbpick rdn">'+[20,50,100].map(n=>'<button class="pbc'+((RD.n||20)===n?' on':'')+'" data-rdn="'+n+'">'+faN(n)+' ارز اول</button>').join('')+'</div>'+
-    '<button class="btn sm" data-rdrun="1"'+(RDQ.on?' disabled':'')+'>'+ic('refresh')+'<span>بررسی دوباره</span></button><small id="rdProg">'+(RDQ.on?'':RD.at?ageTxt(RD.at):'')+'</small></div>';
-  if(!RD.at&&!RDQ.on)h+='<div class="hint">هنوز بررسی نشده؛ همین الان شروع می‌شود (بار اول چند دقیقه).</div>';
+  h+='<div class="pbpick rdv">'+[['sig','سیگنال‌ها'],['test','آزمایشی'+(ob.test?' ('+faN(ob.test)+' باز)':'')],['log','دفتر پیشنهادها']].map(([k,t])=>'<button class="pbc'+(RDV===k?' on':'')+'" data-rdv="'+k+'">'+t+'</button>').join('')+'</div>';
+  if(RDV!=='sig')return h+rbHtml(RDV)+'</div>';
+  const n=RD.n||0;
+  h+='<div class="rdbar"><span class="rdcnt">'+(n?'ارز 1 تا '+faN(Math.min(n,RD.rank.length||n))+' از '+faN(RD_MAX):'')+'</span>'+
+    (n<RD_MAX?'<button class="btn sm" data-rdmore="1"'+(RDQ.on?' disabled':'')+'>'+ic('plus')+'<span>'+faN(RD_STEP)+' ارز بعدی</span></button>':'')+
+    '<button class="btn sm" data-rdrun="1"'+(RDQ.on?' disabled':'')+'>'+ic('refresh')+'<span>تازه کن</span></button><small id="rdProg">'+(RDQ.on?'':RD.at?ageTxt(RD.at):'')+'</small></div>';
+  if(!RD.at&&!RDQ.on)h+='<div class="hint">هنوز بررسی نشده؛ همین الان 10 ارز اول شروع می‌شود (بار اول هر ارز ~125 روز تاریخچه می‌گیرد؛ چند ثانیه برای هر ارز).</div>';
   if(MKT)h+=mktHtml(MKT,null);
   h+=rdPanelHtml();
-  act.forEach((x,i)=>{
-    const z=x.pl?isoSize(x.pl.E,x.pl.SL):null, f=RD.fund&&RD.fund[x.tk];
-    const R=rdReasons(x);
-    h+='<div class="glsig rdit'+(x.ok?'':' weak')+'" data-rd="'+esc(x.tk)+'"><div class="glit"><span class="rdrk">'+faN(i+1)+'</span><b dir="ltr">'+esc(x.tk)+'</b><span class="pill '+x.dir+'">'+(x.dir==='long'?'لانگ':'شورت')+'</span>'+
-      '<span class="rdsc '+(x.net>0?'u':'d')+'">امتیاز '+faN(Math.abs(x.net))+'</span>'+rdStarHtml(x.stars)+'</div>'+
-      (x.cb?'<div class="glnum glh2">سابقه‌ی '+(x.dir==='long'?'لانگ':'شورت')+'‌های امتیاز '+rdBucket(Math.abs(x.net))+(x.rt.reg?' در بازار '+RDREG_FA[RD.reg]:'')+': '+faN(x.cb.n)+' بار، '+faN(Math.round(x.cb.w/x.cb.n*100))+'٪ برد، میانگین <b class="'+cls(x.cb.r/x.cb.n)+'">'+fmtR(x.cb.r/x.cb.n)+'</b></div>':'')+
-      (x.wl!=null||x.rl!=null||x.tb!=null?'<div class="glnum rdflow">'+[x.wl!=null?'نهنگ‌ها <b>'+faN(Math.round(x.wl))+'٪</b> لانگ':'',x.rl!=null?'مردم <b>'+faN(Math.round(x.rl))+'٪</b> لانگ':'',
-        x.tb!=null?'خرید تهاجمی <b>'+faN(Math.round(x.tb))+'٪</b>':'',x.doi!=null?'OI <b class="'+cls(x.doi)+'">'+fmtPct(x.doi)+'</b> (6 ساعت)':''].filter(Boolean).join(' · ')+'</div>':'')+
-      '<div class="glnum rdwhy">'+R.map(r=>'<span class="pill '+(r.good==null?'mut':r.good?'win':'lose')+'">'+(r.good?'✓ ':r.good===false?'✗ ':'')+esc(r.t)+'</span>').join('')+
-        (f!=null&&Math.abs(f)>=0.03?'<span class="pill mut" title="فاندینگ فیوچرز؛ در امتیاز نیست">فاندینگ '+fmtNum(f)+'٪ '+(f>0?'(لانگ‌ها شلوغ)':'(شورت‌ها شلوغ)')+'</span>':'')+
-        (!x.flow?'<span class="pill mut">بی داده‌ی فیوچرز بایننس</span>':'')+'</div>'+
-      (x.pl?'<div class="glnum">ورود <b dir="ltr">'+fmtPrice(x.pl.E)+'</b> · استاپ <b dir="ltr">'+fmtPrice(x.pl.SL)+'</b> ('+fmtNum(x.pl.sd*100)+'٪) · هدف <b dir="ltr">'+fmtPrice(x.pl.TP)+'</b> · ریسک‌فری در +1R · حداکثر '+faN(AS_HOLD)+' ساعت</div>':'')+
-      '<div class="glact">'+(z?'<button class="btn sm ok" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
-        '<button class="btn sm side" data-a="copy" title="برای اپ صرافی">'+ic('share')+'</button></div></div>';
-  });
-  if(wait.length)h+='<div class="hint rdwait"><b>صبر</b> (امتیاز بین −'+faN(RD_TH)+' و +'+faN(RD_TH)+'): '+wait.map(x=>esc(x.tk)+' <span class="'+cls(x.net)+'" dir="ltr">'+(x.net>0?'+':'')+faN(x.net)+'</span>').join('، ')+'</div>';
-  h+='<div class="hint">12 عامل: قیمت (روند 4 و 1 ساعته، MACD، RSI، شکست 7 روزه، حجم، بیت‌کوین، فاصله از میانگین) و جریان پول از فیوچرز بایننس (نهنگ‌ها در برابر مردم، ازدحام مردم، خرید/فروش تهاجمی، Open Interest'+
-    (RD.nflow!=null?'؛ '+faN(RD.nflow)+' ارز داده‌اش را داشتند':'')+'). وزن‌ها روی 60٪ اول یاد گرفته و کارنامه روی 40٪ آخر سنجیده شده؛ ستاره‌ها از همان کارنامه. سود گذشته تضمین آینده نیست.</div></div>';
+  act.forEach((x,i)=>{h+=rdRowHtml(x,i);});
+  if(wait.length)h+='<div class="hint rdwait"><b>صبر</b> (امتیاز زیر '+faN(RD_MIN)+'): '+wait.map(x=>esc(x.tk)+' <span class="'+(x.best==='long'?'win':'lose')+'">'+(x.best==='long'?'L':'S')+faN(x.sc)+'</span>').join('، ')+'</div>';
+  h+='<div class="hint">مدل: رگرسیون لجستیک، جدا برای لانگ و شورت، روی نتیجه‌ی همین معامله (بعد از کارمزد و با ریسک‌فری). 17 عامل: قیمت، بیت‌کوین، قدرت نسبی، روند روزانه، نوسان و جریان پول فیوچرز بایننس'+
+    (RD.nflow!=null?' ('+faN(RD.nflow)+' ارز داده‌اش را داشتند)':'')+'. کارنامه با آزمون پیش‌رونده: مدل هر دوره را ندیده سنجیده شده. سود گذشته تضمین آینده نیست؛ «تست» بزن و در «دفتر پیشنهادها» ببین در عمل چه شد.</div></div>';
   return h;
 }
 function paintRadar(g){
   g.className='glance gltab';g.innerHTML=rdHtml();
-  if(!RDQ.on&&(Date.now()-RD.at>30*60000||!RD.rank.length))setTimeout(()=>rdScan(),300);
-  g.querySelectorAll('[data-rdn]').forEach(b=>b.onclick=()=>{RD.n=+b.dataset.rdn;lsSet(RD_KEY,RD);rdScan(true);paintRadar(g);});
-  const r=g.querySelector('[data-rdrun]');if(r)r.onclick=()=>{rdScan(true);paintRadar(g);};
+  if(!RDQ.on&&(Date.now()-RD.at>30*60000||!RD.rank.length))setTimeout(()=>rdScan('refresh'),300);
+  try{rbCatchUp();}catch(e){}
+  g.querySelectorAll('[data-rdv]').forEach(b=>b.onclick=()=>{RDV=b.dataset.rdv;try{localStorage.setItem('signaldesk.rdview',RDV);}catch(e){}paintRadar(g);});
+  const mo=g.querySelector('[data-rdmore]');if(mo)mo.onclick=()=>{rdScan('more');paintRadar(g);};
+  const r=g.querySelector('[data-rdrun]');if(r)r.onclick=()=>{rdScan('refresh');paintRadar(g);};
+  if(RDV!=='sig'){rbBind(g);return;}
   g.querySelectorAll('.rdit').forEach(w=>{const x=rdList().find(y=>y.tk===w.dataset.rd);if(!x||!x.pl)return;
     const k={tk:x.tk,k:'radar',t:RD.at,pl:x.pl,dir:x.dir};
     w.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{
-      const p={id:'radar/'+x.tk+'/'+RD.at,num:0,text:'رادار بازار: '+x.tk+' '+(x.dir==='long'?'لانگ':'شورت')+' · امتیاز '+Math.abs(x.net),date:new Date(),link:null,img:null,auto:true};
+      const p={id:'radar/'+x.tk+'/'+RD.at,num:0,text:'رادار بازار: '+x.tk+' '+(x.dir==='long'?'لانگ':'شورت')+' · امتیاز '+x.sc,date:new Date(),link:null,img:null,auto:true};
+      if(b.dataset.a==='test'){rbAdd('test',x);paintRadar(g);return;}
       if(b.dataset.a==='iso'){const z=isoSize(x.pl.E,x.pl.SL);
         sheetEnter(p,asSig(k),{stop:x.pl.SL,lev:z?z.lev:null,amt:z?z.margin:null,market:'futures'},PRICES.get(x.tk)||x.pl.E,
-          {iso:true,note:'رادار بازار · امتیاز '+Math.abs(x.net)+(x.stars?' · '+x.stars+'★':''),until:Date.now()+AS_HOLD*36e5});}
+          {iso:true,note:'رادار بازار · امتیاز '+x.sc+(x.stars?' · '+x.stars+'★':''),until:Date.now()+AS_HOLD*36e5});}
       else copyExch(p,asSig(k),{stop:x.pl.SL,market:'futures'},PRICES.get(x.tk)||x.pl.E);});});
 }

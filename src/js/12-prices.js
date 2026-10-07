@@ -24,6 +24,7 @@ function applyPrices(m,srcName,route,ms){
   let did=false;
   try{did=checkAutoExec();}catch(e){logIt('err','اجرای خودکار: '+e.message);}
   try{if(!did)checkAlerts();checkPending();}catch(e){}
+  try{rbCheck();}catch(e){}
 }
 /* ---- مارک پرایس فیوچرز ---- */
 /* قیمت اصلی از بازار اسپات می‌آید، ولی صرافی استاپ فیوچرز را با «مارک پرایس» اجرا می‌کند؛ در

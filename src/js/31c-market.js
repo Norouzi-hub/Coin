@@ -74,7 +74,11 @@ function mktHtml(m,dirs){
   let h='<div class="mkst"><div class="mkh"><b>'+ic('trend')+'حال بازار · '+MK_REG_FA[m.reg]+'</b><small>'+ageTxt(m.at)+'</small></div>'+
     '<div class="mkbars">'+bars+'</div>'+
     '<div class="mkline"><i class="u" style="width:'+pu.toFixed(1)+'%"></i><i class="m" style="width:'+(100-pu-pd).toFixed(1)+'%"></i><i class="d" style="width:'+pd.toFixed(1)+'%"></i></div>'+
-    '<div class="mknum"><span class="u">صعودی '+faN(m.up)+'</span><span>میانه '+fmtPct(m.med)+(m.btc!=null?' · بیت‌کوین <b class="'+cls(m.btc)+'">'+fmtPct(m.btc)+'</b>':'')+'</span><span class="d">نزولی '+faN(m.down)+'</span></div>';
+    '<div class="mknum"><span class="u">صعودی '+faN(m.up)+'</span><span>میانه '+fmtPct(m.med)+(m.btc!=null?' · بیت‌کوین <b class="'+cls(m.btc)+'">'+fmtPct(m.btc)+'</b>':'')+'</span><span class="d">نزولی '+faN(m.down)+'</span></div>'+
+    '<details class="mkwhy"><summary>این عددها یعنی چه؟</summary><div class="hint">'+faN(m.n)+' ارزِ بازار اسپات '+esc(m.src||'')+' (جفت تتری با حجم 24 ساعتِ بالای 20 هزار دلار؛ بی استیبل‌کوین و توکن اهرمی). '+
+      'هر ارز با تغییر قیمتش در 24 ساعت گذشته شمرده شده: <b class="d">'+faN(m.down)+'</b> بیش از 0.3٪ ریخته‌اند، <b class="u">'+faN(m.up)+'</b> بیش از 0.3٪ رشد کرده‌اند و '+faN(m.flat)+' تقریباً بی‌تغییرند. '+
+      'ستون‌ها از چپ: چند ارز بیش از 10٪ ریخته‌اند، 7 تا 10٪، 5 تا 7٪، 3 تا 5٪، 1 تا 3٪، تقریباً صفر، و همین‌طور تا رشد بیش از 10٪. «میانه» تغییرِ ارزِ وسطِ صف است. '+
+      'نام حال بازار: بیش از 75٪ ارزها منفی = خیلی نزولی، 60٪ = نزولی (و برعکس برای صعودی)، وگرنه خنثی.</div></details>';
   // هشدار وقتی بازار خلاف جهتِ سیگنال‌های قابل گرفتن است، با سابقه‌ی کانال در همین حال
   const reg=regOfBtc(m.btc);
   for(const d of ['long','short']){

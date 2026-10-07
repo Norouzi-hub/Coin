@@ -1,110 +1,155 @@
-/* رادار بازار: امتیاز لانگ/شورت از ۸ عامل، سنجش روی گذشته، اولویت‌بندی، تب «بازار» */
+/* رادار بازار v3: عامل‌ها، مدل لجستیک، کارنامه‌ی صادق، بارگذاری ده‌تایی، معامله‌ی آزمایشی و دفتر پیشنهادها */
 const {pw}=require('./lib');const {chromium}=pw;const {route,seed}=require('./fixture');
 let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);};
 (async()=>{
  const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:900}});await route(ctx);
+ // کندل ساختگیِ پیوسته (تابع زمان، پس صفحه‌ها با هم جورند) برای هر نماد؛ شمارش درخواست‌ها
+ const REQ={},PXN={};
+ await ctx.route(/klines\?symbol=/,r=>{const u=r.request().url(),m=u.match(/symbol=([A-Z0-9]+)USDT&interval=(\w+)&startTime=(\d+)&limit=(\d+)/);
+   if(!m)return r.fallback();const [,s,iv,st,lim]=m,ms={'1h':36e5,'5m':3e5}[iv];if(!ms||s==='GRAM')return r.fallback();
+   REQ[s+':'+iv]=(REQ[s+':'+iv]||0)+1;
+   const sd=[...s].reduce((a,c)=>a+c.charCodeAt(0),0)%17, H=36e5, base={BTC:60000,ETH:3000}[s]||10+sd;
+   const P=PXN[s+':'+iv];
+   const px=t=>P?P(t):base*(1+0.06*Math.sin(t/H/41+sd)+0.03*Math.sin(t/H/13+2*sd)+0.012*Math.sin(t/H/3.1+sd)+0.004*Math.sin(t/H*1.7));
+   const out=[],now=Date.now();
+   for(let t=+st;t<now&&out.length<+lim;t+=ms){const o=px(t),c=px(t+ms),w=Math.abs(c-o)*0.6+o*0.0015;out.push([t,String(o),String(Math.max(o,c)+w),String(Math.min(o,c)-w),String(c),String(1000+400*Math.sin(t/H/5+sd)),t+ms-1]);}
+   return r.fulfill({status:200,headers:{'content-type':'application/json','access-control-allow-origin':'*'},body:JSON.stringify(out)});});
+ await ctx.route('**/futures/data/**',r=>{const u=r.request().url(),H=36e5,now=Math.floor(Date.now()/H)*H,lim=+(u.match(/limit=(\d+)/)||[0,500])[1];
+   REQ['flow']=(REQ['flow']||0)+1;
+   const row=i=>{const t=now-(lim-1-i)*H;return /taker/.test(u)?{buySellRatio:String(1+0.2*Math.sin(t/H/9)),timestamp:t}:/openInterest/.test(u)?{sumOpenInterestValue:String(1e8*(1+Math.sin(t/H/50)*0.1)),timestamp:t}:{longShortRatio:String(/top/.test(u)?1.4+0.3*Math.sin(t/H/11):2+0.5*Math.cos(t/H/13)),timestamp:t};};
+   return r.fulfill({status:200,headers:{'content-type':'application/json','access-control-allow-origin':'*'},body:JSON.stringify(/BTCUSDT|ETHUSDT/.test(u)?Array.from({length:lim},(_,i)=>row(i)):[])});});
  const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
  await p.addInitScript(seed);await p.goto('http://localhost:8899/index.html');await p.waitForTimeout(3000);
 
- console.log('=== موتور ===');
- const e=await p.evaluate(()=>{const H=36e5,t0=Math.floor(Date.now()/H)*H-1000*H;
-   const mk=f=>{const C=[];let v=100;for(let i=0;i<1000;i++){const o=v;v=f(i,v);C.push({t:t0+i*H,o,h:Math.max(o,v)*1.002,l:Math.min(o,v)*0.998,c:v,v:1000+(i>995?3000:0)});}return C;};
-   const up=mk((i,v)=>v*(1+0.002+0.004*Math.sin(i/7))), dn=mk((i,v)=>v*(1-0.002+0.004*Math.sin(i/7))), fl=mk((i,v)=>100+Math.sin(i/9)*0.8);
-   const sc=C=>{const P=rdPrep(C,up);const s=rdScore(P,C.length-1);return {net:s.net,dir:rdDir(s.net),parts:s.parts};};
-   const a=sc(up),b=sc(dn),c=sc(fl);
-   // در طول روند صعودی (نه فقط کندل آخر): بیشترِ ۲۰۰ کندل آخر لانگ، هیچ‌کدام شورت
-   const PU=rdPrep(up,up),dirs=[];for(let i=800;i<1000;i++)dirs.push(rdDir(rdScore(PU,i).net));
-   a.longs=dirs.filter(x=>x==='long').length;a.shorts=dirs.filter(x=>x==='short').length;
-   // پیش‌نگری نه: امتیازِ کندل i با کندل‌های بعدی عوض نمی‌شود
-   const BB=up.map(k=>Object.assign({},k)), P1=rdPrep(up.slice(0,800),BB), P2=rdPrep(up,BB), s1=rdScore(P1,799).net, s2=rdScore(P2,799).net;
-   const cal={};rdBacktest(rdPrep(up,up),cal);
-   return {a,b:{net:b.net,dir:b.dir,btc:b.parts.btc},c:{net:c.net,dir:c.dir},s1,s2,cal};});
- console.log('   ',JSON.stringify({a:e.a.net,b:e.b,c:e.c,s1:e.s1,s2:e.s2,cal:e.cal}));
- ok(e.a.longs>=120&&e.a.shorts===0&&e.a.parts.t4>0,'روند صعودی پایدار ← بیشتر لانگ ('+e.a.longs+' از 200)، هیچ شورت');
- ok(e.b.dir==='short'&&e.b.btc>0,'روند نزولی ← شورت؛ عامل بیت‌کوین (صعودی) خلافش حساب شد ('+e.b.net+')');
- ok(e.c.dir==='wait','بازار رنج ← «صبر» ('+e.c.net+')');
- ok(e.s1===e.s2,'امتیاز هر کندل فقط از گذشته (بی نگاه به آینده)');
- const k=Object.keys(e.cal);ok(k.length&&k.every(x=>/^long\|/.test(x))&&e.cal[k[0]].n>20,'سنجش گذشته: نمونه‌های لانگ در روند صعودی '+JSON.stringify(e.cal));
+ console.log('=== عامل‌ها و نمونه‌ها ===');
+ const e=await p.evaluate(()=>{const H=36e5,t0=Math.floor(Date.now()/H)*H-1500*H;
+   const mk=f=>{const C=[];let v=100;for(let i=0;i<1500;i++){const o=v;v=f(i,v);C.push({t:t0+i*H,o,h:Math.max(o,v)*1.002,l:Math.min(o,v)*0.998,c:v,v:1000});}return C;};
+   const up=mk((i,v)=>v*(1+0.002+0.004*Math.sin(i/7))), B=mk((i,v)=>v*(1+0.0005+0.004*Math.sin(i/9)));
+   const P=rdPrep(up,B), r=rdParts(P,1400);
+   // پیش‌نگری نه: عامل‌های کندل i با کندل‌های بعدی عوض نمی‌شوند
+   const v1=rdVec(rdParts(rdPrep(up.slice(0,1201),B),1200).p), v2=rdVec(rdParts(rdPrep(up,B),1200).p);
+   const S1=rdSamples(P,'UP');
+   return {p:r.p,rsv:r.m.rsv,same:JSON.stringify(v1)===JSON.stringify(v2),n:S1.t.length,F:S1.F,xl:S1.X.length,
+     longWin:S1.R.long.filter(x=>x>0).length/S1.t.length, shortWin:S1.R.short.filter(x=>x>0).length/S1.t.length,exitOk:S1.J.long.every((j,q)=>j>S1.t[q])};});
+ console.log('   ',JSON.stringify(e).slice(0,400));
+ ok(e.p.t4>0&&e.p.rs>0&&e.p.d50>0&&e.p.volc!=null,'روند صعودی قوی‌تر از بیت‌کوین ← روند 4ساعته، قدرت نسبی و روند روزانه مثبت');
+ ok(e.same,'عامل‌های هر کندل فقط از گذشته (بی نگاه به آینده)');
+ ok(e.n>500&&e.xl===e.n*e.F&&e.exitOk,'نمونه‌ها: هر 2 ساعت، 17 عامل، خروج بعد از ورود ('+e.n+')');
+ ok(e.longWin>e.shortWin,'در روند صعودی لانگ بیشتر سود داده تا شورت ('+e.longWin.toFixed(2)+' در برابر '+e.shortWin.toFixed(2)+')');
+
+ console.log('=== مدل لجستیک و کارنامه‌ی صادق ===');
+ const m=await p.evaluate(()=>{
+   // نمونه‌های ساختگی: «خرید تهاجمی» (ستون 13) لانگ را پیش‌بینی می‌کند، بقیه نویز
+   let rnd=7;const R=()=>{rnd=(rnd*9301+49297)%233280;return rnd/233280;};
+   const F=RD_FEAT.length,ti=RD_FEAT.indexOf('taker'),H=36e5,t0=Date.now()-3000*H,SS=[];
+   for(const tk of ['A','B','C']){const t=[],X=[],Rr={long:[],short:[]},J={long:[],short:[]},G=[];
+     for(let i=0;i<1400;i++){const x=Array.from({length:F},()=>R()*2-1);x[F-1]=x[F-2]=0;const tt=t0+i*2*H;
+       const pw=1/(1+Math.exp(-(2.2*x[ti]-0.3)));const win=R()<pw;
+       t.push(tt);X.push(...x);G.push('flat');Rr.long.push(win?1.4:-1.1);Rr.short.push(!win?1.4:-1.1);J.long.push(tt+6*H);J.short.push(tt+6*H);}
+     SS.push({tk,t,X:Float32Array.from(X),R:Rr,J,G,F});}
+   const ML=rdFit(SS,'long',Infinity),MS=rdFit(SS,'short',Infinity);
+   const qs=ML.q, mono=qs.every((v,i)=>!i||v>=qs[i-1]);
+   const cal={},rel={long:Array.from({length:6},()=>[0,0,0]),short:Array.from({length:6},()=>[0,0,0])};
+   rdEvalFold(SS,{long:ML,short:MS},t0,t0+3000*H,cal,rel,new Map());
+   const L=rdSum(cal.long),A=cal['long|95+']&&rdSum(cal['long|95+']);
+   // بی هم‌پوشانی: هر ارز در هر 6 ساعت حداکثر یک معامله ← حداکثر 1400×3/3
+   const tot=(cal.long?cal.long.n:0)+(cal.short?cal.short.n:0);
+   const top=rdPct(ML,0.99),lo=rdPct(ML,0.01);
+   return {wl:ML.w[ti],ws:MS.w[ti],other:Math.max(...ML.w.slice(0,F).filter((_,i)=>i!==ti).map(Math.abs)),mono,top,lo,L,A,tot,base:rdSum(cal['base|long']),
+     st:[rdStars({n:10,w:5,r:3,g:9,lb:.2}),rdStars({n:50,w:20,r:-3,g:9,lb:-.2}),rdStars({n:50,w:30,r:5,g:9,lb:-.01}),rdStars({n:50,w:30,r:8,g:9,lb:.05}),rdStars({n:50,w:30,r:20,g:9,lb:.3}),rdStars({n:50,w:30,r:20,g:3,lb:.3})]};});
+ console.log('   ',JSON.stringify(m));
+ ok(m.wl>1.2&&m.ws<-1.2&&m.other<0.4,'مدل عامل پیش‌بین را پیدا کرد: لانگ +'+m.wl.toFixed(2)+'، شورت '+m.ws.toFixed(2)+'؛ بقیه کوچک ('+m.other.toFixed(2)+')');
+ ok(m.mono&&m.top===100&&m.lo===0,'امتیاز = صدک احتمال (0 تا 100)');
+ ok(m.L&&m.L.r/m.L.n>m.base.r/m.base.n+0.3&&m.L.lb<m.L.r/m.L.n&&m.L.g>10,'کارنامه: لانگ‌های امتیاز 70+ بسیار بهتر از بی‌انتخاب؛ کران پایین کمتر از میانگین');
+ ok(m.tot<=1400,'برای هر ارز در هر لحظه فقط یک معامله ('+m.tot+' معامله از 4200 لحظه)');
+ ok(JSON.stringify(m.st)==='[0,1,2,3,5,0]','ستاره: نمونه‌ی کم، زیان، شاید شانس، مطمئن، عالی، روزهای کم ← '+JSON.stringify(m.st));
 
  console.log('=== اولویت و تب «بازار» ===');
  const t=await p.evaluate(()=>{const now=Date.now();['RDA','RDB','RDC','RDD'].forEach((x,i)=>{SYMBOLS.add(x);PRICES.set(x,10+i);});SYMVER++;
    const pl=(E,d)=>({dir:d,E,SL:d==='long'?E*0.98:E*1.02,TP:d==='long'?E*1.03:E*0.97,sd:0.02,rr:1.5});
-   const parts={t4:1,t1:1,macd:1,rsi:0.6,brk:0,vol:0.5,btc:1,ext:0};
-   RD={v:2,at:now,n:20,W:null,reg:null,fund:{RDA:0.06,RDB:0.01},rank:['RDA','RDB','RDC','RDD'],
-     calib:{'long|60+':{n:120,w:72,r:30},'long|45-60':{n:200,w:96,r:30},'short|30-45':{n:90,w:36,r:-9}},
-     coins:{RDA:{net:52,dir:'long',flow:true,parts,rsi:62,rv:1.3,atrPct:1,px:10,pl:pl(10,'long')},
-            RDB:{net:75,dir:'long',flow:true,parts,rsi:66,rv:1.9,atrPct:1,px:11,pl:pl(11,'long')},
-            RDC:{net:-35,dir:'short',parts:{t4:-1,t1:-1,macd:-1,rsi:-0.3,brk:-1,vol:0,btc:1,ext:0},rsi:44,rv:1,atrPct:1,px:12,pl:pl(12,'short')},
-            RDD:{net:12,dir:'wait',parts,rsi:51,rv:1,atrPct:1,px:13,pl:null}}};
-   const L=rdList();bucket='live';sigFilter='mkt';go('signals',true);renderAll();
+   const F=RD_FEAT.length,w=Array(F+1).fill(0);w[RD_FEAT.indexOf('t4')]=0.8;w[RD_FEAT.indexOf('rs')]=0.5;
+   const parts={t4:1,t1:1,macd:1,rsi:0.6,brk:0,vol:0.5,btc:1,ext:0,rs:0.6,d50:0.4,volc:0,rbull:0,rbear:0};
+   const c=(n,w,r,g,lb)=>({n,w,r,g,lb});
+   RD={v:3,at:now,n:10,reg:null,fund:{RDA:0.06,RDB:0.01},rank:['RDA','RDB','RDC','RDD'],M:{long:{w,q:[]},short:{w:w.map(x=>-x),q:[]}},
+     calib:{'long|95+':c(120,72,30,40,0.12),'long|85-95':c(200,96,30,50,0.04),'short|70-85':c(90,36,-9,30,-0.3)},
+     coins:{RDA:{sc:88,dir:'long',best:'long',p:0.46,flow:true,parts,rsi:62,rv:1.3,rsv:4,px:10,pl:pl(10,'long')},
+            RDB:{sc:97,dir:'long',best:'long',p:0.52,flow:true,parts,rsi:66,rv:1.9,rsv:6,px:11,pl:pl(11,'long')},
+            RDC:{sc:75,dir:'short',best:'short',p:0.4,parts:{t4:-1,t1:-1,macd:-1,rsi:-0.3,brk:-1,vol:0,btc:1,ext:0,rs:-0.5},rsi:44,rv:1,rsv:-5,px:12,pl:pl(12,'short')},
+            RDD:{sc:55,dir:'wait',best:'long',parts,rsi:51,rv:1,px:13,pl:null}}};
+   RDV='sig';const L=rdList();bucket='live';sigFilter='mkt';go('signals',true);renderAll();
    const G=document.getElementById('glance'), it=[...G.querySelectorAll('.rdit')];
    return {order:L.map(x=>x.tk+':'+(x.ok?1:0)).join(','),segs:[...document.querySelectorAll('#fbar .fseg .fb span')].map(x=>x.textContent).join(','),
      n:[...document.querySelectorAll('#fbar .fseg .fb')][1].querySelector('i').textContent,
      items:it.map(x=>x.querySelector('.glit').textContent),first:it[0]&&it[0].textContent,wait:(G.querySelector('.rdwait')||{}).textContent||'',cards:document.querySelectorAll('#list .card').length,
-     weak:it.filter(x=>x.classList.contains('weak')).length};});
- console.log('   ',JSON.stringify(Object.assign({},t,{first:t.first&&t.first.slice(0,200)})));
+     weak:it.filter(x=>x.classList.contains('weak')).length,more:!!G.querySelector('[data-rdmore]'),cnt:(G.querySelector('.rdcnt')||{}).textContent,
+     tabs:[...G.querySelectorAll('[data-rdv]')].map(x=>x.textContent).join(',')};});
+ console.log('   ',JSON.stringify(Object.assign({},t,{first:t.first&&t.first.slice(0,260)})));
  ok(t.segs==='الان چه کنم؟,بازار,در انتظار,همه','تب «بازار» کنار «الان چه کنم؟»: '+t.segs);
- ok(t.order==='RDB:1,RDA:1,RDC:0,RDD:0','اولویت با رتبه: RDB (4★، +0.25R) بعد RDA (3★، +0.15R)، شورت RDC (1★) و صبر آخر — '+t.order);
+ ok(t.order==='RDB:1,RDA:1,RDC:0,RDD:0','اولویت: RDB (4★) بعد RDA (3★)، شورت RDC (1★) و صبر آخر — '+t.order);
  ok(t.n==='2'&&t.weak===1,'عدد تب = فرصت‌های با رتبه‌ی خوب (۲)؛ شورت RDC کم‌رنگ');
- ok(/^1RDBلانگامتیاز 75/.test(t.items[0])&&/120 بار/.test(t.first)&&/★★★★☆/.test(t.first)&&/✓ روند 4 ساعته صعودی/.test(t.first),'ردیف اول: رتبه، نماد، جهت، امتیاز، سابقه و دلیل‌ها');
+ ok(/^1RDBلانگامتیاز 97/.test(t.items[0])&&/120 بار در 40 روز/.test(t.first)&&/★★★★☆/.test(t.first)&&/✓ روند 4 ساعته صعودی/.test(t.first)&&/احتمال سود به گفته‌ی مدل: 52٪/.test(t.first)&&/بدترین حالت محتمل/.test(t.first),'ردیف اول: رتبه، امتیاز، ستاره، سابقه با روزها، احتمال، دلیل‌ها');
  ok(/صبر/.test(t.wait)&&/RDD/.test(t.wait)&&t.cards===0,'«صبر» جدا؛ کارت پستی در این تب نیست');
- const f=await p.evaluate(()=>{const w=[...document.querySelectorAll('#glance .rdit')].find(x=>x.dataset.rd==='RDA');return w.textContent;});
- ok(/فاندینگ 0.06٪ \(لانگ‌ها شلوغ\)/.test(f),'فاندینگ بالا به‌عنوان اطلاع');
+ ok(t.more&&/ارز 1 تا 4 از 100/.test(t.cnt)&&t.tabs==='سیگنال‌ها,آزمایشی,دفتر پیشنهادها','دکمه‌ی «10 ارز بعدی» و سه زیرتب');
  await p.evaluate(()=>document.querySelector('#glance .rdit[data-rd="RDB"] [data-a="iso"]').click());await p.waitForTimeout(600);
  ok(await p.evaluate(()=>/RDB/.test(document.querySelector('#sheet').textContent)&&+document.querySelector('#f_e').value===11),'«ایزوله» فرم ورود RDB را باز کرد');
  await p.evaluate(()=>closeSheet());await p.waitForTimeout(400);
  const u=await p.evaluate(()=>{RDCAP={at:Date.now(),list:['BTC','USDT','ETH','USDC','STETH','XRP','WBTC','SOL','BNB','FDUSD','DOGE']};return rdUniverse(5).join(',');});
  ok(u==='BTC,ETH,XRP,SOL,BNB','فهرست ارزها بی استیبل و توکن‌های بسته‌بندی‌شده: '+u);
- console.log('=== جریان پول، ریسک‌فری، یادگیری وزن ===');
- const fz=await p.evaluate(()=>{const H=36e5,t0=Math.floor(Date.now()/H)*H-400*H,C=[];
-   for(let i=0;i<400;i++){const o=100+Math.sin(i/5),c=100+Math.sin((i+1)/5);C.push({t:t0+i*H,o,h:Math.max(o,c)+0.3,l:Math.min(o,c)-0.3,c,v:1000});}
-   const m=f=>new Map(C.map((k,i)=>[k.t,f(i)]));
-   const FL={top:m(()=>1.6),glob:m(()=>3.3),taker:m(()=>0.65),oi:m(i=>1e6*(1+i*0.01))};
-   const r=rdParts(rdPrep(C,C,FL),399);
-   // ریسک‌فری: قیمت به +1R رسید و برگشت به ورود ← حدود صفر، نه −1R
-   const pl={dir:'long',E:100,SL:98,TP:103,sd:0.02,rr:1.5};
-   const W=[{t:0,o:100,h:100,l:100,c:100},{t:1,o:100,h:102.2,l:100.5,c:102},{t:2,o:102,h:102,l:99.9,c:100},{t:3,o:100,h:100,l:97,c:97}];
-   const w=rdWalk(W.concat(new Array(30).fill({t:9,o:97,h:97,l:97,c:97})),0,pl);
-   // یادگیری: عاملی که حرکت بعد را پیش‌بینی می‌کند وزن مثبت بزرگ می‌گیرد
-   // بازه‌های ۲۴ ساعته با جریان پایدار: خرید تهاجمی غالب ← قیمت در همان بازه بالا می‌رود
-   const mk=seed=>{const C2=[];let v=100,rnd=seed;const R=()=>{rnd=(rnd*9301+49297)%233280;return rnd/233280-0.5;};
-     const tk=new Map();let f=1;
-     for(let i=0;i<1000;i++){if(i%24===0)f=R()>0?1:-1;const t=t0+i*H, o=v;v*=1+f*0.002+R()*0.004;tk.set(t,f>0?1.3:0.77);
-       C2.push({t,o,h:Math.max(o,v)*1.001,l:Math.min(o,v)*0.999,c:v,v:1000});}
-     return rdPrep(C2,null,{taker:tk});};
-   const L=rdLearn([mk(7),mk(11),mk(23)]);
-   return {p:r.p,m:r.m,w,W:L.W,n:L.n};});
- console.log('   ',JSON.stringify({p:fz.p,w:fz.w,W:fz.W}));
- ok(fz.p.whale<0&&Math.abs(fz.m.wl-61.5)<1&&Math.abs(fz.m.rl-76.7)<1,'نهنگ‌ها 62٪ لانگ، مردم 77٪ لانگ ← «نهنگ‌ها شورت‌تر از مردم» (منفی)');
- ok(fz.p.crowd<0,'مردم بیش از 70٪ لانگ ← ازدحام، منفی برای لانگ');
- ok(fz.p.taker<0&&Math.abs(fz.m.tb-39.4)<1,'خرید تهاجمی 39٪ ← منفی');
- ok(fz.p.oi!==null&&fz.m.doi>0,'OI رو به بالا محاسبه شد');
- ok(fz.w&&fz.w.how==='be'&&fz.w.R<0&&fz.w.R>-0.3,'ریسک‌فری بعد از +1R: برگشت به ورود ← '+(fz.w&&fz.w.R.toFixed(2))+'R نه −1R');
- ok(fz.W.taker>10,'یادگیری: عاملِ پیش‌بین (خرید تهاجمی) وزن مثبتِ قابل توجه گرفت: '+fz.W.taker);
 
- console.log('=== پنل کارنامه و کار امروز ===');
- const pn=await p.evaluate(()=>{const c=(n,w,r)=>({n,w,r});
-   RD.reg='bear';RD.calib={'long':c(300,120,-30),'short':c(280,160,40),'long|bear':c(120,40,-24),'short|bear':c(110,70,33),
-     'long|30-45':c(150,60,-15),'long|45-60':c(100,45,0),'long|60+':c(50,25,5),'short|30-45':c(140,78,8),'short|45-60':c(90,55,25),'short|60+':c(50,32,16),
-     'short|bear|45-60':c(40,26,12),'short|bear|30-45':c(50,28,3),'long|bear|30-45':c(60,20,-15)};
-   RD.W={t4:30,t1:10,macd:5,rsi:-5,brk:0,vol:5,btc:15,ext:0,whale:15,crowd:10,taker:5,oi:0};
-   paintGlance();const P=document.querySelector('#glance .rdpan');return P?P.textContent:'';});
- console.log('   ',pn.slice(0,260));
- ok(/در بازار نزولی/.test(pn)&&/در همه‌ی حال‌های بازار/.test(pn),'دو جدول: حال بازار امروز و همه');
- ok(/کار امروز: فقط شورت‌های امتیاز (60\+|45-60)/.test(pn)&&/لانگ در این حال بازار زیان داده/.test(pn),'«کار امروز»: شورت 45-60؛ لانگ نه');
- ok(/RSI \(برعکس\) 5/.test(pn)&&/بی‌اثر یا بی‌داده: شکست 7 روزه/.test(pn),'وزن‌های یادگرفته، با «برعکس» و «بی‌اثر»');
+ console.log('=== معامله‌ی آزمایشی ===');
+ const T30=Date.now()-30*36e5;PXN['XRP:5m']=t=>t<T30+5*36e5?2:1.9;
+ const bk=await p.evaluate(async(t0)=>{RB.items=[];
+   document.querySelector('#glance .rdit[data-rd="RDB"] [data-a="test"]').click();
+   const it=RB.items[0], tab=[...document.querySelectorAll('#glance [data-rdv]')].map(x=>x.textContent).join(',');
+   const dup=rbAdd('test',rdList().find(x=>x.tk==='RDB'));
+   // قیمت: +1R (ریسک‌فری) بعد برگشت به ورود
+   PRICES.set('RDB',11*1.021);rbCheck();const be=it.be;PRICES.set('RDB',10.99);rbCheck();
+   const r1={st:it.st,R:it.R,be};
+   // دومی: به هدف
+   const x=rdList().find(x=>x.tk==='RDA');PRICES.set('RDA',10);const i2=rbAdd('test',x,true);PRICES.set('RDA',10.31);rbCheck();
+   // سومی: وقتی برنامه بسته بود (30 ساعت پیش) ← از کندل 5 دقیقه‌ای؛ قیمت ساختگی به استاپ می‌خورد
+   const H=36e5;
+   const i3={id:'tx',k:'test',tk:'XRP',dir:'long',t:t0,E:2,SL:1.95,TP:2.1,sd:0.025,rr:2,be:false,st:'open'};RB.items.push(i3);
+   await rbCatchUp(true);
+   RDV='test';paintGlance();const G=document.getElementById('glance');
+   return {r1,i2:{st:i2.st,R:i2.R},i3:{st:i3.st,R:i3.R,xt:i3.xt-t0},dup,tab,txt:G.textContent,rows:G.querySelectorAll('.rbrow').length};},T30);
+ console.log('   ',JSON.stringify(Object.assign({},bk,{txt:bk.txt.slice(0,300)})));
+ ok(bk.tab.includes('آزمایشی (1 باز)')&&bk.dup===null,'«تست» ثبت شد (زیرتب: آزمایشی (1 باز))؛ تکراری ثبت نمی‌شود');
+ ok(bk.r1.be&&bk.r1.st==='be'&&bk.r1.R<0&&bk.r1.R>-0.3,'ریسک‌فری بعد از +1R و بسته شدن در ورود ← '+bk.r1.R+'R');
+ ok(bk.i2.st==='tp'&&bk.i2.R>1.3,'به هدف رسید ← +'+bk.i2.R+'R');
+ ok(bk.i3.st==='sl'&&bk.i3.R<-1&&bk.i3.xt>5*36e5&&bk.i3.xt<6*36e5,'برنامه بسته بود: از کندل 5 دقیقه‌ای استاپ خورده پیدا شد ('+bk.i3.R+'R)');
+ ok(bk.rows===3&&/نتیجه3 بسته/.test(bk.txt)&&/پولی در کار نیست/.test(bk.txt),'زیرتب آزمایشی: جمع‌بندی و 3 ردیف');
 
- console.log('=== بررسی کامل با داده‌ی فیوچرز ===');
- await ctx.route('**/futures/data/**',r=>{const u=r.request().url(),H=36e5,now=Math.floor(Date.now()/H)*H;
-   const row=i=>{const t=now-(499-i)*H;return /taker/.test(u)?{buySellRatio:String(1+0.2*Math.sin(i/9)),timestamp:t}:/openInterest/.test(u)?{sumOpenInterestValue:String(1e8*(1+i*0.001)),timestamp:t}:{longShortRatio:String(/top/.test(u)?1.4+0.3*Math.sin(i/11):2+0.5*Math.cos(i/13)),timestamp:t};};
-   return r.fulfill({status:200,headers:{'content-type':'application/json','access-control-allow-origin':'*'},body:JSON.stringify(/BTCUSDT|ETHUSDT/.test(u)?Array.from({length:500},(_,i)=>row(i)):[])});});
- const full=await p.evaluate(async()=>{RD.n=5;RD.at=0;await rdScan(true);
+ console.log('=== بررسی کامل: ده‌تا‌ده‌تا، IndexedDB، دفتر پیشنهادها ===');
+ const full=await p.evaluate(async()=>{RB.items=[];RD=rdEmpty();RDS.clear();RDV='sig';
+   RDCAP={at:Date.now(),list:['BTC','ETH','SOL','XRP','ADA','DOGE','DOT','LINK','AVAX','NEAR','UNI','APT']};
+   const t0=performance.now();await rdScan('refresh');const ms=Math.round(performance.now()-t0);
    bucket='live';sigFilter='mkt';renderAll();
-   return {n:RD.rank.length,nflow:RD.nflow,btc:RD.coins.BTC&&{wl:RD.coins.BTC.wl,rl:RD.coins.BTC.rl,tb:RD.coins.BTC.tb,flow:RD.coins.BTC.flow},sol:RD.coins.SOL&&RD.coins.SOL.flow,
-     W:RD.W,cal:Object.keys(RD.calib).length,pan:!!document.querySelector('#glance .rdpan'),reg:RD.reg};});
- console.log('   ',JSON.stringify(full));
- ok(full.n>=3&&full.nflow===2,'بررسی کامل: '+full.n+' ارز، داده‌ی جریان برای BTC و ETH');
- ok(full.btc&&full.btc.flow&&full.btc.wl>50&&full.btc.rl>60&&full.btc.tb>0&&full.sol===false,'BTC با نهنگ/مردم/تهاجمی؛ SOL بی داده‌ی فیوچرز');
- ok(full.W&&Object.keys(full.W).length===12&&full.cal>0&&full.pan,'وزن‌های یادگرفته، کارنامه و پنل ساخته شد');
+   const st=await idbGet('rdc:ETH'),fl=await idbGet('rdf:ETH');
+   return {ms,n:RD.n,rank:RD.rank.length,nflow:RD.nflow,M:!!(RD.M&&RD.M.long&&RD.M.short),cal:Object.keys(RD.calib).length,rel:!!RD.rel,
+     eth:RD.coins.ETH&&{wl:RD.coins.ETH.wl,flow:RD.coins.ETH.flow,sc:RD.coins.ETH.sc},sol:RD.coins.SOL&&RD.coins.SOL.flow,
+     rows:st&&st.rows.length,flow:fl&&fl.top&&fl.top.length,pan:!!document.querySelector('#glance .rdpan'),
+     auto:RB.items.filter(i=>i.k==='auto').length,sig:rdList().filter(x=>x.dir!=='wait').length};});
+ console.log('   ',JSON.stringify(full),JSON.stringify(REQ));
+ ok(full.n===10&&full.rank===10,'بار اول فقط 10 ارز اول ('+full.rank+')، در '+full.ms+'ms');
+ ok(full.rows>=2990&&full.flow>=490,'تاریخچه در IndexedDB: '+full.rows+' کندل یک‌ساعته، '+full.flow+' ساعت جریان پول');
+ ok(full.M&&full.cal>0&&full.rel&&full.pan,'مدل لانگ و شورت، کارنامه، صداقت مدل و پنل ساخته شد');
+ ok(full.eth&&full.eth.flow&&full.eth.wl>50&&full.sol===false&&full.nflow===2,'ETH با داده‌ی نهنگ/مردم؛ SOL بی فیوچرز');
+ ok(full.auto===full.sig,'همه‌ی پیشنهادهای 70+ در «دفتر پیشنهادها» ثبت شد ('+full.auto+')');
+ const R0=Object.assign({},REQ);
+ const more=await p.evaluate(async()=>{await rdScan('more');return {n:RD.n,rank:RD.rank.length,uni:RD.rank.includes('UNI')&&RD.rank.includes('APT')};});
+ const d=k=>(REQ[k]||0)-(R0[k]||0);
+ console.log('   ',JSON.stringify(more),'ETH:',d('ETH:1h'),'UNI:',d('UNI:1h'));
+ ok(more.rank===12&&more.uni&&d('ETH:1h')===0&&d('UNI:1h')>=3,'«10 ارز بعدی»: فقط ارزهای تازه گرفته شد (ETH: 0 درخواست، UNI: '+d('UNI:1h')+')');
+ const R1=Object.assign({},REQ);
+ await p.evaluate(async()=>{RB.items=[];const st=await idbGet('rdc:ETH');st.at-=10*60000;await idbSet('rdc:ETH',st);await rdScan('refresh');});
+ const d1=k=>(REQ[k]||0)-(R1[k]||0);
+ ok(d1('ETH:1h')===1,'تازه کردن: فقط کندل‌های تازه (ETH: '+d1('ETH:1h')+' درخواست)');
+ const lg=await p.evaluate(()=>{RDV='log';paintGlance();const G=document.getElementById('glance');return G.textContent;});
+ ok(/آزمون واقعیِ آینده/.test(lg)&&/باز \(/.test(lg),'زیرتب «دفتر پیشنهادها»');
+ const mk=await p.evaluate(()=>{RDV='sig';MKT={at:Date.now(),n:650,up:93,down:545,flat:12,med:-5.8,btc:-3.2,bins:[50,80,90,60,50,20,10,5,3,2,1],reg:'bear2',src:'Binance',top:[]};paintGlance();
+   const d=document.querySelector('#glance .mkwhy');return d?d.textContent:'';});
+ ok(/650 ارزِ بازار اسپات Binance/.test(mk)&&/545 بیش از 0.3٪ ریخته‌اند/.test(mk)&&/خیلی نزولی/.test(mk),'«حال بازار»: توضیح عددها');
+ await p.screenshot({path:'/tmp/signaldesk-tests/logs/radar.png',fullPage:true});
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');})();
