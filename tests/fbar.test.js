@@ -46,20 +46,20 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
   console.log('=== نوار فیلتر: ساختار ===');
   let s=await read();
   console.log('  بخش‌ها:', s.segs.map(x=>x.label+'('+x.n+')').join(' | '));
-  ok(s.segs.length===3,'سه بخش فیلتر دارد (الان چه کنم؟، در انتظار، همه)');
+  ok(s.segs.length===4,'چهار بخش فیلتر دارد (الان چه کنم؟، بازار، در انتظار، همه)');
   ok(s.arch,'دکمه‌ی آرشیو جداست');
   ok(s.arch&&s.arch.svg,'آرشیو آیکون دارد');
   ok(s.arch&&/آرشیو/.test(s.arch.label||''),'آرشیو برچسب متنی دارد');
   ok(s.segs.every(x=>x.title),'هر بخش راهنما (title) دارد');
   const num=t=>Number(String(t).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
-  const [,nNew,nAll]=s.segs.map(x=>num(x.n));
+  const [,,nNew,nAll]=s.segs.map(x=>num(x.n));
   console.log('  شمارش:', 'در انتظار='+nNew, 'همه='+nAll);
   ok(nAll===4,'۴ سیگنال در «همه»؛ سه پستِ یادداشت/خبر خودشان آرشیو شدند');
   ok(nNew===4,'هر ۴ سیگنال بی‌تصمیم است');
   ok(nNew<=nAll,'شمارش‌ها تودرتو و سازگارند');
 
   console.log('\n=== انتخاب فعال و فیلتر واقعی ===');
-  for (const [i,k,label] of [[1,'new','در انتظار'],[2,'all','همه']]) {
+  for (const [i,k,label] of [[2,'new','در انتظار'],[3,'all','همه']]) {
     await p.evaluate(i=>document.querySelectorAll('#fbar .fseg .fb')[i].click(), i);
     await p.waitForTimeout(350);
     s=await read();
@@ -86,8 +86,8 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
     DB.decisions[p0.id]={skip:true,at:Date.now()};save();renderAll();});
   await p.waitForTimeout(400);
   s=await read();
-  ok(num(s.segs[1].n)===3,'«در انتظار» به ۳ رسید، شد '+num(s.segs[1].n));
-  ok(num(s.segs[2].n)===4,'«همه» هنوز ۴ است');
+  ok(num(s.segs[2].n)===3,'«در انتظار» به ۳ رسید، شد '+num(s.segs[2].n));
+  ok(num(s.segs[3].n)===4,'«همه» هنوز ۴ است');
   ok(!!s.tidy,'دکمه‌ی کنارگذاشتن ظاهر شد: '+(s.tidy||'—'));
 
   console.log('\n=== آرشیو ===');
@@ -104,7 +104,7 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
   console.log('  بعد از کنارگذاشتن:', s.segs.map(x=>x.label+'('+x.n+')').join(' | '),
               'آرشیو='+s.arch.n);
   ok(num(s.arch.n)===4,'شمارنده‌ی آرشیو ۴ شد (۳ خودکار + ۱ کنارگذاشته)');
-  ok(num(s.segs[2].n)===3,'«همه» به ۳ افت کرد');
+  ok(num(s.segs[3].n)===3,'«همه» به ۳ افت کرد');
   ok(!s.tidy,'دکمه‌ی کنارگذاشتن رفت');
 
   console.log('\n=== چیدمان روی موبایل ===');

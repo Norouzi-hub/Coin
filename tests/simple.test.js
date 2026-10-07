@@ -25,7 +25,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    sigFilter='new';renderSignals();const empty=!document.getElementById('glance').firstChild, cards=document.querySelectorAll('#list .card').length;
    [...document.querySelectorAll('#fbar .fseg .fb')][0].click();
    return {segs,empty,cards,back:sigFilter==='now'&&!!document.querySelector('#glance .glsig')&&!document.querySelector('#list .card')};});
- ok(tab.segs.join(',')==='الان چه کنم؟,در انتظار,همه','نوار فیلتر: «الان چه کنم؟» | در انتظار | همه — '+tab.segs.join(','));
+ ok(tab.segs.join(',')==='الان چه کنم؟,بازار,در انتظار,همه','نوار فیلتر: «الان چه کنم؟» | بازار | در انتظار | همه — '+tab.segs.join(','));
  ok(tab.empty&&tab.cards>0,'در «در انتظار» فهرست کارت‌ها، بی «الان چه کنم؟»');
  ok(tab.back,'زدن تب: «الان چه کنم؟» جای فهرست');
 

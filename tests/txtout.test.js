@@ -33,6 +33,6 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const top=await p.evaluate(()=>{go('signals',true);bucket='live';sigFilter='new';renderAll();paintGlance();
    const c=document.getElementById('topcard');return {kids:[...c.children].map(x=>x.id),segs:[...document.querySelectorAll('#fbar .fseg .fb span')].map(x=>x.textContent)};});
  ok(top.kids.join(',')==='status','کارت خلاصه بالای صفحه؛ «الان چه کنم؟» تبِ خودش را دارد');
- ok(top.segs.join(',')==='الان چه کنم؟,در انتظار,همه','نوار فیلتر: «الان چه کنم؟»، «در انتظار» و «همه»');
+ ok(top.segs.join(',')==='الان چه کنم؟,بازار,در انتظار,همه','نوار فیلتر: «الان چه کنم؟»، «بازار»، «در انتظار» و «همه»');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');})();

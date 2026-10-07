@@ -63,6 +63,7 @@ function glSigHtml(x,i){
 }
 function paintGlance(){
   const g=$('#glance');if(!g)return;
+  if(view==='signals'&&bucket==='live'&&sigFilter==='mkt'){paintRadar(g);return;}
   if(view!=='signals'||bucket!=='live'||sigFilter!=='now'){g.innerHTML='';g.className='';return;}
   if(!POSTS.length){g.className='glance gltab';g.innerHTML='<div class="empty">'+STAR+'هنوز پستی نیامده.</div>';return;}
   const d=glanceData();

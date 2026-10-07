@@ -43,7 +43,7 @@ function mkSummarize(rows){
   const med=all[all.length>>1], dn=down/n, upS=up/n;
   const reg=dn>=0.75?'bear2':dn>=0.6?'bear':upS>=0.75?'bull2':upS>=0.6?'bull':'flat';
   // پرحجم‌ترین‌ها: فهرستی که «پیشنهاد برنامه» بررسی می‌کند (31d-autosig.js)
-  const top=vols.sort((a,b)=>b[1]-a[1]).slice(0,40).map(x=>x[0]);
+  const top=vols.sort((a,b)=>b[1]-a[1]).slice(0,120).map(x=>x[0]);
   return {at:Date.now(),n,up,down,flat:n-up-down,med,btc,bins,reg,top};
 }
 const MK_REG_FA={bear2:'خیلی نزولی',bear:'نزولی',flat:'خنثی',bull:'صعودی',bull2:'خیلی صعودی'};

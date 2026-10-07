@@ -1593,3 +1593,11 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .assec{display:flex;flex-direction:column;gap:6px;padding:9px 10px;border-radius:12px;border:1px dashed color-mix(in srgb,var(--gold) 45%,var(--line))}
 .assec .assig{background:var(--card)}
 .gldir b.u{color:var(--up)}.gldir b.d{color:var(--dn)}
+/* رادار بازار (31e-radar.js) */
+.rdbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.rdbar small{color:var(--tx3);font-size:11px}
+.rdbar .rdn{flex:1 1 auto}
+.rdrk{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:7px;background:var(--card2);color:var(--tx2);font-size:12px;font-weight:800}
+.rdsc{font-size:12px;font-weight:800}.rdsc.u{color:var(--up)}.rdsc.d{color:var(--dn)}
+.rdwhy{display:flex;flex-wrap:wrap;gap:4px}.rdwhy .pill{font-size:11px}
+.rdit.weak{opacity:.72}
+.rdwait .u{color:var(--up)}.rdwait .d{color:var(--dn)}
