@@ -1639,3 +1639,4 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .mdc .u{color:var(--up)}.mdc .d{color:var(--dn)}.mdc .w{color:var(--warn)}
 .mdsp{width:100%;height:16px;color:var(--tx3)}.mdsp.u{color:var(--up)}.mdsp.d{color:var(--dn)}.mdsp.w{color:var(--warn)}
 
+.rdtime .lnk{background:none;border:0;padding:0;color:var(--gold);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer}

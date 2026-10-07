@@ -161,7 +161,13 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  console.log('   ',JSON.stringify(more),'ETH:',d('ETH:1h'),'UNI:',d('UNI:1h'));
  ok(more.rank===12&&more.uni&&d('ETH:1h')===0&&d('UNI:1h')>=3,'«10 ارز بعدی»: فقط ارزهای تازه گرفته شد (ETH: 0 درخواست، UNI: '+d('UNI:1h')+')');
  const R1=Object.assign({},REQ);
- await p.evaluate(async()=>{RB.items=[];const st=await idbGet('rdc:ETH');st.at-=10*60000;await idbSet('rdc:ETH',st);await rdScan('refresh');});
+ const stb=await p.evaluate(async()=>{RB.items=[];const st=await idbGet('rdc:ETH');st.at-=10*60000;await idbSet('rdc:ETH',st);
+   const snap=()=>({mt0:RD.mt0,cal:JSON.stringify(RD.calib),sc:RD.rank.map(t=>t+':'+RD.coins[t].sc+':'+RD.coins[t].dir+':'+RD.coins[t].since).join(',')});
+   const a=snap();await rdScan('refresh');const b=snap();
+   bucket='live';sigFilter='mkt';RDV='sig';paintGlance();const hint=(document.querySelector('#glance .rdtime')||{}).textContent||'';
+   await rdScan('learn');const c=snap();return {same:a.mt0===b.mt0&&a.cal===b.cal&&a.sc===b.sc,learn:c.mt0>a.mt0,hint};});
+ ok(stb.same,'«تازه کن» در همان ساعت: مدل، ستاره‌ها و امتیازها همان می‌مانند');
+ ok(stb.learn&&/امتیازها برای کندلِ بسته‌شده‌ی ساعت/.test(stb.hint)&&/یادگیری دوباره/.test(stb.hint),'«یادگیری دوباره» مدل را از نو می‌سازد؛ توضیح زمان امتیاز');
  const d1=k=>(REQ[k]||0)-(R1[k]||0);
  ok(d1('ETH:1h')===1,'تازه کردن: فقط کندل‌های تازه (ETH: '+d1('ETH:1h')+' درخواست)');
  const lg=await p.evaluate(()=>{RDV='log';paintGlance();const G=document.getElementById('glance');return G.textContent;});

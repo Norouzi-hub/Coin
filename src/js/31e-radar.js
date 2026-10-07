@@ -102,6 +102,7 @@ function rdParts(P,i){
   return {p,m};
 }
 const rdVec=p=>RD_CF.map(k=>p[k]==null?0:p[k]);
+const rdHH=t=>{const d=new Date(t);return String(d.getHours()).padStart(2,'0')+':00';};
 const rdBucket=s=>s>=95?'95+':s>=85?'85-95':'70-85';
 /* معامله با ریسک‌فری: بعد از +1R استاپ به ورود (از کندل بعد) */
 function rdWalk(C,i,pl){
@@ -213,7 +214,7 @@ async function rdModel(){
   RDQ.msg='';RDQ.pm=1;
   if(!ML||!MS)return false;
   const C2={};for(const k in cal)C2[k]=rdSum(cal[k]);
-  Object.assign(RD,{M:{long:ML,short:MS},calib:C2,rel,ns:SS.reduce((s,x)=>s+x.t.length,0),span:[t0,t1],ncoin:SS.length});
+  Object.assign(RD,{mt0:Date.now(),M:{long:ML,short:MS},calib:C2,rel,ns:SS.reduce((s,x)=>s+x.t.length,0),span:[t0,t1],ncoin:SS.length});
   return true;
 }
 /* ستاره از کارنامه‌ی بیرون از یادگیری: 0 = نمونه‌ی کم، 1 = زیان، 2 = سود ولی شاید شانس، 3+ = حتی در بدترین حالت محتمل سود */
@@ -303,7 +304,8 @@ async function rdMktBuild(B){
   const Tn=MD.tot,Bn=Tn*MD.pct.btc/100,En=Tn*MD.pct.eth/100,Un=Tn*MD.pct.usdt/100;
   const sb=rel(B),se=rel(await local('ETH'));if(!sb||!se)return false;
   const A=new Float64Array(N);let An=0;
-  for(const tk of RDS.keys()){if(tk==='BTC'||tk==='ETH'||RD_STB.test(tk))continue;const c=MD.caps[tk]&&MD.caps[tk][0];if(!c)continue;
+  // همه‌ی ارزهای بررسی‌شده (نه فقط آن‌هایی که همین بار در حافظه‌اند)، تا بازسازی هر بار یکی باشد
+  for(const tk of new Set([...RDS.keys(),...(RD.rank||[])])){if(tk==='BTC'||tk==='ETH'||RD_STB.test(tk))continue;const c=MD.caps[tk]&&MD.caps[tk][0];if(!c)continue;
     const a=rel(await local(tk));if(!a)continue;An+=c;for(let i=0;i<N;i++)A[i]+=c*a[i];}
   let Sn=0;for(const k in MD.caps)if(RD_STB.test(k))Sn+=MD.caps[k][0];
   const Rn=Math.max(0,Tn-Bn-En-Un-Sn-An);
@@ -333,10 +335,13 @@ async function rdScan(mode){
   clearInterval(RDQ.iv);RDQ.iv=setInterval(rdPaintProg,1000);rdPaintProg();
   try{
     await Promise.all([rdCapLoad(),mdLoad()]);
-    const U=rdUniverse(want), fresh=tk=>mode!=='more'||!RDS.has(tk);
+    // refresh: داده‌ی تازه برای همه؛ more و learn: فقط ارزهای تازه از شبکه، بقیه از حافظه
+    const U=rdUniverse(want), fresh=tk=>mode==='refresh'||!RDS.has(tk);
+    // مدل و ستاره‌ها پایدار می‌مانند: فقط روزی یک بار، با «10 ارز بعدی» یا «یادگیری دوباره» از نو یاد گرفته می‌شوند
+    const fit=mode==='learn'||mode==='more'||!RD.M||Date.now()-(RD.mt0||0)>24*36e5;
     RDQ.n=U.filter(tk=>fresh(tk)||!RDS.has(tk)).length;RDQ.msg='گرفتن تاریخچه‌ی بیت‌کوین (برای روند و حال بازار)…';rdPaintProg();
     let B=null;try{B=await rdCandles('BTC',true);}catch(e){}
-    if(B&&!RDMF.size){RDQ.msg='بازسازی تاریخچه‌ی TOTAL و دامیننس‌ها…';rdPaintProg();try{await rdMktBuild(B);}catch(e){}}
+    if(B){RDQ.msg='بازسازی تاریخچه‌ی TOTAL و دامیننس‌ها…';rdPaintProg();try{await rdMktBuild(B);}catch(e){}}
     RDQ.msg='';RDQ.tc=Date.now();
     if(B&&B.length>30){const H=36e5,k=B[B.length-1].t+H>Date.now()?B.length-2:B.length-1;RD.reg=rdRegMap(B)(B[k].t)||RD.reg;}
     const fundP=rdFundLoad();
@@ -357,7 +362,8 @@ async function rdScan(mode){
       RDQ.fin=a+RD_STEP>=U.length;
       if(!RD.M||RDQ.fin){const m0=Date.now();RDQ.pm=0;
         if(B){RDQ.msg='بازسازی تاریخچه‌ی TOTAL و دامیننس‌ها…';rdPaintProg();try{await rdMktBuild(B);}catch(e){}}
-        await rdModel();if(RDQ.fin)RD.mt=Date.now()-m0;}
+        if(fit||!RD.M){await rdModel();if(RDQ.fin)RD.mt=Date.now()-m0;}
+        RDQ.pm=1;}
       rdLive(U);
       if(view==='signals')renderSignals();
     }
@@ -375,7 +381,8 @@ function rdLive(U){
     const mr=RDMF.get(L.t)||null, mp={};if(mr)RD_MF.forEach((k,j)=>mp[k]=mr[j]);
     const pL=M?rdPred(M.long,L.x,0,mr):null,pS=M?rdPred(M.short,L.x,0,mr):null,sL=rdPct(M&&M.long,pL),sS=rdPct(M&&M.short,pS);
     const d=sL>=sS?'long':'short',sc=Math.max(sL,sS),dir=M&&sc>=RD_MIN?d:'wait';
-    coins[tk]=Object.assign({dir,best:d,sc,sL,sS,p:d==='long'?pL:pS,parts:Object.assign({},L.parts,mp),px:L.px,t:L.t,flow:L.flow,
+    const was=RD.coins[tk], since=dir==='wait'?null:was&&was.dir===dir&&was.since?was.since:L.t+36e5;
+    coins[tk]=Object.assign({dir,best:d,sc,sL,sS,since,p:d==='long'?pL:pS,parts:Object.assign({},L.parts,mp),px:L.px,t:L.t,flow:L.flow,
       pl:dir==='wait'?null:rdPlanAt(L.pl[d],PRICES.get(tk)||L.px)},L.m);
     rank.push(tk);}
   RD.coins=coins;RD.rank=rank;RD.n=Math.max(RD.n||0,Math.min(U.length,RD_MAX));
@@ -483,7 +490,7 @@ function rdRowHtml(x,i){
       '<span class="rdsc '+(x.dir==='long'?'u':'d')+'">امتیاز '+faN(x.sc)+'</span>'+rdStarHtml(x.stars)+'</div>'+
     (x.cb?'<div class="glnum glh2">سابقه‌ی '+dn+'‌های امتیاز '+rdBucket(x.sc)+(x.rt.reg?' در بازار '+RDREG_FA[RD.reg]:'')+': '+faN(x.cb.n)+' بار در '+faN(x.cb.g||0)+' روز، '+faN(Math.round(x.cb.w/x.cb.n*100))+'٪ برد، میانگین <b class="'+cls(x.cb.r/x.cb.n)+'" dir="ltr">'+fmtR(x.cb.r/x.cb.n)+'</b>'+
       (x.cb.lb!=null&&isFinite(x.cb.lb)?'، بدترین حالت محتمل <b class="'+cls(x.cb.lb)+'" dir="ltr">'+fmtR(x.cb.lb)+'</b>':'')+'</div>':'')+
-    (x.p!=null?'<div class="glnum">احتمال سود به گفته‌ی مدل: <b>'+faN(Math.round(x.p*100))+'٪</b></div>':'')+
+    (x.p!=null?'<div class="glnum">احتمال سود به گفته‌ی مدل: <b>'+faN(Math.round(x.p*100))+'٪</b>'+(x.since?' · سیگنال از ساعت <b dir="ltr">'+rdHH(x.since)+'</b>':'')+'</div>':'')+
     (x.wl!=null||x.rl!=null||x.tb!=null?'<div class="glnum rdflow">'+[x.wl!=null?'نهنگ‌ها <b>'+faN(Math.round(x.wl))+'٪</b> لانگ':'',x.rl!=null?'مردم <b>'+faN(Math.round(x.rl))+'٪</b> لانگ':'',
       x.tb!=null?'خرید تهاجمی <b>'+faN(Math.round(x.tb))+'٪</b>':'',x.doi!=null?'OI <b class="'+cls(x.doi)+'">'+fmtPct(x.doi)+'</b> (6 ساعت)':''].filter(Boolean).join(' · ')+'</div>':'')+
     '<div class="glnum rdwhy">'+R.map(r=>'<span class="pill '+(r.good==null?'mut':r.good?'win':'lose')+'">'+(r.good?'✓ ':r.good===false?'✗ ':'')+esc(r.t)+'</span>').join('')+
@@ -504,6 +511,11 @@ function rdHtml(){
   h+='<div class="rdbar"><span class="rdcnt">'+(n?'ارز 1 تا '+faN(Math.min(n,RD.rank.length||n))+' از '+faN(RD_MAX):'')+'</span>'+
     (n<RD_MAX?'<button class="btn sm" data-rdmore="1"'+(RDQ.on?' disabled':'')+'>'+ic('plus')+'<span>'+faN(RD_STEP)+' ارز بعدی</span></button>':'')+
     '<button class="btn sm" data-rdrun="1"'+(RDQ.on?' disabled':'')+'>'+ic('refresh')+'<span>تازه کن</span></button><small id="rdProg">'+(RDQ.on?'':RD.at?ageTxt(RD.at):'')+'</small></div>'+(RDQ.on?rdProgHtml():'');
+  // چرا امتیاز عوض می‌شود: فقط با بسته شدن هر کندل ساعتی، و مدل/ستاره فقط وقتی دوباره یاد گرفته شود
+  {const tt=Object.values(RD.coins).map(x=>x.t||0),t=tt.length?Math.max(...tt):0;
+   if(t&&RD.mt0)h+='<div class="hint rdtime">امتیازها برای کندلِ بسته‌شده‌ی ساعت <b dir="ltr">'+rdHH(t+36e5)+'</b> است و تا بسته شدن کندل بعدی ('+'<b dir="ltr">'+rdHH(t+2*36e5)+'</b>) عوض نمی‌شود. '+
+     'مدل و ستاره‌ها '+ageTxt(RD.mt0)+' یاد گرفته شده‌اند و روزی یک بار (یا با «10 ارز بعدی») از نو یاد گرفته می‌شوند. '+
+     '<button class="lnk" data-rdlearn="1"'+(RDQ.on?' disabled':'')+'>یادگیری دوباره</button></div>';}
   if(!RD.at&&!RDQ.on)h+='<div class="hint">هنوز بررسی نشده؛ همین الان 10 ارز اول شروع می‌شود (بار اول هر ارز ~125 روز تاریخچه می‌گیرد؛ چند ثانیه برای هر ارز).</div>';
   if((!MKT||Date.now()-MKT.at>MK_TTL)&&Date.now()-MKTRY>120000){MKTRY=Date.now();const was=MKT&&MKT.at;
     mktLoad().then(m=>{if(m&&m.at!==was&&view==='signals')paintGlance();}).catch(()=>{});}
@@ -523,6 +535,7 @@ function paintRadar(g){
   g.querySelectorAll('[data-rdv]').forEach(b=>b.onclick=()=>{RDV=b.dataset.rdv;try{localStorage.setItem('signaldesk.rdview',RDV);}catch(e){}paintRadar(g);});
   const mo=g.querySelector('[data-rdmore]');if(mo)mo.onclick=()=>{rdScan('more');paintRadar(g);};
   const r=g.querySelector('[data-rdrun]');if(r)r.onclick=()=>{rdScan('refresh');paintRadar(g);};
+  const ln=g.querySelector('[data-rdlearn]');if(ln)ln.onclick=()=>{rdScan('learn');paintRadar(g);};
   if(RDV!=='sig'){rbBind(g);return;}
   g.querySelectorAll('.rdit').forEach(w=>{const x=rdList().find(y=>y.tk===w.dataset.rd);if(!x||!x.pl)return;
     const k={tk:x.tk,k:'radar',t:RD.at,pl:x.pl,dir:x.dir};
