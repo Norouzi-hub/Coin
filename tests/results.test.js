@@ -127,11 +127,10 @@ const num=t=>Number(String(t).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.index
  ok(new Set(btn.tray.map(x=>x.w)).size===1,'هر سه دقیقاً هم‌عرض‌اند');
  ok(new Set(btn.tray.map(x=>x.t)).size===1,'هر سه در یک خط‌اند');
  ok(Math.min(...btn.tray.map(x=>x.h))>=40,'ارتفاع لمسی کافی');
- const prim=btn.acts.find(x=>x.l.includes('بررسی'));
+ const prim=btn.acts.find(x=>/بررسی|ایزوله/.test(x.l));
  const sec=btn.acts.find(x=>x.l.includes('وارد نشدم'));
- const fast=btn.acts.find(x=>x.l.includes('سریع'));
- ok(prim&&sec&&prim.w>sec.w,'دکمه‌ی اصلی پهن‌تر از فرعی است ('+prim.w+' > '+sec.w+')');
- ok(!fast||fast.w<sec.w,'میان‌بُر «سریع» از دکمه‌ی فرعی هم کوچک‌تر است ('+(fast?fast.w:'—')+')');
+  ok(prim&&sec&&prim.w>sec.w,'دکمه‌ی اصلی پهن‌تر از فرعی است ('+prim.w+' > '+sec.w+')');
+ ok(!btn.acts.some(x=>x.l.includes('سریع')),'دکمه‌ی «سریع» دیگر نیست (ایزوله جایش است)');
  const style=await p.evaluate(()=>{
    const c=[...document.querySelectorAll('#list .card')].find(c=>c.querySelector('.brief'));
    const g=x=>getComputedStyle(x).backgroundImage!=='none'?'gradient':getComputedStyle(x).backgroundColor;

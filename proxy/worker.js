@@ -104,8 +104,6 @@ export default {
     const path = new URL(request.url).pathname;
     if (path === '/db') return handleDb(request, env);
     if (path.startsWith('/tg/')) return handleTg(request, env, path.slice(4));
-    if (path === '/feed' || path.startsWith('/feed/')) return handleFeed(request, env, path.slice(6));
-    if (path.startsWith('/f/')) return serveFeed(request, env, path.slice(3));
 
     if (request.method !== 'GET') return text('فقط GET', 405);
 
@@ -258,16 +256,22 @@ async function tgCheck(env) {
   const db = JSON.parse((await env.STORE.get(KEY)) || 'null');
   const data = db && db.data;
   if (!data || !Array.isArray(data.positions)) return { skipped: 'no-data' };
-  const feat = (data.settings && data.settings.feat) || {};
-  if (feat.alerts === false) return { skipped: 'alerts-off' };
-  const open = data.positions.filter(p => p && p.status === 'open' && p.entry > 0 && p.ticker);
-  if (!open.length) return { open: 0, sent: 0 };
-
-  const needFut = open.some(p => p.kind !== 'spot'), needSpot = open.some(p => p.kind === 'spot');
-  const [mark, spot] = await Promise.all([needFut ? markPrices() : new Map(), (needSpot || needFut) ? spotPrices() : new Map()]);
+  const st = data.settings || {}, feat = st.feat || {}, adv = st.adv || {}, cats = adv.cats || {};
+  // مشاورِ برنامه خاموش است ← ورکر هم ساکت
+  if (adv.on === false) return { skipped: 'alerts-off' };
+  const posOn = cats.pos !== false && feat.alerts !== false;
+  const open = posOn ? data.positions.filter(p => p && p.status === 'open' && p.entry > 0 && p.ticker) : [];
   const done = JSON.parse((await env.STORE.get(ALKEY)) || '{}');
   const now = Date.now(), msgs = [];
   const fire = (key, text) => { if (done[key]) return; done[key] = now; msgs.push(text); };
+  // وقتی برنامه بسته است: سیگنال تازه، مهلت پوزیشن، یک R سود، گزارش هفتگی
+  if (cats.sig !== false) await tgNewSignals(env, st, fire);
+  if (posOn) tgPosAdvice(open, st, now, fire);
+  if (cats.rep !== false) tgWeekly(data.positions, now, fire);
+  if (!open.length) return tgFlush(env, cfg, done, msgs, open, now);
+
+  const needFut = open.some(p => p.kind !== 'spot'), needSpot = open.some(p => p.kind === 'spot');
+  const [mark, spot] = await Promise.all([needFut ? markPrices() : new Map(), (needSpot || needFut) ? spotPrices() : new Map()]);
 
   for (const p of open) {
     const fut = p.kind !== 'spot';
@@ -307,74 +311,97 @@ async function tgCheck(env) {
       const tg = (p.targets || []).filter(t => t > 0 && (t - p.entry) * sign > 0).sort((a, b) => (a - b) * sign);
       tg.forEach((t, i) => { if ((px - t) * sign >= 0) fire(p.id + ':tp' + i, '🟢 ' + head + ' — به تارگت ' + (i + 1) + ' (' + fmt(t) + ') رسید\n' + src + ': ' + fmt(px)); });
     }
+    // یک R در سود و استاپ هنوز زیر ورود (نقشه‌ای هم که خودش استاپ را جابه‌جا کند نیست)
+    if (p.stop > 0 && !(+st.beAt > 0) && !(p.pb && p.pb.be > 0)) {
+      const R = Math.abs(p.entry - p.stop);
+      if ((p.entry - p.stop) * sign > 0 && (px - p.entry) * sign >= R)
+        fire(p.id + ':be', '🛡 ' + head + ' — یک R در سود است\nاستاپ را روی ورود بیاور (ریسک‌فری). ' + src + ': ' + fmt(px));
+    }
   }
-
+  return tgFlush(env, cfg, done, msgs, open, now);
+}
+async function tgFlush(env, cfg, done, msgs, open, now) {
   let sent = 0;
   for (const t of msgs.slice(0, 10)) { const r = await tgSend(env, cfg.chat, t); if (r && r.ok) sent++; }
-  if (msgs.length) {
-    // کلیدهای پوزیشن‌های بسته‌شده و خیلی قدیمی پاک می‌شوند تا انبار بزرگ نشود
+  if (msgs.length || done.__seen) {
+    // کلیدهای پوزیشن‌های بسته‌شده و خیلی قدیمی پاک می‌شوند تا انبار بزرگ نشود؛ کلیدهای سیگنال و هفته فقط با زمان
     const live = new Set(open.map(p => String(p.id)));
-    for (const k of Object.keys(done)) if (!live.has(k.split(':')[0]) || now - done[k] > 30 * 864e5) delete done[k];
+    for (const k of Object.keys(done)) {
+      if (k === '__seen') continue;
+      const glob = /^(sig|wk):/.test(k);
+      if ((!glob && !live.has(k.split(':')[0])) || now - done[k] > 30 * 864e5) delete done[k];
+    }
     await env.STORE.put(ALKEY, JSON.stringify(done));
   }
   return { open: open.length, sent, pending: msgs.length };
 }
 
-/* ==================== لینک خروجی سیگنال‌ها ====================
- * برنامه قالب‌های ICS/RSS/CSV/JSON را می‌سازد و اینجا می‌گذارد (PUT /feed با رمز همگام‌سازی).
- * برنامه‌ی دیگر (تقویم، برنامه‌ریز، گوگل‌شیت…) بدون رمز از لینک /f/<کلید>/signals.<قالب> می‌خواند.
- * کلید یک رشته‌ی تصادفی جداست، نه SYNC_TOKEN: لینک فقط سیگنال‌ها را نشان می‌دهد و با
- * «لینک تازه» (POST /feed/rotate) باطل می‌شود.
- */
-const FEEDKEY = 'signaldesk:feed';       // {at, n, files:{ics,rss,csv,json}}
-const FEEDKEYK = 'signaldesk:feedkey';   // کلید لینک
-const FEED_TYPES = { ics: 'text/calendar; charset=utf-8', rss: 'application/rss+xml; charset=utf-8',
-  csv: 'text/csv; charset=utf-8', json: 'application/json; charset=utf-8' };
-const newKey = () => { const a = new Uint8Array(18); crypto.getRandomValues(a);
-  return btoa(String.fromCharCode(...a)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
-
-async function handleFeed(request, env, action) {
-  if (!env || !env.STORE || !env.SYNC_TOKEN) return json({ error: 'sync-missing',
-    message: 'اول همگام‌سازی را راه بینداز (STORE و SYNC_TOKEN).' }, 500);
-  if (!authed(request, env)) return json({ error: 'unauthorized', message: 'رمز همگام‌سازی درست نیست' }, 401);
-  let key = await env.STORE.get(FEEDKEYK);
-  if (action === 'rotate' && request.method === 'POST') {
-    key = newKey(); await env.STORE.put(FEEDKEYK, key);
-    return json({ key });
+/* ---- سیگنال تازه از صفحه‌ی عمومی کانال ----
+ * فقط پست‌هایی که نماد (#BTC) و یکی از کلیدواژه‌های سیگنال دارند. ورود و استاپ اگر در متن بود،
+ * اندازه‌ی ایزوله (با «ریسک هر معامله»ی برنامه) هم نوشته می‌شود. بار اول فقط شماره‌ی آخرین پست
+ * یادداشت می‌شود تا پست‌های قدیمی یک‌جا نریزند. */
+const FA_DIG = '۰۱۲۳۴۵۶۷۸۹', AR_DIG = '٠١٢٣٤٥٦٧٨٩';
+const normD = t => String(t || '').replace(/[۰-۹٠-٩]/g, c => { const i = FA_DIG.indexOf(c); return String(i >= 0 ? i : AR_DIG.indexOf(c)); }).replace(/٫/g, '.');
+const numAfter = (t, re) => { const m = t.match(new RegExp('(?:' + re + ')[^\\d\\n]{0,25}?(\\d[\\d,]*\\.?\\d*)\\s*([kK])?', 'i'));
+  if (!m) return null; let v = parseFloat(m[1].replace(/,/g, '')); if (m[2]) v *= 1e3; return v > 0 ? v : null; };
+const htmlText = h => h.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+  .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ').trim();
+async function tgNewSignals(env, st, fire) {
+  const ch = String(st.channel || 'ccoineres').replace(/[^A-Za-z0-9_]/g, '');
+  let html = '';
+  try {
+    const r = await fetch('https://t.me/s/' + ch, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36' }, cf: { cacheTtl: 20 } });
+    if (!r.ok) return; html = await r.text();
+  } catch { return; }
+  const posts = [];
+  const re = /data-post="([^"\/]+)\/(\d+)"[\s\S]*?(?:class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>|class="tgme_widget_message_footer)/g;
+  let m;
+  while ((m = re.exec(html))) if (m[1].toLowerCase() === ch.toLowerCase()) posts.push({ n: +m[2], text: m[3] ? htmlText(m[3]) : '' });
+  if (!posts.length) return;
+  const seenKey = 'signaldesk:tgseen', last = +((await env.STORE.get(seenKey)) || 0), max = Math.max(...posts.map(p => p.n));
+  if (max > last) await env.STORE.put(seenKey, String(max));
+  if (!last) return;                                      // بار اول: فقط یادداشت
+  const risk = +st.riskUsd > 0 ? +st.riskUsd : (+st.cap || 10) * (+st.risk || 5) / 100;
+  for (const p of posts.filter(p => p.n > last).sort((a, b) => a.n - b.n)) {
+    const t = normD(p.text), tk = (t.match(/#([A-Za-z][A-Za-z0-9]{1,11})/) || [])[1];
+    if (!tk || !/ورود|حد\s*ضرر|حدضرر|استاپ|تریگر|لانگ|شورت|مجاز|\bentry\b|\blong\b|\bshort\b/i.test(t)) continue;
+    if (/Liquidated|سیو\s*(?:کنید|میکنید)|اخبار/i.test(t)) continue;
+    const E = numAfter(t, 'ورود|انتری|entry|بالای|تریگر'), SL = numAfter(t, 'حد\\s*ضرر|حدضرر|استاپ|\\bsl\\b');
+    let size = '';
+    if (E && SL && E !== SL) {
+      const sd = Math.abs(E - SL) / E, lev = Math.max(1, Math.min(Math.floor(1 / (sd * 1.1 + MMR)), +st.maxLev || 10));
+      const mg = risk / (sd + ((+st.fee || 0.1) + (+st.slip || 0)) / 100) / lev;
+      size = sd * 100 > (+st.isoMaxSd || 15) ? '\nاستاپ ' + (sd * 100).toFixed(1) + '٪ دور — بلندمدت، برای ایزوله نه'
+        : '\nایزوله ' + lev + 'x · مارجین $' + mg.toFixed(2) + ' (ریسک $' + risk.toFixed(2) + ')';
+    }
+    fire('sig:' + p.n, '📣 سیگنال تازه · #' + tk.toUpperCase() + '\n' + p.text.slice(0, 350) + size + '\nhttps://t.me/' + ch + '/' + p.n);
   }
-  if (action === '' && request.method === 'PUT') {
-    let body; try { body = await request.json(); } catch { return json({ error: 'bad-json' }, 400); }
-    const files = body && body.files;
-    if (!files || typeof files !== 'object' || !Object.keys(FEED_TYPES).every(k => typeof files[k] === 'string'))
-      return json({ error: 'bad-body', message: 'files با چهار قالب لازم است' }, 400);
-    if (!key) { key = newKey(); await env.STORE.put(FEEDKEYK, key); }
-    const at = Date.now();
-    await env.STORE.put(FEEDKEY, JSON.stringify({ at, n: Number(body.n) || 0, files }));
-    return json({ key, at });
-  }
-  if (action === 'info') {
-    const cur = JSON.parse((await env.STORE.get(FEEDKEY)) || 'null');
-    return json({ key: key || null, at: cur ? cur.at : 0, n: cur ? cur.n : 0 });
-  }
-  return json({ error: 'action' }, 404);
 }
 
-async function serveFeed(request, env, rest) {
-  if (request.method !== 'GET' && request.method !== 'HEAD') return text('فقط GET', 405);
-  const m = rest.match(/^([A-Za-z0-9_-]{16,64})\/signals\.(ics|rss|csv|json)$/);
-  if (!m || !env || !env.STORE) return text('پیدا نشد', 404);
-  const key = await env.STORE.get(FEEDKEYK);
-  // مقایسه‌ی طول‌ثابت، مثل رمز همگام‌سازی
-  let diff = !key || key.length !== m[1].length ? 1 : 0;
-  if (!diff) for (let i = 0; i < key.length; i++) diff |= key.charCodeAt(i) ^ m[1].charCodeAt(i);
-  if (diff) return text('این لینک معتبر نیست یا عوض شده', 404);
-  const cur = JSON.parse((await env.STORE.get(FEEDKEY)) || 'null');
-  if (!cur || !cur.files) return text('هنوز چیزی منتشر نشده', 404);
-  const headers = Object.assign({}, CORS, {
-    'Content-Type': FEED_TYPES[m[2]],
-    'Cache-Control': 'public, max-age=300',
-    'Last-Modified': new Date(cur.at).toUTCString(),
-    'Content-Disposition': 'inline; filename="signals.' + m[2] + '"'
-  });
-  return new Response(request.method === 'HEAD' ? null : cur.files[m[2]], { status: 200, headers });
+/* ---- مهلت پوزیشن (قاعده‌ی من یا «سقف زمان» تنظیمات) ---- */
+function tgPosAdvice(open, st, now, fire) {
+  for (const p of open) {
+    const dl = p.until || (+st.maxHold > 0 ? (p.openedAt || now) + st.maxHold * 36e5 : 0);
+    if (!dl) continue;
+    if (now >= dl) fire(p.id + ':dl', '⏱ ' + p.ticker + ' — مهلت پوزیشن تمام شد\nطبق قاعده ببند.');
+    else if (dl - now < 30 * 60000) fire(p.id + ':dl30', '⏱ ' + p.ticker + ' — ۳۰ دقیقه تا پایان مهلت پوزیشن');
+  }
 }
+
+/* ---- گزارش هفتگی: جمعه‌ها از ساعت ۱۸ به وقت تهران ---- */
+function tgWeekly(positions, now, fire) {
+  const teh = new Date(now + 3.5 * 36e5);                // تهران UTC+3:30
+  if (teh.getUTCDay() !== 5 || teh.getUTCHours() < 18) return;
+  const L = (positions || []).filter(p => p && p.status === 'closed' && p.closedAt > now - 7 * 864e5 && p.entry > 0);
+  let pnl = 0, w = 0;
+  for (const p of L) {
+    const sign = p.dir === 'short' ? -1 : 1, parts = Array.isArray(p.partials) ? p.partials : [];
+    let v = parts.reduce((s, x) => s + (+x.pnl || 0), 0);
+    if (p.exitPrice > 0 && p.margin > 0) v += (p.exitPrice - p.entry) * sign * (p.margin * (p.lev || 1) / p.entry) - (+p.fees || 0);
+    pnl += v; if (v > 0) w++;
+  }
+  fire('wk:' + teh.toISOString().slice(0, 10), '📊 گزارش هفتگی\n' + (L.length
+    ? L.length + ' معامله · ' + (pnl >= 0 ? '+' : '−') + '$' + Math.abs(pnl).toFixed(2) + ' · برد ' + Math.round(w / L.length * 100) + '٪'
+    : '۷ روز اخیر معامله‌ی بسته‌ای نداشتی.'));
+}
+

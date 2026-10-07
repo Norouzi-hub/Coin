@@ -44,8 +44,6 @@ function riskGateExtra(dir){
   const out=[];
   const lk=lossLockOn();
   if(lk)out.push(faN(lk.n)+' باخت پیاپی؛ قانون خودت می‌گوید تا فردا ورود تازه نه.');
-  const mx=+S.maxOpen;
-  if(mx>0&&openPos().length>=mx)out.push('الان '+faN(openPos().length)+' پوزیشن باز داری؛ سقفت '+faN(mx)+' است.');
   if(dir&&dir!=='spot'){const sd=sameDirOf(dir);
     if(sd.length>=2)out.push('با این، '+faN(sd.length+1)+' پوزیشن '+(dir==='long'?'لانگ':'شورت')+' هم‌زمان داری ('+
       [...new Set(sd.map(p=>p.ticker))].join('، ')+')؛ اگر بیت‌کوین برگردد، همه با هم ضرر می‌کنند.');}
@@ -118,6 +116,5 @@ function posRiskBits(p,head,body,acts){
     if(dl){const left=dl-Date.now();
       head.appendChild(el('span','pill '+(left<=0?'lose':left<36e5?'gold':'mut'),ic('clock')+(left<=0?'مهلت گذشت':fmtLeft(left)+' مانده')));}
     if(liqBeforeStop(p))body.insertBefore(el('div','flag d','<i>!</i><span>لیکوئید پیش از استاپ است: اگر قیمت برگردد، صرافی کل مارجین را پیش از رسیدن به استاپ می‌بندد. اهرم را کم کن یا استاپ را نزدیک‌تر بیاور.</span>'),body.children[1]||null);
-    if(acts&&pxOf(p)!=null){const q=el('button','btn',ic('bolt')+'<span>بستن با قیمت لحظه</span>');q.onclick=()=>sheetQuickClose(p);acts.insertBefore(q,acts.children[1]||null);}
   }else if(p.why)head.appendChild(el('span','pill mut','بستم: '+WHY_FA[p.why]));
 }

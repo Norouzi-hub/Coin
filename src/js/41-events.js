@@ -65,8 +65,8 @@ function wire(){
   $('#setDone').onclick=()=>closePanel('setVeil');
   $('#setVeil').onclick=e=>{if(e.target===$('#setVeil'))closePanel('setVeil');};
   $('#veil').onclick=e=>{if(e.target===$('#veil'))closeSheet();};
-  for(const id of ['sProxy','sChannel','sAcct','sCap','sAmts','sRisk','sMaxLev','sDaily','sMode','sR','sFee','sSlip','sFund','sOpenRisk','sAuto','sStale','sCal','sPb',
-    'sRiskUsd','sIsoSd','sBeAt','sTrail','sMaxHold','sLossLock','sMaxOpen','sGoal'])
+  for(const id of ['sProxy','sChannel','sAcct','sCap','sAmts','sMaxLev','sDaily','sR','sFee','sSlip','sFund','sOpenRisk','sAuto','sStale','sCal','sPb',
+    'sRiskUsd','sIsoSd','sBeAt','sTrail','sMaxHold','sLossLock','sGoal'])
     $('#'+id).onchange=()=>{readSettings();renderAll();};
   wireAdvForm();
   wireIO();

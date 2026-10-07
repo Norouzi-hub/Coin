@@ -16,7 +16,7 @@ const {chromium} = require('./lib').pw;
   await p.waitForTimeout(3000);
 
   await p.evaluate(() => {
-    S.feat.alerts = true; S.feat.notify = true;
+    S.feat.notify = true; S.adv = Object.assign(advCfg(), {on:true}); S.adv.cats.pos = true;
     DB.positions = [ensureBase({id:'x1',ticker:'BTC',dir:'long',entry:60000,stop:59000,
       margin:10,lev:3,targets:[62000,64000],status:'open',openedAt:Date.now()})];
     save();
@@ -34,7 +34,7 @@ const {chromium} = require('./lib').pw;
   await fire(58000); console.log('قیمت ۵۸۰۰۰ (استاپ خورد) →', (await notes()).slice(-1)[0] || '—');
 
   // خاموش کردن هشدارها
-  await p.evaluate(() => { S.feat.alerts = false; window.__notes = []; });
+  await p.evaluate(() => { S.adv.cats.pos = false; window.__notes = []; });
   await fire(57000);
   console.log('با کلید خاموش           →', (await notes()).length, 'اعلان', (await notes()).length===0 ? '✅ رفت' : '❌');
   await b.close();

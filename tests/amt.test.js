@@ -29,18 +29,15 @@ const fa=t=>String(t).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).r
  const cap=await p.evaluate(()=>S.cap);
  const chips=await p.evaluate(()=>{const c=[...document.querySelectorAll('#list .card')].find(c=>/740/.test(c.innerHTML));
    return {chips:[...c.querySelectorAll('.amtb')].map(b=>b.textContent+(b.classList.contains('on')?'*':'')),
-     inp:c.querySelector('.amtin').value,quick:c.querySelector('.btn.side')?.textContent};});
+     inp:c.querySelector('.amtin').value};});
  console.log('  ',JSON.stringify(chips),'cap=',cap);
  ok(chips.chips.some(x=>x.endsWith('*')&&+fa(x.replace(/[$*]/g,''))===cap),'پیش‌فرض تنظیمات روشن است');
- ok(fa(chips.quick).includes(String(cap)),'دکمه‌ی سریع مبلغ پیش‌فرض را می‌گوید');
 
  const clickIn=async(sel,idx)=>p.evaluate(([s,i])=>{const c=[...document.querySelectorAll('#list .card')].find(c=>/740/.test(c.innerHTML));c.querySelectorAll(s)[i].click();},[sel,idx]);
  const i100=chips.chips.findIndex(x=>x.startsWith('100'));
  await clickIn('.amtb',i100); await p.waitForTimeout(300);
- const a1=await p.evaluate(()=>({ov:OVERRIDE['c/1893051/740']?.amt,
-   quick:[...document.querySelectorAll('#list .card')].find(c=>/740/.test(c.innerHTML)).querySelector('.btn.side').textContent}));
+ const a1=await p.evaluate(()=>({ov:OVERRIDE['c/1893051/740']?.amt}));
  ok(a1.ov===100,'زدن 100$ در override ذخیره شد ('+a1.ov+')');
- ok(fa(a1.quick).includes('100'),'دکمه‌ی سریع: '+a1.quick);
 
  // مبلغ دستی
  await p.evaluate(()=>{const c=[...document.querySelectorAll('#list .card')].find(c=>/740/.test(c.innerHTML));
@@ -48,9 +45,8 @@ const fa=t=>String(t).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).r
  await p.waitForTimeout(300);
  const a2=await p.evaluate(()=>{const c=[...document.querySelectorAll('#list .card')].find(c=>/740/.test(c.innerHTML));
    return {ov:OVERRIDE['c/1893051/740']?.amt,on:c.querySelector('.amtin').classList.contains('on'),
-    anyChip:!!c.querySelector('.amtb.on'),quick:c.querySelector('.btn.side').textContent};});
+    anyChip:!!c.querySelector('.amtb.on')};});
  ok(a2.ov===37&&a2.on&&!a2.anyChip,'مبلغ دستی 37 ثبت شد و کادر دستی روشن است');
- ok(fa(a2.quick).includes('37'),'دکمه‌ی سریع: '+a2.quick);
 
  console.log('=== یک مرحله: کارت ← فرم ===');
  await p.evaluate(()=>{const c=[...document.querySelectorAll('#list .card')].find(c=>/740/.test(c.innerHTML));
@@ -59,7 +55,7 @@ const fa=t=>String(t).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).r
  ok(!(await p.evaluate(()=>typeof PLANOPEN!=='undefined')),'ماشین‌حساب جدای کارت دیگر نیست');
  console.log('=== فرم «وارد شدم» ===');
  await p.evaluate(()=>{const c=[...document.querySelectorAll('#list .card')].find(c=>/740/.test(c.innerHTML));
-   c.querySelector('.brief .acts .btn.ok').click();});
+   [...c.querySelectorAll('.brief .acts .btn')].find(b=>/فرم کامل|بررسی و ورود/.test(b.textContent)).click();});
  await p.waitForTimeout(400);
  ok(await p.$eval('#f_m',e=>e.value)==='100','کادر مبلغ فرم با 100 پر شده');
  const sc=await p.$$eval('#amtBox .amtb',e=>e.map(x=>x.textContent+(x.classList.contains('on')?'*':'')));
@@ -76,14 +72,16 @@ const fa=t=>String(t).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).r
  const pos=await p.evaluate(()=>DB.positions.map(x=>({t:x.ticker,m:x.margin,lev:x.lev})));
  ok(pos.length===1&&pos[0].m===73,'پوزیشن با 73$ ثبت شد '+JSON.stringify(pos));
 
- console.log('=== ورود سریع روی کارت دوم ===');
+ console.log('=== مبلغ چیپ روی کارت دوم ← فرم ===');
  await p.evaluate(()=>{const c=[...document.querySelectorAll('#list .card')].find(c=>/739/.test(c.innerHTML));
    [...c.querySelectorAll('.amtb')].find(b=>b.textContent.startsWith('25')).click();});
  await p.waitForTimeout(300);
- await p.evaluate(()=>{const c=[...document.querySelectorAll('#list .card')].find(c=>/739/.test(c.innerHTML));c.querySelector('.btn.side').click();});
+ await p.evaluate(()=>{const c=[...document.querySelectorAll('#list .card')].find(c=>/739/.test(c.innerHTML));[...c.querySelectorAll('.acts .btn')].find(b=>/فرم کامل|بررسی و ورود/.test(b.textContent)).click();});
  await p.waitForTimeout(400);
+ ok(+(await p.inputValue('#f_m'))===25,'فرم با مبلغ چیپ 25$ باز شد');
+ await p.click('#ok'); await p.waitForTimeout(400);
  const pos2=await p.evaluate(()=>DB.positions.map(x=>({t:x.ticker,m:x.margin})));
- ok(pos2.some(x=>x.t==='ETH'&&x.m===25),'ورود سریع با 25$ '+JSON.stringify(pos2));
+ ok(pos2.some(x=>x.t==='ETH'&&x.m===25),'ورود با 25$ '+JSON.stringify(pos2));
 
  console.log('=== برگشت به پیش‌فرض ===');
  await p.evaluate(()=>{OVERRIDE['c/1893051/739']={amt:40};DB.overrides=OVERRIDE;save();PCACHE.clear();

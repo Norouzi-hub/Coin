@@ -1507,6 +1507,8 @@ textarea.cptxt{width:100%;min-height:50vh;font:inherit;font-size:12px;direction:
 .xrline .u{color:var(--up)}.xrline .d{color:var(--dn)}
 .isobox .plink{align-self:flex-start}
 .btn.iso .ic{color:var(--gold)}
+/* دکمه‌ی اصلی ایزوله یک ردیف کامل؛ «فرم کامل» و «وارد نشدم» زیرش کنار هم */
+.acts .btn.ok.iso{flex:1 1 100%}
 table.xtab tr.mine td{box-shadow:inset 0 -2px 0 color-mix(in srgb,var(--gold) 55%,transparent)}
 table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .xbest.mine{border-color:color-mix(in srgb,var(--gold) 45%,transparent)}

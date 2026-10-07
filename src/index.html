@@ -305,26 +305,22 @@
     <details class="sec" data-sec="risk" open><summary>اندازه و ریسک</summary>
     <div class="grid">
       <div class="fld"><label>موجودی حساب ($)</label><input id="sAcct" class="money" value="100"></div>
-      <div class="fld"><label>مارجین هر معامله ($)</label><input id="sCap" class="money" value="10"></div>
+      <div class="fld"><label>ریسک هر معامله ($)</label><input id="sRiskUsd" type="number" min="0" step="0.5" inputmode="decimal"></div>
+      <div class="fld"><label>مبلغ پیش‌فرض اسپات و بی‌استاپ ($)</label><input id="sCap" class="money" value="10"></div>
       <div class="fld"><label>مبلغ‌های آماده ($)</label><input id="sAmts" value="10, 25, 50, 100" dir="ltr" placeholder="10, 25, 50, 100"></div>
-      <div class="fld"><label>ریسک هدف (٪ مارجین)</label><input id="sRisk" type="number" value="5" min="0.5" max="100" step="0.5"></div>
       <div class="fld"><label>سقف اهرم</label><input id="sMaxLev" type="number" value="10" min="1" max="125" step="1"></div>
+      <div class="fld"><label>بیشترین فاصله‌ی استاپ برای ایزوله (٪)</label><input id="sIsoSd" type="number" value="15" min="1" max="60" step="1"></div>
       <div class="fld"><label>حد ضرر روزانه (٪ حساب)</label><input id="sDaily" type="number" value="10" min="1" max="100" step="1"></div>
-      <div class="fld"><label>حالت محاسبه</label>
-        <select id="sMode"><option value="margin">کل مارجین وارد شود</option><option value="risk">ریسک ثابت</option></select></div>
+      <div class="fld"><label>سقف ریسک باز هم‌زمان (٪ حساب)</label><input id="sOpenRisk" type="number" value="15" min="1" max="100" step="1"></div>
+      <div class="fld"><label>قفل بعد از چند باخت پیاپی</label><input id="sLossLock" type="number" value="2" min="0" max="10" step="1"></div>
+      <div class="fld"><label>ریسک‌فری خودکار بعد از (٪ حرکت)</label><input id="sBeAt" type="number" min="0" max="50" step="0.1" placeholder="خالی = خاموش"></div>
+      <div class="fld"><label>استاپ دنباله‌دار (٪ پشت بهترین قیمت)</label><input id="sTrail" type="number" min="0" max="50" step="0.1" placeholder="خالی = خاموش"></div>
+      <div class="fld"><label>سقف زمان هر پوزیشن (ساعت)</label><input id="sMaxHold" type="number" min="0" max="720" step="0.5" placeholder="خالی = فقط قاعده‌ی من"></div>
+      <div class="fld"><label>هدف ماهانه (٪ حساب)</label><input id="sGoal" type="number" min="0" max="1000" step="1" placeholder="مثلاً 20"></div>
       <div class="fld"><label>تارگت‌ها (R)</label><input id="sR" value="1.5, 3, 5" dir="ltr"></div>
       <div class="fld"><label>کارمزد رفت‌وبرگشت (٪)</label><input id="sFee" type="number" value="0.1" min="0" max="2" step="0.01"></div>
       <div class="fld"><label>لغزش روی استاپ (٪)</label><input id="sSlip" type="number" value="0.05" min="0" max="2" step="0.01"></div>
       <div class="fld"><label>فاندینگ تخمینی (٪ هر ۸ ساعت)</label><input id="sFund" type="number" value="0" min="-1" max="1" step="0.005"></div>
-      <div class="fld"><label>سقف ریسک باز هم‌زمان (٪ حساب)</label><input id="sOpenRisk" type="number" value="15" min="1" max="100" step="1"></div>
-      <div class="fld"><label>ریسک هر معامله‌ی ایزوله ($)</label><input id="sRiskUsd" type="number" min="0" step="0.5" inputmode="decimal" placeholder="خالی = مارجین × ریسک هدف"></div>
-      <div class="fld"><label>بیشترین فاصله‌ی استاپ برای ایزوله (٪)</label><input id="sIsoSd" type="number" value="15" min="1" max="60" step="1"></div>
-      <div class="fld"><label>ریسک‌فری خودکار بعد از (٪ حرکت)</label><input id="sBeAt" type="number" min="0" max="50" step="0.1" placeholder="خالی = خاموش"></div>
-      <div class="fld"><label>استاپ دنباله‌دار (٪ پشت بهترین قیمت)</label><input id="sTrail" type="number" min="0" max="50" step="0.1" placeholder="خالی = خاموش"></div>
-      <div class="fld"><label>سقف زمان هر پوزیشن (ساعت)</label><input id="sMaxHold" type="number" min="0" max="720" step="0.5" placeholder="خالی = فقط قاعده‌ی من"></div>
-      <div class="fld"><label>قفل بعد از چند باخت پیاپی</label><input id="sLossLock" type="number" value="2" min="0" max="10" step="1"></div>
-      <div class="fld"><label>حداکثر پوزیشن باز هم‌زمان</label><input id="sMaxOpen" type="number" value="3" min="0" max="50" step="1"></div>
-      <div class="fld"><label>هدف ماهانه (٪ حساب)</label><input id="sGoal" type="number" min="0" max="1000" step="1" placeholder="مثلاً 20"></div>
       <div class="fld"><label>سبک خروج پیش‌فرض</label><select id="sPb">
         <option value="s1">اسکلپ · تارگت 1</option><option value="s2">اسکلپ · تارگت 2</option>
         <option value="bal">متعادل</option><option value="sw">سوئینگ پله‌ای</option><option value="cu">دلخواه</option></select></div>

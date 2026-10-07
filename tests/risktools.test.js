@@ -29,13 +29,12 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
      openedAt:now-h*36e5-36e5,status:st,exitPrice:st==='closed'?(pnlSign>0?105:96):null,closedAt:st==='closed'?now-h*36e5:null,fees:0,partials:[],log:[]});
    DB.positions=[mk('c1','long','closed',-1,0.2),mk('c2','long','closed',-1,0.5),mk('c3','long','closed',1,3),
      mk('o1','long','open'),mk('o2','long','open'),mk('o3','short','open')];
-   Object.assign(S,{lossLock:2,maxOpen:3});
+   S.lossLock=2;
    const gate=riskGateExtra('long');
    S.lossLock=3;const g3=riskGateExtra('short');
    return {gate,g3,streak:lossStreak().n};});
  console.log('    '+g.gate.join(' | '));
  ok(g.streak===2&&/2 باخت پیاپی/.test(g.gate[0]),'۲ باخت پیاپی ← قفل تا فردا');
- ok(g.gate.some(x=>/سقفت 3/.test(x)),'۳ پوزیشن باز با سقف ۳ ← هشدار');
  ok(g.gate.some(x=>/3 پوزیشن لانگ هم‌زمان/.test(x)),'۲ لانگ باز + لانگ تازه ← هشدار هم‌جهت');
  ok(!g.g3.some(x=>/باخت پیاپی/.test(x))&&!g.g3.some(x=>/هم‌زمان داری/.test(x)),'با قفل ۳ و شورت تازه: نه قفل، نه هم‌جهت');
 
@@ -46,12 +45,12 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    PRICES.set('BTC',61000);POSOPEN.add('k1');save();go('positions',true);renderAll();});
  await p.waitForTimeout(500);
  const k=await p.evaluate(()=>{const c=document.getElementById('pos-k1');return {pills:[...c.querySelectorAll('.chead .pill')].map(x=>x.textContent).join('|'),
-   flag:[...c.querySelectorAll('.flag.d')].map(x=>x.textContent).join('|'),q:!![...c.querySelectorAll('.acts .btn')].find(x=>/بستن با قیمت لحظه/.test(x.textContent))};});
+   flag:[...c.querySelectorAll('.flag.d')].map(x=>x.textContent).join('|'),q:!![...c.querySelectorAll('.acts .btn')].find(x=>/^بستن$/.test(x.textContent.trim()))};});
  console.log('   ',JSON.stringify(k));
  ok(/مهلت گذشت/.test(k.pills),'سقف زمانِ گذشته ← «مهلت گذشت»');
  ok(/لیکوئید پیش از استاپ/.test(k.flag),'اهرم ۲۰ با استاپ ۱۰٪ ← «لیکوئید پیش از استاپ»');
- ok(k.q,'دکمه‌ی «بستن با قیمت لحظه»');
- await p.evaluate(()=>[...document.querySelectorAll('#pos-k1 .acts .btn')].find(x=>/بستن با قیمت لحظه/.test(x.textContent)).click());await p.waitForTimeout(400);
+ ok(k.q,'دکمه‌ی «بستن» (با قیمت لحظه)');
+ await p.evaluate(()=>[...document.querySelectorAll('#pos-k1 .acts .btn')].find(x=>/^بستن$/.test(x.textContent.trim())).click());await p.waitForTimeout(400);
  await p.evaluate(()=>document.querySelector('#sheet [data-w="time"]').click());await p.waitForTimeout(400);
  const cl=await p.evaluate(()=>{posFilter='closed';renderAll();const q=DB.positions.find(x=>x.id==='k1');return {st:q.status,ex:q.exitPrice,why:q.why,pill:[...document.querySelectorAll('#pos-k1 .chead .pill')].map(x=>x.textContent).join('|')};});
  console.log('   ',JSON.stringify(cl));

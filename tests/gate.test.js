@@ -16,13 +16,15 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  // SOL: qty=100/150=.6667 × 10 = 6.667 + fee .1 = 6.767 ; XRP بدون استاپ: 5  → 11.77٪
  ok(Math.abs(r.r.used-11.7667)<0.01,'ریسک باز: SOL 6.77 + XRP بدون استاپ 5 = '+r.r.used.toFixed(2));
  ok(/ریسک باز\s*11\.8٪/.test(r.st),'در نوار خلاصه: «ریسک باز 11.8٪/15٪» — '+r.st);
- // ورود سریع روی BTC (ورود 64800، استاپ 63500) با ریسک 5٪ حساب ← 16.8٪ > 15
+ // ورود روی BTC (ورود 64800، استاپ 63500) با ۵ دلار ریسک ← 16.8٪ > 15
  await p.evaluate(()=>{sigFilter='all';renderAll();});await p.waitForTimeout(300);
  const g=await p.evaluate(()=>entryGate(5));
  ok(g.length===1&&g[0].includes('16.8٪'),'ورود با ۵ دلار ریسک: هشدار سقف ریسک — '+g[0]);
- await p.evaluate(()=>{S.openRisk=12;const post=POSTS.find(x=>x.id.endsWith('/920'));quickEnter(post,sigOf(post),OVERRIDE[post.id]||{},PRICES.get('BTC'));});
- await p.waitForTimeout(300);
- ok(dialogs[0]&&dialogs[0].startsWith('⚠️')&&dialogs[0].includes('سقف'),'ورود سریع (سقف ۱۲٪): اول هشدار سقف ریسک — '+(dialogs[0]||'').slice(0,60));
+ await p.evaluate(()=>{S.openRisk=12;const post=POSTS.find(x=>x.id.endsWith('/920'));sheetEnter(post,sigOf(post),OVERRIDE[post.id]||{},PRICES.get('BTC'));});
+ await p.waitForTimeout(600);
+ await p.evaluate(()=>document.querySelector('#ok').click());await p.waitForTimeout(300);
+ ok(dialogs[0]&&dialogs[0].startsWith('⚠️')&&dialogs[0].includes('سقفت 12٪'),'فرم ورود (سقف ۱۲٪): اول هشدار سقف ریسک — '+(dialogs[0]||'').slice(0,60));
+ await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
  ok(await p.evaluate(()=>DB.positions.length)===2,'«نه» زدی: ثبت نشد');
  // حد ضرر روزانه پر
  await p.evaluate(()=>{DB.positions.push({id:'c1',ticker:'ETH',dir:'long',kind:'futures',entry:100,stop:90,margin:20,lev:5,openedAt:Date.now()-2*36e5,closedAt:Date.now()-60e3,exitPrice:89,fees:0,status:'closed',partials:[],log:[]});save();});

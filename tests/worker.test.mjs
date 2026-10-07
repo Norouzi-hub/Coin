@@ -14,7 +14,10 @@ globalThis.fetch=async(u,o)=>{u=String(u);const J=(b,s)=>new Response(JSON.strin
   if(u.includes('fapi.binance.com'))return binanceDown?J({},451):J(Object.entries(mark).map(([k,v])=>({symbol:k+'USDT',markPrice:String(v)})).concat(Array.from({length:30},(_,i)=>({symbol:'Z'+i+'USDT',markPrice:'1'}))));
   if(u.includes('okx.com'))return J({data:Object.entries(mark).map(([k,v])=>({instId:k+'-USDT-SWAP',markPx:String(v)})).concat(Array.from({length:30},(_,i)=>({instId:'Z'+i+'-USDT-SWAP',markPx:'1'})))});
   if(u.includes('api.binance.com'))return J([{symbol:'BTCUSDT',price:'90.5'},{symbol:'SOLUSDT',price:'158'}].concat(Array.from({length:30},(_,i)=>({symbol:'Z'+i+'USDT',price:'1'}))));
+  if(u.startsWith('https://t.me/s/'))return new Response(TME,{status:200});
   return J({},404);};
+let TME='<html></html>';
+const tmePost=(n,t)=>'<div class="tgme_widget_message" data-post="ccoineres/'+n+'"><div class="tgme_widget_message_text js-message_text" dir="auto">'+t+'</div><div class="tgme_widget_message_footer"></div></div>';
 const req=(path,tok)=>new Request('https://w.dev'+path,{method:'POST',headers:{Authorization:'Bearer '+(tok||'sec')}});
 const call=async(p,t)=>(await W.fetch(req(p,t),env)).json();
 const db={rev:3,at:1,data:{settings:{feat:{alerts:true}},positions:[
@@ -45,7 +48,23 @@ console.log('=== جابه‌جایی استاپ و منبع جایگزین ===')
 db.data.positions[0].stop=89;kv.set('signaldesk',JSON.stringify(db));binanceDown=true;mark.BTC=89.2;
 await new Promise(r=>W.scheduled({},env,{waitUntil:p=>p.then(r)}));
 ok(sent.some(s=>s.text.startsWith('🟠 BTC')),'استاپ عوض شد (89): هشدار تازه «نزدیک حد ضرر» با مارک OKX وقتی بایننس بسته است');
-db.data.settings.feat.alerts=false;kv.set('signaldesk',JSON.stringify(db));
-ok((await call('/tg/check')).skipped==='alerts-off','هشدارها در برنامه خاموش ← ورکر هم ساکت');
+console.log('=== وقتی برنامه بسته است: سیگنال تازه، مهلت ===');
+TME='<html>'+tmePost(500,'#BTC لانگ<br>ورود 100<br>حد ضرر 95')+'</html>';
+db.data.settings.riskUsd=2;db.data.settings.maxLev=10;db.data.positions[1].until=Date.now()-1000;kv.set('signaldesk',JSON.stringify(db));
+sent.length=0;await new Promise(r=>W.scheduled({},env,{waitUntil:p=>p.then(r)}));
+ok(!sent.some(s=>s.text.startsWith('📣'))&&kv.get('signaldesk:tgseen')==='500','بار اول: پست‌های موجود فقط یادداشت می‌شوند، نه پیام');
+ok(sent.some(s=>s.text.startsWith('⏱ ETH')&&s.text.includes('مهلت پوزیشن تمام شد')),'مهلت پوزیشن ETH تمام شد ← پیام');
+TME='<html>'+tmePost(500,'#BTC لانگ<br>ورود 100<br>حد ضرر 95')+tmePost(501,'#SOL لانگ<br>ورود ۱۵۰<br>حد ضرر ۱۴۵<br>تارگت ۱۶۰')+tmePost(502,'🟢 #BTC Liquidated Short: $89K')+tmePost(503,'یک نکته‌ی آموزشی')+'</html>';
+sent.length=0;await new Promise(r=>W.scheduled({},env,{waitUntil:p=>p.then(r)}));
+const ns=sent.filter(s=>s.text.startsWith('📣'));console.log('   '+ns.map(s=>s.text.replace(/\n/g,' / ')).join('\n   '));
+ok(ns.length===1&&ns[0].text.includes('#SOL')&&ns[0].text.includes('ایزوله 10x · مارجین $5.83')&&ns[0].text.includes('t.me/ccoineres/501'),'پست تازه‌ی سیگنال ← پیام با اندازه‌ی ایزوله؛ لیکوئید و نکته نه');
+sent.length=0;await new Promise(r=>W.scheduled({},env,{waitUntil:p=>p.then(r)}));
+ok(sent.length===0,'دقیقه‌ی بعد: نه سیگنال تکراری، نه مهلت تکراری');
+db.data.settings.adv={on:true,cats:{sig:false,pos:true}};kv.set('signaldesk',JSON.stringify(db));
+TME='<html>'+tmePost(504,'#ETH شورت<br>ورود 3000<br>حد ضرر 3100')+'</html>';
+sent.length=0;await new Promise(r=>W.scheduled({},env,{waitUntil:p=>p.then(r)}));
+ok(!sent.some(s=>s.text.startsWith('📣')),'دسته‌ی «سیگنال» در برنامه خاموش ← سیگنال تازه به تلگرام نمی‌رود');
+db.data.settings.adv={on:false};kv.set('signaldesk',JSON.stringify(db));
+ok((await call('/tg/check')).skipped==='alerts-off','مشاور در برنامه خاموش ← ورکر هم ساکت');
 ok((await call('/tg/unlink')).linked===false&&!kv.has('signaldesk:tg'),'قطع کردن');
 console.log(bad?'✗ '+bad:'✔ همه درست');

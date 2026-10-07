@@ -212,7 +212,8 @@ function wireAdvForm(){
   if(!$('#aOn'))return;
   advApplyForm();
   ['aOn','aSound','aVol','aVib','aQuiet'].forEach(id=>$('#'+id).onchange=()=>{advReadForm();if(id==='aSound'&&$('#aSound').checked){advAudio();advBeep('mid',true);}});
-  $('#aSys').onchange=()=>{const fc=$('#feat_notify');if(fc)fc.checked=$('#aSys').checked;readSettings();renderAll();};
+  $('#aSys').onchange=()=>{S.feat.notify=$('#aSys').checked;DB.settings=Object.assign({},S);save();
+    if(S.feat.notify)askNotify().then(()=>{$('#aSys').checked=F('notify');});setTimer();};
   $('#aTest').onclick=()=>{advAudio();advBeep('hi',true);setTimeout(()=>advBeep('mid',true),900);setTimeout(()=>advBeep('lo',true),1600);};
 }
 let ADVSLOW=0;

@@ -415,7 +415,7 @@ const claimOfPost=id=>{for(const c of claimsAll())if(c.p.id===id)return c;return
 
 /* ---- تب کانال‌سنج ---- */
 const AFKEY='signaldesk.af.v1';
-let AF=Object.assign({dir:'all',mkt:'all',rr:0,span:0,sym:'',noLate:true,maxSd:0},(()=>{try{return lsGet(AFKEY)||{};}catch(e){return {};}})());
+let AF=Object.assign({dir:'all',mkt:'all',rr:0,span:0,sym:'',noLate:true,iso:false},(()=>{try{return lsGet(AFKEY)||{};}catch(e){return {};}})());
 const afSave=()=>lsSet(AFKEY,AF);
 let audList='all', audShown=40;
 const AUD_ST={win:['برد','win'],loss:['باخت','lose'],exp:['منقضی','mut'],none:['فعال نشد','mut'],
@@ -448,7 +448,8 @@ function audFilter(rows){
     if(AF.sym&&i.tk!==AF.sym)return false;
     if(AF.span&&i.t0&&now-i.t0>AF.span*DAY)return false;
     if(AF.rr){const q=rrOf(i);if(q==null||q<AF.rr)return false;}
-    if(AF.maxSd){const sd=stopPctOf(i);if(sd==null||sd>AF.maxSd)return false;}
+    // یک عدد برای همه‌جا: «بیشترین فاصله‌ی استاپ برای ایزوله» (تنظیمات)
+    if(AF.iso){const sd=stopPctOf(i);if(sd==null||sd>isoMaxSd())return false;}
     if(AF.noLate&&x.r&&x.r.late)return false;
     return true;
   });
@@ -796,7 +797,7 @@ function buildAudFilter(all){
   const d=el('details','sec audf');
   // «دیرهنگام‌ها در آمار نیایند» پیش‌فرض روشن است؛ شمرده می‌شود تا معلوم باشد چیزی کنار رفته،
   // ولی به‌خاطر آن بخش خودبه‌خود باز نمی‌شود
-  const user=(AF.dir!=='all')+(AF.mkt!=='all')+(!!AF.rr)+(!!AF.span)+(!!AF.sym)+(!!AF.maxSd);
+  const user=(AF.dir!=='all')+(AF.mkt!=='all')+(!!AF.rr)+(!!AF.span)+(!!AF.sym)+(!!AF.iso);
   const active=user+(AF.noLate?1:0);
   d.open=!!user;
   d.innerHTML='<summary>فیلتر — «اگر فقط این‌ها را گرفته بودم؟»'+
@@ -816,7 +817,7 @@ function buildAudFilter(all){
   row('بازار',[['all','همه'],['futures','فیوچرز'],['spot','اسپات']],'mkt');
   row('سود به ریسک',[[0,'همه'],[1,'1+'],[1.5,'1٫5+'],[2,'2+'],[3,'3+']],'rr');
   row('بازه',[[0,'همه'],[30,'30 روز'],[90,'90 روز']],'span');
-  row('فاصله‌ی استاپ',[[0,'همه'],[5,'تا 5٪'],[10,'تا 10٪'],[15,'تا 15٪'],[25,'تا 25٪']],'maxSd');
+  row('فاصله‌ی استاپ',[[false,'همه'],[true,'فقط مناسب ایزوله (تا '+fmtNum(isoMaxSd())+'٪)']],'iso');
   const syms=[...new Set(all.map(x=>x.inp.tk).filter(Boolean))].sort();
   const w=el('div','afrow');
   w.appendChild(el('span','aflab','نماد'));
@@ -830,7 +831,7 @@ function buildAudFilter(all){
   d.appendChild(lt);
   if(active){
     const c=el('button','btn xs','برداشتن همه‌ی فیلترها');
-    c.onclick=()=>{Object.assign(AF,{dir:'all',mkt:'all',rr:0,span:0,sym:'',maxSd:0});afSave();renderAudit();};
+    c.onclick=()=>{Object.assign(AF,{dir:'all',mkt:'all',rr:0,span:0,sym:'',iso:false});afSave();renderAudit();};
     d.appendChild(c);
   }
   return d;

@@ -34,13 +34,9 @@ const html = `<html><body>
   console.log('  خاموش:', await hasMoney() ? '❌ مانده' : '✅ رفت');
   await setF('summary', true);
 
-  console.log('=== ورود سریع ===');
+  console.log('=== ورود ایزوله (جای «ورود سریع») ===');
   const qb = await p.$$eval('#list .acts .btn', e => e.map(x=>x.textContent));
-  console.log('  دکمه‌ها:', qb.join(' | '), qb.some(x=>x.includes('سریع')) ? '✅' : '❌');
-  await setF('quick', false);
-  console.log('  خاموش:', (await p.$$eval('#list .acts .btn', e => e.map(x=>x.textContent)))
-    .some(x=>x.includes('سریع')) ? '❌ مانده' : '✅ رفت');
-  await setF('quick', true);
+  console.log('  دکمه‌ها:', qb.join(' | '), qb.some(x=>x.includes('ایزوله')) && !qb.some(x=>x.includes('سریع')) ? '✅' : '❌');
 
   console.log('=== کارت فشرده ===');
   await setF('accordion', true);
@@ -52,31 +48,19 @@ const html = `<html><body>
   await setF('accordion', false);
   console.log('  خاموش:', await count('.card.tight') ? '❌ مانده' : '✅ رفت');
 
-  console.log('=== ورود سریع → پوزیشن ===');
+  console.log('=== ورود ایزوله → پوزیشن ===');
   await p.evaluate(() => [...document.querySelectorAll('#list .acts .btn')]
-    .find(b => b.textContent.includes('سریع')).click());
+    .find(b => b.textContent.includes('ایزوله')).click());
+  await p.waitForTimeout(700);
+  await p.evaluate(() => document.querySelector('#ok').click());
   await p.waitForTimeout(700);
   const pos = await p.evaluate(() => DB.positions.map(x => ({t:x.ticker,lev:x.lev,m:x.margin,e:x.entry,s:x.stop})));
-  console.log(' ', JSON.stringify(pos), pos.length===1 && pos[0].lev===3 ? '✅ اهرم 3 درست' : '❌');
+  console.log(' ', JSON.stringify(pos), pos.length===1 && pos[0].lev>=1 && pos[0].lev<=10 && pos[0].m>0 ? '✅ ثبت شد با اهرم امن' : '❌');
 
-  console.log('=== بستن 50٪ روی تارگت ===');
+  console.log('=== یک دکمه‌ی «بستن» روی پوزیشن ===');
   await p.evaluate(()=>document.querySelector('.tab[data-v="positions"]').click()); await p.waitForTimeout(600);
   const tb = await p.$$eval('#vPositions .acts .btn', e => e.map(x=>x.textContent.trim()));
-  console.log('  دکمه‌ها:', tb.join(' | '));
-  const has = tb.some(x => x.includes('بستن 50٪'));
-  console.log(' ', has ? '✅ هست' : '❌ نیست');
-  if (has) {
-    await p.evaluate(() => [...document.querySelectorAll('#vPositions .acts .btn')]
-      .find(b => b.textContent.includes('بستن 50٪')).click());
-    await p.waitForTimeout(700);
-    const after = await p.evaluate(() => { const x=DB.positions[0];
-      return {margin:x.margin, parts:(x.partials||[]).length, pnl:(x.partials||[])[0] && +x.partials[0].pnl.toFixed(3)}; });
-    console.log('  بعد از بستن:', JSON.stringify(after),
-      after.parts===1 && Math.abs(after.margin-5)<0.01 ? '✅ نصف مارجین آزاد شد' : '❌');
-  }
-  await setF('tpclose', false);
-  console.log('  خاموش:', (await p.$$eval('#vPositions .acts .btn', e => e.map(x=>x.textContent)))
-    .some(x=>x.includes('بستن 50٪')) ? '❌ مانده' : '✅ رفت');
+  console.log('  دکمه‌ها:', tb.join(' | '), tb.includes('بستن') && !tb.some(x=>/بستن 50٪|بستن کامل/.test(x)) ? '✅' : '❌');
 
   console.log('=== بازه‌ی دلخواه کارنامه ===');
   await p.evaluate(()=>{document.querySelector('.tab[data-v="more"]').click();document.querySelector('.moreit[data-go="report"]').click();}); await p.waitForTimeout(500);

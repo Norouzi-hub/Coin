@@ -43,7 +43,7 @@ function fireAlert(key,msg,kind){
   if(!advise('al:'+key,{cat:'pos',pri:kind==='err'||kind==='ok'?'hi':'mid',title:msg,act:{t:'pos',id:key.split(':')[0]}}))toast(msg,kind);
 }
 function checkAlerts(){
-  if(!F('alerts'))return;
+  const ac=advCfg();if(!ac.on||!ac.cats.pos)return;      // کلیدِ «پوزیشن» در «اعلان و پیشنهاد»
   for(const p of DB.positions){
     if(p.status!=='open')continue;
     const px=pxOf(p);
@@ -52,6 +52,8 @@ function checkAlerts(){
     if(p.stop){
       const hit=(p.dir==='long'&&px<=p.stop)||(p.dir==='short'&&px>=p.stop);
       const near=Math.abs(px-p.stop)/Math.abs(p.entry-p.stop)<0.25;
+      // اجرای خودکار روشن است: «استاپ خورد و بسته شد» را خودش می‌گوید؛ «به استاپ رسید» تکراری است
+      if(hit&&autoOn(p))continue;
       if(hit||near)fireAlert(p.id+(hit?':stop:':':near:')+p.stop,
         hit?p.ticker+' به حد ضرر رسید ('+fmtPrice(px)+')':p.ticker+' نزدیک حد ضرر است ('+fmtPrice(px)+')',hit?'err':'info');
     }

@@ -336,7 +336,7 @@ function buildPosCard(p,opt){
     if(m.parts)head.appendChild(el('span','pill gold','پله‌ای'));
     if(m.liquidated)head.appendChild(el('span','pill lose','در محدوده لیکوئید'));
     // برچسب هشدار روی خود کارت، نه فقط یک پیغام گذرا
-    else{const as=F('alerts')?alertState(p,live):null;if(as)head.appendChild(el('span','pill '+as.c+' alrt',as.t));}
+    else{const as=advCfg().on&&advCfg().cats.pos?alertState(p,live):null;if(as)head.appendChild(el('span','pill '+as.c+' alrt',as.t));}
     if(fw.length)head.appendChild(el('span','pill gold alrt','کانال: '+esc(FOLLOW_FA[fw[fw.length-1].f.kind])));
   }else{
     head.appendChild(el('span','pill '+((m.pnl||0)>=0?'win':'lose'),(m.pnl||0)>=0?'برد':'باخت'));
@@ -448,22 +448,11 @@ function buildPosCard(p,opt){
 
   const a=el('div','acts');
   if(open){
-    const c=el('button','btn pri',ic('door')+'<span>بستن کامل</span>');c.onclick=()=>sheetClose(p);
+    // یک دکمه‌ی بستن: با قیمت لحظه و «چرا بستم»؛ «فرم کامل» داخل همان برگه است
+    const c=el('button','btn pri',ic('door')+'<span>بستن</span>');c.onclick=()=>sheetQuickClose(p);
     const pc=el('button','btn',ic('scissors')+'<span>بستن بخشی</span>');pc.onclick=()=>sheetPartial(p);
     const ad=el('button','btn',ic('plus')+'<span>افزودن حجم</span>');ad.onclick=()=>sheetAdd(p);
     a.appendChild(c);a.appendChild(pc);a.appendChild(ad);
-    if(F('tpclose')){
-      // نزدیک‌ترین تارگتِ جلوتر از ورود؛ همان که در عمل تارگت بعدی است.
-      // پارامترهای sort عمداً x و y هستند تا روی متغیر a (ظرف دکمه‌ها) سایه نیندازند.
-      const sign=p.dir==='long'?1:-1;
-      const tg=(p.targets||[]).filter(t=>isFinite(t)&&t>0)
-        .sort((x,y)=>(x-y)*sign).find(t=>sign>0?t>p.entry:t<p.entry);
-      if(tg!=null){
-        const tb=el('button','btn','بستن 50٪ روی '+fmtPrice(tg));
-        tb.onclick=()=>closeHalfAt(p,tg);
-        a.appendChild(tb);
-      }
-    }
   }else{
     const r=el('button','btn','باز کردن دوباره');
     r.onclick=()=>{p.status='open';p.exitPrice=null;p.closedAt=null;p.fees=null;

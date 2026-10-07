@@ -70,7 +70,7 @@ const html=`<html><body>${posts.map(p=>`<div class="tgme_widget_message" data-po
  console.log('=== نقشه روی پوزیشن ===');
  await p.evaluate(()=>{go('signals',true);PRICES=new Map([['BTC',100],['ETH',100],['SOL',100]]);SYMBOLS=new Set(PRICES.keys());SYMVER++;sigFilter='all';S.exitPb='bal';renderAll();});
  await p.waitForTimeout(300);
- await p.evaluate(()=>[...document.querySelectorAll('#list .card')].find(c=>c.dataset.id.endsWith('/800')).querySelector('.brief .btn.ok').click());
+ await p.evaluate(()=>{const c8=[...document.querySelectorAll('#list .card')].find(c=>c.dataset.id.endsWith('/800'));[...c8.querySelectorAll('.brief .acts .btn')].find(b=>/فرم کامل|بررسی و ورود/.test(b.textContent)).click();});
  await p.waitForTimeout(500);
  const sh=await p.evaluate(()=>({on:document.querySelector('#pbBox .pbc.on')?.textContent,steps:[...document.querySelectorAll('#pbBox .pbsteps li')].map(l=>l.textContent)}));
  console.log('  ',JSON.stringify(sh));

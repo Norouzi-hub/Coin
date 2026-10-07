@@ -47,7 +47,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  await p.evaluate(()=>renderAudit());await p.waitForTimeout(300);
  const ui=await p.evaluate(()=>{const xl=document.querySelector('#audBody [data-acc="خروج"]');
    return {xl:!!xl,tab:xl?xl.querySelectorAll('.xtab tbody tr').length:0,txt:xl?xl.textContent:'',
-     sd:[...document.querySelectorAll('.audf .catchip')].some(b=>/تا 10٪/.test(b.textContent)),
+     sd:[...document.querySelectorAll('.audf .catchip')].some(b=>/فقط مناسب ایزوله \(تا 15٪\)/.test(b.textContent)),
      iso:(()=>{AUDOPEN='فهرست سیگنال‌ها';renderAudit();const v=[...document.querySelectorAll('#audBody .ar2')].some(x=>/ایزوله تا \d+x/.test(x.textContent));AUDOPEN='خروج';renderAudit();return v;})(),
      cp:[...document.querySelectorAll('#audBody .audiag button')].some(x=>/کپی متن/.test(x.textContent)),
      xg:Object.values(AUD).filter(a=>a.xg).length};});
@@ -67,9 +67,9 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(sv.a==='short'&&sv.b==='pb'&&sv.lab===5,'یک پنل «خروج» با دو نما: خروج کوتاه ⇄ سبک‌های پله‌ای');
  ok(!sv.acc.includes('آزمایشگاه خروج')&&!sv.acc.includes('خروج کوتاه')&&!sv.acc.includes('نمادها'),'بخش‌ها: '+sv.acc.join('، '));
  const xe=await p.$('#audBody [data-acc="خروج"]');if(xe)await xe.screenshot({path:out('xlab.png')});
- await p.evaluate(()=>{AF.maxSd=1;afSave();renderAudit();});await p.waitForTimeout(200);
+ await p.evaluate(()=>{S.isoMaxSd=1;AF.iso=true;afSave();renderAudit();});await p.waitForTimeout(200);
  ok(await p.evaluate(()=>audFilter(audRows()).every(x=>stopPctOf(x.inp)<=1)),'فیلتر فاصله‌ی استاپ فقط سیگنال‌های با استاپ نزدیک را نگه می‌دارد');
- await p.evaluate(()=>{AF.maxSd=0;afSave();});
+ await p.evaluate(()=>{AF.iso=false;S.isoMaxSd=15;afSave();});
  console.log('=== کارت سیگنال ===');
  await p.evaluate(()=>go('signals',true));await p.waitForTimeout(600);
  await p.evaluate(()=>{const c=document.querySelector('#list .card');c&&c.click();});await p.waitForTimeout(500);
