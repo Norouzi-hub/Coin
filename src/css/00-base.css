@@ -1601,3 +1601,18 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rdwhy{display:flex;flex-wrap:wrap;gap:4px}.rdwhy .pill{font-size:11px}
 .rdit.weak{opacity:.72}
 .rdwait .u{color:var(--up)}.rdwait .d{color:var(--dn)}
+/* رادار: کارنامه و ستاره‌ها */
+.rdpan{display:flex;flex-direction:column;gap:6px;padding:9px 10px;border-radius:12px;background:var(--inset);border:1px solid var(--line)}
+.rdtab{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:3px}
+.rdtab th{font-size:11px;color:var(--tx3);font-weight:700;padding:2px}
+.rdtab th:first-child,.rdtab td:first-child{width:52px}
+.rdtab td{vertical-align:top;text-align:center;font-size:11.5px;padding:5px 2px;background:var(--card);border-radius:9px}
+.rdtab td:first-child{background:none;vertical-align:middle}
+.rdtab small{display:block;color:var(--tx2);font-size:10.5px;white-space:nowrap;margin-top:1px}
+.rdtab small.n{color:var(--tx3)}.rdtab .rdst{font-size:11px}
+.rdcap{margin-top:0;font-size:11px}
+.rdst{font-size:12px;letter-spacing:-1px;color:var(--gold);white-space:nowrap}.rdst i{font-style:normal;color:var(--line2)}
+.rdst.s1{color:var(--dn)}.rdst.s2{color:var(--warn)}.rdst.s0{font-size:10.5px;letter-spacing:0;color:var(--tx3)}
+.rdtodo{margin-top:4px}
+.rdwts{display:flex;flex-wrap:wrap;gap:4px;padding:6px 0}.rdwts .pill{font-size:11px}
+.rdflow b{color:var(--tx)}
