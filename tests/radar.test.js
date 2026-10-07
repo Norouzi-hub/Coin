@@ -18,6 +18,13 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    REQ['flow']=(REQ['flow']||0)+1;
    const row=i=>{const t=now-(lim-1-i)*H;return /taker/.test(u)?{buySellRatio:String(1+0.2*Math.sin(t/H/9)),timestamp:t}:/openInterest/.test(u)?{sumOpenInterestValue:String(1e8*(1+Math.sin(t/H/50)*0.1)),timestamp:t}:{longShortRatio:String(/top/.test(u)?1.4+0.3*Math.sin(t/H/11):2+0.5*Math.cos(t/H/13)),timestamp:t};};
    return r.fulfill({status:200,headers:{'content-type':'application/json','access-control-allow-origin':'*'},body:JSON.stringify(/BTCUSDT|ETHUSDT/.test(u)?Array.from({length:lim},(_,i)=>row(i)):[])});});
+ // CoinGecko: کل بازار، ارزش بازار هر ارز، عرضه‌ی تتر
+ const CG=[['BTC',1.84e12,-1.5],['ETH',3.872e11,-3],['USDT',1.664e11,0.05],['SOL',8e10,-4],['XRP',7e10,-4],['ADA',3e10,-5],['USDC',6e10,0],['DOGE',2.5e10,-6],['DOT',1e10,-5],['LINK',9e9,-5],['AVAX',8e9,-5],['NEAR',6e9,-5],['UNI',5e9,-4],['APT',4e9,-4]];
+ await ctx.route('**/api.coingecko.com/**',r=>{const u=r.request().url(),J=b=>r.fulfill({status:200,headers:{'content-type':'application/json','access-control-allow-origin':'*'},body:JSON.stringify(b)});
+   if(/\/global/.test(u))return J({data:{total_market_cap:{usd:3.2e12},market_cap_change_percentage_24h_usd:-2.5,market_cap_percentage:{btc:57.5,eth:12.1,usdt:5.2}}});
+   if(/coins\/markets/.test(u))return J(CG.map(([s,c,ch])=>({symbol:s.toLowerCase(),market_cap:c,market_cap_change_percentage_24h:ch})));
+   if(/tether\/market_chart/.test(u)){const D=864e5,n=Date.now();return J({market_caps:Array.from({length:131},(_,i)=>[n-(130-i)*D,1.5e11+i*1.25e8])});}
+   return r.fallback();});
  const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
  await p.addInitScript(seed);await p.goto('http://localhost:8899/index.html');await p.waitForTimeout(3000);
 
@@ -41,7 +48,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const m=await p.evaluate(()=>{
    // نمونه‌های ساختگی: «خرید تهاجمی» (ستون 13) لانگ را پیش‌بینی می‌کند، بقیه نویز
    let rnd=7;const R=()=>{rnd=(rnd*9301+49297)%233280;return rnd/233280;};
-   const F=RD_FEAT.length,ti=RD_FEAT.indexOf('taker'),H=36e5,t0=Date.now()-3000*H,SS=[];
+   const F=RD_F0,ti=RD_FEAT.indexOf('taker'),H=36e5,t0=Date.now()-3000*H,SS=[];
    for(const tk of ['A','B','C']){const t=[],X=[],Rr={long:[],short:[]},J={long:[],short:[]},G=[];
      for(let i=0;i<1400;i++){const x=Array.from({length:F},()=>R()*2-1);x[F-1]=x[F-2]=0;const tt=t0+i*2*H;
        const pw=1/(1+Math.exp(-(2.2*x[ti]-0.3)));const win=R()<pw;
@@ -139,6 +146,15 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(full.M&&full.cal>0&&full.rel&&full.pan,'مدل لانگ و شورت، کارنامه، صداقت مدل و پنل ساخته شد');
  ok(full.eth&&full.eth.flow&&full.eth.wl>50&&full.sol===false&&full.nflow===2,'ETH با داده‌ی نهنگ/مردم؛ SOL بی فیوچرز');
  ok(full.auto===full.sig,'همه‌ی پیشنهادهای 70+ در «دفتر پیشنهادها» ثبت شد ('+full.auto+')');
+ const mk2=await p.evaluate(()=>{const r=mdMetrics(MD);RDV='sig';bucket='live';sigFilter='mkt';paintGlance();const G=document.getElementById('glance');
+   const tiles=[...G.querySelectorAll('.mdt')].map(x=>x.textContent);sigFilter='now';paintGlance();const now=!!document.querySelector('#glance .mdbox');sigFilter='mkt';paintGlance();
+   return {r,tiles,flags:[...G.querySelectorAll('.mdbox .flag')].map(x=>x.textContent),now,mf:RDMF.size,w:RD.M&&RD.M.long.w.length,last:RD.mk7&&{tot:RD.mk7.tot.slice(-1)[0],bd:RD.mk7.bd.slice(-1)[0],ud:RD.mk7.ud.slice(-1)[0],n:RD.mk7.tot.length},mkl:RD.mkl,
+     mrow:[...RDMF.values()].slice(-1)[0]};});
+ console.log('   ',JSON.stringify(mk2).slice(0,900));
+ ok(mk2.r&&Math.abs(mk2.r.t3[0]-3.2e12*(1-0.575-0.121))<1e6&&mk2.r.bd[1]>0.3&&mk2.r.ud[1]>0.1&&mk2.r.t3[1]<mk2.r.tot[1],'TOTAL3 = بی BTC و ETH؛ دامیننس بیت‌کوین و تتر بالا رفت، آلت‌ها ضعیف‌تر');
+ ok(mk2.tiles.length===6&&/TOTAL3/.test(mk2.tiles.join())&&/USDT\.D/.test(mk2.tiles.join())&&/\$3\.20T/.test(mk2.tiles[0])&&/57\.50%/.test(mk2.tiles[3])&&mk2.now,'شش کارت جدا: TOTAL، TOTAL2، TOTAL3، BTC.D، USDT.D، ETH.D (در «بازار» و «الان چه کنم؟»)');
+ ok(mk2.flags.some(x=>/پول به تتر فرار/.test(x))&&mk2.flags.some(x=>/روز آلت‌کوین نیست/.test(x)),'خوانش: فرار به تتر و ضعف آلت‌ها');
+ ok(mk2.mf>2000&&mk2.w===23&&mk2.last&&Math.abs(mk2.last.tot/3.2e12-1)<0.001&&Math.abs(mk2.last.bd-57.5)<0.01&&mk2.last.n>40&&mk2.mrow.length===5,'تاریخچه‌ی ساعتی کل بازار بازسازی شد ('+mk2.mf+' ساعت)، ساعت آخر = CoinGecko؛ 5 عامل بازار در مدل');
  const R0=Object.assign({},REQ);
  const more=await p.evaluate(async()=>{await rdScan('more');return {n:RD.n,rank:RD.rank.length,uni:RD.rank.includes('UNI')&&RD.rank.includes('APT')};});
  const d=k=>(REQ[k]||0)-(R0[k]||0);

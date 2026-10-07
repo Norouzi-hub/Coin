@@ -81,7 +81,7 @@ function paintGlance(){
   {
     h+='<div class="glb">';
     if(d.lock)h+='<div class="flag d"><i>!</i><span>'+faN(d.lock.n)+' باخت پیاپی — تا فردا ورود تازه نه.</span></div>';
-    {const dirs={long:0,short:0};for(const x of d.take)dirs[x.dir]++;h+=mktHtml(MKT,dirs);}
+    {const dirs={long:0,short:0};for(const x of d.take)dirs[x.dir]++;h+=mktHtml(MKT,dirs)+mdHtml();}
     if(d.nL+d.nS)h+='<div class="hint gldir">کانال در 30 روز اخیر: <b class="u">'+faN(d.nL)+' لانگ</b> · <b class="d">'+faN(d.nS)+' شورت</b>'+
       (d.nS<d.nL*0.15?' — کانال تقریباً فقط لانگ می‌دهد؛ شورت را «پیشنهاد برنامه» (شکست کف، تقاطع نزولی) پیدا می‌کند.':'')+'</div>';
     const list=GLALL?d.take:d.take.slice(0,GLMAX);

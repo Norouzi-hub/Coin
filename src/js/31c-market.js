@@ -234,3 +234,83 @@ function regimeTableHtml(rows){
     else if(ra>=rb)note='<div class="hint">لانگ‌های کانال در روزهای نزولی هم بدتر نبوده‌اند ('+fmtR(ra)+' در برابر '+fmtR(rb)+').</div>';}
   return html+note;
 }
+
+/* ---- ۴) کل بازار و دامیننس‌ها (CoinGecko) ----
+   TOTAL = ارزش کل بازار رمزارز، TOTAL2 = بی بیت‌کوین، TOTAL3 = بی بیت‌کوین و اتریوم (آلت‌ها)،
+   دامیننس بیت‌کوین، اتریوم و تتر (سهم از TOTAL). تغییر 24 ساعته از تغییر ارزش بازار هر کدام.
+   تاریخچه‌ی ساعتی‌شان (برای مدل رادار و نمودار 7 روزه) در 31e-radar.js از کندل‌ها بازسازی می‌شود. */
+const MDKEY='signaldesk.dom.v1', MD_TTL=15*60000;
+let MD=lsGet(MDKEY)||null, MDTRY=0, MDBUSY=null;
+async function mdLoad(force){
+  if(!force&&MD&&Date.now()-MD.at<MD_TTL)return MD;
+  if(MDBUSY)return MDBUSY;
+  MDBUSY=(async()=>{
+    try{
+      const opt=(l,v)=>({json:true,timeout:12000,kind:'px',quiet:true,label:l,validate:v});
+      const [g,mk]=await Promise.all([
+        fetchVia('https://api.coingecko.com/api/v3/global',opt('کل بازار (CoinGecko)',d=>!!(d&&d.data&&d.data.total_market_cap))),
+        fetchVia('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=150&page=1',
+          opt('ارزش بازار (CoinGecko)',d=>Array.isArray(d)&&d.length>=10)).catch(()=>null)]);
+      const G=g.data.data, caps={};
+      if(mk)for(const x of mk.data){const s=String(x.symbol||'').toUpperCase();if(!caps[s]&&+x.market_cap>0)caps[s]=[+x.market_cap,+x.market_cap_change_percentage_24h||0];}
+      const P=G.market_cap_percentage||{};
+      MD={at:Date.now(),tot:+G.total_market_cap.usd,totC:+G.market_cap_change_percentage_24h_usd||0,pct:{btc:+P.btc||0,eth:+P.eth||0,usdt:+P.usdt||0},
+        caps:mk?caps:(MD&&MD.caps)||{}};
+      lsSet(MDKEY,MD);
+      if(mk){RDCAP={at:Date.now(),list:mk.data.map(x=>String(x.symbol||'').toUpperCase())};lsSet(RDCAP_KEY,RDCAP);}
+    }catch(e){}
+    return MD;
+  })();
+  try{return await MDBUSY;}finally{MDBUSY=null;}
+}
+/* تابع خالص: الان و تغییر 24 ساعته؛ ارزش به دلار و تغییرش به درصد، دامیننس به درصد و تغییرش به «واحد درصد» */
+function mdMetrics(M){
+  if(!M||!(M.tot>0)||!M.pct||!(M.pct.btc>0))return null;
+  const ago=(v,c)=>v/(1+c/100), T=M.tot, T0=ago(T,M.totC), cp=s=>M.caps&&M.caps[s]?M.caps[s][1]:null;
+  const B=T*M.pct.btc/100, E=T*M.pct.eth/100, U=T*M.pct.usdt/100;
+  const B0=cp('BTC')!=null?ago(B,cp('BTC')):null, E0=cp('ETH')!=null?ago(E,cp('ETH')):null, U0=cp('USDT')!=null?ago(U,cp('USDT')):null;
+  return {tot:[T,M.totC],
+    t2:[T-B,B0!=null?((T-B)/(T0-B0)-1)*100:null],
+    t3:[T-B-E,B0!=null&&E0!=null?((T-B-E)/(T0-B0-E0)-1)*100:null],
+    bd:[M.pct.btc,B0!=null?M.pct.btc-B0/T0*100:null],
+    ed:[M.pct.eth,E0!=null?M.pct.eth-E0/T0*100:null],
+    ud:[M.pct.usdt,U0!=null?M.pct.usdt-U0/T0*100:null]};
+}
+const fmtCap=v=>v>=1e12?'$'+(v/1e12).toFixed(2)+'T':v>=1e9?'$'+(v/1e9).toFixed(0)+'B':'$'+fmtNum(v);
+/* خوانش ساده: پول کجا می‌رود؟ */
+function mdRead(r){
+  const s=[];if(!r)return s;
+  if(r.ud[1]!=null&&r.ud[1]>=0.1&&r.tot[1]<0)s.push(['w','دامیننس تتر بالا رفت و کل بازار پایین آمد: پول به تتر فرار می‌کند (فشار فروش).']);
+  else if(r.ud[1]!=null&&r.ud[1]<=-0.1&&r.tot[1]>0)s.push(['u','دامیننس تتر پایین آمد و کل بازار بالا رفت: پول تازه از تتر وارد بازار می‌شود.']);
+  if(r.bd[1]!=null&&r.t3[1]!=null){
+    if(r.bd[1]>=0.2&&r.t3[1]<r.tot[1])s.push(['w','دامیننس بیت‌کوین بالا رفت و آلت‌ها (TOTAL3) از کل بازار ضعیف‌ترند: روز آلت‌کوین نیست؛ لانگ آلت ریسکی‌تر است.']);
+    else if(r.bd[1]<=-0.2&&r.t3[1]>r.tot[1])s.push(['u','دامیننس بیت‌کوین پایین آمد و آلت‌ها (TOTAL3) قوی‌ترند: پول به آلت‌کوین‌ها می‌رود.']);}
+  return s;
+}
+const mdSpark=(a,cl)=>{if(!a||a.length<3)return '';const lo=Math.min(...a),hi=Math.max(...a),d=hi-lo||1;
+  return '<svg class="mdsp '+cl+'" viewBox="0 0 60 18" preserveAspectRatio="none"><polyline fill="none" stroke="currentColor" stroke-width="1.5" points="'+
+    a.map((v,i)=>(i/(a.length-1)*60).toFixed(1)+','+(16-(v-lo)/d*14).toFixed(1)).join(' ')+'"/></svg>';};
+function mdHtml(){
+  if((!MD||Date.now()-MD.at>MD_TTL)&&Date.now()-MDTRY>120000){MDTRY=Date.now();const was=MD&&MD.at;
+    mdLoad().then(m=>{if(m&&m.at!==was&&view==='signals')paintGlance();}).catch(()=>{});}
+  const r=mdMetrics(MD);
+  if(!r)return '<div class="mdbox"><div class="hint">'+(Date.now()-MDTRY<15000?'در حال گرفتن TOTAL و دامیننس‌ها از CoinGecko…':'TOTAL و دامیننس‌ها نیامد (CoinGecko در دسترس نبود).')+'</div></div>';
+  const S=typeof RD!=='undefined'&&RD.mk7||{};
+  // رنگ: برای ارزش بازار بالا = سبز؛ برای دامیننس تتر بالا = قرمز (پول از بازار بیرون)؛ دامیننس بیت‌کوین بالا = زرد (برای آلت‌ها بد)
+  const T=[['tot','TOTAL','کل بازار',0],['t2','TOTAL2','بی بیت‌کوین',0],['t3','TOTAL3','آلت‌کوین‌ها',0],
+    ['bd','BTC.D','دامیننس بیت‌کوین',1],['ud','USDT.D','دامیننس تتر',1],['ed','ETH.D','دامیننس اتریوم',1]];
+  // اگر تغییر 24 ساعته‌ی بیت‌کوین/اتریوم/تتر نیامد، از تاریخچه‌ی بازسازی‌شده‌ی رادار
+  const K2={t2:'t2c',t3:'t3c',bd:'bdD',ud:'udD'}, ML=typeof RD!=='undefined'&&RD.mkl;
+  const tile=([k,n,fa,dom])=>{let [v,c]=r[k];if(c==null&&ML&&K2[k]&&ML[K2[k]]!=null)c=ML[K2[k]];
+    const col=c==null?'':k==='ud'?(c>0.03?'d':c<-0.03?'u':''):k==='bd'?(c>0.1?'w':c<-0.1?'u':''):cls(c);
+    return '<div class="mdt"><div class="mdn"><b dir="ltr">'+n+'</b><small>'+fa+'</small></div><div class="mdv" dir="ltr">'+(dom?v.toFixed(2)+'%':fmtCap(v))+'</div>'+
+      '<div class="mdc"><b class="'+col+'" dir="ltr">'+(c==null?'—':(c>0?'+':c<0?'−':'')+Math.abs(c).toFixed(2)+(dom?'':'%'))+'</b><small>'+(dom?'واحد در 24h':'در 24h')+'</small>'+mdSpark(S[k],col)+'</div></div>';};
+  let h='<div class="mdbox"><div class="mkh"><b>'+ic('coin')+'کل بازار و دامیننس‌ها</b><small>'+ageTxt(MD.at)+'</small></div><div class="mdgrid">'+T.map(tile).join('')+'</div>';
+  for(const [c,t] of mdRead(r))h+='<div class="flag '+c+'"><i>'+(c==='u'?'✓':'!')+'</i><span>'+t+'</span></div>';
+  h+='<details class="mkwhy"><summary>این‌ها چیست؟</summary><div class="hint"><b>TOTAL</b> ارزش کل بازار رمزارز است؛ <b>TOTAL2</b> همان بدون بیت‌کوین؛ <b>TOTAL3</b> بدون بیت‌کوین و اتریوم، یعنی آلت‌کوین‌ها. '+
+    '<b>BTC.D</b> سهم بیت‌کوین از TOTAL است: بالا رفتنش یعنی پول به سمت بیت‌کوین می‌رود و آلت‌ها معمولاً ضعیف‌ترند. '+
+    '<b>USDT.D</b> سهم تتر است: بالا رفتنش یعنی مردم می‌فروشند و تتر نگه می‌دارند (نزولی)، پایین آمدنش یعنی تتر خرج خرید می‌شود (صعودی). '+
+    'تغییر دامیننس به «واحد درصد» است (مثلاً 58.10٪ ← 58.40٪ = +0.30). نمودار کوچک: 7 روز اخیر (بعد از بررسی رادار). منبع CoinGecko؛ با TradingView کمی فرق دارد چون فهرست ارزهایشان یکی نیست. '+
+    'رادار این‌ها را به‌عنوان عامل هم می‌سنجد.</div></details></div>';
+  return h;
+}

@@ -1630,4 +1630,12 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rdpt{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:12px}
 .rdpp{font-size:15px;min-width:42px}.rdps{flex:1 1 160px;color:var(--tx2)}
 .rdtm{display:inline-flex;align-items:center;gap:4px;color:var(--tx3);font-size:11.5px}.rdtm svg{width:13px;height:13px}
+.mdbox{display:flex;flex-direction:column;gap:6px;padding:9px 10px;border-radius:12px;background:var(--inset);border:1px solid var(--line)}
+.mdgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.mdt{display:flex;flex-direction:column;gap:2px;padding:6px 7px;border-radius:9px;background:var(--card);min-width:0}
+.mdn{display:flex;flex-direction:column;line-height:1.25}.mdn b{font-size:12px}.mdn small{font-size:9.5px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mdv{font-size:13.5px;font-weight:800;text-align:start}
+.mdc{display:flex;flex-wrap:wrap;align-items:center;gap:0 4px;font-size:11px}.mdc small{font-size:9.5px;color:var(--tx3)}
+.mdc .u{color:var(--up)}.mdc .d{color:var(--dn)}.mdc .w{color:var(--warn)}
+.mdsp{width:100%;height:16px;color:var(--tx3)}.mdsp.u{color:var(--up)}.mdsp.d{color:var(--dn)}.mdsp.w{color:var(--warn)}
 
