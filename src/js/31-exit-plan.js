@@ -173,7 +173,7 @@ function buildShortLab(rows){
       '<div class="afrow"><span class="aflab">سقف زمان</span>'+chips(XH_FA,'h',h)+'</div>'+
       '<div class="tscroll"><table class="tp xtab"><thead><tr><th>خروج با سود</th><th>سیگنال</th><th>برد</th><th>جمع</th><th>میانگین</th><th>نگه‌داری</th></tr></thead><tbody>'+
       XT.map((t,ti)=>{const s=xStat(G,k,ti,h), mine=MR&&MR.k===k&&MR.h===h&&MR.t===ti;
-        return '<tr class="tap'+(best&&best.ki===k&&best.hi===h&&best.ti===ti?' on':'')+(mine?' mine':'')+'" data-t="'+ti+'"><td>'+XT_FA[ti]+(mine?' <span class="pill gold">قاعده‌ی من</span>':'')+'</td><td class="num">'+faN(s.n)+'</td><td class="num">'+(s.win==null?'—':faN(Math.round(s.win))+'٪')+
+        return '<tr class="tap'+(best&&best.ki===k&&best.hi===h&&best.ti===ti?' on':'')+(mine?' mine':'')+'" data-t="'+ti+'"><td>'+XT_FA[ti]+(s.n?lowN(s.n):'')+(mine?' <span class="pill gold">قاعده‌ی من</span>':'')+'</td><td class="num">'+faN(s.n)+'</td><td class="num">'+(s.win==null?'—':faN(Math.round(s.win))+'٪')+
         '</td><td class="num '+cls(s.sum)+'"><bdi>'+(s.n?fmtR(s.sum):'—')+'</bdi></td><td class="num"><bdi>'+(s.avg==null?'—':fmtR(s.avg))+'</bdi></td><td class="num">'+(s.hold==null?'—':fmtNum(s.hold)+' س')+'</td></tr>';}).join('')+
       '</tbody></table></div>'+
       '<div class="hint">روی هر ردیف بزن تا همان (با استاپ و سقف زمانِ بالا) «قاعده‌ی من» شود؛ روی هر کارت سیگنال آماده می‌آید.</div>'+

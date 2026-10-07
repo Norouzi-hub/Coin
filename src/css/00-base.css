@@ -1512,3 +1512,6 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .xbest.mine{border-color:color-mix(in srgb,var(--gold) 45%,transparent)}
 .pill.ltp{border-style:dashed}
 .whyrow{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
+.lown{display:inline-block;font-size:10px;font-weight:700;color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 55%,transparent);
+  border-radius:6px;padding:0 4px;margin-inline-start:4px;vertical-align:1px;white-space:nowrap}
+.btcref b.u{color:var(--up)}.btcref b.d{color:var(--dn)}

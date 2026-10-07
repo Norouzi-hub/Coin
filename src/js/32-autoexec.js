@@ -619,6 +619,7 @@ function renderAudit(){
 
   // ترتیب به اهمیت برای هدفِ «خروج کوتاه در ایزوله»: خروج، بعد افت پیش از سود
   safe('خروج',()=>buildExitPanel(rows));
+  safe('سرمایه و الگوها',()=>buildInsights(rows));
   safe('نوسان‌سنج',()=>buildSwingPanel(rows));
   safe('شما در برابر کانال',()=>buildVsChannel(rows));
   safe('صحت‌سنجی',()=>buildVerify(all));
