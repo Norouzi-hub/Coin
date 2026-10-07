@@ -1,5 +1,6 @@
 /* رادار بازار v3: عامل‌ها، مدل لجستیک، کارنامه‌ی صادق، بارگذاری ده‌تایی، معامله‌ی آزمایشی و دفتر پیشنهادها */
 const {pw}=require('./lib');const {chromium}=pw;const {route,seed}=require('./fixture');
+const RD_EXN_OK=f=>['tp','lad','trl'].includes(f.exP)&&f.exs&&f.extab;
 let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);};
 (async()=>{
  const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:900}});await route(ctx);
@@ -107,7 +108,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
 
  console.log('=== معامله‌ی آزمایشی ===');
  const T30=Date.now()-30*36e5;PXN['XRP:5m']=t=>t<T30+5*36e5?2:1.9;
- const bk=await p.evaluate(async(t0)=>{RB.items=[];
+ const bk=await p.evaluate(async(t0)=>{RB.items=[];RBEX='tp';   // این بخش: نقشه‌ی «هدف ثابت»
    document.querySelector('#glance .rdit[data-rd="RDB"] [data-a="test"]').click();
    const it=RB.items[0], tab=[...document.querySelectorAll('#glance [data-rdv]')].map(x=>x.textContent).join(',');
    const dup=rbAdd('test',rdList().find(x=>x.tk==='RDB'));
@@ -129,6 +130,33 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(bk.i3.st==='sl'&&bk.i3.R<-1&&bk.i3.xt>5*36e5&&bk.i3.xt<6*36e5,'برنامه بسته بود: از کندل 5 دقیقه‌ای استاپ خورده پیدا شد ('+bk.i3.R+'R)');
  ok(bk.rows===3&&/نتیجه3 بسته/.test(bk.txt)&&/پولی در کار نیست/.test(bk.txt),'زیرتب آزمایشی: جمع‌بندی و 3 ردیف');
 
+ console.log('=== نقشه‌ی خروج: سیو سود ===');
+ const T3=Date.now()-3*36e5;PXN['XRP:5m']=t=>t<T3+36e5?2:t<T3+2*36e5?2.06:1.99;
+ const ex=await p.evaluate(async(t3)=>{RB.items=[];const PL=rdExPlans();
+   // پله‌ای: نصف در +1R، استاپ به ورود؛ یک‌چهارم در +2R، استاپ به +1R؛ برگشت به +1R ← باقی همان‌جا
+   const L=exNew();exStep(L,PL.lad,1.05,0.2);const a1={k:L.k,rem:L.rem,stop:L.stop};exStep(L,PL.lad,2.1,1.5);const a2={k:L.k,rem:L.rem,stop:L.stop};
+   const e1=exStep(L,PL.lad,2.2,0.9);
+   // متحرک: نصف در +1R؛ بیشترین سود +3R ← استاپ +2R؛ برگشت ← باقی در +2R
+   const T=exNew();exStep(T,PL.trl,1.2,0.3);exStep(T,PL.trl,3,2.5);const ts=T.stop;const e2=exStep(T,PL.trl,2.6,1.9);
+   // تست زنده با «پله‌ای»: +1R ← سیو 50٪ و استاپ به ورود؛ برگشت به ورود ← بسته با سودِ همان نصف
+   RBEX='lad';PRICES.set('RDB',11);const it=rbAdd('test',rdList().find(x=>x.tk==='RDB'),true);
+   PRICES.set('RDB',11*1.0205);rbCheck();const s1={k:it.x.k,rem:it.x.rem,st:it.st,live:rbLiveR(it,11*1.0205)};
+   RDV='test';paintGlance();const mid=document.getElementById('glance').textContent;
+   PRICES.set('RDB',10.999);rbCheck();
+   // معامله‌ی بازِ قدیمی (بی نقشه، 3 ساعت پیش): از لحظه‌ی ورود با کندل 5 دقیقه‌ای و نقشه‌ی تازه دوباره حساب می‌شود
+   const old={id:'old1',k:'test',tk:'XRP',dir:'long',t:t3,E:2,SL:1.95,TP:2.075,sd:0.025,rr:1.5,be:false,st:'open'};RB.items.push(old);
+   const n=rbReplan(null,true);await rbCatchUp(true);
+   paintGlance();const G=document.getElementById('glance');
+   return {a1,a2,e1,ladR:L.acc,ts,e2,trR:T.acc,s1,mid,it:{st:it.st,R:it.R},n,old:{ex:old.ex,st:old.st,R:old.R,k:old.x&&old.x.k},
+     pick:(G.querySelector('.rbex')||{}).textContent||''};},T3);
+ console.log('   ',JSON.stringify(Object.assign({},ex,{mid:ex.mid.slice(0,200),pick:ex.pick.slice(0,160)})));
+ ok(ex.a1.k===1&&ex.a1.rem===0.5&&ex.a1.stop===0&&ex.a2.k===2&&ex.a2.stop===1&&ex.e1&&Math.abs(ex.ladR-1.25)<1e-9,'پله‌ای: نصف در +1R (استاپ ورود)، یک‌چهارم در +2R (استاپ +1R)، باقی در +1R ← +1.25R');
+ ok(ex.ts===2&&ex.e2&&Math.abs(ex.trR-1.5)<1e-9,'متحرک: نصف در +1R، استاپ 1R پشت بیشترین سود (+3R ← +2R)، باقی در +2R ← +1.5R');
+ ok(ex.s1.k===1&&ex.s1.rem===0.5&&ex.s1.st==='open'&&/سیو شد 50٪/.test(ex.mid),'تست زنده: در +1R نصف سیو شد و معامله باز ماند');
+ ok(ex.it.st==='be'&&ex.it.R>0.3&&ex.it.R<0.5,'برگشت به ورود: بسته با سود همان نصف ('+ex.it.R+'R) — قبلاً صفر می‌شد');
+ ok(ex.n>=1&&ex.old.ex==='lad'&&ex.old.k===1&&ex.old.st==='be'&&ex.old.R>0.3,'معامله‌ی باز قدیمی با نقشه‌ی تازه از لحظه‌ی ورود دوباره حساب شد ('+ex.old.st+' '+ex.old.R+'R)');
+ ok(/نقشه‌ی خروج/.test(ex.pick)&&/خودکار/.test(ex.pick)&&/استاپ متحرک/.test(ex.pick),'انتخاب نقشه‌ی خروج در «آزمایشی»');
+
  console.log('=== بررسی کامل: ده‌تا‌ده‌تا، IndexedDB، دفتر پیشنهادها ===');
  const full=await p.evaluate(async()=>{RB.items=[];RD=rdEmpty();RDS.clear();RDV='sig';
    RDCAP={at:Date.now(),list:['BTC','ETH','SOL','XRP','ADA','DOGE','DOT','LINK','AVAX','NEAR','UNI','APT']};
@@ -140,11 +168,12 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    return {ms,n:RD.n,rank:RD.rank.length,nflow:RD.nflow,M:!!(RD.M&&RD.M.long&&RD.M.short),cal:Object.keys(RD.calib).length,rel:!!RD.rel,
      eth:RD.coins.ETH&&{wl:RD.coins.ETH.wl,flow:RD.coins.ETH.flow,sc:RD.coins.ETH.sc},sol:RD.coins.SOL&&RD.coins.SOL.flow,
      rows:st&&st.rows.length,flow:fl&&fl.top&&fl.top.length,pan:!!document.querySelector('#glance .rdpan'),
-     auto:RB.items.filter(i=>i.k==='auto').length,sig:rdList().filter(x=>x.dir!=='wait').length,seen:seen.filter((x,i)=>i%5===0),gone:!document.getElementById('rdProgBox')};});
+     exP:RD.ex,exs:!!(RD.exs&&RD.exs.lad&&RD.exs.lad.all),extab:!!document.querySelector('#glance .rdex'),auto:RB.items.filter(i=>i.k==='auto').length,sig:rdList().filter(x=>x.dir!=='wait').length,seen:seen.filter((x,i)=>i%5===0),gone:!document.getElementById('rdProgBox')};});
  console.log('   ',JSON.stringify(full),JSON.stringify(REQ));
  ok(full.seen.length>2&&full.seen.every(x=>/\d+٪/.test(x)&&/\d:\d\d/.test(x))&&full.seen.some(x=>/ارز \d+ از 10/.test(x))&&full.gone,'نوار پیشرفت: درصد، کار الان و تایمر؛ آخر کار برداشته شد');
  ok(full.n===10&&full.rank===10,'بار اول فقط 10 ارز اول ('+full.rank+')، در '+full.ms+'ms');
  ok(full.rows>=2990&&full.flow>=490,'تاریخچه در IndexedDB: '+full.rows+' کندل یک‌ساعته، '+full.flow+' ساعت جریان پول');
+ ok(RD_EXN_OK(full),'سه نقشه‌ی خروج بیرون از یادگیری سنجیده شد؛ بهترین: '+full.exP);
  ok(full.M&&full.cal>0&&full.rel&&full.pan,'مدل لانگ و شورت، کارنامه، صداقت مدل و پنل ساخته شد');
  ok(full.eth&&full.eth.flow&&full.eth.wl>50&&full.sol===false&&full.nflow===2,'ETH با داده‌ی نهنگ/مردم؛ SOL بی فیوچرز');
  ok(full.auto===full.sig,'همه‌ی پیشنهادهای 70+ در «دفتر پیشنهادها» ثبت شد ('+full.auto+')');

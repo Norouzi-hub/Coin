@@ -640,7 +640,7 @@ function sheetEnter(p,sig,ov,px,opt){
   // اهرمی که کانال گفته یا خودت روی سیگنال گذاشته‌ای، دستی می‌نشیند؛ وگرنه خودکار
   const lev0=I0.spot?null:(I0.lev>0?Math.min(I0.lev,S.maxLev):null);
   // ورود ایزوله فقط «قاعده‌ی من» را دارد (یک هدف)؛ نقشه‌ی پله‌ای برای ورود معمولی است
-  let pbSel=opt.iso?'s1':pbDefault();
+  let pbSel=opt.pb||(opt.iso?'s1':pbDefault());
   const maxMargin=Math.ceil(Math.max(amt0*2,S.cap*4,...AMT_CHIPS,Math.min(S.acct,1000)));
   const spot=()=>MK==='spot';
   let VOL=null;

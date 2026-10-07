@@ -12,6 +12,7 @@ const PB={
   s2:{n:'اسکلپ · تارگت 2',d:'همه در تارگت دوم؛ استاپ سر جایش می‌ماند.',parts:[0,1],be:0,trail:false},
   bal:{n:'متعادل',d:'نصف در تارگت اول و استاپ به ورود؛ باقی در تارگت دوم.',parts:[.5,.5],be:1,trail:false},
   sw:{n:'سوئینگ پله‌ای',d:'در هر تارگت سهمی مساوی؛ استاپ پله‌پله پشت قیمت می‌آید.',parts:'eq',be:1,trail:true},
+  rd:{n:'رادار · سیو سود پله‌ای',d:'نصف در +1R و استاپ به ورود؛ یک‌چهارم در +2R و استاپ به +1R؛ باقی در +3R.',parts:[.5,.25,.25],be:1,trail:true},
   cu:{n:'دلخواه',d:'درصد هر تارگت و قانون استاپ را خودت می‌چینی.'}
 };
 const PB_IDS=['s1','s2','bal','sw','cu'];
@@ -350,7 +351,7 @@ function closePartAt(p,price,frac,label,at){
 }
 function pbPicker(cur,onPick){
   const w=el('div','pbpick');
-  for(const id of PB_IDS){
+  for(const id of PB_IDS.includes(cur)||!PB[cur]?PB_IDS:[cur].concat(PB_IDS)){
     const b=el('button','pbc'+(id===cur?' on':''),esc(pbDef(id).n));
     b.type='button';b.title=pbDef(id).d;b.setAttribute('aria-pressed',id===cur?'true':'false');
     b.onclick=()=>onPick(id);
