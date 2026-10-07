@@ -1515,3 +1515,14 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .lown{display:inline-block;font-size:10px;font-weight:700;color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 55%,transparent);
   border-radius:6px;padding:0 4px;margin-inline-start:4px;vertical-align:1px;white-space:nowrap}
 .btcref b.u{color:var(--up)}.btcref b.d{color:var(--dn)}
+.goalbar{margin:10px 0}
+.goalbar .gl{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--tx2);margin-bottom:6px}
+.goalbar .gl b{color:var(--tx)}
+.goalbar .gb{height:10px;border-radius:99px;background:var(--inset);border:1px solid var(--line);overflow:hidden}
+.goalbar .gb i{display:block;height:100%;border-radius:99px}
+.goalbar .gb i.u{background:linear-gradient(90deg,color-mix(in srgb,var(--up) 60%,transparent),var(--up))}
+.goalbar .gb i.d{background:var(--dn)}
+.daystrip{display:grid;grid-template-columns:repeat(30,1fr);gap:3px;direction:ltr;margin:4px 0 10px}
+.daystrip i{aspect-ratio:1;border-radius:3px;background:var(--inset);border:1px solid var(--line)}
+.daystrip i.u{background:var(--up);border-color:transparent}.daystrip i.d{background:var(--dn);border-color:transparent}
+.whyagg{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}

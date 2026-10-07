@@ -108,6 +108,7 @@ function renderReportList(){
   head.appendChild(equityCurve(inRange));
   head.appendChild(rDist(inRange));
   body.appendChild(head);
+  body.appendChild(buildBehavior(inRange));
   body.appendChild(journalPanel(inRange));
 
   for(const k of keys){

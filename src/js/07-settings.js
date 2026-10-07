@@ -54,7 +54,7 @@ function applySettingsToForm(){
   $('#sSlip').value=S.slip; $('#sFund').value=S.fund; $('#sOpenRisk').value=S.openRisk;
   $('#sRiskUsd').value=S.riskUsd>0?S.riskUsd:''; $('#sIsoSd').value=S.isoMaxSd||15;
   $('#sBeAt').value=S.beAt>0?S.beAt:''; $('#sTrail').value=S.trail>0?S.trail:''; $('#sMaxHold').value=S.maxHold>0?S.maxHold:'';
-  $('#sLossLock').value=S.lossLock!=null?S.lossLock:2; $('#sMaxOpen').value=S.maxOpen!=null?S.maxOpen:3;
+  $('#sGoal').value=S.goal>0?S.goal:''; $('#sLossLock').value=S.lossLock!=null?S.lossLock:2; $('#sMaxOpen').value=S.maxOpen!=null?S.maxOpen:3;
 }
 function readSettings(){
   const prevCh=S.channel, prevAuto=S.auto, prevProxy=S.proxy;
@@ -85,7 +85,7 @@ function readSettings(){
   S.isoMaxSd=Math.min(60,Math.max(1,parseFloat($('#sIsoSd').value)||15));
   {const n=(id,mx)=>{const v=parseFloat(normDig($(id).value||''));return v>0?Math.min(mx,v):0;};
    S.beAt=n('#sBeAt',50);S.trail=n('#sTrail',50);S.maxHold=n('#sMaxHold',720);
-   S.lossLock=Math.round(n('#sLossLock',10));S.maxOpen=Math.round(n('#sMaxOpen',50));}
+   S.goal=n('#sGoal',1000);S.lossLock=Math.round(n('#sLossLock',10));S.maxOpen=Math.round(n('#sMaxOpen',50));}
   S.auto=parseInt($('#sAuto').value)||0;
   S.staleDays=Math.min(60,Math.max(1,parseInt($('#sStale').value,10)||7));
   S.exitPb=$('#sPb').value||'bal';
