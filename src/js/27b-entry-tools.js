@@ -147,5 +147,7 @@ function buildIsoBox(p,sig,ov,px){
   }
   const h=histLine(p);
   if(h)w.appendChild(el('div','xrline hist','<b>سابقه</b><span>'+h+'</span>'));
+  // رویدادهای همین ارز (شکست کف/سقف، تقاطع MA، حرکت ناگهانی) نسبت به جهت سیگنال — 31c-market.js
+  if(sig.ticker&&!decisionOf(p.id)){const f=mkEvFlag(sig.ticker,I.dir);if(f)w.appendChild(f);}
   return w.childNodes.length?w:null;
 }

@@ -42,6 +42,7 @@ function glSigHtml(x,i){
     (now?'<div class="glnum">'+now+'</div>':'')+
     (pl?'<div class="glnum">قاعده‌ی من: '+esc(xRuleName(pl.r))+' · هدف <b dir="ltr">'+fmtPrice(pl.tp)+'</b></div>':'')+
     (hl?'<div class="glnum glh2">سابقه: '+hl+'</div>':'')+
+    (()=>{const e=mkEvPills(x.tk,x.dir);return e?'<div class="glnum">'+e+'</div>':'';})()+
     '<div class="glact">'+
       (z?'<button class="btn sm ok" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
       '<button class="btn sm'+(z?'':' ok')+'" data-a="form">'+(z?'فرم کامل':'بررسی و ورود')+'</button>'+
@@ -53,14 +54,19 @@ function paintGlance(){
   const g=$('#glance');if(!g)return;
   if(view!=='signals'||bucket!=='live'||!POSTS.length){g.innerHTML='';return;}
   const d=glanceData();
-  if(!d.take.length&&!d.dl&&!d.unread&&!d.lock&&!d.late&&!d.lt){g.innerHTML='';return;}
+  // حال بازار هر ۱۵ دقیقه؛ رسیدنش دوباره می‌کشد
+  // اگر نیامد، حداکثر هر دو دقیقه یک بار؛ فقط وقتی داده‌ی تازه رسید دوباره می‌کشد (نه حلقه)
+  if((!MKT||Date.now()-MKT.at>MK_TTL)&&Date.now()-MKTRY>120000){MKTRY=Date.now();const was=MKT&&MKT.at;
+    mktLoad().then(m=>{if(m&&m.at!==was&&view==='signals')paintGlance();}).catch(()=>{});}
+  if(!d.take.length&&!d.dl&&!d.unread&&!d.lock&&!d.late&&!d.lt&&!MKT){g.innerHTML='';return;}
   g.className='glance'+(GLSHUT?' shut':'');
   let h='<button class="glh" type="button"><b>'+ic('bolt')+'الان چه کنم؟</b><span>'+
     [d.take.length?faN(d.take.length)+' سیگنال قابل گرفتن':'سیگنال قابل گرفتنی نیست',d.dl?'مهلت '+d.dl.p.ticker+': '+(d.dl.t<=Date.now()?'گذشت':fmtLeft(d.dl.t-Date.now())):'',
-     d.unread?faN(d.unread)+' پیشنهاد تازه':''].filter(Boolean).join(' · ')+'</span><i class="chev"></i></button>';
+     d.unread?faN(d.unread)+' پیشنهاد تازه':'',MKT?'بازار '+MK_REG_FA[MKT.reg]:''].filter(Boolean).join(' · ')+'</span><i class="chev"></i></button>';
   if(!GLSHUT){
     h+='<div class="glb">';
     if(d.lock)h+='<div class="flag d"><i>!</i><span>'+faN(d.lock.n)+' باخت پیاپی — تا فردا ورود تازه نه.</span></div>';
+    {const dirs={long:0,short:0};for(const x of d.take)dirs[x.dir]++;h+=mktHtml(MKT,dirs);}
     const list=GLALL?d.take:d.take.slice(0,GLMAX);
     list.forEach((x,i)=>h+=glSigHtml(x,i));
     if(d.take.length>list.length)h+='<button class="btn sm glmore" data-more="1">'+faN(d.take.length-list.length)+' سیگنال دیگر</button>';

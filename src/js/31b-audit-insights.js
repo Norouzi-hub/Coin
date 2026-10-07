@@ -100,6 +100,8 @@ function buildInsights(rows){
   c.appendChild(el('div',null,grpTable('به تفکیک ساعت انتشار',groupBy(rows,x=>Math.floor(new Date(x.inp.t0).getHours()/4)),[0,1,2,3,4,5],k=>'ساعت '+HB[k])));
   // ۲۲) نوع ورود
   c.appendChild(el('div',null,grpTable('به تفکیک نوع ورود',groupBy(rows,x=>sigKindOf(x.p,x.inp)),['full','trig','follow','img'],k=>SIGKIND_FA[k])));
+  // حال بازار: لانگ و شورت در روزهای صعودی/خنثی/نزولیِ بیت‌کوین (31c-market.js)
+  c.appendChild(el('div',null,regimeTableHtml(rows)));
   // ۲۸) خروجی CSV
   const ex=el('div','srow');
   const bcsv=el('button','btn sm',ic('down')+'<span>خروجی CSV برای اکسل</span>');

@@ -1574,3 +1574,17 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .flag.vline{width:100%;text-align:start;cursor:pointer;font-family:inherit;border:0;margin-top:10px;font-size:12.5px}
 .flag.vline small{display:block;color:var(--tx3);font-size:11.5px;margin-top:2px}
 .flag.vline em{font-style:normal;color:var(--gold);font-size:12px;white-space:nowrap;align-self:center;margin-inline-start:auto}
+/* حال بازار در «الان چه کنم؟» و رویدادهای هر ارز (31c-market.js) */
+.mkt{display:flex;flex-direction:column;gap:6px;padding:9px 10px;border-radius:12px;background:var(--inset);border:1px solid var(--line)}
+.mkh{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
+.mkh b{display:flex;align-items:center;gap:5px}.mkh b .ic{width:15px;height:15px;color:var(--gold)}
+.mkh small{color:var(--tx3);font-size:11px}
+.mkbars{display:flex;align-items:flex-end;gap:3px;height:28px;direction:ltr}
+.mkbars i{flex:1;border-radius:3px 3px 0 0;background:var(--tx3)}
+.mkbars i.d{background:var(--dn)}.mkbars i.u{background:var(--up)}
+.mkline{display:flex;height:6px;border-radius:3px;overflow:hidden;gap:2px}
+.mkline i{display:block;height:100%}.mkline i.u{background:var(--up)}.mkline i.d{background:var(--dn)}.mkline i.m{background:var(--tx3)}
+.mknum{display:flex;justify-content:space-between;gap:6px;font-size:11.5px;color:var(--tx2);flex-wrap:wrap}
+.mknum .u,.mknum b.u{color:var(--up)}.mknum .d,.mknum b.d{color:var(--dn)}
+.mkev{display:inline-flex;flex-wrap:wrap;gap:4px}.mkev .pill{font-size:11px}
+.flag.mkevf{margin-top:6px}
