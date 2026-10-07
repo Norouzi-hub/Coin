@@ -362,11 +362,22 @@ async function tgNewSignals(env, st, fire) {
   if (max > last) await env.STORE.put(seenKey, String(max));
   if (!last) return;                                      // بار اول: فقط یادداشت
   const risk = +st.riskUsd > 0 ? +st.riskUsd : (+st.cap || 10) * (+st.risk || 5) / 100;
+  // تکرارِ سیگنالِ قبلی (همان نماد، ورود و استاپ در ۳۰ روز) دوباره «سیگنال تازه» نیست
+  const recKey = 'signaldesk:tgsigs', now = Date.now();
+  let rec = []; try { rec = JSON.parse((await env.STORE.get(recKey)) || '[]'); } catch {}
+  rec = rec.filter(x => now - x.t < 30 * 864e5);
+  const near = (a, b) => a > 0 && b > 0 && Math.abs(a - b) / b <= 0.005;
+  let recDirty = false;
   for (const p of posts.filter(p => p.n > last).sort((a, b) => a.n - b.n)) {
     const t = normD(p.text), tk = (t.match(/#([A-Za-z][A-Za-z0-9]{1,11})/) || [])[1];
     if (!tk || !/ورود|حد\s*ضرر|حدضرر|استاپ|تریگر|لانگ|شورت|مجاز|\bentry\b|\blong\b|\bshort\b/i.test(t)) continue;
     if (/Liquidated|سیو\s*(?:کنید|میکنید)|اخبار/i.test(t)) continue;
     const E = numAfter(t, 'ورود|انتری|entry|بالای|تریگر'), SL = numAfter(t, 'حد\\s*ضرر|حدضرر|استاپ|\\bsl\\b');
+    // پیگیریِ نتیجه («سیو سود»، «تارگت ۱ زده شد»، «ریسک‌فری») بدون ورود و استاپ کامل، سیگنال نیست
+    if (!(E && SL) && /سیو\s*سود|ریسک\s*فری|تارگت[^\n\d]{0,30}?(?:زده\s*شد|خورد|رسید)|(?:استاپ|حد\s*ضرر)[^\n\d]{0,25}?خورد/.test(t)) continue;
+    const T = tk.toUpperCase();
+    if (E && !/مجدد|دوباره/.test(t) && rec.some(x => x.tk === T && near(E, x.E) && (SL ? near(SL, x.SL) : true))) continue;
+    if (E) { rec.push({ tk: T, E, SL: SL || null, t: now }); recDirty = true; }
     let size = '';
     if (E && SL && E !== SL) {
       const sd = Math.abs(E - SL) / E, lev = Math.max(1, Math.min(Math.floor(1 / (sd * 1.1 + MMR)), +st.maxLev || 10));
@@ -376,6 +387,7 @@ async function tgNewSignals(env, st, fire) {
     }
     fire('sig:' + p.n, '📣 سیگنال تازه · #' + tk.toUpperCase() + '\n' + p.text.slice(0, 350) + size + '\nhttps://t.me/' + ch + '/' + p.n);
   }
+  if (recDirty) await env.STORE.put(recKey, JSON.stringify(rec.slice(-200)));
 }
 
 /* ---- مهلت پوزیشن (قاعده‌ی من یا «سقف زمان» تنظیمات) ---- */

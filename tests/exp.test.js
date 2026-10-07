@@ -26,10 +26,10 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  let c=await fb();console.log('  ',JSON.stringify(c));
  ok(c['منقضی']===2,'منقضی: ۲ (اتریوم بی‌تصمیم + سولانای نگرفته)');
  ok(c['سیگنال‌ها']===undefined,'بخش «سیگنال‌ها» برداشته شد (همان «همه» › سیگنال)');
- ok(c['همه']===3,'همه: منقضی‌ها شمرده نمی‌شوند (تازه، ریپل، خبر)');
+ ok(c['همه']===2&&c['آرشیو']===1,'همه: منقضی‌ها شمرده نمی‌شوند (تازه، ریپل)؛ خبر در آرشیو');
  ok(c['در انتظار']===1,'در انتظار: ۱');
  await p.evaluate(()=>{bucket='live';sigFilter='sig';renderSignals();});
- ok(await ids()==='960,957'&&await p.evaluate(()=>sigFilter==='all'&&VIEW.kind==='sig'),'«همه» › سیگنال (از sigFilter قدیمی sig): '+await ids());
+ ok(await ids()==='960,957'&&await p.evaluate(()=>sigFilter==='all'),'sigFilter قدیمی sig ← «همه»: '+await ids());
  await p.$$eval('#fbar .fbucket',bs=>bs.find(b=>b.textContent.includes('منقضی')).click());await p.waitForTimeout(200);
  ok(await ids()==='959,958','سطل منقضی: '+await ids());
  const card=await p.$eval('#list .card[data-id$="/959"]',c=>({pill:[...c.querySelectorAll('.pill')].map(x=>x.textContent).join('|'),rv:!!c.querySelector('.stale .btn'),enter:!!c.querySelector('.brief')}));

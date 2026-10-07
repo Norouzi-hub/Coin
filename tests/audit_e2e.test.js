@@ -34,7 +34,9 @@ let POSTS_SRC=[
  [903,'تارگت اول اتریوم زده شد ✅ سیو سود',T0+40*H,909],
  [902,'تارگت اول سولانا زده شد ✅',T0+40*H,908],
  [901,'یک نکته‌ی آموزشی درباره‌ی مدیریت سرمایه',T0+1*H],
- [900,'#بیت_کوین لانگ<br>ورود 60000<br>حد ضرر 59000<br>تارگت 62000<br>اگر تارگت اول را زد، استاپ را به نقطه‌ی ورود بیاورید',T0-2*H],
+ [900,'#بیت_کوین لانگ<br>ورود 60000<br>حد ضرر 59500<br>تارگت 62000<br>اگر تارگت اول را زد، استاپ را به نقطه‌ی ورود بیاورید',T0-2*H],
+ // همان سیگنالِ #910 که کانال بعد از رسیدن دوباره فرستاده (نه پاسخ): تکرار است، سیگنال تازه نه
+ [899,'#بیت_کوین لانگ فیوچرز<br>ورود 60000<br>حد ضرر 59000<br>تارگت 62000<br>✅ تارگت اول زده شد، سیو سود کنید',T0+31*H],
 ];
 const channelHtml=()=>'<html><body>'+POSTS_SRC.map(x=>mkPost(...x)).join('')+'</body></html>';
 (async()=>{
@@ -72,7 +74,9 @@ const channelHtml=()=>'<html><body>'+POSTS_SRC.map(x=>mkPost(...x)).join('')+'</
  ok(calls.mexc>0,'پشتیبانِ MEXC واقعاً استفاده شد');
  ok(!st['904']&&!st['901'],'پست نتیجه و آموزش سنجیده نمی‌شوند');
  const g=await p.evaluate(()=>({b900:postKind(POSTS.find(x=>x.id==='c/1893051/900')),
-   b904:postKind(POSTS.find(x=>x.id==='c/1893051/904')),b902:postKind(POSTS.find(x=>x.id==='c/1893051/902'))}));
+   b904:postKind(POSTS.find(x=>x.id==='c/1893051/904')),b902:postKind(POSTS.find(x=>x.id==='c/1893051/902')),
+   b899:postKind(POSTS.find(x=>x.id==='c/1893051/899')),r899:REPOF.get('c/1893051/899'),a899:!!AUD['c/1893051/899']}));
+ ok(g.b899==='res'&&g.r899==='c/1893051/910'&&!g.a899,'تکرارِ #910 بعد از رسیدن («… سیو سود کنید») سیگنال تازه نیست و سنجیده نمی‌شود');
  ok(g.b900==='sig','سیگنالِ دارای «اگر تارگت اول را زد…» در فهرست فعال ماند');
  ok(g.b904==='res'&&g.b902==='res','«تارگت اول بیت کوین زده شد» حالا نتیجه شناخته می‌شود');
 
@@ -93,10 +97,10 @@ const channelHtml=()=>'<html><body>'+POSTS_SRC.map(x=>mkPost(...x)).join('')+'</
    badge:document.querySelector('#cAud').textContent}));
  console.log('  کارنامه:',ui.stats);
  console.log('  بخش‌ها:',ui.panels.join(' · '));
- // #900 هم BTC با همان عددهاست ولی 2 ساعت زودتر → برد +2R
+ // #900 هم BTC است با استاپ 59500، 2 ساعت زودتر → برد +4R
  ok(/نرخ برد=75٪/.test(ui.stats),'نرخ برد: 3 برد از 4 = 75٪');
- // BTC ×2: +2R+2R ؛ DOGE: (0.12-0.1)/0.005 = +4R ؛ ETH −1R → مجموع +7R
- ok(/مجموع R=\+7\.00R/.test(ui.stats),'مجموع R = 2 + 2 + 4 − 1 = +7R');
+ // BTC: +2R و +4R ؛ DOGE: (0.12-0.1)/0.005 = +4R ؛ ETH −1R → مجموع +9R (تکرارِ #899 شمرده نمی‌شود)
+ ok(/مجموع R=\+9\.00R/.test(ui.stats),'مجموع R = 2 + 4 + 4 − 1 = +9R');
  ok(ui.panels.length>=4,'همه‌ی بخش‌ها ساخته شدند');
  ok(ui.rows===7,'هفت سیگنال در فهرست');
  ok(ui.badge==='2','نشان تب: 2 ادعای نادرست');
@@ -117,15 +121,15 @@ const channelHtml=()=>'<html><body>'+POSTS_SRC.map(x=>mkPost(...x)).join('')+'</
    const b2=[...document.querySelectorAll('#audBody .st')].find(s=>s.querySelector('b').textContent==='مجموع R').querySelector('span').textContent;
    AF.sym='';renderAudit();return {long:a,btc:b2};});
  console.log('  فقط لانگ:',f.long,'· فقط BTC:',f.btc);
- ok(f.long==='+8.00R','فقط لانگ‌ها: +8R (شورتِ بازنده حذف شد)');
- ok(f.btc==='+4.00R','فقط BTC: +4R');
+ ok(f.long==='+10.00R','فقط لانگ‌ها: +10R (شورتِ بازنده حذف شد)');
+ ok(f.btc==='+6.00R','فقط BTC: +6R');
 
  console.log('\n=== قانون پله‌ای ===');
  const lad=await p.evaluate(()=>{S.aud=Object.assign({},S.aud,{rule:'ladder'});renderAudit();
    const v=[...document.querySelectorAll('#audBody .st')].find(s=>s.querySelector('b').textContent==='مجموع R').querySelector('span').textContent;
    S.aud.rule='tp1';renderAudit();return v;});
  console.log('  پله‌ای:',lad);
- ok(lad==='+7.00R','با یک تارگت، پله‌ای همان نتیجه را می‌دهد (همه در تارگت اول)');
+ ok(lad==='+9.00R','با یک تارگت، پله‌ای همان نتیجه را می‌دهد (همه در تارگت اول)');
 
  console.log('\n=== فید ===');
  await p.click('.tab[data-v="signals"]');await p.waitForTimeout(500);

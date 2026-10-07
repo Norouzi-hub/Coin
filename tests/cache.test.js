@@ -28,7 +28,7 @@ const page_ = (nums, prefix) => `<html><body>${
   });
   await p.reload({waitUntil:'domcontentloaded'});
   await p.waitForTimeout(6000);
-  await p.evaluate(() => { sigFilter='all'; renderSignals(); });
+  await p.evaluate(() => { sigFilter='all'; bucket='arch'; renderSignals(); });   // «POST-n» یادداشت است و خودش آرشیو می‌شود
 
   const order = await p.$$eval('#list .card', e => e.map(x => (x.textContent.match(/POST-\d+/)||['?'])[0]));
   const nums = order.map(s => +s.replace('POST-',''));

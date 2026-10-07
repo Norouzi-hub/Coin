@@ -60,6 +60,10 @@ const ns=sent.filter(s=>s.text.startsWith('📣'));console.log('   '+ns.map(s=>s
 ok(ns.length===1&&ns[0].text.includes('#SOL')&&ns[0].text.includes('ایزوله 10x · مارجین $5.83')&&ns[0].text.includes('t.me/ccoineres/501'),'پست تازه‌ی سیگنال ← پیام با اندازه‌ی ایزوله؛ لیکوئید و نکته نه');
 sent.length=0;await new Promise(r=>W.scheduled({},env,{waitUntil:p=>p.then(r)}));
 ok(sent.length===0,'دقیقه‌ی بعد: نه سیگنال تکراری، نه مهلت تکراری');
+TME='<html>'+tmePost(505,'#SOL لانگ<br>ورود ۱۵۰<br>حد ضرر ۱۴۵<br>تارگت ۱۶۰<br>✅ تارگت اول زده شد')+tmePost(506,'#SOL تارگت اول زده شد، سیو سود و ریسک فری کنید')+tmePost(507,'#SOL ورود مجدد ۱۵۰ مجازه')+'</html>';
+sent.length=0;await new Promise(r=>W.scheduled({},env,{waitUntil:p=>p.then(r)}));
+const ns2=sent.filter(s=>s.text.startsWith('📣'));console.log('   '+ns2.map(s=>s.text.split('\n').pop()).join(' | '));
+ok(ns2.length===1&&ns2[0].text.includes('/507'),'تکرارِ همان سیگنال (#505) و پیگیریِ «سیو سود» (#506) سیگنال تازه نیستند؛ «ورود مجدد» (#507) هست');
 db.data.settings.adv={on:true,cats:{sig:false,pos:true}};kv.set('signaldesk',JSON.stringify(db));
 TME='<html>'+tmePost(504,'#ETH شورت<br>ورود 3000<br>حد ضرر 3100')+'</html>';
 sent.length=0;await new Promise(r=>W.scheduled({},env,{waitUntil:p=>p.then(r)}));

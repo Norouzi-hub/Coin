@@ -48,7 +48,7 @@ const num=t=>Number(String(t).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.index
  console.log('  گروه:',bar.segs.join(' | '),'  کنار:',bar.side.join(' | '));
  ok(bar.side.length===3,'سه سطل: نتایج، منقضی، آرشیو (آموزش تب خودش را دارد)');
  ok(num(bar.side[0].split(':')[1])===3,'نتایج ۳ تا شمرد');
- ok(num(bar.segs[1].split(':')[1])===6,'«همه» هر ۶ پست را شمرد (نتیجه‌ها هم)');
+ ok(num(bar.segs[1].split(':')[1])===5,'«همه» ۵ پست را شمرد (نتیجه‌ها هم؛ یادداشت در آرشیو)');
  ok(!bar.over,'نوار از عرض ۴۱۲ بیرون نمی‌زند');
  ok(bar.rows===2,'دو ردیف: فیلترها و سطل‌ها');
 
@@ -73,10 +73,10 @@ const num=t=>Number(String(t).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.index
    stored:Object.values(DB.results)}));
  console.log('  نتایج:',after.res,'· فعال:',after.live,'· ذخیره:',JSON.stringify(after.stored));
  ok(after.res===2,'یکی از نتایج بیرون آمد');
- ok(after.live===4,'و به فهرست فعال برگشت');
+ ok(after.live===3,'و به فهرست فعال برگشت (نه آرشیو، چون خودت گفتی نتیجه نیست)');
  ok(after.stored.includes(0),'نقض با صفر ذخیره شد تا تشخیص خودکار دوباره برش نگرداند');
  // پست غیرنتیجه را دستی نتیجه کن
- await p.evaluate(()=>{bucket='live';sigFilter='all';renderSignals();});
+ await p.evaluate(()=>{bucket='arch';renderSignals();});      // یادداشت خودش در آرشیو است
  await p.waitForTimeout(300);
  await p.evaluate(()=>{
    const c=[...document.querySelectorAll('#list .card')].find(c=>c.textContent.includes('مدیریت سرمایه'));

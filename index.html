@@ -1572,6 +1572,18 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
   color:var(--tx2);font:inherit;font-size:12.5px;cursor:pointer;text-align:start}
 .glit b{color:var(--tx);font-size:14px}.glit small{margin-inline-start:auto;color:var(--tx3);font-size:11.5px}
 .glit .ic{width:15px;height:15px;color:var(--gold);vertical-align:-3px;margin-inline-end:3px}
+/* هر سیگنال قابل گرفتن: سربرگ (زدنش کارت را باز می‌کند)، عددها، سابقه و دکمه‌های اقدام */
+.glsig{display:flex;flex-direction:column;gap:5px;padding:8px;border-radius:12px;background:var(--inset);border:1px solid var(--line)}
+.glsig .glit{background:none;border:0;padding:2px 3px}
+.glnum{font-size:12px;color:var(--tx2);line-height:1.7;padding:0 4px}
+.glnum b{color:var(--tx);font-weight:800;font-variant-numeric:tabular-nums}
+.glnum .u{color:var(--up)}.glnum .w{color:var(--warn)}.glnum .d{color:var(--dn)}.glnum .m{color:var(--tx3)}
+.glact{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.glact .btn{flex:1 1 auto;min-height:36px}
+.glact .btn.ok{flex:2 1 150px;background:linear-gradient(180deg,var(--gold),var(--gold2));border-color:transparent;color:var(--onGold);font-weight:800}
+.glact .btn.side{flex:0 0 auto}
+.glmore{align-self:center}
+.glskip{margin:2px 4px 0}
 .panel.lazy{padding-top:12px;padding-bottom:12px}
 .shot.tapimg{min-height:0}
 .tapload{width:100%;background:none;border:0;cursor:pointer;justify-content:center;color:var(--gold)}
@@ -5328,12 +5340,13 @@ const PAGE=30; let shownMax=PAGE;
    bucket جای کدام‌شان را نشان می‌دهد: live | arch | res */
 let bucket='live';
 /* فیلترهای صفحه‌ی پست‌ها روی همین دستگاه می‌مانند؛ هر بار همان‌جایی برمی‌گردی که بودی.
-   kind: نوع پست در «همه» · cat: دسته‌ی ساخت خودت · day: all|today|yest|week|range */
+   day: all|today|yest|week|range (نوع پست و دسته‌ی دلخواه برداشته شدند) */
 const VIEWKEY='signaldesk.view.v1';
-const VIEW=Object.assign({kind:'all',day:'all',from:'',to:''},lsGet(VIEWKEY)||{});
+const VIEW=Object.assign({day:'all',from:'',to:''},lsGet(VIEWKEY)||{});
 delete VIEW.cat;                  // دسته‌های دلخواه برداشته شد
 if(['new','all'].includes(VIEW.sf))sigFilter=VIEW.sf;
-else if(VIEW.sf==='sig'){sigFilter='all';VIEW.kind='sig';}   // بخش «سیگنال‌ها» = «همه» › سیگنال
+else if(VIEW.sf==='sig')sigFilter='all';   // بخش «سیگنال‌ها» برداشته شد
+delete VIEW.kind;                 // ردیف نوع پست برداشته شد
 if(['live','res','arch','exp'].includes(VIEW.bk))bucket=VIEW.bk;
 function setView(o){
   Object.assign(VIEW,o);VIEW.sf=sigFilter;VIEW.bk=bucket;
@@ -5355,8 +5368,31 @@ function dayPass(){
   return p=>{if(!p.date)return false;const n=postDay(p);return (a==null||n>=a)&&(b==null||n<=b);};
 }
 const isArch=id=>!!DB.archived[id];
+/* دسته‌ها حداقل شدند: خبر، اطلاع‌رسانی و یادداشت خودشان به آرشیو می‌روند، و هر پستی که قبلاً
+   در دسته‌های دلخواهِ برداشته‌شده (pcat) گذاشته بودی هم. «برگرداندن از آرشیو» مقدار صفر
+   می‌گذارد تا همان پست دیگر خودکار آرشیو نشود. */
+const AUTOARCH=new Set(['news','ann','note']);
+// «نتیجه نیست» که خودت زدی یعنی می‌خواهی ببینی‌اش؛ آن پست هم خودکار آرشیو نمی‌شود
+// پاسخِ کانال به یک سیگنال («به نقطه ورود رسید») پیگیریِ همان سیگنال است و در فهرست می‌ماند
+const RTSMEMO=new WeakMap();
+function replyToSig(p){
+  if(!p.reply||!p.reply.id)return false;
+  const ver=POSTS.length+'|'+KGEN, m=RTSMEMO.get(p);if(m&&m.ver===ver)return m.v;
+  const n=String(p.reply.id).split('/').pop(), q=POSTS.find(x=>x!==p&&x.id.split('/').pop()===n);
+  const v=!!(q&&postKind(q)==='sig');RTSMEMO.set(p,{ver,v});return v;
+}
+// یادداشتی که شکلِ سیگنال دارد ولی نماد/عددش خوانده نشد («این ارز رو بگیرید حد ضرر ۱۴۰») در فهرست می‌ماند
+// تا با «افزودن به سیگنال‌ها» درستش کنی؛ پنهان کردنش یعنی گم شدن یک سیگنال
+const RX_SIGLIKE=/حد\s*ضرر|استاپ|ورود|تارگت|لانگ|شورت|اهرم|تریگر|\bentry\b|\bsl\b|\btp\b/i;
+const sigLike=p=>{const t=normDig(p.text||'');return /\d/.test(t)&&RX_SIGLIKE.test(t);};
+const autoArch=p=>{
+  if(DB.archived[p.id]===0||DB.results[p.id]===0)return false;
+  if(DB.pcat&&DB.pcat[p.id])return true;
+  const k=postKind(p);
+  return AUTOARCH.has(k)&&!replyToSig(p)&&!(k==='note'&&sigLike(p));
+};
 function setArch(id,on){
-  if(on)DB.archived[id]=Date.now(); else delete DB.archived[id];
+  if(on)DB.archived[id]=Date.now(); else DB.archived[id]=0;
   save();renderAll();
 }
 /* پست نتیجه: کانال بعد از هر سیگنال می‌گوید تارگت خورد یا استاپ. اینها نه سیگنال‌اند
@@ -5376,8 +5412,9 @@ const RX_RESULT=new RegExp(
   '|\\bTP\\s*\\d?\\s*(?:hit|done|reached)\\b|\\bSL\\s*hit\\b|\\btarget\\s*(?:hit|reached)\\b','i');
 const RCACHE=new Map();
 function autoRes(p){
-  const c=RCACHE.get(p.id);
-  if(c!==undefined)return c;
+  // تکرار به پست‌های قدیمی‌تر بستگی دارد: با رسیدن پست تازه یا اصلاح دستی دوباره سنجیده می‌شود
+  const ver=POSTS.length+'|'+KGEN, c=RCACHE.get(p.id);
+  if(c&&c.ver===ver)return c.v;
   const t=faNorm(normDig(p.text||''));
   let v=RX_RESULT.test(t);
   /* محافظ: سیگنالِ کاملی که داخلش دستور مدیریتی دارد («اگر تارگت اول را زد، استاپ را
@@ -5385,8 +5422,54 @@ function autoRes(p){
      که بدتر از نشناختنِ یک پست نتیجه است. */
   if(v){const g=parseSignal(p.text,p.id);
     if(g.isSignal&&g.entry!=null&&g.stop!=null&&!p.reply)v=false;}
-  RCACHE.set(p.id,v);
+  // ...مگر همان سیگنالِ قبلی باشد که کانال دوباره فرستاده («… ✅ تارگت ۱ زد، سیو سود»)
+  if(!v&&repeatOf(p))v=true;
+  RCACHE.set(p.id,{ver,v});
   return v;
+}
+/* تکرارِ سیگنالِ قبلی: کانال بعد از رسیدن قیمت، همان سیگنال را دوباره می‌فرستد یا به آن ارجاع
+   می‌دهد («سیو سود کنید»، «ریسک‌فری»). اگر سیگنال حساب شود، یک معامله چند بار شمرده می‌شود
+   (در «در انتظار»، کانال‌سنج، خروجی متنی). تکرار = همان نماد و جهت، ورودِ تا ۰٫۵٪ همان و
+   استاپِ همان، از سیگنالی که در ۳۰ روز گذشته آمده؛ یا پاسخ به همان سیگنال با حرف سود/مدیریت.
+   «ورود مجدد/دوباره» با عددِ تازه سیگنالِ تازه است و تکرار نیست. اولین نسخه سیگنال می‌ماند. */
+const RX_REP_AGAIN=/مجدد|دوباره|ورود\s*دوم|پله\s*دوم/;
+let RPIX=null,RPIXV='';
+function repIdx(){
+  const v=POSTS.length+'|'+(POSTS[0]&&POSTS[0].id)+'|'+KGEN+'|'+SYMVER;
+  if(v===RPIXV&&RPIX)return RPIX;
+  RPIXV=v;RPIX=new Map();
+  for(const q of POSTS){
+    const r=repKey(q);if(!r)continue;
+    (RPIX.get(r.tk)||RPIX.set(r.tk,[]).get(r.tk)).push(r);
+  }
+  return RPIX;
+}
+function repKey(q){
+  if(!q.date)return null;
+  const ov=OVERRIDE[q.id]||{};if(ov.sig===false)return null;
+  const g=q.origText?parseSignal(q.origText):parseSignal(q.text,q.id);
+  const tk=ov.ticker||g.ticker;if(!tk||!(g.isSignal||ov.sig===true))return null;
+  const E=ov.entry!=null?ov.entry:(g.entry!=null?g.entry:g.trigger), SL=ov.stop!=null?ov.stop:g.stop;
+  if(!(E>0))return null;
+  return {id:q.id,t:+q.date,tk,dir:ov.dir||g.direction,E,SL:SL>0?SL:null,rep:q.reply&&q.reply.id?String(q.reply.id).split('/').pop():null};
+}
+const repNear=(a,b)=>a>0&&b>0&&Math.abs(a-b)/b<=0.005;
+const REPOF=new Map();          // پستِ تکراری ← شناسه‌ی سیگنالِ اصلی (برای برچسب روی کارت)
+function repeatOf(p){
+  REPOF.delete(p.id);
+  const ov=OVERRIDE[p.id]||{};if(ov.sig===true)return null;
+  const me=repKey(p);if(!me)return null;
+  const txt=faNorm(normDig(p.text||'')), upd=RX_RESULT.test(txt)||RX_MGMT.test(txt);
+  if(RX_REP_AGAIN.test(txt)&&!upd)return null;
+  let hit=null;                  // قدیمی‌ترین نسخه = سیگنالِ اصلی
+  for(const x of repIdx().get(me.tk)||[]){
+    if(x.id===p.id||x.t>=me.t||me.t-x.t>30*864e5||x.dir!==me.dir)continue;
+    const same=repNear(me.E,x.E)&&(me.SL?repNear(me.SL,x.SL):upd);
+    const ref=upd&&me.rep&&x.id.split('/').pop()===me.rep;
+    if((same||ref)&&(!hit||x.t<hit.t))hit=x;
+  }
+  if(hit)REPOF.set(p.id,hit.id);
+  return hit?hit.id:null;
 }
 function isRes(p){
   const v=DB.results[p.id];
@@ -5412,7 +5495,7 @@ function setRes(p,on){
 const hasOpenPos=p=>{const d=DB.decisions[p.id];
   return !!(d&&d.action==='taken'&&d.posId&&DB.positions.some(x=>x.id===d.posId&&x.status==='open'));};
 const isExp=p=>isSigPost(p)&&isStale(p)&&!hasOpenPos(p);
-const bucketOf=p=>isArch(p.id)?'arch':(isLesson(p.id)?'les':(isExp(p)?'exp':'live'));
+const bucketOf=p=>isArch(p.id)?'arch':(isLesson(p.id)?'les':(autoArch(p)?'arch':(isExp(p)?'exp':'live')));
 const RX_ANN=/اطلاعیه|اطلاع\s*رسانی|قابل\s*توجه|توجه\s*(?:کنید|داشته)|کمپین|ثبت\s*نام|عضویت|لینک|تخفیف|وی\s*آی\s*پی|\bvip\b|پشتیبانی|ادمین|قوانین|دستورالعمل|لایو|وبینار|قرعه|جایزه|حمایت\s*کنید|رتبه|تبلیغ|پین/i;
 const RX_NEWS=/خبر|اخبار|فوری|گزارش|فدرال|نرخ\s*بهره|تورم|\bcpi\b|\betf\b|بلک\s*راک|\bsec\b|ترامپ|هک\s*شد|لیست\s*شد|لیستینگ|دلیست|هاوینگ|آپگرید|آپدیت\s*شبکه|breaking|\bnews\b|بازار\s*امروز/i;
 /* نوعِ هر پست: sig سیگنال · res نتیجه · news خبر · ann اطلاع‌رسانی · note بقیه.
@@ -5563,6 +5646,13 @@ function buildCard(p,lite){
     if(I.spot)head.appendChild(el('span','pill gold','اسپات'));
     const lt=longTermOf(p,sig,I);
     if(lt&&!I.spot){const t=el('span','pill mut ltp','بلندمدت');t.title=lt+' — برای ایزوله‌ی کوتاه‌مدت مناسب نیست';head.appendChild(t);}
+  }else if(kind==='res'&&REPOF.has(p.id)&&resAuto(p)){
+    // تکرارِ همان سیگنالِ قبلی: با زدن، سیگنال اصلی باز می‌شود
+    const o=findPost(REPOF.get(p.id)), b=el('button','pill kind k-res tapme',ic('flag')+'تکرار سیگنال قبلی');
+    b.title='همان سیگنالِ '+(o&&o.date?relTime(o.date):'قبلی')+' است؛ دوباره شمرده نمی‌شود. بزن تا اصلش باز شود';
+    b.onclick=e=>{e.stopPropagation();if(o){bucket=bucketOf(o)==='live'?'live':bucketOf(o);sigFilter='all';ACCOPEN=o.id;setView({});
+      setTimeout(()=>{const c=document.querySelector('#list .card[data-id="'+o.id+'"]');if(c)c.scrollIntoView({block:'center',behavior:'smooth'});},120);}};
+    head.appendChild(b);
   }else head.appendChild(el('span','pill kind k-'+kind+(kind==='res'&&!resAuto(p)?' gold':''),KIND_FA[kind]||'یادداشت'));
   if(NEWIDS.has(p.id))head.appendChild(el('span','pill gold','تازه'));
   const stale=isSig&&!dec&&isStale(p);
@@ -6422,7 +6512,7 @@ function renderFbar(){
   // 800 پست هر بار از نو bucketOf می‌گرفت.
   // همه‌ی شمارنده‌ها با فیلتر روز: «امروز» که روشن است، عددها هم مال امروزند
   let nLive=0,nNew=0,nRes=0,nArch=0,nExp=0;
-  const KN={sig:0,news:0,ann:0,res:0,note:0}, dp=dayPass();
+  const dp=dayPass();
   for(const p of POSTS){
     if(dp&&!dp(p))continue;
     const bk=bucketOf(p);
@@ -6431,14 +6521,13 @@ function renderFbar(){
     if(bk==='les')continue;
     nLive++;
     const kd=postKind(p);
-    KN[kd]++;
     if(kd==='res')nRes++;
     if(kd!=='sig')continue;
     if(!decisionOf(p.id)&&!isStale(p))nNew++;
   }
   const segs=[
     {k:'new', label:'در انتظار', n:nNew, hint:'سیگنال‌های این '+faN(S.staleDays||7)+' روز که هنوز تصمیمشان را نگرفته‌ای'},
-    {k:'all', label:'همه',       n:nLive, hint:'همه‌ی پست‌های کانال: سیگنال، نتیجه، خبر و اطلاع‌رسانی'}
+    {k:'all', label:'همه',       n:nLive, hint:'سیگنال‌ها و نتیجه‌ها؛ خبر، اطلاع‌رسانی و یادداشت خودشان در آرشیوند'}
   ];
   const cur=bucket==='live'?sigFilter:bucket;
   bar.innerHTML='';
@@ -6487,19 +6576,7 @@ function renderFbar(){
     const b=el('button','fc'+(on?' on':'')+(cls?' '+cls:''),'<span>'+label+'</span>'+(n!=null?'<i>'+faN(n)+'</i>':''));
     b.setAttribute('aria-pressed',on?'true':'false');b.onclick=fn;row.appendChild(b);return b;
   };
-  /* ردیف نوع و دسته فقط در «همه»: خبر، اطلاع‌رسانی، نتیجه… و دسته‌هایی که خودت ساخته‌ای */
-  if(bucket==='live'&&sigFilter==='all'){
-    const row=el('div','frow');row.setAttribute('aria-label','نوع پست');
-    const kind=KN[VIEW.kind]!=null?VIEW.kind:'all';
-    chip(row,'همه',nLive,kind==='all',()=>setView({kind:'all'}));
-    for(const k of ['sig','news','ann','res','note'])
-      chip(row,k==='sig'?'سیگنال':KIND_FA[k],KN[k],kind===k,()=>setView({kind:k}));
-    bar.appendChild(row);
-    // چیپ روشن ممکن است بیرون از دید افقی باشد؛ بی‌آنکه صفحه بالا-پایین برود جلو بیاوریمش
-    const onc=row.querySelector('.fc.on');
-    if(onc)requestAnimationFrame(()=>{const r=row.getBoundingClientRect(),c=onc.getBoundingClientRect();
-      if(c.left<r.left||c.right>r.right)row.scrollLeft+=c.left<r.left?c.left-r.left-8:c.right-r.right+8;});
-  }
+  /* ردیف نوع پست برداشته شد: خبر، اطلاع‌رسانی و یادداشت خودشان در آرشیوند؛ «همه» = سیگنال‌ها و نتیجه‌ها */
   // «در انتظار»: سیگنال‌های بلندمدت (استاپ دور، اسپات، هولد) برای ایزوله‌ی کوتاه‌مدت پنهان‌اند
   if(bucket==='live'&&sigFilter==='new'&&(LTHID||VIEW.iso===false)){
     const row=el('div','frow');
@@ -6529,7 +6606,7 @@ function renderFbar(){
    راست: آرشیو · چپ: «وارد نشدم» (فقط سیگنالی که هنوز تصمیمش را نگرفته‌ای). هر دو با «برگرداندن».
    فقط وقتی حرکت آشکارا افقی است؛ اسکرول عادی، اسلایدرها و نردبان دست نمی‌خورند. */
 function swipeAct(p,dx){
-  if(dx>0)return isArch(p.id)?null:{k:'arch',t:'رها کن: آرشیو',
+  if(dx>0)return bucketOf(p)==='arch'?null:{k:'arch',t:'رها کن: آرشیو',
     run:()=>undoable('به آرشیو رفت',()=>{DB.archived[p.id]=Date.now();})};
   if(dx<0&&isSigPost(p)&&!decisionOf(p.id))return {k:'skip',t:'رها کن: وارد نشدم',
     run:()=>undoable('ثبت شد: وارد نشدم',()=>{
@@ -6655,8 +6732,8 @@ function restoreAnchor(a){
 let RS_KEY='', LTHID=0;          // LTHID: سیگنال‌های بلندمدتِ پنهان در «در انتظار»
 function renderSignals(){
   const list=$('#list');
-  // بخش «سیگنال‌ها» برداشته شد؛ همان «همه» با چیپ «سیگنال» است
-  if(sigFilter==='sig'){sigFilter='all';VIEW.kind='sig';}
+  // بخش «سیگنال‌ها» برداشته شد؛ سیگنال‌های تصمیم‌نگرفته در «در انتظار»اند
+  if(sigFilter==='sig')sigFilter='all';
   // بروزرسانی خودکار هر دقیقه همین را صدا می‌زند؛ جای خواندن نباید تکان بخورد
   const anchor=listAnchor();
   /* سطل آموزش فهرست خودش را دارد (عنوان، دسته، اسکن کانال)، پس به‌جای کارت پست
@@ -6670,9 +6747,9 @@ function renderSignals(){
   const acc=F('accordion');
   let firstId=null, lastDay=null, sepEl=null, sepN=0;
   const closeSep=()=>{if(sepEl)sepEl.querySelector('.dsn').textContent=sepN+' پست';};
-  const dp=dayPass(), kind=bucket==='live'&&sigFilter==='all'&&VIEW.kind!=='all'?VIEW.kind:'';
+  const dp=dayPass();
   // انیمیشن ورود کارت‌ها فقط وقتی فهرست واقعاً عوض شده (فیلتر، سطل، جستجو)، نه با هر بروزرسانی
-  const rk=[bucket,sigFilter,coinFilter,q,VIEW.day,kind,VIEW.iso].join('|'), animate=rk!==RS_KEY;RS_KEY=rk;
+  const rk=[bucket,sigFilter,coinFilter,q,VIEW.day,VIEW.iso].join('|'), animate=rk!==RS_KEY;RS_KEY=rk;
   LTHID=0;
   for(const p of POSTS){
     if(dp&&!dp(p))continue;
@@ -6680,7 +6757,6 @@ function renderSignals(){
     if(bucket==='res'){if(bk!=='live'||postKind(p)!=='res')continue;}
     else if(bk!==bucket)continue;
     if(coinFilter&&(sig.ticker||'')!==coinFilter)continue;
-    if(kind&&postKind(p)!==kind)continue;
     if(bucket==='live'&&sigFilter==='new'&&!isOpenSig(p))continue;
     if(bucket==='live'&&sigFilter==='new'&&VIEW.iso!==false&&isLongTerm(p)){LTHID++;continue;}
     if(q&&!((sig.ticker||'')+' '+p.text).toLowerCase().includes(q))continue;
@@ -6733,8 +6809,6 @@ function renderSignals(){
     const BK={res:'نتایج',exp:'منقضی',arch:'آرشیو'};
     // بخش‌های بالا (در انتظار/همه) خودشان روشن دیده می‌شوند؛ اینجا فقط چیزهایی که از چشم می‌افتند
     if(bucket!=='live'&&BK[bucket])tags.push([BK[bucket],()=>{bucket='live';}]);
-    if(bucket==='live'&&sigFilter==='all'&&VIEW.kind&&VIEW.kind!=='all')
-      tags.push([VIEW.kind==='sig'?'سیگنال':(KIND_FA[VIEW.kind]||VIEW.kind),()=>{VIEW.kind='all';}]);
     if(DAY_FA[VIEW.day]&&VIEW.day!=='all')tags.push(['روز: '+DAY_FA[VIEW.day],()=>{VIEW.day='all';}]);
     if(coinFilter)tags.push(['فقط '+esc(coinFilter),()=>{coinFilter=null;}]);
     if(q)tags.push(['جستجو: '+esc(query.trim().slice(0,16)),()=>{query='';$('#q').value='';}]);
@@ -6747,7 +6821,7 @@ function renderSignals(){
       }
       if(tags.length>1){const all=el('button','actall','همه را بردار');
         all.onclick=()=>{bucket='live';sigFilter='all';coinFilter=null;query='';$('#q').value='';
-          setView({kind:'all',day:'all'});};bar.appendChild(all);}
+          setView({day:'all'});};bar.appendChild(all);}
       list.appendChild(bar);
     }
   }
@@ -13231,44 +13305,73 @@ function renderAll(){
 }
 
 /* ==================== سرعت و سادگی (پیشنهادهای ۳۹ تا ۴۳) ====================
-   ۳۹ «الان چه کنم؟»: بالای سیگنال‌ها، سیگنال‌های قابل گرفتن، نزدیک‌ترین مهلت، پیشنهادهای تازه
+   ۳۹ «الان چه کنم؟»: بالای سیگنال‌ها، همه‌ی سیگنال‌های قابل گرفتن با عدد و دکمه‌ی اقدام، نزدیک‌ترین مهلت، پیشنهادهای تازه
    ۴۰ حالت «فقط ضروری» (کلید امکانات): پنل‌های تحلیلیِ کانال‌سنج و کارنامه پنهان
    ۴۱ پنل‌های بسته‌ی کانال‌سنج تا باز نشوند ساخته نمی‌شوند (32-autoexec.js)
    ۴۲ «عکس‌ها فقط با زدن» (کلید امکانات): در اینترنت کند حجم دانلود را کم می‌کند (17-gallery.js)
    ۴۳ میان‌برهای آیکون برنامه (manifest) و باز شدن مستقیم با ?v= */
 
-const GLKEY='signaldesk.glance.v1';
-let GLSHUT=!!lsGet(GLKEY);
+const GLKEY='signaldesk.glance.v1', GLMAX=12;
+let GLSHUT=!!lsGet(GLKEY), GLALL=false;
+/* سیگنال‌های قابل گرفتن: تصمیم‌نگرفته، منقضی‌نشده، نه بلندمدت، نه «دیر رسیدی». همه‌شان، نه فقط چهار تا،
+   با عددها و دکمه‌ی اقدام، تا همین‌جا بررسی و وارد شوی. دیر رسیده‌ها و بلندمدت‌ها فقط شمرده می‌شوند. */
 function glanceData(){
-  const now=Date.now(), take=[];
+  const now=Date.now(), take=[];let late=0,lt=0;
   for(const p of POSTS){
     if(!p.date||now-p.date>(+S.staleDays||7)*864e5)break;
     if(!isOpenSig(p)||decisionOf(p.id)||bucketOf(p)!=='live')continue;
     const sig=sigOf(p), ov=OVERRIDE[p.id]||{}, px=PRICES.get(sig.ticker), I=planInputsOf(p,sig,ov,px);
-    if(longTermOf(p,sig,I)||lateOf(I,sig.targets,px))continue;
+    if(longTermOf(p,sig,I)){lt++;continue;}
+    if(lateOf(I,sig.targets,px)){late++;continue;}
     const E=I.entry||px;
-    let z=null;if(!I.spot&&E&&I.stop){const pl=xRulePlan(I.dir,E,I.stop,sig.targets);z=isoSize(E,pl?pl.stop:I.stop);}
-    take.push({p,tk:sig.ticker,dir:I.dir,z});
-    if(take.length>=4)break;
+    let z=null,pl=null;if(!I.spot&&E&&I.stop){pl=xRulePlan(I.dir,E,I.stop,sig.targets);z=isoSize(E,pl?pl.stop:I.stop);}
+    take.push({p,sig,ov,px,I,tk:sig.ticker,dir:I.dir,z,pl});
   }
   let dl=null;
   for(const q of DB.positions){const d=posDeadline(q);if(d&&(!dl||d<dl.t))dl={t:d,p:q};}
-  return {take,dl,open:openPos().length,unread:advUnread(),lock:lossLockOn()};
+  return {take,late,lt,dl,open:openPos().length,unread:advUnread(),lock:lossLockOn()};
+}
+function glSigHtml(x,i){
+  const {p,sig,I,px,z,pl}=x, E=I.entry, sd=E&&I.stop?Math.abs(E-I.stop)/E*100:null;
+  const tps=(sig.targets||[]).filter(t=>E&&(t-E)*(x.dir==='long'?1:-1)>0).slice(0,3);
+  const far=px&&E?(px-E)/E*100*(x.dir==='long'?1:-1):null;     // مثبت: قیمت از ورود به سمت سود رفته
+  const nums=[E?'ورود <b dir="ltr">'+fmtPrice(E)+'</b>':(sig.trigger!=null?'تریگر <b dir="ltr">'+fmtPrice(sig.trigger)+'</b>':'ورود بازار'),
+    I.stop?'استاپ <b dir="ltr">'+fmtPrice(I.stop)+'</b>'+(sd!=null?' ('+fmtNum(sd)+'٪)':''):'<span class="d">بی‌استاپ</span>',
+    tps.length?'تارگت <b dir="ltr">'+tps.map(fmtPrice).join(' / ')+'</b>':''].filter(Boolean).join(' · ');
+  const now=px!=null?'قیمت الان <b dir="ltr">'+fmtPrice(px)+'</b>'+(far!=null?' · <span class="'+(Math.abs(far)<0.3?'u':far>0?'w':'m')+'">'+
+    (Math.abs(far)<0.3?'روی ورود':far>0?fmtNum(far)+'٪ جلوتر از ورود':fmtNum(-far)+'٪ مانده تا ورود')+'</span>':''):'';
+  const hl=histLine(p);
+  return '<div class="glsig" data-i="'+i+'">'+
+    '<button class="glit" data-sig="'+esc(p.id)+'"><b dir="ltr">'+esc(x.tk||'')+'</b><span class="pill '+x.dir+'">'+(x.dir==='long'?'لانگ':'شورت')+'</span>'+
+      (z?'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span>':'')+'<small>'+relTime(p.date)+'</small></button>'+
+    '<div class="glnum">'+nums+'</div>'+
+    (now?'<div class="glnum">'+now+'</div>':'')+
+    (pl?'<div class="glnum">قاعده‌ی من: '+esc(xRuleName(pl.r))+' · هدف <b dir="ltr">'+fmtPrice(pl.tp)+'</b></div>':'')+
+    (hl?'<div class="glnum glh2">سابقه: '+hl+'</div>':'')+
+    '<div class="glact">'+
+      (z?'<button class="btn sm ok" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
+      '<button class="btn sm'+(z?'':' ok')+'" data-a="form">'+(z?'فرم کامل':'بررسی و ورود')+'</button>'+
+      '<button class="btn sm no" data-a="skip">وارد نشدم</button>'+
+      '<button class="btn sm side" data-a="copy" title="نماد، ورود، استاپ، تارگت، اهرم برای اپ صرافی">'+ic('share')+'</button>'+
+    '</div></div>';
 }
 function paintGlance(){
   const g=$('#glance');if(!g)return;
   if(view!=='signals'||bucket!=='live'||!POSTS.length){g.innerHTML='';return;}
   const d=glanceData();
-  if(!d.take.length&&!d.dl&&!d.unread&&!d.lock){g.innerHTML='';return;}
+  if(!d.take.length&&!d.dl&&!d.unread&&!d.lock&&!d.late&&!d.lt){g.innerHTML='';return;}
   g.className='glance'+(GLSHUT?' shut':'');
   let h='<button class="glh" type="button"><b>'+ic('bolt')+'الان چه کنم؟</b><span>'+
-    [d.take.length?faN(d.take.length)+' سیگنال قابل گرفتن':'',d.dl?'مهلت '+d.dl.p.ticker+': '+(d.dl.t<=Date.now()?'گذشت':fmtLeft(d.dl.t-Date.now())):'',
+    [d.take.length?faN(d.take.length)+' سیگنال قابل گرفتن':'سیگنال قابل گرفتنی نیست',d.dl?'مهلت '+d.dl.p.ticker+': '+(d.dl.t<=Date.now()?'گذشت':fmtLeft(d.dl.t-Date.now())):'',
      d.unread?faN(d.unread)+' پیشنهاد تازه':''].filter(Boolean).join(' · ')+'</span><i class="chev"></i></button>';
   if(!GLSHUT){
     h+='<div class="glb">';
     if(d.lock)h+='<div class="flag d"><i>!</i><span>'+faN(d.lock.n)+' باخت پیاپی — تا فردا ورود تازه نه.</span></div>';
-    for(const x of d.take)h+='<button class="glit" data-sig="'+esc(x.p.id)+'"><b dir="ltr">'+esc(x.tk||'')+'</b><span class="pill '+x.dir+'">'+(x.dir==='long'?'لانگ':'شورت')+'</span>'+
-      (x.z?'<span>ایزوله '+faN(x.z.lev)+'x · '+fmtUsd(x.z.margin)+'</span>':'')+'<small>'+relTime(x.p.date)+'</small></button>';
+    const list=GLALL?d.take:d.take.slice(0,GLMAX);
+    list.forEach((x,i)=>h+=glSigHtml(x,i));
+    if(d.take.length>list.length)h+='<button class="btn sm glmore" data-more="1">'+faN(d.take.length-list.length)+' سیگنال دیگر</button>';
+    if(d.late||d.lt)h+='<div class="hint glskip">'+[d.late?faN(d.late)+' سیگنال دیر رسیده (قیمت بیش از نیمی از راه تا تارگت ۱ را رفته)':'',
+      d.lt?faN(d.lt)+' سیگنال بلندمدت (اسپات یا استاپ دورتر از '+fmtNum(isoMaxSd())+'٪)':''].filter(Boolean).join(' · ')+' — در فهرست «در انتظار» هستند.</div>';
     if(d.dl)h+='<button class="glit" data-pos="'+esc(d.dl.p.id)+'"><b dir="ltr">'+esc(d.dl.p.ticker)+'</b><span>'+ic('clock')+(d.dl.t<=Date.now()?'مهلت گذشت — ببند':fmtLeft(d.dl.t-Date.now())+' تا پایان مهلت')+'</span></button>';
     if(d.unread)h+='<button class="glit" data-bell="1">'+ic('bell')+'<span>'+faN(d.unread)+' پیشنهاد تازه از مشاور</span></button>';
     h+='</div>';
@@ -13278,6 +13381,17 @@ function paintGlance(){
   g.querySelectorAll('[data-sig]').forEach(b=>b.onclick=()=>advDo({t:'sig',id:b.dataset.sig}));
   g.querySelectorAll('[data-pos]').forEach(b=>b.onclick=()=>advDo({t:'pos',id:b.dataset.pos}));
   g.querySelectorAll('[data-bell]').forEach(b=>b.onclick=sheetAdvice);
+  const mb=g.querySelector('[data-more]');if(mb)mb.onclick=()=>{GLALL=true;paintGlance();};
+  g.querySelectorAll('.glsig').forEach(w=>{
+    const x=d.take[+w.dataset.i];if(!x)return;
+    w.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{
+      const a=b.dataset.a;
+      if(a==='iso')isoEnter(x.p,x.sig,x.ov,x.px);
+      else if(a==='form')sheetEnter(x.p,x.sig,x.ov,x.px);
+      else if(a==='skip')sheetSkip(x.p,x.sig,x.ov,x.px);
+      else if(a==='copy')copyExch(x.p,x.sig,x.ov,x.px);
+    });
+  });
 }
 
 /* ۴۳) ?v=signals|positions|audit|report|scalp|bell از میان‌برهای آیکون برنامه */

@@ -117,6 +117,13 @@ function buildCard(p,lite){
     if(I.spot)head.appendChild(el('span','pill gold','اسپات'));
     const lt=longTermOf(p,sig,I);
     if(lt&&!I.spot){const t=el('span','pill mut ltp','بلندمدت');t.title=lt+' — برای ایزوله‌ی کوتاه‌مدت مناسب نیست';head.appendChild(t);}
+  }else if(kind==='res'&&REPOF.has(p.id)&&resAuto(p)){
+    // تکرارِ همان سیگنالِ قبلی: با زدن، سیگنال اصلی باز می‌شود
+    const o=findPost(REPOF.get(p.id)), b=el('button','pill kind k-res tapme',ic('flag')+'تکرار سیگنال قبلی');
+    b.title='همان سیگنالِ '+(o&&o.date?relTime(o.date):'قبلی')+' است؛ دوباره شمرده نمی‌شود. بزن تا اصلش باز شود';
+    b.onclick=e=>{e.stopPropagation();if(o){bucket=bucketOf(o)==='live'?'live':bucketOf(o);sigFilter='all';ACCOPEN=o.id;setView({});
+      setTimeout(()=>{const c=document.querySelector('#list .card[data-id="'+o.id+'"]');if(c)c.scrollIntoView({block:'center',behavior:'smooth'});},120);}};
+    head.appendChild(b);
   }else head.appendChild(el('span','pill kind k-'+kind+(kind==='res'&&!resAuto(p)?' gold':''),KIND_FA[kind]||'یادداشت'));
   if(NEWIDS.has(p.id))head.appendChild(el('span','pill gold','تازه'));
   const stale=isSig&&!dec&&isStale(p);
@@ -976,7 +983,7 @@ function renderFbar(){
   // 800 پست هر بار از نو bucketOf می‌گرفت.
   // همه‌ی شمارنده‌ها با فیلتر روز: «امروز» که روشن است، عددها هم مال امروزند
   let nLive=0,nNew=0,nRes=0,nArch=0,nExp=0;
-  const KN={sig:0,news:0,ann:0,res:0,note:0}, dp=dayPass();
+  const dp=dayPass();
   for(const p of POSTS){
     if(dp&&!dp(p))continue;
     const bk=bucketOf(p);
@@ -985,14 +992,13 @@ function renderFbar(){
     if(bk==='les')continue;
     nLive++;
     const kd=postKind(p);
-    KN[kd]++;
     if(kd==='res')nRes++;
     if(kd!=='sig')continue;
     if(!decisionOf(p.id)&&!isStale(p))nNew++;
   }
   const segs=[
     {k:'new', label:'در انتظار', n:nNew, hint:'سیگنال‌های این '+faN(S.staleDays||7)+' روز که هنوز تصمیمشان را نگرفته‌ای'},
-    {k:'all', label:'همه',       n:nLive, hint:'همه‌ی پست‌های کانال: سیگنال، نتیجه، خبر و اطلاع‌رسانی'}
+    {k:'all', label:'همه',       n:nLive, hint:'سیگنال‌ها و نتیجه‌ها؛ خبر، اطلاع‌رسانی و یادداشت خودشان در آرشیوند'}
   ];
   const cur=bucket==='live'?sigFilter:bucket;
   bar.innerHTML='';
@@ -1041,19 +1047,7 @@ function renderFbar(){
     const b=el('button','fc'+(on?' on':'')+(cls?' '+cls:''),'<span>'+label+'</span>'+(n!=null?'<i>'+faN(n)+'</i>':''));
     b.setAttribute('aria-pressed',on?'true':'false');b.onclick=fn;row.appendChild(b);return b;
   };
-  /* ردیف نوع و دسته فقط در «همه»: خبر، اطلاع‌رسانی، نتیجه… و دسته‌هایی که خودت ساخته‌ای */
-  if(bucket==='live'&&sigFilter==='all'){
-    const row=el('div','frow');row.setAttribute('aria-label','نوع پست');
-    const kind=KN[VIEW.kind]!=null?VIEW.kind:'all';
-    chip(row,'همه',nLive,kind==='all',()=>setView({kind:'all'}));
-    for(const k of ['sig','news','ann','res','note'])
-      chip(row,k==='sig'?'سیگنال':KIND_FA[k],KN[k],kind===k,()=>setView({kind:k}));
-    bar.appendChild(row);
-    // چیپ روشن ممکن است بیرون از دید افقی باشد؛ بی‌آنکه صفحه بالا-پایین برود جلو بیاوریمش
-    const onc=row.querySelector('.fc.on');
-    if(onc)requestAnimationFrame(()=>{const r=row.getBoundingClientRect(),c=onc.getBoundingClientRect();
-      if(c.left<r.left||c.right>r.right)row.scrollLeft+=c.left<r.left?c.left-r.left-8:c.right-r.right+8;});
-  }
+  /* ردیف نوع پست برداشته شد: خبر، اطلاع‌رسانی و یادداشت خودشان در آرشیوند؛ «همه» = سیگنال‌ها و نتیجه‌ها */
   // «در انتظار»: سیگنال‌های بلندمدت (استاپ دور، اسپات، هولد) برای ایزوله‌ی کوتاه‌مدت پنهان‌اند
   if(bucket==='live'&&sigFilter==='new'&&(LTHID||VIEW.iso===false)){
     const row=el('div','frow');
@@ -1083,7 +1077,7 @@ function renderFbar(){
    راست: آرشیو · چپ: «وارد نشدم» (فقط سیگنالی که هنوز تصمیمش را نگرفته‌ای). هر دو با «برگرداندن».
    فقط وقتی حرکت آشکارا افقی است؛ اسکرول عادی، اسلایدرها و نردبان دست نمی‌خورند. */
 function swipeAct(p,dx){
-  if(dx>0)return isArch(p.id)?null:{k:'arch',t:'رها کن: آرشیو',
+  if(dx>0)return bucketOf(p)==='arch'?null:{k:'arch',t:'رها کن: آرشیو',
     run:()=>undoable('به آرشیو رفت',()=>{DB.archived[p.id]=Date.now();})};
   if(dx<0&&isSigPost(p)&&!decisionOf(p.id))return {k:'skip',t:'رها کن: وارد نشدم',
     run:()=>undoable('ثبت شد: وارد نشدم',()=>{
@@ -1209,8 +1203,8 @@ function restoreAnchor(a){
 let RS_KEY='', LTHID=0;          // LTHID: سیگنال‌های بلندمدتِ پنهان در «در انتظار»
 function renderSignals(){
   const list=$('#list');
-  // بخش «سیگنال‌ها» برداشته شد؛ همان «همه» با چیپ «سیگنال» است
-  if(sigFilter==='sig'){sigFilter='all';VIEW.kind='sig';}
+  // بخش «سیگنال‌ها» برداشته شد؛ سیگنال‌های تصمیم‌نگرفته در «در انتظار»اند
+  if(sigFilter==='sig')sigFilter='all';
   // بروزرسانی خودکار هر دقیقه همین را صدا می‌زند؛ جای خواندن نباید تکان بخورد
   const anchor=listAnchor();
   /* سطل آموزش فهرست خودش را دارد (عنوان، دسته، اسکن کانال)، پس به‌جای کارت پست
@@ -1224,9 +1218,9 @@ function renderSignals(){
   const acc=F('accordion');
   let firstId=null, lastDay=null, sepEl=null, sepN=0;
   const closeSep=()=>{if(sepEl)sepEl.querySelector('.dsn').textContent=sepN+' پست';};
-  const dp=dayPass(), kind=bucket==='live'&&sigFilter==='all'&&VIEW.kind!=='all'?VIEW.kind:'';
+  const dp=dayPass();
   // انیمیشن ورود کارت‌ها فقط وقتی فهرست واقعاً عوض شده (فیلتر، سطل، جستجو)، نه با هر بروزرسانی
-  const rk=[bucket,sigFilter,coinFilter,q,VIEW.day,kind,VIEW.iso].join('|'), animate=rk!==RS_KEY;RS_KEY=rk;
+  const rk=[bucket,sigFilter,coinFilter,q,VIEW.day,VIEW.iso].join('|'), animate=rk!==RS_KEY;RS_KEY=rk;
   LTHID=0;
   for(const p of POSTS){
     if(dp&&!dp(p))continue;
@@ -1234,7 +1228,6 @@ function renderSignals(){
     if(bucket==='res'){if(bk!=='live'||postKind(p)!=='res')continue;}
     else if(bk!==bucket)continue;
     if(coinFilter&&(sig.ticker||'')!==coinFilter)continue;
-    if(kind&&postKind(p)!==kind)continue;
     if(bucket==='live'&&sigFilter==='new'&&!isOpenSig(p))continue;
     if(bucket==='live'&&sigFilter==='new'&&VIEW.iso!==false&&isLongTerm(p)){LTHID++;continue;}
     if(q&&!((sig.ticker||'')+' '+p.text).toLowerCase().includes(q))continue;
@@ -1287,8 +1280,6 @@ function renderSignals(){
     const BK={res:'نتایج',exp:'منقضی',arch:'آرشیو'};
     // بخش‌های بالا (در انتظار/همه) خودشان روشن دیده می‌شوند؛ اینجا فقط چیزهایی که از چشم می‌افتند
     if(bucket!=='live'&&BK[bucket])tags.push([BK[bucket],()=>{bucket='live';}]);
-    if(bucket==='live'&&sigFilter==='all'&&VIEW.kind&&VIEW.kind!=='all')
-      tags.push([VIEW.kind==='sig'?'سیگنال':(KIND_FA[VIEW.kind]||VIEW.kind),()=>{VIEW.kind='all';}]);
     if(DAY_FA[VIEW.day]&&VIEW.day!=='all')tags.push(['روز: '+DAY_FA[VIEW.day],()=>{VIEW.day='all';}]);
     if(coinFilter)tags.push(['فقط '+esc(coinFilter),()=>{coinFilter=null;}]);
     if(q)tags.push(['جستجو: '+esc(query.trim().slice(0,16)),()=>{query='';$('#q').value='';}]);
@@ -1301,7 +1292,7 @@ function renderSignals(){
       }
       if(tags.length>1){const all=el('button','actall','همه را بردار');
         all.onclick=()=>{bucket='live';sigFilter='all';coinFilter=null;query='';$('#q').value='';
-          setView({kind:'all',day:'all'});};bar.appendChild(all);}
+          setView({day:'all'});};bar.appendChild(all);}
       list.appendChild(bar);
     }
   }

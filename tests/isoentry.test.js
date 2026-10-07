@@ -84,7 +84,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  console.log('=== ۵: سابقه در کانال‌سنج ===');
  const h=await p.evaluate(()=>{
    const H=36e5,now=Date.now(),R=audRules();
-   for(let i=0;i<4;i++){const P={id:'ccoineres/9880'+i,num:98800+i,text:'#ISOA لانگ\nورود 100\nحد ضرر 90\nتارگت 110',date:new Date(now-(50+i)*H)};
+   for(let i=0;i<4;i++){const P={id:'ccoineres/9880'+i,num:98800+i,text:'#ISOA لانگ\nورود '+(120+5*i)+'\nحد ضرر '+(110+5*i)+'\nتارگت '+(130+5*i),date:new Date(now-(50+i)*H)};   // عددهای متفاوت: تکرارِ هم نیستند
      POSTS.push(P);const inp=audInput(P);AUD[P.id]={k:audKey(inp,R),st:i<3?'win':'loss',fin:true,at:now,tAct:+P.date,tTp:[+P.date+H],late:false};}
    KGEN++;AUDQ.at=Date.now();return histLine(POSTS.find(x=>x.id==='ccoineres/99001'));});
  console.log('    '+h.replace(/<[^>]+>/g,''));

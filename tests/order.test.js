@@ -1,4 +1,5 @@
 const {chromium} = require('./lib').pw;
+// متنِ «POST-n» یادداشت است و خودش آرشیو می‌شود؛ ترتیب در سطل آرشیو سنجیده می‌شود
 
 // صفحه‌ی جعلی t.me با شماره‌ی پست‌های مشخص
 const page_ = (nums, before) => `<html><body>${
@@ -29,7 +30,7 @@ const page_ = (nums, before) => `<html><body>${
   });
 
   await p.goto('http://localhost:8899/index.html', {waitUntil:'domcontentloaded'});
-  await p.evaluate(() => { sigFilter = "all"; renderSignals(); });
+  await p.evaluate(() => { sigFilter = "all"; bucket = "arch"; renderSignals(); });
   await p.waitForFunction(() => document.querySelectorAll('#list .card').length > 0, {timeout:20000});
 
   const first = await p.$$eval('#list .card', els =>
@@ -39,8 +40,8 @@ const page_ = (nums, before) => `<html><body>${
   // حالا «پست‌های قدیمی‌تر»
   await p.click('#btnMore');
   await p.waitForTimeout(3000);
-  await p.evaluate(() => { sigFilter = "all"; renderSignals(); });
-  await p.evaluate(() => { sigFilter = "all"; renderSignals(); });
+  await p.evaluate(() => { sigFilter = "all"; bucket = "arch"; renderSignals(); });
+  await p.evaluate(() => { sigFilter = "all"; bucket = "arch"; renderSignals(); });
   await p.waitForFunction(() => document.querySelectorAll('#list .card').length > 5, {timeout:25000});
   const after = await p.$$eval('#list .card', els =>
     els.map(e => (e.textContent.match(/POST-\d+/) || ['?'])[0]));

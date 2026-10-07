@@ -54,7 +54,7 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
   const num=t=>Number(String(t).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
   const [nNew,nAll]=s.segs.map(x=>num(x.n));
   console.log('  شمارش:', 'در انتظار='+nNew, 'همه='+nAll);
-  ok(nAll===7,'۷ پست شمرده شد');
+  ok(nAll===4,'۴ سیگنال در «همه»؛ سه پستِ یادداشت/خبر خودشان آرشیو شدند');
   ok(nNew===4,'هر ۴ سیگنال بی‌تصمیم است');
   ok(nNew<=nAll,'شمارش‌ها تودرتو و سازگارند');
 
@@ -87,7 +87,7 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
   await p.waitForTimeout(400);
   s=await read();
   ok(num(s.segs[0].n)===3,'«در انتظار» به ۳ رسید، شد '+num(s.segs[0].n));
-  ok(num(s.segs[1].n)===7,'«همه» هنوز ۷ است');
+  ok(num(s.segs[1].n)===4,'«همه» هنوز ۴ است');
   ok(!!s.tidy,'دکمه‌ی کنارگذاشتن ظاهر شد: '+(s.tidy||'—'));
 
   console.log('\n=== آرشیو ===');
@@ -103,8 +103,8 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
   s=await read();
   console.log('  بعد از کنارگذاشتن:', s.segs.map(x=>x.label+'('+x.n+')').join(' | '),
               'آرشیو='+s.arch.n);
-  ok(num(s.arch.n)===1,'شمارنده‌ی آرشیو ۱ شد');
-  ok(num(s.segs[1].n)===6,'«همه» به ۶ افت کرد');
+  ok(num(s.arch.n)===4,'شمارنده‌ی آرشیو ۴ شد (۳ خودکار + ۱ کنارگذاشته)');
+  ok(num(s.segs[1].n)===3,'«همه» به ۳ افت کرد');
   ok(!s.tidy,'دکمه‌ی کنارگذاشتن رفت');
 
   console.log('\n=== چیدمان روی موبایل ===');
