@@ -8,7 +8,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    for(const q of pts.slice(1))t.dispatchEvent(new TouchEvent('touchmove',{touches:[mk(...q)],bubbles:true}));
    t.dispatchEvent(new TouchEvent('touchend',{touches:[],bubbles:true}));},{sel,pts});
  // 7) متن خام جمع
- const c7=await p.evaluate(()=>{S.feat.accordion=false;renderSignals();const c=document.querySelector('#list .card[data-id$="/920"]');return {cl:c.querySelector('.txt').className,b:c.querySelector('.more')?.textContent};});
+ const c7=await p.evaluate(()=>{S.feat.accordion=false;sigFilter='all';VIEW.kind='all';renderSignals();const c=document.querySelector('#list .card[data-id$="/920"]');return {cl:c.querySelector('.txt').className,b:c.querySelector('.more')?.textContent};});
  ok(/clamp2/.test(c7.cl)&&c7.b==='متن کامل','سیگنال خوانده‌شده: متن دو خطی + «متن کامل» '+JSON.stringify(c7));
  // 8) کشیدن به راست = آرشیو
  await touch('#list .card[data-id$="/920"]',[[100,300],[140,302],[200,303],[300,305]]);await p.waitForTimeout(500);

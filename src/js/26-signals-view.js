@@ -1,5 +1,5 @@
 /* ==================== نمای سیگنال‌ها ==================== */
-let OVERRIDE={},COLLAPSED={},sigFilter='sig',query='',beforeId=null,busy=false,coinFilter=null;
+let OVERRIDE={},COLLAPSED={},sigFilter='new',query='',beforeId=null,busy=false,coinFilter=null;
 /* با 800 پست در کش، ساختن همه‌ی کارت‌ها در هر رندر روی گوشی کند می‌شود.
    فقط یک پنجره می‌سازیم و با دکمه بزرگش می‌کنیم. هر تغییر فیلتر پنجره را صفر می‌کند. */
 const PAGE=30; let shownMax=PAGE;
@@ -12,7 +12,8 @@ let bucket='live';
 const VIEWKEY='signaldesk.view.v1';
 const VIEW=Object.assign({kind:'all',day:'all',from:'',to:''},lsGet(VIEWKEY)||{});
 delete VIEW.cat;                  // دسته‌های دلخواه برداشته شد
-if(['new','sig','all'].includes(VIEW.sf))sigFilter=VIEW.sf;
+if(['new','all'].includes(VIEW.sf))sigFilter=VIEW.sf;
+else if(VIEW.sf==='sig'){sigFilter='all';VIEW.kind='sig';}   // بخش «سیگنال‌ها» = «همه» › سیگنال
 if(['live','res','arch','exp'].includes(VIEW.bk))bucket=VIEW.bk;
 function setView(o){
   Object.assign(VIEW,o);VIEW.sf=sigFilter;VIEW.bk=bucket;

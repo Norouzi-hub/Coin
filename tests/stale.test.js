@@ -42,7 +42,7 @@ const fa=t=>+String(t).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
  const fb=await p.evaluate(()=>Object.fromEntries([...document.querySelectorAll('#fbar .fseg .fb')].map(b=>[b.querySelector('span').textContent,b.querySelector('i').textContent])));
  console.log('  ',JSON.stringify(fb));
  ok(fa(fb['در انتظار'])===2,'«در انتظار» فقط دو سیگنال تازه');
- ok(fa(fb['سیگنال‌ها'])===2,'«سیگنال‌ها» فقط دو سیگنال زنده؛ منقضی‌ها بیرون‌اند');
+ ok(fb['سیگنال‌ها']==null,'بخش «سیگنال‌ها» برداشته شد');
  const nExp=await p.evaluate(()=>+[...document.querySelectorAll('#fbar .fbucket')].find(b=>b.textContent.includes('منقضی')).querySelector('i').textContent);
  ok(nExp===4,'سطل «منقضی»: ۴ سیگنال');
  ok(fa(await p.$eval('#cSig',e=>e.textContent))===2,'شمارنده‌ی تب ۲');

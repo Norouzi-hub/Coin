@@ -975,7 +975,7 @@ function renderFbar(){
   // یک پیمایش برای هر پنج شمارنده. قبلاً چهار filter پشت سر هم بود و روی
   // 800 پست هر بار از نو bucketOf می‌گرفت.
   // همه‌ی شمارنده‌ها با فیلتر روز: «امروز» که روشن است، عددها هم مال امروزند
-  let nLive=0,nSig=0,nNew=0,nRes=0,nArch=0,nExp=0;
+  let nLive=0,nNew=0,nRes=0,nArch=0,nExp=0;
   const KN={sig:0,news:0,ann:0,res:0,note:0}, dp=dayPass();
   for(const p of POSTS){
     if(dp&&!dp(p))continue;
@@ -988,12 +988,10 @@ function renderFbar(){
     KN[kd]++;
     if(kd==='res')nRes++;
     if(kd!=='sig')continue;
-    nSig++;
     if(!decisionOf(p.id)&&!isStale(p))nNew++;
   }
   const segs=[
     {k:'new', label:'در انتظار', n:nNew, hint:'سیگنال‌های این '+faN(S.staleDays||7)+' روز که هنوز تصمیمشان را نگرفته‌ای'},
-    {k:'sig', label:'سیگنال‌ها', n:nSig, hint:'همه‌ی سیگنال‌ها'},
     {k:'all', label:'همه',       n:nLive, hint:'همه‌ی پست‌های کانال: سیگنال، نتیجه، خبر و اطلاع‌رسانی'}
   ];
   const cur=bucket==='live'?sigFilter:bucket;
@@ -1211,6 +1209,8 @@ function restoreAnchor(a){
 let RS_KEY='', LTHID=0;          // LTHID: سیگنال‌های بلندمدتِ پنهان در «در انتظار»
 function renderSignals(){
   const list=$('#list');
+  // بخش «سیگنال‌ها» برداشته شد؛ همان «همه» با چیپ «سیگنال» است
+  if(sigFilter==='sig'){sigFilter='all';VIEW.kind='sig';}
   // بروزرسانی خودکار هر دقیقه همین را صدا می‌زند؛ جای خواندن نباید تکان بخورد
   const anchor=listAnchor();
   /* سطل آموزش فهرست خودش را دارد (عنوان، دسته، اسکن کانال)، پس به‌جای کارت پست
@@ -1235,7 +1235,6 @@ function renderSignals(){
     else if(bk!==bucket)continue;
     if(coinFilter&&(sig.ticker||'')!==coinFilter)continue;
     if(kind&&postKind(p)!==kind)continue;
-    if(bucket==='live'&&sigFilter==='sig'&&!isSigPost(p))continue;
     if(bucket==='live'&&sigFilter==='new'&&!isOpenSig(p))continue;
     if(bucket==='live'&&sigFilter==='new'&&VIEW.iso!==false&&isLongTerm(p)){LTHID++;continue;}
     if(q&&!((sig.ticker||'')+' '+p.text).toLowerCase().includes(q))continue;
@@ -1286,7 +1285,7 @@ function renderSignals(){
   {
     const tags=[];
     const BK={res:'نتایج',exp:'منقضی',arch:'آرشیو'};
-    // بخش‌های بالا (در انتظار/سیگنال‌ها/همه) خودشان روشن دیده می‌شوند؛ اینجا فقط چیزهایی که از چشم می‌افتند
+    // بخش‌های بالا (در انتظار/همه) خودشان روشن دیده می‌شوند؛ اینجا فقط چیزهایی که از چشم می‌افتند
     if(bucket!=='live'&&BK[bucket])tags.push([BK[bucket],()=>{bucket='live';}]);
     if(bucket==='live'&&sigFilter==='all'&&VIEW.kind&&VIEW.kind!=='all')
       tags.push([VIEW.kind==='sig'?'سیگنال':(KIND_FA[VIEW.kind]||VIEW.kind),()=>{VIEW.kind='all';}]);
@@ -1301,7 +1300,7 @@ function renderSignals(){
         b.onclick=()=>{off();setView({});};bar.appendChild(b);
       }
       if(tags.length>1){const all=el('button','actall','همه را بردار');
-        all.onclick=()=>{bucket='live';sigFilter='sig';coinFilter=null;query='';$('#q').value='';
+        all.onclick=()=>{bucket='live';sigFilter='all';coinFilter=null;query='';$('#q').value='';
           setView({kind:'all',day:'all'});};bar.appendChild(all);}
       list.appendChild(bar);
     }
@@ -1358,8 +1357,8 @@ function showStatus(){
     return;
   }
   /* شمارنده‌های «پست/سیگنال/تصمیم‌نگرفته» از اینجا برداشته شدند: همین سه عدد
-     دقیقاً در نوار فیلترِ بالای همین صفحه هستند (همه/سیگنال‌ها/در انتظار).
-     اینجا فقط چیزی می‌ماند که جای دیگری نوشته نشده. */
+     دقیقاً در نوار فیلترِ بالای همین صفحه هستند (همه/در انتظار).
+     اینجا فقط چیزی می‌ماند که جای دیگری نوشته نشده؛ «الان چه کنم؟» زیر همین خط، در همان کارت است. */
   st.className='status';
   const px=(priceSrc&&priceSrc!=='—')
     ?(H.px.state==='stale'?'قیمت قدیمی ':'قیمت ')+esc(priceSrc)+' · '+ageTxt(PX_AT)

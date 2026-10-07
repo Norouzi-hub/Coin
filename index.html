@@ -1281,9 +1281,9 @@ table.tp .num{direction:ltr;text-align:start}
   background:var(--card);color:var(--tx2);display:grid;place-items:center;cursor:pointer}
 .srow{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
 .tgbox{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
-#feedBox .autotog{margin:12px 0 4px}
-#feedBox a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
-#feedState[data-k=ok]{color:var(--up);font-weight:700}
+#txtOut .txtprev{width:100%;min-height:120px;margin-top:8px;background:var(--inset);border:1px solid var(--line2);border-radius:11px;padding:9px;
+  font:12px/1.6 ui-monospace,Menlo,Consolas,monospace;direction:ltr;text-align:left;color:var(--tx2);white-space:pre;overflow:auto}
+#txtOut .txtopt{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .flink{margin-top:10px}
 .flh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:13px}
 .flh span{font-size:12px;color:var(--tx3)}
@@ -1553,7 +1553,13 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 }
 @media (max-width:360px){.bname{display:none}}
 /* «الان چه کنم؟» بالای سیگنال‌ها (38b-simple.js) */
-.glance{margin:0 0 10px;border:1px solid color-mix(in srgb,var(--gold) 35%,var(--line));border-radius:var(--r);background:var(--card);overflow:hidden}
+.glance{background:var(--card)}
+/* نوار خلاصه و «الان چه کنم؟» یک کارت‌اند */
+.topcard{margin:10px 0;border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden}
+.topcard:has(>.status:empty):has(>.glance:empty),.topcard:has(>.status:empty):has(>#glance:empty){display:none}
+.topcard:has(>.glance:not(:empty)){border-color:color-mix(in srgb,var(--gold) 35%,var(--line))}
+.topcard>.status{margin:0;border:0;border-radius:0}
+.topcard>.status:not(:empty)+.glance:not(:empty){border-top:1px solid var(--line)}
 .glh{display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;background:none;border:0;color:var(--tx);font:inherit;cursor:pointer;text-align:start}
 .glh b{display:flex;align-items:center;gap:5px;font-size:13.5px;flex:none}.glh b .ic{color:var(--gold);width:16px;height:16px}
 .glh span{flex:1;min-width:0;font-size:12px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1754,8 +1760,8 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
       <label class="search"><span id="qIc"></span><input id="q" placeholder="جستجو در نماد یا متن…" autocomplete="off"></label>
       <div class="fbar" id="fbar" role="tablist" aria-label="نمایش پست‌ها"></div>
     </div>
-    <div id="glance"></div>
-    <div class="status" id="status"></div>
+    <!-- یک کارت: خط خلاصه (ریسک، سود/ضرر باز، قیمت) و زیرش «الان چه کنم؟» -->
+    <div class="topcard" id="topcard"><div class="status" id="status"></div><div id="glance"></div></div>
     <div id="incoming" class="incoming hide"></div>
     <div id="list"></div>
     <div id="moreSkel" class="hide"></div>
@@ -1962,18 +1968,18 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
     </div>
     </details>
 
-    <details class="sec" data-sec="feed"><summary>خروجی برای برنامه‌های دیگر</summary>
-    <div class="wsetup" id="feedBox">
-      <div class="hint">سیگنال‌های ۶۰ روز اخیر (با ورود، استاپ، تارگت‌ها، وضعیت «گرفتم/نگرفتم» و نتیجه) برای
-        تقویم، برنامه‌ریز روزانه، گوگل‌شیت یا هر برنامه‌ای که از روی لینک می‌خواند.</div>
-      <label class="autotog"><input type="checkbox" id="sFeedOn"><span>لینک ثابت روی ورکر خودم
-        <span class="markhint" id="feedState">—</span></span></label>
-      <div id="feedLinks"></div>
-      <div class="hint">لینک محرمانه است: هر کس داشته باشد سیگنال‌ها را می‌بیند، ولی به داده‌ی دیگرت راه ندارد.
-        برنامه‌ی دیگر هر چند دقیقه خودش دوباره می‌خواند؛ نسخه‌ی روی ورکر هر بار که این برنامه باز است
-        (یا روی دستگاه دیگری باز است) تازه می‌شود. به همگام‌سازی با ورکر خودت نیاز دارد.</div>
-      <div class="srow"><button class="btn" id="feedDlIcs">دانلود فایل تقویم</button>
-        <button class="btn" id="feedDlCsv">دانلود CSV</button></div>
+    <details class="sec" data-sec="txtout"><summary>خروجی متنی سیگنال‌ها</summary>
+    <div class="wsetup" id="txtOut">
+      <div class="hint">هر سیگنال یک خط، برای دادن به برنامه‌ی خودت. ستون‌ها با « | » جدا شده‌اند و عددها انگلیسی‌اند:
+        <span dir="ltr">TIME | TICKER | LONG/SHORT | FUTURES/SPOT | ENTRY | SL | TP | LEV | STATUS | LINK</span>.
+        خانه‌ی نامعلوم «-» است.</div>
+      <div class="txtopt">
+        <label for="txDays">بازه</label>
+        <select id="txDays"><option value="1">۲۴ ساعت</option><option value="3">۳ روز</option><option value="7" selected>۷ روز</option><option value="30">۳۰ روز</option><option value="60">۶۰ روز</option></select>
+        <label class="shopt"><input type="checkbox" id="txOpen"><span>فقط باز (نگرفته، منقضی‌نشده)</span></label>
+      </div>
+      <textarea class="txtprev" id="txPrev" readonly rows="6" aria-label="پیش‌نمایش خروجی متنی"></textarea>
+      <div class="srow"><button class="btn pri" id="txCopy">کپی متن</button><button class="btn" id="txDl">دانلود فایل txt</button></div>
     </div>
     </details>
 
@@ -2306,7 +2312,6 @@ function save(){
   try{ localStorage.setItem(KEY,JSON.stringify(dbBlob())); }
   catch(e){ storeOK=false; showStoreWarn(); }
   if(typeof syncSoon==='function')syncSoon();
-  if(typeof feedSoon==='function')feedSoon();
 }
 function load(){
   try{
@@ -2581,7 +2586,7 @@ function fxGuard(){
   if(S.feat&&S.feat.fx===false&&!lsGet('signaldesk.fxuser')){S.feat.fx=true;return true;}
   return false;
 }
-const S={lossLock:2,channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,slip:0.05,fund:0,openRisk:15,feedOn:false,auto:60,proxy:'',feat:featDefaults(),staleDays:7,exitPb:'bal',cal:'j',
+const S={lossLock:2,channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,slip:0.05,fund:0,openRisk:15,auto:60,proxy:'',feat:featDefaults(),staleDays:7,exitPb:'bal',cal:'j',
   aud:{days:30,entryDays:3,tol:1,rule:'tp1'}};
 const F=k=>!!(S.feat&&S.feat[k]);
 let BOOTED=false;
@@ -5312,7 +5317,7 @@ function sheetHealth(){
 }
 
 /* ==================== نمای سیگنال‌ها ==================== */
-let OVERRIDE={},COLLAPSED={},sigFilter='sig',query='',beforeId=null,busy=false,coinFilter=null;
+let OVERRIDE={},COLLAPSED={},sigFilter='new',query='',beforeId=null,busy=false,coinFilter=null;
 /* با 800 پست در کش، ساختن همه‌ی کارت‌ها در هر رندر روی گوشی کند می‌شود.
    فقط یک پنجره می‌سازیم و با دکمه بزرگش می‌کنیم. هر تغییر فیلتر پنجره را صفر می‌کند. */
 const PAGE=30; let shownMax=PAGE;
@@ -5325,7 +5330,8 @@ let bucket='live';
 const VIEWKEY='signaldesk.view.v1';
 const VIEW=Object.assign({kind:'all',day:'all',from:'',to:''},lsGet(VIEWKEY)||{});
 delete VIEW.cat;                  // دسته‌های دلخواه برداشته شد
-if(['new','sig','all'].includes(VIEW.sf))sigFilter=VIEW.sf;
+if(['new','all'].includes(VIEW.sf))sigFilter=VIEW.sf;
+else if(VIEW.sf==='sig'){sigFilter='all';VIEW.kind='sig';}   // بخش «سیگنال‌ها» = «همه» › سیگنال
 if(['live','res','arch','exp'].includes(VIEW.bk))bucket=VIEW.bk;
 function setView(o){
   Object.assign(VIEW,o);VIEW.sf=sigFilter;VIEW.bk=bucket;
@@ -6413,7 +6419,7 @@ function renderFbar(){
   // یک پیمایش برای هر پنج شمارنده. قبلاً چهار filter پشت سر هم بود و روی
   // 800 پست هر بار از نو bucketOf می‌گرفت.
   // همه‌ی شمارنده‌ها با فیلتر روز: «امروز» که روشن است، عددها هم مال امروزند
-  let nLive=0,nSig=0,nNew=0,nRes=0,nArch=0,nExp=0;
+  let nLive=0,nNew=0,nRes=0,nArch=0,nExp=0;
   const KN={sig:0,news:0,ann:0,res:0,note:0}, dp=dayPass();
   for(const p of POSTS){
     if(dp&&!dp(p))continue;
@@ -6426,12 +6432,10 @@ function renderFbar(){
     KN[kd]++;
     if(kd==='res')nRes++;
     if(kd!=='sig')continue;
-    nSig++;
     if(!decisionOf(p.id)&&!isStale(p))nNew++;
   }
   const segs=[
     {k:'new', label:'در انتظار', n:nNew, hint:'سیگنال‌های این '+faN(S.staleDays||7)+' روز که هنوز تصمیمشان را نگرفته‌ای'},
-    {k:'sig', label:'سیگنال‌ها', n:nSig, hint:'همه‌ی سیگنال‌ها'},
     {k:'all', label:'همه',       n:nLive, hint:'همه‌ی پست‌های کانال: سیگنال، نتیجه، خبر و اطلاع‌رسانی'}
   ];
   const cur=bucket==='live'?sigFilter:bucket;
@@ -6649,6 +6653,8 @@ function restoreAnchor(a){
 let RS_KEY='', LTHID=0;          // LTHID: سیگنال‌های بلندمدتِ پنهان در «در انتظار»
 function renderSignals(){
   const list=$('#list');
+  // بخش «سیگنال‌ها» برداشته شد؛ همان «همه» با چیپ «سیگنال» است
+  if(sigFilter==='sig'){sigFilter='all';VIEW.kind='sig';}
   // بروزرسانی خودکار هر دقیقه همین را صدا می‌زند؛ جای خواندن نباید تکان بخورد
   const anchor=listAnchor();
   /* سطل آموزش فهرست خودش را دارد (عنوان، دسته، اسکن کانال)، پس به‌جای کارت پست
@@ -6673,7 +6679,6 @@ function renderSignals(){
     else if(bk!==bucket)continue;
     if(coinFilter&&(sig.ticker||'')!==coinFilter)continue;
     if(kind&&postKind(p)!==kind)continue;
-    if(bucket==='live'&&sigFilter==='sig'&&!isSigPost(p))continue;
     if(bucket==='live'&&sigFilter==='new'&&!isOpenSig(p))continue;
     if(bucket==='live'&&sigFilter==='new'&&VIEW.iso!==false&&isLongTerm(p)){LTHID++;continue;}
     if(q&&!((sig.ticker||'')+' '+p.text).toLowerCase().includes(q))continue;
@@ -6724,7 +6729,7 @@ function renderSignals(){
   {
     const tags=[];
     const BK={res:'نتایج',exp:'منقضی',arch:'آرشیو'};
-    // بخش‌های بالا (در انتظار/سیگنال‌ها/همه) خودشان روشن دیده می‌شوند؛ اینجا فقط چیزهایی که از چشم می‌افتند
+    // بخش‌های بالا (در انتظار/همه) خودشان روشن دیده می‌شوند؛ اینجا فقط چیزهایی که از چشم می‌افتند
     if(bucket!=='live'&&BK[bucket])tags.push([BK[bucket],()=>{bucket='live';}]);
     if(bucket==='live'&&sigFilter==='all'&&VIEW.kind&&VIEW.kind!=='all')
       tags.push([VIEW.kind==='sig'?'سیگنال':(KIND_FA[VIEW.kind]||VIEW.kind),()=>{VIEW.kind='all';}]);
@@ -6739,7 +6744,7 @@ function renderSignals(){
         b.onclick=()=>{off();setView({});};bar.appendChild(b);
       }
       if(tags.length>1){const all=el('button','actall','همه را بردار');
-        all.onclick=()=>{bucket='live';sigFilter='sig';coinFilter=null;query='';$('#q').value='';
+        all.onclick=()=>{bucket='live';sigFilter='all';coinFilter=null;query='';$('#q').value='';
           setView({kind:'all',day:'all'});};bar.appendChild(all);}
       list.appendChild(bar);
     }
@@ -6796,8 +6801,8 @@ function showStatus(){
     return;
   }
   /* شمارنده‌های «پست/سیگنال/تصمیم‌نگرفته» از اینجا برداشته شدند: همین سه عدد
-     دقیقاً در نوار فیلترِ بالای همین صفحه هستند (همه/سیگنال‌ها/در انتظار).
-     اینجا فقط چیزی می‌ماند که جای دیگری نوشته نشده. */
+     دقیقاً در نوار فیلترِ بالای همین صفحه هستند (همه/در انتظار).
+     اینجا فقط چیزی می‌ماند که جای دیگری نوشته نشده؛ «الان چه کنم؟» زیر همین خط، در همان کارت است. */
   st.className='status';
   const px=(priceSrc&&priceSrc!=='—')
     ?(H.px.state==='stale'?'قیمت قدیمی ':'قیمت ')+esc(priceSrc)+' · '+ageTxt(PX_AT)
@@ -13097,204 +13102,60 @@ function wireIO(){
   };
 }
 
-/* ==================== لینک خروجی برای برنامه‌های دیگر ==================== */
-/* سیگنال‌ها در چهار قالب که بیشتر برنامه‌ها «از روی لینک» می‌خوانند:
-   - ICS  (تقویم): گوگل‌کلندر، تقویم آیفون، Outlook و برنامه‌های برنامه‌ریزی روزانه — هر سیگنال یک رویداد
-   - RSS : خبرخوان‌ها، IFTTT و Zapier
-   - CSV : گوگل‌شیت (=IMPORTDATA)، اکسل
-   - JSON: هر برنامه‌ی دیگری
-   قالب‌ها همین‌جا ساخته می‌شوند (یک جا، هم برای دانلود و هم برای لینک). اگر همگام‌سازی روشن
-   باشد، نسخه‌ی تازه روی ورکر خودت می‌رود و ورکر آن را پشت یک لینک ثابت و محرمانه نگه می‌دارد؛
-   برنامه‌ی دیگر هر چند دقیقه همان لینک را دوباره می‌خواند. */
-const FEED_DAYS=60, FEED_MAX=200;
-const FEED_ST_FA={open:'باز',taken:'گرفتم',skipped:'نگرفتم',expired:'منقضی'};
-function feedItems(){
-  const since=Date.now()-FEED_DAYS*864e5, out=[];
+/* ==================== خروجی متنی سیگنال‌ها ====================
+   برای برنامه‌ی خودِ صاحب پروژه که سیگنال‌ها را چک می‌کند: هر سیگنال یک خط، ستون‌ها با « | »،
+   عدد انگلیسی و نقطه‌ی اعشار، خانه‌ی نامعلوم «-». خط‌های «#» توضیح‌اند و برنامه می‌تواند ردشان کند.
+   2026-10-07 14:32 | BTC | LONG | FUTURES | ENTRY 64800 | SL 63500 | TP 66000,67000 | LEV 10 | STATUS open | https://t.me/... */
+const TXST={open:'open',taken:'taken',skipped:'skipped',expired:'expired'};
+const txNum=v=>v==null||!isFinite(v)?'-':String(+(+v).toPrecision(8));
+const txTime=t=>{const d=new Date(t),z=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+' '+z(d.getHours())+':'+z(d.getMinutes());};
+function txItems(days,onlyOpen){
+  const since=Date.now()-days*864e5, out=[];
   for(const p of POSTS){
     if(!p.date||+p.date<since||!isSigPost(p))continue;
     const s=sigOf(p), ov=OVERRIDE[p.id]||{}, dec=decisionOf(p.id);
-    const pos=dec&&dec.posId?DB.positions.find(x=>x.id===dec.posId):null;
-    const it={id:p.id,at:+p.date,ticker:s.ticker||'',dir:s.direction,market:s.market||'futures',
-      entry:ov.entry!=null?ov.entry:s.entry,stop:ov.stop!=null?ov.stop:s.stop,
-      targets:(s.targets||[]).slice(0,6),lev:s.leverage||null,
-      status:dec?(dec.action==='taken'?'taken':'skipped'):isStale(p)?'expired':'open',
-      link:p.link||('https://t.me/'+p.id),text:(p.text||'').replace(/\s+\n/g,'\n').slice(0,600)};
-    // نتیجه فقط وقتی بسته شده؛ سود شناورِ لحظه‌ای هر دقیقه عوض می‌شود و خروجی را بی‌دلیل تازه می‌کرد
-    if(pos){it.pos={status:pos.status,entry:pos.entry};
-      if(pos.status==='closed'){const m=posMetrics(pos);it.pos.pnl=m.pnl!=null?+m.pnl.toFixed(2):null;it.pos.r=m.r!=null?+m.r.toFixed(2):null;}}
-    out.push(it);
+    const st=dec?(dec.action==='taken'?'taken':'skipped'):isStale(p)?'expired':'open';
+    if(onlyOpen&&st!=='open')continue;
+    out.push({at:+p.date,tk:s.ticker||'-',dir:s.direction==='short'?'SHORT':s.direction==='long'?'LONG':'-',mkt:s.market==='spot'?'SPOT':'FUTURES',
+      entry:ov.entry!=null?ov.entry:(s.entry!=null?s.entry:s.trigger),stop:ov.stop!=null?ov.stop:s.stop,
+      tps:(s.targets||[]).slice(0,6),lev:s.leverage||null,st,link:p.link||('https://t.me/'+p.id)});
   }
-  return out.sort((a,b)=>b.at-a.at).slice(0,FEED_MAX);
+  return out.sort((a,b)=>a.at-b.at);
 }
-const fNum=v=>v==null||!isFinite(v)?'':String(+(+v).toPrecision(8));
-function feedTitle(it){
-  const d=it.dir==='short'?'🔴':'🟢';
-  let t=d+' '+it.ticker+' '+(it.dir==='short'?'شورت':'لانگ')+(it.market==='spot'?' اسپات':'');
-  if(it.entry!=null)t+=' · ورود '+fNum(it.entry);
-  if(it.stop!=null)t+=' · استاپ '+fNum(it.stop);
-  if(it.pos&&it.pos.status==='closed'&&it.pos.r!=null)t+=' · نتیجه '+(it.pos.r>=0?'+':'')+it.pos.r+'R';
-  else if(it.status!=='open')t+=' · '+FEED_ST_FA[it.status];
-  return t;
+function txText(days,onlyOpen){
+  const L=txItems(days,onlyOpen).map(x=>[txTime(x.at),x.tk,x.dir,x.mkt,'ENTRY '+txNum(x.entry),'SL '+txNum(x.stop),
+    'TP '+(x.tps.length?x.tps.map(txNum).join(','):'-'),'LEV '+(x.lev?txNum(x.lev):'-'),'STATUS '+TXST[x.st],x.link].join(' | '));
+  return {n:L.length,text:'# signaldesk @'+(S.channel||'channel')+' · '+txTime(Date.now())+' (device time) · '+L.length+' signals\n'+
+    '# TIME | TICKER | DIR | MARKET | ENTRY | SL | TP | LEV | STATUS | LINK\n'+L.join('\n')+(L.length?'\n':'')};
 }
-function feedDesc(it){
-  const L=[];
-  L.push('نماد: '+it.ticker+' · '+(it.dir==='short'?'شورت':'لانگ')+' · '+(it.market==='spot'?'اسپات':'فیوچرز'));
-  if(it.entry!=null)L.push('ورود: '+fNum(it.entry));
-  if(it.stop!=null)L.push('حد ضرر: '+fNum(it.stop));
-  if(it.targets.length)L.push('تارگت‌ها: '+it.targets.map(fNum).join(' / '));
-  if(it.lev)L.push('اهرم: '+it.lev+'x');
-  L.push('وضعیت: '+FEED_ST_FA[it.status]+(it.pos?(it.pos.status==='closed'
-    ?' · بسته شد'+(it.pos.pnl!=null?' '+(it.pos.pnl>=0?'+':'')+it.pos.pnl+'$':'')+(it.pos.r!=null?' ('+it.pos.r+'R)':'')
-    :' · پوزیشن باز'):''));
-  L.push('');L.push(it.text);L.push('');L.push(it.link);
-  return L.join('\n');
+const txOpt=()=>({days:+($('#txDays')||{}).value||7,open:!!($('#txOpen')||{}).checked});
+function paintTxtOut(){
+  const b=$('#txPrev');if(!b)return;
+  const o=txOpt(), r=txText(o.days,o.open);
+  b.value=r.n?r.text:'# در این بازه سیگنالی نیست';
 }
-/* ---- ICS (RFC 5545) ---- */
-const icsEsc=s=>String(s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');
-const icsTime=t=>new Date(t).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
-// هر خط حداکثر 75 بایت؛ ادامه با یک فاصله در خط بعد. نویسه‌ی فارسی دو بایتی است، پس نیمه نشکند.
-function icsFold(line){
-  const enc=new TextEncoder();if(enc.encode(line).length<=75)return line;
-  const out=[];let cur='',n=0;
-  for(const ch of line){const b=enc.encode(ch).length;
-    if(n+b>(out.length?74:75)){out.push(cur);cur='';n=0;}
-    cur+=ch;n+=b;}
-  out.push(cur);
-  return out.join('\r\n ');
-}
-function feedICS(items,ch){
-  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//SignalDesk//Signals//FA','CALSCALE:GREGORIAN','METHOD:PUBLISH',
-    'X-WR-CALNAME:'+icsEsc('سیگنال‌های @'+ch),'X-WR-CALDESC:'+icsEsc('میز سیگنال — هر سیگنال یک رویداد'),
-    'REFRESH-INTERVAL;VALUE=DURATION:PT15M','X-PUBLISHED-TTL:PT15M'];
-  const now=icsTime(Date.now());
-  for(const it of items){
-    L.push('BEGIN:VEVENT','UID:'+it.id.replace(/[^\w-]/g,'-')+'@signaldesk','DTSTAMP:'+now,
-      'DTSTART:'+icsTime(it.at),'DTEND:'+icsTime(it.at+30*60e3),
-      'SUMMARY:'+icsEsc(feedTitle(it)),'DESCRIPTION:'+icsEsc(feedDesc(it)),'URL:'+it.link,
-      'CATEGORIES:'+icsEsc(it.ticker+','+FEED_ST_FA[it.status]),'TRANSP:TRANSPARENT','END:VEVENT');
-  }
-  L.push('END:VCALENDAR');
-  return L.map(icsFold).join('\r\n')+'\r\n';
-}
-/* ---- RSS 2.0 ---- */
-const xmlEsc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-function feedRSS(items,ch){
-  return '<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel>'+
-    '<title>'+xmlEsc('سیگنال‌های @'+ch)+'</title><link>https://t.me/s/'+xmlEsc(ch)+'</link>'+
-    '<description>'+xmlEsc('میز سیگنال')+'</description><language>fa</language><ttl>15</ttl>'+
-    '<lastBuildDate>'+new Date().toUTCString()+'</lastBuildDate>'+
-    items.map(it=>'<item><title>'+xmlEsc(feedTitle(it))+'</title><link>'+xmlEsc(it.link)+'</link>'+
-      '<guid isPermaLink="false">'+xmlEsc(it.id)+'</guid><pubDate>'+new Date(it.at).toUTCString()+'</pubDate>'+
-      '<category>'+xmlEsc(it.ticker)+'</category>'+
-      '<description>'+xmlEsc(feedDesc(it)).replace(/\n/g,'&lt;br&gt;')+'</description></item>').join('')+
-    '</channel></rss>\n';
-}
-/* ---- CSV (با BOM تا اکسل فارسی را درست نشان دهد) ---- */
-function feedCSV(items){
-  const q=v=>{const s=v==null?'':String(v);return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
-  const teh=t=>{try{return new Date(t).toLocaleString('sv-SE',{timeZone:'Asia/Tehran'}).slice(0,16);}catch(e){return '';}};
-  const rows=[['time_utc','time_tehran','ticker','direction','market','entry','stop','targets','leverage','status','position','pnl_usd','r','link','text']];
-  for(const it of items)rows.push([new Date(it.at).toISOString(),teh(it.at),it.ticker,it.dir,it.market,fNum(it.entry),fNum(it.stop),
-    it.targets.map(fNum).join('|'),it.lev||'',it.status,it.pos?it.pos.status:'',it.pos&&it.pos.pnl!=null?it.pos.pnl:'',
-    it.pos&&it.pos.r!=null?it.pos.r:'',it.link,it.text.replace(/\n+/g,' ').slice(0,300)]);
-  return '\ufeff'+rows.map(r=>r.map(q).join(',')).join('\r\n')+'\r\n';
-}
-function feedJSON(items,ch){
-  return JSON.stringify({channel:ch,updated:new Date().toISOString(),source:'SignalDesk',
-    items:items.map(it=>Object.assign({},it,{time:new Date(it.at).toISOString(),title:feedTitle(it)}))},null,1);
-}
-function feedFiles(){
-  const items=feedItems(), ch=S.channel||'channel';
-  return {items,files:{ics:feedICS(items,ch),rss:feedRSS(items,ch),csv:feedCSV(items),json:feedJSON(items,ch)}};
-}
-
-/* ---- انتشار روی ورکر ---- */
-const FEEDKEY='signaldesk.feed.v1';
-let feedCfg=lsGet(FEEDKEY)||{key:'',at:0,sig:''};
-let feedTimer=null, feedBusy=false, feedLast=0;
-const feedOn=()=>!!S.feedOn&&syncOn();
-const feedSave=()=>lsSet(FEEDKEY,feedCfg);
-const feedBase=()=>String(syncCfg.url||'').replace(/\/+$/,'');
-const feedUrl=ext=>feedCfg.key?feedBase()+'/f/'+feedCfg.key+'/signals.'+ext:'';
-function feedSoon(){
-  if(!feedOn())return;
-  clearTimeout(feedTimer);
-  // هر تغییر کوچک یک نوشتن روی KV است؛ حداکثر هر ۹۰ ثانیه یک بار
-  const wait=Math.max(5000,feedLast+90e3-Date.now());
-  feedTimer=setTimeout(()=>feedPublish(false),wait);
-}
-async function feedReq(method,path,body){
-  const r=await fetch(feedBase()+path,{method,cache:'no-store',
-    headers:Object.assign({'Authorization':'Bearer '+syncCfg.token},body?{'Content-Type':'application/json'}:{}),
-    body:body?JSON.stringify(body):undefined});
-  let j=null;try{j=await r.json();}catch(e){}
-  if(r.status===404&&!(j&&j.error))throw new Error('ورکر قدیمی است؛ کد تازه‌ی proxy/worker.js را Deploy کن');
-  if(!r.ok)throw new Error((j&&j.message)||('HTTP '+r.status));
-  return j||{};
-}
-/* force: از دکمه؛ بدون آن فقط وقتی محتوا عوض شده باشد */
-async function feedPublish(force){
-  if(!feedOn()||feedBusy)return false;
-  const {items,files}=feedFiles();
-  const sig=JSON.stringify(items);
-  if(!force&&sig===feedCfg.sig&&feedCfg.key)return false;
-  feedBusy=true;
-  try{
-    const j=await feedReq('PUT','/feed',{files,n:items.length});
-    feedCfg.key=j.key||feedCfg.key;feedCfg.at=j.at||Date.now();feedCfg.sig=sig;feedSave();
-    feedLast=Date.now();paintFeed();
-    return true;
-  }catch(e){logIt('warn','لینک خروجی: '+e.message);if(force)toast(e.message,'err');return false;}
-  finally{feedBusy=false;}
-}
-function feedDownload(ext){
-  const {items,files}=feedFiles();
-  if(!items.length)return toast('سیگنالی در '+faN(FEED_DAYS)+' روز اخیر نیست','info');
-  const mime={ics:'text/calendar',rss:'application/rss+xml',csv:'text/csv',json:'application/json'}[ext];
-  dl('signals-'+(S.channel||'channel')+'.'+ext,files[ext],mime+';charset=utf-8');
-  toast(faN(items.length)+' سیگنال در فایل '+ext.toUpperCase(),'ok');
-}
-function paintFeed(){
-  const box=$('#feedBox');if(!box)return;
-  const cb=$('#sFeedOn');if(cb)cb.checked=!!S.feedOn;
-  const st=$('#feedState'), links=$('#feedLinks');
-  if(!syncOn()){st.textContent='اول همگام‌سازی';links.innerHTML='';return;}
-  if(!S.feedOn){st.textContent='خاموش';st.dataset.k='';links.innerHTML='';return;}
-  st.textContent=feedCfg.key?'روشن · '+(feedCfg.at?ageTxt(feedCfg.at):''):'در حال ساختن لینک…';st.dataset.k=feedCfg.key?'ok':'';
-  if(!feedCfg.key){links.innerHTML='';return;}
-  const row=(ext,label,hint)=>'<div class="flink"><div class="flh"><b>'+label+'</b><span>'+hint+'</span></div>'+
-    '<div class="flr"><input readonly dir="ltr" value="'+esc(feedUrl(ext))+'"><button type="button" class="btn sm" data-copy="'+ext+'">کپی</button></div></div>';
-  links.innerHTML=row('ics','تقویم (ICS)','گوگل‌کلندر، تقویم آیفون، Outlook و برنامه‌ریزهای روزانه')+
-    row('rss','RSS','خبرخوان، IFTTT، Zapier')+row('csv','CSV','گوگل‌شیت: ‎=IMPORTDATA("لینک")‎، اکسل')+
-    row('json','JSON','هر برنامه‌ی دیگر')+
-    '<div class="srow"><a class="btn sm" id="feedWebcal" href="'+esc(feedUrl('ics').replace(/^https?:/,'webcal:'))+'">افزودن به تقویم گوشی</a>'+
-    '<button type="button" class="btn sm" id="feedNow">به‌روز کن</button><button type="button" class="btn sm" id="feedRot">لینک تازه</button></div>';
-  links.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{
-    const u=feedUrl(b.dataset.copy);
-    try{await navigator.clipboard.writeText(u);toast('لینک کپی شد','ok');}
-    catch(e){const i=b.previousElementSibling;i.select();toast('لینک را انتخاب کردم؛ کپی کن','info');}
-  });
-  $('#feedNow').onclick=async e=>{btnBusy(e.currentTarget,true);const ok=await feedPublish(true);btnBusy(e.currentTarget,false);if(ok)toast('خروجی به‌روز شد','ok');};
-  $('#feedRot').onclick=async e=>{
-    if(!confirm('لینک‌های قبلی از کار می‌افتند و باید لینک تازه را دوباره در برنامه‌ی دیگر بگذاری. ادامه؟'))return;
-    btnBusy(e.currentTarget,true);
-    try{const j=await feedReq('POST','/feed/rotate');feedCfg.key=j.key;feedSave();paintFeed();toast('لینک تازه ساخته شد','ok');}
-    catch(err){toast(err.message,'err');}
-    btnBusy(e.currentTarget,false);
+function wireTxtOut(){
+  const box=$('#txtOut');if(!box)return;
+  const st=lsGet('signaldesk.txtout.v1')||{};
+  if(st.days)$('#txDays').value=String(st.days);
+  $('#txOpen').checked=!!st.open;
+  const ch=()=>{const o=txOpt();lsSet('signaldesk.txtout.v1',o);paintTxtOut();};
+  $('#txDays').onchange=ch;$('#txOpen').onchange=ch;
+  $('#txCopy').onclick=async()=>{
+    const o=txOpt(), r=txText(o.days,o.open);
+    if(!r.n)return toast('در این بازه سیگنالی نیست','info');
+    try{await navigator.clipboard.writeText(r.text);toast(faN(r.n)+' سیگنال کپی شد','ok');}
+    catch(e){const t=$('#txPrev');t.value=r.text;t.focus();t.select();toast('متن انتخاب شد؛ کپی کن','info');}
   };
-}
-function wireFeed(){
-  const cb=$('#sFeedOn');if(!cb)return;
-  cb.onchange=async()=>{
-    if(cb.checked&&!syncOn()){cb.checked=false;return toast('اول همگام‌سازی را با ورکر خودت روشن کن','err');}
-    S.feedOn=cb.checked;DB.settings=Object.assign({},S);save();paintFeed();
-    if(S.feedOn){const ok=await feedPublish(true);if(ok)toast('لینک خروجی آماده است','ok');}
+  $('#txDl').onclick=()=>{
+    const o=txOpt(), r=txText(o.days,o.open);
+    if(!r.n)return toast('در این بازه سیگنالی نیست','info');
+    dl('signals-'+(S.channel||'channel')+'.txt',r.text,'text/plain;charset=utf-8');
+    toast(faN(r.n)+' سیگنال در فایل txt','ok');
   };
-  $('#feedDlIcs').onclick=()=>feedDownload('ics');
-  $('#feedDlCsv').onclick=()=>feedDownload('csv');
-  const sec=$('#feedBox').closest('details');
-  if(sec)sec.addEventListener('toggle',()=>{if(sec.open)paintFeed();});
-  paintFeed();
+  const sec=box.closest('details');
+  if(sec)sec.addEventListener('toggle',()=>{if(sec.open)paintTxtOut();});
 }
 /* ==================== ناوبری ==================== */
 let view='signals';
@@ -13484,7 +13345,6 @@ async function refresh(append,silent){
     // پیش از رندر: وگرنه فهرست خالی هنوز «در حال خواندن» حساب می‌شد و اسکلت بارگذاری زیر خطا می‌ماند
     busy=false;
     renderAll();
-    if(okAny&&typeof feedSoon==='function')feedSoon();     // سیگنال تازه ← لینک خروجی هم تازه شود
     return okAny;
   }finally{
     busy=false;
@@ -13755,7 +13615,7 @@ loadPostCache();
 pruneCaches();          // کلیدهای مرده‌ی نشست‌های قبلی همین‌جا برداشته می‌شوند
 BOOTED=true;
 wireSync();
-wireFeed();
+wireTxtOut();
 // اول از سرور می‌گیریم تا این دستگاه با آخرین وضعیت شروع کند، نه با نسخه‌ی کهنه‌ی خودش
 if(syncOn())syncPull(true).catch(()=>{});
 // برگشت به برنامه بعد از بیش از ۳۰ ثانیه: آخرین وضعیت از همگام‌سازی

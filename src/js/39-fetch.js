@@ -57,7 +57,6 @@ async function refresh(append,silent){
     // پیش از رندر: وگرنه فهرست خالی هنوز «در حال خواندن» حساب می‌شد و اسکلت بارگذاری زیر خطا می‌ماند
     busy=false;
     renderAll();
-    if(okAny&&typeof feedSoon==='function')feedSoon();     // سیگنال تازه ← لینک خروجی هم تازه شود
     return okAny;
   }finally{
     busy=false;

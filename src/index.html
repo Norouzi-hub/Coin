@@ -78,8 +78,8 @@
       <label class="search"><span id="qIc"></span><input id="q" placeholder="جستجو در نماد یا متن…" autocomplete="off"></label>
       <div class="fbar" id="fbar" role="tablist" aria-label="نمایش پست‌ها"></div>
     </div>
-    <div id="glance"></div>
-    <div class="status" id="status"></div>
+    <!-- یک کارت: خط خلاصه (ریسک، سود/ضرر باز، قیمت) و زیرش «الان چه کنم؟» -->
+    <div class="topcard" id="topcard"><div class="status" id="status"></div><div id="glance"></div></div>
     <div id="incoming" class="incoming hide"></div>
     <div id="list"></div>
     <div id="moreSkel" class="hide"></div>
@@ -286,18 +286,18 @@
     </div>
     </details>
 
-    <details class="sec" data-sec="feed"><summary>خروجی برای برنامه‌های دیگر</summary>
-    <div class="wsetup" id="feedBox">
-      <div class="hint">سیگنال‌های ۶۰ روز اخیر (با ورود، استاپ، تارگت‌ها، وضعیت «گرفتم/نگرفتم» و نتیجه) برای
-        تقویم، برنامه‌ریز روزانه، گوگل‌شیت یا هر برنامه‌ای که از روی لینک می‌خواند.</div>
-      <label class="autotog"><input type="checkbox" id="sFeedOn"><span>لینک ثابت روی ورکر خودم
-        <span class="markhint" id="feedState">—</span></span></label>
-      <div id="feedLinks"></div>
-      <div class="hint">لینک محرمانه است: هر کس داشته باشد سیگنال‌ها را می‌بیند، ولی به داده‌ی دیگرت راه ندارد.
-        برنامه‌ی دیگر هر چند دقیقه خودش دوباره می‌خواند؛ نسخه‌ی روی ورکر هر بار که این برنامه باز است
-        (یا روی دستگاه دیگری باز است) تازه می‌شود. به همگام‌سازی با ورکر خودت نیاز دارد.</div>
-      <div class="srow"><button class="btn" id="feedDlIcs">دانلود فایل تقویم</button>
-        <button class="btn" id="feedDlCsv">دانلود CSV</button></div>
+    <details class="sec" data-sec="txtout"><summary>خروجی متنی سیگنال‌ها</summary>
+    <div class="wsetup" id="txtOut">
+      <div class="hint">هر سیگنال یک خط، برای دادن به برنامه‌ی خودت. ستون‌ها با « | » جدا شده‌اند و عددها انگلیسی‌اند:
+        <span dir="ltr">TIME | TICKER | LONG/SHORT | FUTURES/SPOT | ENTRY | SL | TP | LEV | STATUS | LINK</span>.
+        خانه‌ی نامعلوم «-» است.</div>
+      <div class="txtopt">
+        <label for="txDays">بازه</label>
+        <select id="txDays"><option value="1">۲۴ ساعت</option><option value="3">۳ روز</option><option value="7" selected>۷ روز</option><option value="30">۳۰ روز</option><option value="60">۶۰ روز</option></select>
+        <label class="shopt"><input type="checkbox" id="txOpen"><span>فقط باز (نگرفته، منقضی‌نشده)</span></label>
+      </div>
+      <textarea class="txtprev" id="txPrev" readonly rows="6" aria-label="پیش‌نمایش خروجی متنی"></textarea>
+      <div class="srow"><button class="btn pri" id="txCopy">کپی متن</button><button class="btn" id="txDl">دانلود فایل txt</button></div>
     </div>
     </details>
 

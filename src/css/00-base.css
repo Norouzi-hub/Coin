@@ -1264,9 +1264,9 @@ table.tp .num{direction:ltr;text-align:start}
   background:var(--card);color:var(--tx2);display:grid;place-items:center;cursor:pointer}
 .srow{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
 .tgbox{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
-#feedBox .autotog{margin:12px 0 4px}
-#feedBox a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
-#feedState[data-k=ok]{color:var(--up);font-weight:700}
+#txtOut .txtprev{width:100%;min-height:120px;margin-top:8px;background:var(--inset);border:1px solid var(--line2);border-radius:11px;padding:9px;
+  font:12px/1.6 ui-monospace,Menlo,Consolas,monospace;direction:ltr;text-align:left;color:var(--tx2);white-space:pre;overflow:auto}
+#txtOut .txtopt{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .flink{margin-top:10px}
 .flh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:13px}
 .flh span{font-size:12px;color:var(--tx3)}
@@ -1536,7 +1536,13 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 }
 @media (max-width:360px){.bname{display:none}}
 /* «الان چه کنم؟» بالای سیگنال‌ها (38b-simple.js) */
-.glance{margin:0 0 10px;border:1px solid color-mix(in srgb,var(--gold) 35%,var(--line));border-radius:var(--r);background:var(--card);overflow:hidden}
+.glance{background:var(--card)}
+/* نوار خلاصه و «الان چه کنم؟» یک کارت‌اند */
+.topcard{margin:10px 0;border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden}
+.topcard:has(>.status:empty):has(>.glance:empty),.topcard:has(>.status:empty):has(>#glance:empty){display:none}
+.topcard:has(>.glance:not(:empty)){border-color:color-mix(in srgb,var(--gold) 35%,var(--line))}
+.topcard>.status{margin:0;border:0;border-radius:0}
+.topcard>.status:not(:empty)+.glance:not(:empty){border-top:1px solid var(--line)}
 .glh{display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;background:none;border:0;color:var(--tx);font:inherit;cursor:pointer;text-align:start}
 .glh b{display:flex;align-items:center;gap:5px;font-size:13.5px;flex:none}.glh b .ic{color:var(--gold);width:16px;height:16px}
 .glh span{flex:1;min-width:0;font-size:12px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

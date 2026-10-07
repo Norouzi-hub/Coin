@@ -46,21 +46,20 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
   console.log('=== نوار فیلتر: ساختار ===');
   let s=await read();
   console.log('  بخش‌ها:', s.segs.map(x=>x.label+'('+x.n+')').join(' | '));
-  ok(s.segs.length===3,'سه بخش فیلتر دارد');
+  ok(s.segs.length===2,'دو بخش فیلتر دارد (در انتظار، همه)');
   ok(s.arch,'دکمه‌ی آرشیو جداست');
   ok(s.arch&&s.arch.svg,'آرشیو آیکون دارد');
   ok(s.arch&&/آرشیو/.test(s.arch.label||''),'آرشیو برچسب متنی دارد');
   ok(s.segs.every(x=>x.title),'هر بخش راهنما (title) دارد');
   const num=t=>Number(String(t).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
-  const [nNew,nSig,nAll]=s.segs.map(x=>num(x.n));
-  console.log('  شمارش:', 'در انتظار='+nNew, 'سیگنال='+nSig, 'همه='+nAll);
-  ok(nSig===4,'۴ سیگنال شمرده شد');
+  const [nNew,nAll]=s.segs.map(x=>num(x.n));
+  console.log('  شمارش:', 'در انتظار='+nNew, 'همه='+nAll);
   ok(nAll===7,'۷ پست شمرده شد');
   ok(nNew===4,'هر ۴ سیگنال بی‌تصمیم است');
-  ok(nNew<=nSig&&nSig<=nAll,'شمارش‌ها تودرتو و سازگارند');
+  ok(nNew<=nAll,'شمارش‌ها تودرتو و سازگارند');
 
   console.log('\n=== انتخاب فعال و فیلتر واقعی ===');
-  for (const [i,k,label] of [[0,'new','در انتظار'],[1,'sig','سیگنال‌ها'],[2,'all','همه']]) {
+  for (const [i,k,label] of [[0,'new','در انتظار'],[1,'all','همه']]) {
     await p.evaluate(i=>document.querySelectorAll('#fbar .fseg .fb')[i].click(), i);
     await p.waitForTimeout(350);
     s=await read();
@@ -88,7 +87,7 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
   await p.waitForTimeout(400);
   s=await read();
   ok(num(s.segs[0].n)===3,'«در انتظار» به ۳ رسید، شد '+num(s.segs[0].n));
-  ok(num(s.segs[1].n)===4,'«سیگنال‌ها» هنوز ۴ است');
+  ok(num(s.segs[1].n)===7,'«همه» هنوز ۷ است');
   ok(!!s.tidy,'دکمه‌ی کنارگذاشتن ظاهر شد: '+(s.tidy||'—'));
 
   console.log('\n=== آرشیو ===');
@@ -105,7 +104,7 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
   console.log('  بعد از کنارگذاشتن:', s.segs.map(x=>x.label+'('+x.n+')').join(' | '),
               'آرشیو='+s.arch.n);
   ok(num(s.arch.n)===1,'شمارنده‌ی آرشیو ۱ شد');
-  ok(num(s.segs[2].n)===6,'«همه» به ۶ افت کرد');
+  ok(num(s.segs[1].n)===6,'«همه» به ۶ افت کرد');
   ok(!s.tidy,'دکمه‌ی کنارگذاشتن رفت');
 
   console.log('\n=== چیدمان روی موبایل ===');
