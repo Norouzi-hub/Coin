@@ -147,7 +147,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(full.eth&&full.eth.flow&&full.eth.wl>50&&full.sol===false&&full.nflow===2,'ETH با داده‌ی نهنگ/مردم؛ SOL بی فیوچرز');
  ok(full.auto===full.sig,'همه‌ی پیشنهادهای 70+ در «دفتر پیشنهادها» ثبت شد ('+full.auto+')');
  const mk2=await p.evaluate(()=>{const r=mdMetrics(MD);RDV='sig';bucket='live';sigFilter='mkt';paintGlance();const G=document.getElementById('glance');
-   const tiles=[...G.querySelectorAll('.mdt')].map(x=>x.textContent);sigFilter='now';paintGlance();const now=!!document.querySelector('#glance .mdbox');sigFilter='mkt';paintGlance();
+   const tiles=[...G.querySelectorAll('.mdt')].map(x=>x.textContent);AS.at=Date.now();sigFilter='now';paintGlance();const now=!!document.querySelector('#glance .mdbox');sigFilter='mkt';paintGlance();
    return {r,tiles,flags:[...G.querySelectorAll('.mdbox .flag')].map(x=>x.textContent),now,mf:RDMF.size,w:RD.M&&RD.M.long.w.length,last:RD.mk7&&{tot:RD.mk7.tot.slice(-1)[0],bd:RD.mk7.bd.slice(-1)[0],ud:RD.mk7.ud.slice(-1)[0],n:RD.mk7.tot.length},mkl:RD.mkl,
      mrow:[...RDMF.values()].slice(-1)[0]};});
  console.log('   ',JSON.stringify(mk2).slice(0,900));
