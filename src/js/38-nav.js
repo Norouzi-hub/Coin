@@ -56,7 +56,7 @@ function renderAll(){
   setN('cWait',nAct);setN('cOpenP',nOpen);setN('cClosedP',nClosed);
   setN('cAllP',DB.positions.length+nAct);
 
-  if(view==='signals')renderSignals();
+  if(view==='signals'){renderSignals();paintGlance();}
   else if(view==='audit')renderAudit();
   else if(view==='positions')renderPositions();
   else if(view==='report')renderReport();

@@ -144,8 +144,14 @@ function postShot(p,src,alt){
     if(step===3){const u=await imgViaRoutes(url);if(u){im.src=u;return;}}
     fail();
   };
+  a.appendChild(im);
+  if(F('imgtap')&&!/^data:/.test(url)){                 // «عکس‌ها فقط با زدن»
+    a.classList.add('noimg','tapimg');
+    const t=el('button','noimgb tapload','<span>'+ic('down')+'نمایش تصویر</span>');t.type='button';
+    t.onclick=e=>{e.stopPropagation();t.remove();a.classList.remove('noimg','tapimg');im.src=url;};
+    a.appendChild(t);return a;
+  }
   im.src=url;
   if(im.complete&&im.naturalWidth)a.classList.add('loaded');
-  a.appendChild(im);
   return a;
 }

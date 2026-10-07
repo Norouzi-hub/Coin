@@ -44,7 +44,7 @@ const html=`<html><body>${posts.map(p=>`<div class="tgme_widget_message" data-po
    const paths={'800':{st:'win',path:[2,-2,3,-3,4]},'799':{st:'loss',path:[-1]},'798':{st:'win',path:[2,3,4]}};
    for(const x of POSTS){const inp=audInput(x);const n=x.id.split('/').pop();if(!inp||!paths[n])continue;
      AUD[x.id]=Object.assign({k:audKey(inp,R),fin:true,at:Date.now(),tAct:t0(x),tTp:[],late:false},paths[n]);}
-   audSave();go('audit',true);
+   audSave();AUDOPEN='خروج';XSEL.v='pb';LABAUTO=XLABAUTO=true;go('audit',true);
  });
  await p.waitForTimeout(600);
  const lab=await p.evaluate(()=>{const L=document.querySelector('.lab');if(!L)return null;

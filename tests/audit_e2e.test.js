@@ -89,7 +89,7 @@ const channelHtml=()=>'<html><body>'+POSTS_SRC.map(x=>mkPost(...x)).join('')+'</
    stats:(()=>{const x=[...document.querySelectorAll('#audBody .panel')].find(q=>/کارنامه‌ی کانال/.test(q.textContent));
      return x?[...x.querySelectorAll('.st')].map(s=>s.querySelector('b').textContent+'='+s.querySelector('span').textContent).join(' | '):'';})(),
    panels:[...document.querySelectorAll('#audBody .panelhead b')].map(x=>x.textContent),
-   rows:document.querySelectorAll('#audBody .arow2').length,
+   rows:(()=>{const keep=AUDOPEN;AUDOPEN='فهرست سیگنال‌ها';renderAudit();const n=document.querySelectorAll('#audBody .arow2').length;AUDOPEN=keep;renderAudit();return n;})(),
    badge:document.querySelector('#cAud').textContent}));
  console.log('  کارنامه:',ui.stats);
  console.log('  بخش‌ها:',ui.panels.join(' · '));
@@ -100,7 +100,7 @@ const channelHtml=()=>'<html><body>'+POSTS_SRC.map(x=>mkPost(...x)).join('')+'</
  ok(ui.panels.length>=6,'همه‌ی بخش‌ها ساخته شدند');
  ok(ui.rows===7,'هفت سیگنال در فهرست');
  ok(ui.badge==='2','نشان تب: 2 ادعای نادرست');
- const sel=await p.evaluate(()=>{const x=[...document.querySelectorAll('#audBody .st')];
+ const sel=await p.evaluate(()=>{AUDOPEN='صحت‌سنجی';renderAudit();const x=[...document.querySelectorAll('#audBody .st')];
    const g=l=>{const s=x.find(q=>q.querySelector('b').textContent===l);return s?s.querySelector('span').textContent:null;};
    const v=g('گزارش برد / باخت')||'';return {w:v.split(' / ')[0],l:v.split(' / ')[1]};});
  console.log('  گزارش بردها:',sel.w,'· اعتراف باخت‌ها:',sel.l);

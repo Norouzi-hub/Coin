@@ -527,8 +527,18 @@ function audAcc(n,name){
   // بسته که هست، کلِ کادر (نه فقط نوار ۲۶ پیکسلیِ عنوان) جای زدن است
   n.addEventListener('click',e=>{if(n.classList.contains('shut')&&!head.contains(e.target))audAccToggle(n,name);});
 }
+const AUD_LAZY={'خروج':ic('flag')+'خروج: کدام قاعده بهتر جواب داده','سرمایه و الگوها':ic('trend')+'سرمایه و الگوها',
+  'نوسان‌سنج':'نوسان‌سنج: افت پیش از سود','شما در برابر کانال':'شما در برابر کانال','صحت‌سنجی':'صحت‌سنجی: کانال راست می‌گوید؟',
+  'فهرست سیگنال‌ها':'همه‌ی سیگنال‌ها'};
+const AUD_LITE_HIDE=new Set(['فیلتر','نوسان‌سنج','شما در برابر کانال','صحت‌سنجی','سرمایه و الگوها']);
 function audAccToggle(n,name){
   const y0=n.getBoundingClientRect().top, open=n.classList.contains('shut');
+  if(open&&n.dataset.lazy){                               // پنلِ تنبل: حالا بساز، سربرگ سر جایش بماند
+    AUDOPEN=name;lsSet(AUDOPENKEY,AUDOPEN);renderAudit();
+    const m=document.querySelector('#audBody [data-acc="'+name+'"]');
+    if(m){const dy=m.getBoundingClientRect().top-y0;if(Math.abs(dy)>0.5)window.scrollBy(0,dy);}
+    return;
+  }
   AUDOPEN=open?name:'';lsSet(AUDOPENKEY,AUDOPEN);
   if(open)audShutOthers(name);
   n.classList.toggle('shut',!open);
@@ -574,6 +584,10 @@ function renderAudit(){
   /* هر بخش جدا ساخته می‌شود؛ خطا در یکی نباید کل تب را خالی بگذارد (قبلاً یک استثنا
      بقیه‌ی بخش‌ها را هم از بین می‌برد و تب فقط سربرگ داشت). خطا روی صفحه نوشته می‌شود. */
   const safe=(name,fn)=>{
+    if(F('lite')&&AUD_LITE_HIDE.has(name))return;            // «فقط ضروری»
+    // پنلِ بسته تا باز نشود ساخته نمی‌شود؛ فقط سربرگش (با باز شدن، تب از نو ساخته می‌شود)
+    if(AUD_LAZY[name]&&AUDOPEN!==name){const n=el('div','panel lazy');n.dataset.lazy='1';
+      n.appendChild(el('div','panelhead','<b>'+AUD_LAZY[name]+'</b>'));audAcc(n,name);box.appendChild(n);return;}
     try{const n=fn();if(n){audAcc(n,name);box.appendChild(n);}}
     catch(e){
       logIt('err','کانال‌سنج · '+name+': '+(e&&e.message||e));

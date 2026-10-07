@@ -106,10 +106,10 @@ function renderReportList(){
   head.appendChild(ht);
   head.appendChild(statsOf(total,true));
   head.appendChild(equityCurve(inRange));
-  head.appendChild(rDist(inRange));
+  if(!F('lite'))head.appendChild(rDist(inRange));
   body.appendChild(head);
   body.appendChild(buildBehavior(inRange));
-  body.appendChild(journalPanel(inRange));
+  if(!F('lite'))body.appendChild(journalPanel(inRange));
 
   for(const k of keys){
     const list=groups.get(k).sort((a,b)=>b.closedAt-a.closedAt);

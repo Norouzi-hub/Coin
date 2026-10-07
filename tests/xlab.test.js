@@ -48,7 +48,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const ui=await p.evaluate(()=>{const xl=document.querySelector('#audBody [data-acc="خروج"]');
    return {xl:!!xl,tab:xl?xl.querySelectorAll('.xtab tbody tr').length:0,txt:xl?xl.textContent:'',
      sd:[...document.querySelectorAll('.audf .catchip')].some(b=>/تا 10٪/.test(b.textContent)),
-     iso:[...document.querySelectorAll('#audBody .ar2')].some(x=>/ایزوله تا \d+x/.test(x.textContent)),
+     iso:(()=>{AUDOPEN='فهرست سیگنال‌ها';renderAudit();const v=[...document.querySelectorAll('#audBody .ar2')].some(x=>/ایزوله تا \d+x/.test(x.textContent));AUDOPEN='خروج';renderAudit();return v;})(),
      cp:[...document.querySelectorAll('#audBody .audiag button')].some(x=>/کپی متن/.test(x.textContent)),
      xg:Object.values(AUD).filter(a=>a.xg).length};});
  console.log('   ',JSON.stringify(Object.assign({},ui,{txt:ui.txt.slice(0,120)})));
