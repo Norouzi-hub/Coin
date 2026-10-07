@@ -50,8 +50,8 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    PRICES.set('ADVA',100.1);PRICES.set('ADVB',100);KGEN++;
    DB.positions=[ensureBase({id:'ap1',ticker:'BTC',kind:'futures',dir:'long',entry:100,stop:95,stop0:95,margin:10,lev:30,targets:[],openedAt:now-5*36e5,until:now-1000,status:'open',partials:[],log:[]}),
      ensureBase({id:'ap2',ticker:'ETH',kind:'futures',dir:'long',entry:100,stop:95,stop0:95,margin:10,lev:5,targets:[],openedAt:now-36e5,status:'open',partials:[],log:[]}),
-     ensureBase({id:'ac1',ticker:'XRP',kind:'futures',dir:'long',entry:100,stop:95,stop0:95,margin:50,lev:5,targets:[],openedAt:now-3*36e5,closedAt:now-2*36e5,exitPrice:97,fees:0,status:'closed',partials:[],log:[]}),
-     ensureBase({id:'ac2',ticker:'SOL',kind:'futures',dir:'long',entry:100,stop:95,stop0:95,margin:50,lev:5,targets:[],openedAt:now-3*36e5,closedAt:now-36e5,exitPrice:97,fees:0,status:'closed',partials:[],log:[]})];
+     ensureBase({id:'ac1',ticker:'XRP',kind:'futures',dir:'long',entry:100,stop:95,stop0:95,margin:50,lev:5,targets:[],openedAt:now-3*36e5,closedAt:now-120e3,exitPrice:97,fees:0,status:'closed',partials:[],log:[]}),
+     ensureBase({id:'ac2',ticker:'SOL',kind:'futures',dir:'long',entry:100,stop:95,stop0:95,margin:50,lev:5,targets:[],openedAt:now-3*36e5,closedAt:now-60e3,exitPrice:97,fees:0,status:'closed',partials:[],log:[]})];
    PRICES.set('BTC',106);PRICES.set('ETH',100);
    ADVSLOW=0;adviseTick();
    return ADV.items.map(x=>x.key.split(':')[0]+'|'+x.title+'|'+x.body.replace(/\n/g,' / '));});

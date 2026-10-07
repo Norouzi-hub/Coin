@@ -1,5 +1,6 @@
 const {chromium} = require('./lib').pw;
-const D=h=>new Date(Date.now()-h*3600e3).toISOString();
+const T0=require('./lib').tehranAfternoon();   // ساعت ثابت: نتیجه به ساعت اجرای تست بستگی ندارد
+const D=h=>new Date(T0-h*3600e3).toISOString();
 const posts=[
  {n:970,h:1,t:'#بیت_کوین لانگ<br>ورود ۶۵۰۰۰<br>حد ضرر ۶۳۵۰۰'},
  {n:969,h:2,t:'خبر فوری: بازار آرام است'},
@@ -12,6 +13,7 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
  p.on('pageerror',e=>console.log('PAGEERROR:',e.message));
  await p.route('**',r=>{const u=r.request().url();if(u.includes('localhost:8899'))return r.continue();
   if(u.includes('t.me/s/'))return r.fulfill({status:200,headers:{'content-type':'text/html','access-control-allow-origin':'*'},body:html});return r.abort();});
+ await p.clock.install({time:T0});   // ساعت مرورگر هم همان لحظه
  await p.goto('http://localhost:8899/index.html');await p.waitForTimeout(3500);
  await p.evaluate(()=>{PRICES=new Map([['BTC',65100],['ETH',3000],['SOL',150]]);SYMBOLS=new Set(PRICES.keys());SYMVER++;PCACHE.clear();sigFilter='all';ACCOPEN='';renderAll();});
  await p.waitForTimeout(400);

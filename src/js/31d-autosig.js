@@ -131,7 +131,7 @@ function asSig(x){return {isSignal:true,ticker:x.tk,direction:x.dir,dirSet:true,
 function asEnter(x){
   const p=asPost(x), sig=asSig(x), z=isoSize(x.pl.E,x.pl.SL);
   sheetEnter(p,sig,{stop:x.pl.SL,lev:z?z.lev:null,amt:z?z.margin:null,market:'futures'},PRICES.get(x.tk)||x.pl.E,
-    {iso:true,note:'پیشنهاد برنامه · '+AS_RULES[x.k].t,until:Date.now()+AS_HOLD*36e5});
+    {iso:true,untilAuto:true,note:'پیشنهاد برنامه · '+AS_RULES[x.k].t,until:Date.now()+AS_HOLD*36e5});
 }
 function asHtml(){
   if(!F('autosig'))return '';

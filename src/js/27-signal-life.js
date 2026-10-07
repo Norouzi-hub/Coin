@@ -903,6 +903,7 @@ function sheetEnter(p,sig,ov,px,opt){
          ?('خرید اسپات '+fmtUsd(v.margin)+' روی '+fmtPrice(v.entry))
          :('ورود با '+fmtUsd(v.margin)+' مارجین و اهرم '+(+v.lev)+'x روی '+fmtPrice(v.entry)));
        if(opt.until)pos.until=opt.until;               // سقف زمانِ قاعده‌ی من
+       if(opt.until&&opt.untilAuto)pos.untilAuto=true;  // رادار و پیشنهاد برنامه: در سقف زمان خودش بسته می‌شود (همان که سنجیده شده)
        if(opt.iso)pos.iso=true;
        if(pbTps(pos).length&&pbAttach(pos,pbSel))logAdd(pos,'plan','نقشه‌ی خروج: '+pos.pb.n);
        DB.positions.push(pos);
@@ -1034,6 +1035,7 @@ function renderFbar(){
     }else if(sigFilter==='mkt'){
       seg(row,'جهت','mktDir',DIRS);
       chip(row,'فقط ۳ ستاره به بالا',null,!!VIEW.mktOk,()=>setView({mktOk:!VIEW.mktOk}));
+      chip(row,'★ فقط واچ‌لیست',null,!!VIEW.mktFav,()=>setView({mktFav:!VIEW.mktFav}));
     }else if(sigFilter==='new'){
       seg(row,'جهت','newDir',DIRS);
       seg(row,'بازار','newMkt',[['all','همه'],['futures','فیوچرز'],['spot','اسپات']]);

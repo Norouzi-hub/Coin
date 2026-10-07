@@ -75,13 +75,14 @@ function rbCheck(){
 async function rbCatchUp(force){
   const now=Date.now();if(RBCUON||(!force&&now-RBCU<3*60000))return;
   const todo=RB.items.filter(it=>it.st==='open'&&now-(RBLC.get(it.id)||0)>10*60000);if(!todo.length)return;
-  RBCU=now;RBCUON=true;let ch=false;
+  RBCU=now;RBCUON=true;let ch=false;const away=[];
   try{
     for(const it of todo){
       const M5=3e5, from=it.chk||Math.floor(it.t/M5)*M5+M5, end=it.t+AS_HOLD*36e5;
       let C;try{C=await audCandles(it.tk,'5m',from,300,true);}catch(e){continue;}
       let last=null;
       for(const k of C){if(k.t<from)continue;if(k.t>=end)break;last=k;if(rbStep(it,k.h,k.l,k.t+M5))break;}
+      if(it.st!=='open'&&it.k==='test')away.push(it);
       if(it.st==='open'){
         if(last)it.chk=last.t;                  // کندل آخر شاید نیمه است: بار بعد از همان دوباره
         if(now>=end&&last&&last.t+M5>=end-M5)rbClose(it,'time',last.c,end);
@@ -90,6 +91,10 @@ async function rbCatchUp(force){
     }
   }finally{RBCUON=false;}
   if(ch){rbSave();rbRepaint();}
+  // خلاصه‌ی آنچه در نبودِ برنامه بسته شد
+  if(away.length){const r=away.reduce((a,it)=>a+(it.R||0),0);
+    const msg='وقتی برنامه بسته بود '+faN(away.length)+' معامله‌ی آزمایشی بسته شد: '+away.map(it=>it.tk+' '+RB_ST[it.st]).join('، ')+' · جمع '+fmtR(r)+' ('+fmtUsd(r*riskUsd())+')';
+    try{advise('rbaway:'+Date.now(),{cat:'pos',pri:'mid',title:msg})||toast(msg,'info');}catch(e){toast(msg,'info');}}
 }
 const RB_ST={tp:'هدف',sl:'استاپ',be:'ریسک‌فری',trail:'استاپ متحرک',time:'24 ساعت',man:'دستی',open:'باز'};
 function rbSumOf(L){const n=L.length,w=L.filter(x=>x.R>0).length,r=L.reduce((s,x)=>s+x.R,0);return {n,w,r};}

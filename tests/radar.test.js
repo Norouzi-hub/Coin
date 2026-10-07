@@ -87,7 +87,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    const F=RD_FEAT.length,w=Array(F+1).fill(0);w[RD_FEAT.indexOf('t4')]=0.8;w[RD_FEAT.indexOf('rs')]=0.5;
    const parts={t4:1,t1:1,macd:1,rsi:0.6,brk:0,vol:0.5,btc:1,ext:0,rs:0.6,d50:0.4,volc:0,rbull:0,rbear:0};
    const c=(n,w,r,g,lb)=>({n,w,r,g,lb});
-   RD={v:3,at:now,n:10,reg:null,fund:{RDA:0.06,RDB:0.01},rank:['RDA','RDB','RDC','RDD'],M:{long:{w,q:[]},short:{w:w.map(x=>-x),q:[]}},
+   RD={v:5,at:now,n:10,list:['RDA','RDB','RDC','RDD'],reg:null,fund:{RDA:0.06,RDB:0.01},rank:['RDA','RDB','RDC','RDD'],M:{long:{w,q:[]},short:{w:w.map(x=>-x),q:[]}},
      calib:{'long|95+':c(120,72,30,40,0.12),'long|85-95':c(200,96,30,50,0.04),'short|70-85':c(90,36,-9,30,-0.3)},
      coins:{RDA:{sc:88,dir:'long',best:'long',p:0.46,flow:true,parts,rsi:62,rv:1.3,rsv:4,px:10,pl:pl(10,'long')},
             RDB:{sc:97,dir:'long',best:'long',p:0.52,flow:true,parts,rsi:66,rv:1.9,rsv:6,px:11,pl:pl(11,'long')},
@@ -104,9 +104,9 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(t.segs==='الان چه کنم؟,بازار,در انتظار,همه','تب «بازار» کنار «الان چه کنم؟»: '+t.segs);
  ok(t.order==='RDB:1,RDA:1,RDC:0,RDD:0','اولویت: RDB (4★) بعد RDA (3★)، شورت RDC (1★) و صبر آخر — '+t.order);
  ok(t.n==='2'&&t.weak===1,'عدد تب = فرصت‌های با رتبه‌ی خوب (۲)؛ شورت RDC کم‌رنگ');
- ok(/^1RDBلانگامتیاز 97/.test(t.items[0])&&/120 بار در 40 روز/.test(t.first)&&/★★★★☆/.test(t.first)&&/✓ روند 4 ساعته صعودی/.test(t.first)&&/احتمال سود به گفته‌ی مدل: 52٪/.test(t.first)&&/بدترین حالت محتمل/.test(t.first),'ردیف اول: رتبه، امتیاز، ستاره، سابقه با روزها، احتمال، دلیل‌ها');
+ ok(/^1☆RDBلانگامتیاز 97/.test(t.items[0])&&/120 بار در 40 روز/.test(t.first)&&/★★★★☆/.test(t.first)&&/✓ روند 4 ساعته صعودی/.test(t.first)&&/احتمال سود به گفته‌ی مدل: 52٪/.test(t.first)&&/بدترین حالت محتمل/.test(t.first),'ردیف اول: رتبه، امتیاز، ستاره، سابقه با روزها، احتمال، دلیل‌ها');
  ok(/صبر/.test(t.wait)&&/RDD/.test(t.wait)&&t.cards===0,'«صبر» جدا؛ کارت پستی در این تب نیست');
- ok(t.more&&/ارز 1 تا 4 از 100/.test(t.cnt)&&t.tabs==='سیگنال‌ها,آزمایشی,دفتر پیشنهادها','دکمه‌ی «10 ارز بعدی» و سه زیرتب');
+ ok(t.more&&/^4 ارز/.test(t.cnt)&&t.tabs==='سیگنال‌ها,آزمایشی,دفتر پیشنهادها','دکمه‌ی «10 ارز بعدی» و سه زیرتب');
  await p.evaluate(()=>document.querySelector('#glance .rdit[data-rd="RDB"] [data-a="iso"]').click());await p.waitForTimeout(600);
  ok(await p.evaluate(()=>/RDB/.test(document.querySelector('#sheet').textContent)&&+document.querySelector('#f_e').value===11),'«ایزوله» فرم ورود RDB را باز کرد');
  await p.evaluate(()=>closeSheet());await p.waitForTimeout(400);
@@ -199,6 +199,18 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const d=k=>(REQ[k]||0)-(R0[k]||0);
  console.log('   ',JSON.stringify(more),'ETH:',d('ETH:1h'),'UNI:',d('UNI:1h'));
  ok(more.rank===12&&more.uni&&d('ETH:1h')===0&&d('UNI:1h')>=3,'«10 ارز بعدی»: فقط ارزهای تازه گرفته شد (ETH: 0 درخواست، UNI: '+d('UNI:1h')+')');
+ // انتخاب آزاد: بازه‌ی رتبه، نماد، واچ‌لیست، بیرون بردن
+ const pk=await p.evaluate(async()=>{const a=rdParsePick('3-5').join(','),b=rdParsePick('۲ تا ۳').join(','),c=rdParsePick('eth, sol  PEPE').join(','),d=rdParsePick('12').join(',');
+   rdRemove('APT');const r0=RD.rank.includes('APT');
+   await rdScan('add',rdParsePick('APT LINK'));
+   const fav=rdFavToggle('UNI');bucket='live';sigFilter='mkt';RDV='sig';VIEW.mktFav=true;paintGlance();
+   const rows=[...document.querySelectorAll('#glance .rdit')].map(x=>x.dataset.rd),wt=(document.querySelector('#glance .rdwait')||{}).textContent||'',
+     pick=(document.querySelector('#glance .rdpick')||{}).textContent||'';VIEW.mktFav=false;paintGlance();
+   return {a,b,c,d,r0,apt:RD.list.includes('APT')&&RD.rank.includes('APT'),fav,rows,wt,pick,list:RD.list.length};});
+ console.log('   ',JSON.stringify(pk).slice(0,500));
+ ok(pk.a==='SOL,XRP,ADA'&&pk.b==='ETH,SOL'&&pk.c==='ETH,SOL,PEPE'&&pk.d==='APT','«3-5»، «۲ تا ۳»، نمادها و یک رتبه ← '+pk.a+' | '+pk.b+' | '+pk.c+' | '+pk.d);
+ ok(!pk.r0&&pk.apt&&pk.list===12,'بیرون بردن APT و برگرداندنش با نماد');
+ ok(pk.fav&&pk.rows.every(t=>t==='UNI')&&(pk.rows.length===1||/UNI/.test(pk.wt))&&/واچ‌لیست/.test(pk.pick),'واچ‌لیست: ستاره و «فقط واچ‌لیست»');
  const R1=Object.assign({},REQ);
  const stb=await p.evaluate(async()=>{RB.items=[];const st=await idbGet('rdc:ETH');st.at-=10*60000;await idbSet('rdc:ETH',st);
    const snap=()=>({mt0:RD.mt0,cal:JSON.stringify(RD.calib),sc:RD.rank.map(t=>t+':'+RD.coins[t].sc+':'+RD.coins[t].dir+':'+RD.coins[t].since).join(',')});

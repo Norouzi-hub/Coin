@@ -1,5 +1,6 @@
 const {chromium} = require('./lib').pw;
-const D=h=>new Date(Date.now()-h*3600e3).toISOString();
+const T0=require('./lib').tehranAfternoon();   // ساعت ثابت: نتیجه به ساعت اجرای تست بستگی ندارد
+const D=h=>new Date(T0-h*3600e3).toISOString();
 const posts=[
  {n:960,h:1,t:'#بیت_کوین لانگ<br>ورود ۶۵۰۰۰<br>حد ضرر ۶۳۵۰۰<br>تارگت ۶۹۰۰۰'},
  {n:959,h:2,t:'خبر فوری: #بیت_کوین به ۶۵۰۰۰ رسید؛ هدف بعدی ۷۰۰۰۰ است'},
@@ -17,6 +18,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
   if(u.includes('localhost:8899'))return r.continue();
   if(u.includes('t.me/s/'))return r.fulfill({status:200,headers:{'content-type':'text/html','access-control-allow-origin':'*'},body:html});
   return r.abort();});
+ await p.clock.install({time:T0});   // ساعت مرورگر هم همان لحظه
  await p.goto('http://localhost:8899/index.html',{waitUntil:'domcontentloaded'});
  await p.waitForTimeout(3000);
  await p.evaluate(()=>{ACCOPEN=null;});
@@ -39,7 +41,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(await ids()==='960,958,956','7 روز: '+await ids());
  await p.selectOption('#fbar .fday select','range');await p.waitForTimeout(150);
  ok(await p.$$eval('#fbar .frange input',e=>e.length)===2,'بازه: دو ورودی تاریخ');
- const d2=new Date(Date.now()-2*864e5), d0=new Date(Date.now()-864e5);
+ const d2=new Date(T0-2*864e5), d0=new Date(T0-864e5);
  const iso=d=>d.toLocaleDateString('en-CA',{timeZone:'Asia/Tehran'});
  await p.fill('#fbar .frange label:nth-child(1) input',iso(d2));
  await p.$eval('#fbar .frange label:nth-child(1) input',i=>i.dispatchEvent(new Event('change')));

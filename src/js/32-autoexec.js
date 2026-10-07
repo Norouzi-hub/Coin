@@ -18,6 +18,8 @@ function autoSince(p){
   const lg=(p.log||[]).reduce((a,l)=>Math.max(a,l.at||0),0);
   return Math.max(AUTOSEEN[p.id]||0,p.openedAt||0,lg);
 }
+/* سقف زمانِ نقشه (رادار، پیشنهاد برنامه): وقتی رسید، با قیمت همان لحظه بسته می‌شود */
+const autoDue=(p,t)=>!!(p.untilAuto&&p.until&&t>=p.until);
 const autoGap=()=>Math.max(4*60e3,(S.auto||0)*2500);
 /* hi/lo: بالاترین و پایین‌ترین قیمتِ یک بازه؛ برای قیمت زنده هر دو یکی است */
 function autoHit(p,hi,lo){
@@ -40,7 +42,7 @@ function autoClose(p,px,at,kind){
   p.fees=p.margin*p.lev*(S.fee/100);p.autoBy=kind;
   PENDING.delete(p.id);
   const m=posMetrics(p);
-  logAdd(p,'close',(kind==='liq'?'خودکار: قیمت از لیکوئید رد شد؛ بسته شد روی ':'خودکار: استاپ خورد؛ بسته شد روی ')+
+  logAdd(p,'close',(kind==='liq'?'خودکار: قیمت از لیکوئید رد شد؛ بسته شد روی ':kind==='time'?'خودکار: سقف زمان رسید؛ بسته شد روی ':'خودکار: استاپ خورد؛ بسته شد روی ')+
     fmtPrice(px)+' — '+fmtUsd(m.pnl)+(m.r!=null?' ('+fmtR(m.r)+')':''),at);
   return m.pnl;
 }
@@ -67,7 +69,7 @@ function restoreSnap(snap){
 }
 function autoReport(ev,snap){
   save();renderAll();
-  const one=e=>e.p.ticker+' '+(e.k==='be'?'ریسک‌فری شد (استاپ '+fmtPrice(e.stop)+')':e.k==='trail'?'استاپ دنباله‌دار فعال شد ('+fmtPrice(e.stop)+')':e.k==='tp'?'پله‌ی '+faN(e.i+1)+' نقشه اجرا شد':e.k==='liq'?'لیکوئید حساب شد':'استاپ خورد و بسته شد')+
+  const one=e=>e.p.ticker+' '+(e.k==='be'?'ریسک‌فری شد (استاپ '+fmtPrice(e.stop)+')':e.k==='trail'?'استاپ دنباله‌دار فعال شد ('+fmtPrice(e.stop)+')':e.k==='tp'?'پله‌ی '+faN(e.i+1)+' نقشه اجرا شد':e.k==='liq'?'لیکوئید حساب شد':e.k==='time'?'سقف زمان رسید و بسته شد':'استاپ خورد و بسته شد')+
     (e.pnl?' · '+fmtUsd(e.pnl):'')+(e.k==='tp'&&e.p.status==='open'&&e.stop?' · استاپ '+(e.stop===e.p.entry?'روی ورود':fmtPrice(e.stop)):'');
   const msg=ev.length===1?one(ev[0]):'اجرای خودکار: '+ev.map(one).join('؛ ');
   const ids=[...new Set(ev.map(e=>e.p.id))];
@@ -97,8 +99,9 @@ function checkAutoExec(){
     const px=pxOf(p);
     if(px==null)continue;
     if(now-autoSince(p)>gap){late.push(p);continue;}
-    if(!snap&&autoHit(p,px,px))snap=JSON.stringify(dbBlob());
+    if(!snap&&(autoHit(p,px,px)||autoDue(p,now)))snap=JSON.stringify(dbBlob());
     autoFeed(p,px,px,now,ev);
+    if(p.status==='open'&&autoDue(p,now))ev.push({p,k:'time',pnl:autoClose(p,px,now,'time')});
     AUTOSEEN[p.id]=now;
   }
   autoSeenSave();
@@ -127,13 +130,15 @@ async function autoCatchUp(list){
       let seen=since;
       for(const c of cs){
         if(p.status!=='open')break;
+        // سقف زمان وسط فاصله گذشته: با قیمت باز شدن اولین کندلِ بعد از آن بسته می‌شود
+        if(autoDue(p,c.t)){ev.push({p,k:'time',pnl:autoClose(p,c.o,p.until,'time')});seen=c.t;break;}
         const end=Math.min(Date.now(),c.t+ms);
         autoFeed(p,c.h,c.l,end,ev);
         seen=end;
       }
       // کندل‌ها تا الان رسیده‌اند (یا نیامدند): قیمت زنده هم سنجیده می‌شود
       const px=pxOf(p), done=!ok||!cs.length||seen>=Date.now()-ms;
-      if(done&&p.status==='open'&&px!=null)autoFeed(p,px,px,Date.now(),ev);
+      if(done&&p.status==='open'&&px!=null){autoFeed(p,px,px,Date.now(),ev);if(p.status==='open'&&autoDue(p,Date.now()))ev.push({p,k:'time',pnl:autoClose(p,px,Date.now(),'time')});}
       AUTOSEEN[p.id]=done?Date.now():seen;
       autoSeenSave();
       if(ev.length)autoReport(ev,snap);

@@ -257,7 +257,8 @@ async function mdLoad(force){
       MD={at:Date.now(),tot:+G.total_market_cap.usd,totC:+G.market_cap_change_percentage_24h_usd||0,pct:{btc:+P.btc||0,eth:+P.eth||0,usdt:+P.usdt||0},
         caps:mk?caps:(MD&&MD.caps)||{}};
       lsSet(MDKEY,MD);
-      if(mk){RDCAP={at:Date.now(),list:mk.data.map(x=>String(x.symbol||'').toUpperCase())};lsSet(RDCAP_KEY,RDCAP);}
+      // فهرست 500 تایی رادار (روزی یک بار) با 150 تای این‌جا عوض نشود
+      if(mk&&!(RDCAP&&RDCAP.deep&&Date.now()-RDCAP.at<864e5)){RDCAP={at:Date.now(),list:mk.data.map(x=>String(x.symbol||'').toUpperCase())};lsSet(RDCAP_KEY,RDCAP);}
     }catch(e){}
     return MD;
   })();

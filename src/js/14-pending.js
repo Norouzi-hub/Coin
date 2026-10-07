@@ -43,11 +43,32 @@ function pendingStale(w){
   return Date.now()>until;
 }
 const activePending=()=>DB.pending.filter(w=>!pendingStale(w));
+/* وقتی برنامه بسته بود: آیا قیمت در آن فاصله به تریگر رسیده؟ (کندل 5 دقیقه‌ای از آخرین سنجش) */
+const PENDSEEN=lsGet('signaldesk.pendseen.v1')||{};let PENDCU=false;
+async function pendCatchUp(list){
+  if(PENDCU)return;PENDCU=true;let any=false;
+  try{for(const w of list){
+    const M5=3e5, from=Math.ceil(Math.max(PENDSEEN[w.id]||0,w.at||0)/M5)*M5, now=Date.now();if(now-from<M5)continue;
+    let C;try{C=await audCandles(w.ticker,'5m',from,Math.min(1000,Math.ceil((now-from)/M5)+1),true);}catch(e){continue;}
+    if(w.hit||!DB.pending.includes(w))continue;
+    const k=C.find(c=>c.t>=from&&(w.side==='up'?c.h>=w.trigger:c.l<=w.trigger));
+    PENDSEEN[w.id]=now;
+    if(!k)continue;
+    w.hit=k.t;w.hitAway=true;any=true;
+    const msg='وقتی برنامه بسته بود، '+w.ticker+(w.kind==='tier2'?' به پله‌ی دوم ':' به تریگر ورود ')+fmtPrice(w.trigger)+' رسید ('+relTime(new Date(k.t))+')';
+    advise('pend:'+w.id,{cat:'sig',pri:'hi',title:msg,act:{t:'pend'}})||toast(msg,'ok');
+  }}finally{PENDCU=false;lsSet('signaldesk.pendseen.v1',PENDSEEN);}
+  if(any){save();try{renderAll();}catch(e){}}
+}
 function checkPending(){
+  const now=Date.now(), away=[];
   for(const w of DB.pending){
     if(w.hit||pendingStale(w))continue;
+    // فاصله‌ی بیش از 4 دقیقه از آخرین سنجش (برنامه بسته بود): اول با کندل
+    if(!w.tf&&PENDSEEN[w.id]&&now-PENDSEEN[w.id]>4*60e3){away.push(w);continue;}
     const px=PRICES.get(w.ticker);
     if(px==null)continue;
+    PENDSEEN[w.id]=now;
     const reached=w.side==='up'?px>=w.trigger:px<=w.trigger;
     if(w.tf){                                            // لمس فقط خبر؛ ورود با بسته شدن کندل
       if(reached&&!w.touch){w.touch=Date.now();toast(w.ticker+' تریگر '+fmtPrice(w.trigger)+' را لمس کرد؛ منتظر بسته شدن کندل '+TF_FA[w.tf],'info');save();}
@@ -60,6 +81,8 @@ function checkPending(){
     advise('pend:'+w.id,{cat:'sig',pri:'hi',title:msg,act:{t:'pend'}})||toast(msg,'ok');
   }
   if(DB.pending.some(w=>w.hit))save();
+  lsSet('signaldesk.pendseen.v1',PENDSEEN);
+  if(away.length)pendCatchUp(away);
 }
 /* سفارش منتظر که به پوزیشن تبدیل شود، از همان فرم ورود رد می‌شود تا محاسبه یکی بماند */
 function fillPending(w){
