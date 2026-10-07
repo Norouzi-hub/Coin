@@ -1528,6 +1528,7 @@ table.xtab tr.mine td{box-shadow:inset 0 -2px 0 color-mix(in srgb,var(--gold) 55
 table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .xbest.mine{border-color:color-mix(in srgb,var(--gold) 45%,transparent)}
 .pill.ltp{border-style:dashed}
+.whyrow{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -1933,6 +1934,11 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
       <div class="fld"><label>سقف ریسک باز هم‌زمان (٪ حساب)</label><input id="sOpenRisk" type="number" value="15" min="1" max="100" step="1"></div>
       <div class="fld"><label>ریسک هر معامله‌ی ایزوله ($)</label><input id="sRiskUsd" type="number" min="0" step="0.5" inputmode="decimal" placeholder="خالی = مارجین × ریسک هدف"></div>
       <div class="fld"><label>بیشترین فاصله‌ی استاپ برای ایزوله (٪)</label><input id="sIsoSd" type="number" value="15" min="1" max="60" step="1"></div>
+      <div class="fld"><label>ریسک‌فری خودکار بعد از (٪ حرکت)</label><input id="sBeAt" type="number" min="0" max="50" step="0.1" placeholder="خالی = خاموش"></div>
+      <div class="fld"><label>استاپ دنباله‌دار (٪ پشت بهترین قیمت)</label><input id="sTrail" type="number" min="0" max="50" step="0.1" placeholder="خالی = خاموش"></div>
+      <div class="fld"><label>سقف زمان هر پوزیشن (ساعت)</label><input id="sMaxHold" type="number" min="0" max="720" step="0.5" placeholder="خالی = فقط قاعده‌ی من"></div>
+      <div class="fld"><label>قفل بعد از چند باخت پیاپی</label><input id="sLossLock" type="number" value="2" min="0" max="10" step="1"></div>
+      <div class="fld"><label>حداکثر پوزیشن باز هم‌زمان</label><input id="sMaxOpen" type="number" value="3" min="0" max="50" step="1"></div>
       <div class="fld"><label>سبک خروج پیش‌فرض</label><select id="sPb">
         <option value="s1">اسکلپ · تارگت 1</option><option value="s2">اسکلپ · تارگت 2</option>
         <option value="bal">متعادل</option><option value="sw">سوئینگ پله‌ای</option><option value="cu">دلخواه</option></select></div>
@@ -2516,7 +2522,7 @@ function fxGuard(){
   if(S.feat&&S.feat.fx===false&&!lsGet('signaldesk.fxuser')){S.feat.fx=true;return true;}
   return false;
 }
-const S={channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,slip:0.05,fund:0,openRisk:15,feedOn:false,auto:60,proxy:'',feat:featDefaults(),staleDays:7,exitPb:'bal',cal:'j',
+const S={lossLock:2,maxOpen:3,channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,slip:0.05,fund:0,openRisk:15,feedOn:false,auto:60,proxy:'',feat:featDefaults(),staleDays:7,exitPb:'bal',cal:'j',
   aud:{days:30,entryDays:3,tol:1,rule:'tp1'}};
 const F=k=>!!(S.feat&&S.feat[k]);
 let BOOTED=false;
@@ -2546,6 +2552,8 @@ function applySettingsToForm(){
   $('#sMode').value=S.mode; $('#sStale').value=S.staleDays||7; $('#sCal').value=calMode(); $('#sPb').value=pbDefault(); $('#sR').value=S.rMul.join(', '); $('#sFee').value=S.fee; $('#sAuto').value=S.auto;
   $('#sSlip').value=S.slip; $('#sFund').value=S.fund; $('#sOpenRisk').value=S.openRisk;
   $('#sRiskUsd').value=S.riskUsd>0?S.riskUsd:''; $('#sIsoSd').value=S.isoMaxSd||15;
+  $('#sBeAt').value=S.beAt>0?S.beAt:''; $('#sTrail').value=S.trail>0?S.trail:''; $('#sMaxHold').value=S.maxHold>0?S.maxHold:'';
+  $('#sLossLock').value=S.lossLock!=null?S.lossLock:2; $('#sMaxOpen').value=S.maxOpen!=null?S.maxOpen:3;
 }
 function readSettings(){
   const prevCh=S.channel, prevAuto=S.auto, prevProxy=S.proxy;
@@ -2574,6 +2582,9 @@ function readSettings(){
   S.openRisk=Math.min(100,Math.max(1,parseFloat($('#sOpenRisk').value)||15));
   {const r=parseFloat(normDig($('#sRiskUsd').value||''));S.riskUsd=r>0?Math.min(1e6,r):null;}
   S.isoMaxSd=Math.min(60,Math.max(1,parseFloat($('#sIsoSd').value)||15));
+  {const n=(id,mx)=>{const v=parseFloat(normDig($(id).value||''));return v>0?Math.min(mx,v):0;};
+   S.beAt=n('#sBeAt',50);S.trail=n('#sTrail',50);S.maxHold=n('#sMaxHold',720);
+   S.lossLock=Math.round(n('#sLossLock',10));S.maxOpen=Math.round(n('#sMaxOpen',50));}
   S.auto=parseInt($('#sAuto').value)||0;
   S.staleDays=Math.min(60,Math.max(1,parseInt($('#sStale').value,10)||7));
   S.exitPb=$('#sPb').value||'bal';
@@ -5729,7 +5740,7 @@ function quickEnter(p,sig,ov,px){
     return sheetEnter(p,sig,ov,px);
   }
   const lev=+r.leverage.toFixed(2);
-  const gate=entryGate(r.actualRisk);
+  const gate=entryGate(r.actualRisk,I.spot?'spot':I.dir);
   if(gate.length&&!confirm('⚠️ '+gate.join('\n\n')+'\n\nباز هم وارد می‌شوی؟'))return;
   const gateV=gate.length?[{k:'gate',at:Date.now(),t:gate.join(' ')}]:undefined;
   /* بیشتر پست‌های کانال نمی‌گویند فیوچرز است یا اسپات. جلوی ورود سریع را نمی‌گیریم،
@@ -6036,7 +6047,7 @@ function sheetEnter(p,sig,ov,px,opt){
        if(!v.lev||v.lev<=0)return toast('اهرم را وارد کن','err');
        if(v.stop&&((v.dir==='long'&&v.stop>=v.entry)||(v.dir==='short'&&v.stop<=v.entry)))
          return toast('استاپ با جهت معامله نمی‌خواند','err');
-       const gate=entryGate(riskOfPlan(v));
+       const gate=entryGate(riskOfPlan(v),spot()?'spot':v.dir);
        if(gate.length&&!confirm('⚠️ '+gate.join('\n\n')+'\n\nباز هم ثبت شود؟'))return;
        const gateV=gate.length?[{k:'gate',at:Date.now(),t:gate.join(' ')}]:undefined;
        // تنها جایی که هنوز «مطمئنی؟» می‌پرسیم: لیکوئید پیش از استاپ یعنی حد ضرر عملاً وجود ندارد
@@ -6101,8 +6112,8 @@ function riskNow(){
   return {used,pct:S.acct>0?used/S.acct*100:0,cap:+S.openRisk||15};
 }
 /* پیش از هر ورود تازه: حد ضرر روزانه پر شده؟ ریسک باز کل از سقف رد می‌شود؟ خروجی: فهرست هشدارها */
-function entryGate(newRisk){
-  const m=moneyNow(), r=riskNow(), out=[];
+function entryGate(newRisk,dir){
+  const m=moneyNow(), r=riskNow(), out=riskGateExtra(dir);
   if(m.left<=0)out.push('امروز به حد ضرر روزانه ('+faN(S.daily)+'٪ حساب) رسیده‌ای؛ قانون خودت می‌گوید ورود تازه نه.');
   const pct=S.acct>0?(r.used+(newRisk||0))/S.acct*100:0;
   if(newRisk>0&&pct>r.cap)out.push('با این ورود ریسک باز کل به '+pct.toFixed(1)+'٪ حساب می‌رسد؛ سقفت '+faN(r.cap)+'٪ است'+
@@ -10368,6 +10379,8 @@ function autoFeed(p,hi,lo,at,ev){
     // استاپِ تازه در همین کندل سنجیده نمی‌شود: معلوم نیست قیمت بعد از تارگت برگشته یا نه
     const f=p.dir==='long'?hi:lo;hi=lo=f;
   }
+  // ریسک‌فری و دنباله‌دار با سمتِ خوبِ همین بازه؛ استاپِ تازه از بازه‌ی بعد سنجیده می‌شود
+  if(p.status==='open')riskManage(p,hi,lo,at,ev);
 }
 function restoreSnap(snap){
   NOJUDGE=true;             // برگرداندن، خودش تخلف نیست (مثلاً استاپ به جای قبلش برمی‌گردد)
@@ -10377,7 +10390,7 @@ function restoreSnap(snap){
 }
 function autoReport(ev,snap){
   save();renderAll();
-  const one=e=>e.p.ticker+' '+(e.k==='tp'?'پله‌ی '+faN(e.i+1)+' نقشه اجرا شد':e.k==='liq'?'لیکوئید حساب شد':'استاپ خورد و بسته شد')+
+  const one=e=>e.p.ticker+' '+(e.k==='be'?'ریسک‌فری شد (استاپ '+fmtPrice(e.stop)+')':e.k==='trail'?'استاپ دنباله‌دار فعال شد ('+fmtPrice(e.stop)+')':e.k==='tp'?'پله‌ی '+faN(e.i+1)+' نقشه اجرا شد':e.k==='liq'?'لیکوئید حساب شد':'استاپ خورد و بسته شد')+
     (e.pnl?' · '+fmtUsd(e.pnl):'')+(e.k==='tp'&&e.p.status==='open'&&e.stop?' · استاپ '+(e.stop===e.p.entry?'روی ورود':fmtPrice(e.stop)):'');
   const msg=ev.length===1?one(ev[0]):'اجرای خودکار: '+ev.map(one).join('؛ ');
   const ids=[...new Set(ev.map(e=>e.p.id))];
@@ -10389,7 +10402,7 @@ function autoReport(ev,snap){
       if(q){q.autoOff=true;logAdd(q,'plan','اجرای خودکار برگردانده شد؛ برای این پوزیشن خاموش ماند');}}
     save();renderAll();toast('برگشت؛ اجرای خودکار این پوزیشن خاموش شد','info');
   });
-  const bad=ev.some(e=>e.k!=='tp');
+  const bad=ev.some(e=>e.k==='stop'||e.k==='liq');
   try{if(navigator.vibrate)navigator.vibrate(bad?[200,80,200]:[120,60,120]);}catch(e){}
   if(F('notify'))notify('میز سیگنال',msg,'auto'+ids.join(','));
 }
@@ -11852,6 +11865,7 @@ function buildPosCard(p,opt){
   more.title='کارهای بیشتر';more.setAttribute('aria-label','کارهای بیشتر');more.setAttribute('aria-expanded',mo?'true':'false');
   more.onclick=()=>{mo?POSMENU.delete(p.id):POSMENU.add(p.id);renderPositions();};
   a.appendChild(more);
+  posRiskBits(p,head,b,open?a:null);                  // مهلت، لیکوئید پیش از استاپ، بستن سریع، «چرا بستم»
   card.appendChild(a);
   if(mo){
     const pm=el('div','pmore');
@@ -11886,6 +11900,8 @@ function sheetClose(p){
      fldHtml('fee','کارمزد ($)',(p.margin*p.lev*(S.fee/100)).toFixed(3))+
      '<div class="fld"><label>تاریخ بستن</label><input id="f_when" type="datetime-local"></div>'+
    '</div>'+
+   '<div class="fld" style="margin-top:10px"><label>چرا می‌بندی؟</label><select id="f_why"><option value="">—</option>'+
+     Object.entries(WHY_FA).map(([k,v])=>'<option value="'+k+'">'+v+'</option>').join('')+'</select></div>'+
    '<div id="prev" class="kv" style="margin-top:12px"></div>'+
    '<div class="srow"><button class="btn pri" id="ok">ثبت بستن</button><button class="btn" id="cx">انصراف</button></div>',
    sh=>{
@@ -11931,8 +11947,9 @@ function sheetClose(p){
        p.fees=Math.max(0,parseFloat($('#f_fee').value)||0);
        const w=$('#f_when').value;
        p.closedAt=w?new Date(w).getTime():Date.now();
+       const why=$('#f_why').value;if(why)p.why=why;else delete p.why;
        const m=posMetrics(p);
-       logAdd(p,'close','بسته شد روی '+fmtPrice(ex)+' — '+fmtUsd(m.pnl)+' ('+fmtR(m.r)+')');
+       logAdd(p,'close','بسته شد روی '+fmtPrice(ex)+(why?' · '+WHY_FA[why]:'')+' — '+fmtUsd(m.pnl)+' ('+fmtR(m.r)+')');
        PENDING.delete(p.id);
        save();closeSheet();renderAll();
        toast('پوزیشن بسته شد: '+fmtUsd(m.pnl),m.pnl>=0?'ok':'info');
@@ -12171,6 +12188,129 @@ function sheetEditPos(p){
    });
 }
 
+/* ==================== ابزار پوزیشن و ریسک (پیشنهادهای ۱۱ تا ۲۰) ====================
+   ۱۱ لیکوئید پیش از استاپ   ۱۲ سقف زمان پوزیشن     ۱۳ قفل بعد از باخت‌های پیاپی
+   ۱۴ ریسک‌فری خودکار         ۱۵ استاپ دنباله‌دار     ۱۶ هشدار پوزیشن‌های هم‌جهت
+   ۱۷ دلار و R کنار هم         ۱۸ بستن سریع با قیمت لحظه (و ۳۴: «چرا بستم»)
+   ۱۹ تاریخچه (log هر پوزیشن)  ۲۰ سقف تعداد پوزیشن باز
+   ۱۴ و ۱۵ داخل اجرای خودکار (32-autoexec.js → riskManage) اجرا می‌شوند. */
+
+/* ---- ۱۱) لیکوئید پیش از استاپ ---- */
+function liqBeforeStop(p){
+  if(p.kind==='spot'||p.status!=='open'||!p.stop)return false;
+  const liq=posMetrics(p).liqPrice;if(liq==null)return false;
+  return (p.stop-liq)*(p.dir==='long'?1:-1)<=0;
+}
+
+/* ---- ۱۲) سقف زمان: از «قاعده‌ی من» (pos.until) یا تنظیمات (ساعت) ---- */
+function posDeadline(p){
+  if(p.status!=='open')return null;
+  if(p.until)return p.until;
+  return +S.maxHold>0?(p.openedAt||Date.now())+S.maxHold*36e5:null;
+}
+const fmtLeft=ms=>{const m=Math.round(Math.abs(ms)/6e4);
+  return m<60?faN(m)+' دقیقه':m<48*60?faN(+(m/60).toFixed(1))+' ساعت':faN(Math.round(m/1440))+' روز';};
+
+/* ---- ۱۳) باخت‌های پیاپیِ آخر (پوزیشن‌های بسته، جدید به قدیم) ---- */
+function lossStreak(){
+  const cl=DB.positions.filter(p=>p.status==='closed'&&p.closedAt).sort((a,b)=>b.closedAt-a.closedAt);
+  let n=0;for(const p of cl){const m=posMetrics(p);if((m.pnl||0)<0)n++;else break;}
+  return {n,last:cl[0]||null};
+}
+/* قفل تا پایان همان روز (به وقت گوشی) */
+function lossLockOn(){
+  const k=+S.lossLock;if(!(k>0))return null;
+  const s=lossStreak();if(s.n<k||!s.last)return null;
+  const end=new Date(s.last.closedAt);end.setHours(24,0,0,0);
+  return Date.now()<+end?{n:s.n,until:+end}:null;
+}
+
+/* ---- ۱۶ و ۲۰) پوزیشن‌های باز ---- */
+const openPos=()=>DB.positions.filter(p=>p.status==='open');
+function sameDirOf(dir){return openPos().filter(p=>p.kind!=='spot'&&p.dir===dir);}
+
+/* هشدارهای پیش از ورود (به entryGate اضافه می‌شوند) */
+function riskGateExtra(dir){
+  const out=[];
+  const lk=lossLockOn();
+  if(lk)out.push(faN(lk.n)+' باخت پیاپی؛ قانون خودت می‌گوید تا فردا ورود تازه نه.');
+  const mx=+S.maxOpen;
+  if(mx>0&&openPos().length>=mx)out.push('الان '+faN(openPos().length)+' پوزیشن باز داری؛ سقفت '+faN(mx)+' است.');
+  if(dir&&dir!=='spot'){const sd=sameDirOf(dir);
+    if(sd.length>=2)out.push('با این، '+faN(sd.length+1)+' پوزیشن '+(dir==='long'?'لانگ':'شورت')+' هم‌زمان داری ('+
+      [...new Set(sd.map(p=>p.ticker))].join('، ')+')؛ اگر بیت‌کوین برگردد، همه با هم ضرر می‌کنند.');}
+  return out;
+}
+
+/* ---- ۱۴ و ۱۵) ریسک‌فری خودکار و استاپ دنباله‌دار — فقط به سمت سود، هیچ‌وقت عقب ---- */
+function riskManage(p,hi,lo,at,ev){
+  if(p.status!=='open'||!(p.entry>0))return;
+  const sign=p.dir==='long'?1:-1, good=sign>0?hi:lo, E=p.entry;
+  const move=(good-E)/E*100*sign;
+  const fee=E*((+S.fee||0)/100);
+  const setStop=(v,why,k)=>{
+    v=roundP(v);if(p.stop&&(v-p.stop)*sign<=0)return false;
+    p.stop=v;logAdd(p,'plan','خودکار: '+why+' — استاپ روی '+fmtPrice(v),at);
+    if(ev&&k)ev.push({p,k,stop:v});return true;};
+  if(+S.beAt>0&&!p.beDone&&move>=+S.beAt){
+    p.beDone=true;
+    setStop(E+sign*fee,'ریسک‌فری بعد از '+faN(+S.beAt)+'٪ حرکت','be');
+  }
+  const tr=+S.trail;
+  if(tr>0){
+    p.peak=p.peak==null?good:(sign>0?Math.max(p.peak,good):Math.min(p.peak,good));
+    const c=p.peak*(1-sign*tr/100);
+    if((c-E)*sign>fee){                                 // فقط وقتی دست‌کم سربه‌سر است
+      const first=!p.trailOn;p.trailOn=true;
+      // ثبت در تاریخچه فقط برای حرکت‌های معنادار (یک‌چهارمِ فاصله‌ی دنباله)، وگرنه با هر قیمت یک خط
+      const big=!p.stop||Math.abs(c-p.stop)/E*100>=tr/4;
+      if(big)setStop(c,'استاپ دنباله‌دار '+fmtNum(tr)+'٪ پشت بهترین قیمت ('+fmtPrice(p.peak)+')',first?'trail':null);
+    }
+  }
+}
+
+/* ---- ۱۸ و ۳۴) بستن سریع با قیمت لحظه، با «چرا بستم» ---- */
+const WHY_FA={tp:'تارگت',stop:'استاپ',time:'سقف زمان',rule:'طبق قاعده',fear:'ترس',news:'خبر',other:'دیگر'};
+function closeAt(p,ex,why,at){
+  ensureBase(p);
+  p.status='closed';p.exitPrice=ex;p.closedAt=at||Date.now();
+  p.fees=p.margin*p.lev*(S.fee/100);
+  if(why)p.why=why;
+  PENDING.delete(p.id);
+  const m=posMetrics(p);
+  logAdd(p,'close','بسته شد روی '+fmtPrice(ex)+(why?' · '+WHY_FA[why]:'')+' — '+fmtUsd(m.pnl)+(m.r!=null?' ('+fmtR(m.r)+')':''));
+  return m;
+}
+function sheetQuickClose(p){
+  const live=pxOf(p);
+  if(live==null)return sheetClose(p);
+  const m=posMetrics(p,live);
+  const dl=posDeadline(p);
+  openSheet('<h3>بستن سریع · '+esc(p.ticker)+'</h3>'+
+    '<div class="kv"><div class="k"><b>قیمت لحظه</b><span>'+fmtPrice(live)+'</span></div>'+
+    '<div class="k"><b>سود/ضرر</b><span class="'+cls(m.pnl)+'">'+fmtUsd(m.pnl)+(m.r!=null?' · '+fmtR(m.r):'')+'</span></div></div>'+
+    '<div class="sub" style="margin-top:10px">چرا می‌بندی؟ (با زدن، بسته می‌شود)</div>'+
+    '<div class="whyrow">'+Object.entries(WHY_FA).map(([k,v])=>'<button class="catchip'+(k==='time'&&dl&&Date.now()>dl?' on':'')+'" data-w="'+k+'">'+v+'</button>').join('')+'</div>'+
+    '<div class="srow"><button class="btn" id="full">فرم کامل</button><button class="btn" id="cx">انصراف</button></div>',
+    sh=>{
+      $('#cx').onclick=closeSheet;
+      $('#full').onclick=()=>{closeSheet();setTimeout(()=>sheetClose(p),260);};
+      sh.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{
+        const px=pxOf(p)||live, r=closeAt(p,px,b.dataset.w);
+        save();closeSheet();renderAll();toast('بسته شد: '+fmtUsd(r.pnl)+(r.r!=null?' · '+fmtR(r.r):''),r.pnl>=0?'ok':'info');});
+    });
+}
+
+/* ---- روی کارت پوزیشن باز: مهلت، لیکوئید پیش از استاپ، بستن سریع ---- */
+function posRiskBits(p,head,body,acts){
+  if(p.status==='open'){
+    const dl=posDeadline(p);
+    if(dl){const left=dl-Date.now();
+      head.appendChild(el('span','pill '+(left<=0?'lose':left<36e5?'gold':'mut'),ic('clock')+(left<=0?'مهلت گذشت':fmtLeft(left)+' مانده')));}
+    if(liqBeforeStop(p))body.insertBefore(el('div','flag d','<i>!</i><span>لیکوئید پیش از استاپ است: اگر قیمت برگردد، صرافی کل مارجین را پیش از رسیدن به استاپ می‌بندد. اهرم را کم کن یا استاپ را نزدیک‌تر بیاور.</span>'),body.children[1]||null);
+    if(acts&&pxOf(p)!=null){const q=el('button','btn',ic('bolt')+'<span>بستن با قیمت لحظه</span>');q.onclick=()=>sheetQuickClose(p);acts.insertBefore(q,acts.children[1]||null);}
+  }else if(p.why)head.appendChild(el('span','pill mut','بستم: '+WHY_FA[p.why]));
+}
 /* ==================== کارنامه ==================== */
 let repPeriod='month';        // «سالانه» برداشته شد: با «کل» تقریباً یکی بود
 let repFrom=null, repTo=null;      // بازه‌ی دلخواه (میلی‌ثانیه)، وقتی repPeriod==='range'

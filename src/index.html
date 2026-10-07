@@ -300,6 +300,11 @@
       <div class="fld"><label>سقف ریسک باز هم‌زمان (٪ حساب)</label><input id="sOpenRisk" type="number" value="15" min="1" max="100" step="1"></div>
       <div class="fld"><label>ریسک هر معامله‌ی ایزوله ($)</label><input id="sRiskUsd" type="number" min="0" step="0.5" inputmode="decimal" placeholder="خالی = مارجین × ریسک هدف"></div>
       <div class="fld"><label>بیشترین فاصله‌ی استاپ برای ایزوله (٪)</label><input id="sIsoSd" type="number" value="15" min="1" max="60" step="1"></div>
+      <div class="fld"><label>ریسک‌فری خودکار بعد از (٪ حرکت)</label><input id="sBeAt" type="number" min="0" max="50" step="0.1" placeholder="خالی = خاموش"></div>
+      <div class="fld"><label>استاپ دنباله‌دار (٪ پشت بهترین قیمت)</label><input id="sTrail" type="number" min="0" max="50" step="0.1" placeholder="خالی = خاموش"></div>
+      <div class="fld"><label>سقف زمان هر پوزیشن (ساعت)</label><input id="sMaxHold" type="number" min="0" max="720" step="0.5" placeholder="خالی = فقط قاعده‌ی من"></div>
+      <div class="fld"><label>قفل بعد از چند باخت پیاپی</label><input id="sLossLock" type="number" value="2" min="0" max="10" step="1"></div>
+      <div class="fld"><label>حداکثر پوزیشن باز هم‌زمان</label><input id="sMaxOpen" type="number" value="3" min="0" max="50" step="1"></div>
       <div class="fld"><label>سبک خروج پیش‌فرض</label><select id="sPb">
         <option value="s1">اسکلپ · تارگت 1</option><option value="s2">اسکلپ · تارگت 2</option>
         <option value="bal">متعادل</option><option value="sw">سوئینگ پله‌ای</option><option value="cu">دلخواه</option></select></div>

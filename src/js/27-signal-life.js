@@ -616,7 +616,7 @@ function quickEnter(p,sig,ov,px){
     return sheetEnter(p,sig,ov,px);
   }
   const lev=+r.leverage.toFixed(2);
-  const gate=entryGate(r.actualRisk);
+  const gate=entryGate(r.actualRisk,I.spot?'spot':I.dir);
   if(gate.length&&!confirm('⚠️ '+gate.join('\n\n')+'\n\nباز هم وارد می‌شوی؟'))return;
   const gateV=gate.length?[{k:'gate',at:Date.now(),t:gate.join(' ')}]:undefined;
   /* بیشتر پست‌های کانال نمی‌گویند فیوچرز است یا اسپات. جلوی ورود سریع را نمی‌گیریم،
@@ -923,7 +923,7 @@ function sheetEnter(p,sig,ov,px,opt){
        if(!v.lev||v.lev<=0)return toast('اهرم را وارد کن','err');
        if(v.stop&&((v.dir==='long'&&v.stop>=v.entry)||(v.dir==='short'&&v.stop<=v.entry)))
          return toast('استاپ با جهت معامله نمی‌خواند','err');
-       const gate=entryGate(riskOfPlan(v));
+       const gate=entryGate(riskOfPlan(v),spot()?'spot':v.dir);
        if(gate.length&&!confirm('⚠️ '+gate.join('\n\n')+'\n\nباز هم ثبت شود؟'))return;
        const gateV=gate.length?[{k:'gate',at:Date.now(),t:gate.join(' ')}]:undefined;
        // تنها جایی که هنوز «مطمئنی؟» می‌پرسیم: لیکوئید پیش از استاپ یعنی حد ضرر عملاً وجود ندارد
@@ -988,8 +988,8 @@ function riskNow(){
   return {used,pct:S.acct>0?used/S.acct*100:0,cap:+S.openRisk||15};
 }
 /* پیش از هر ورود تازه: حد ضرر روزانه پر شده؟ ریسک باز کل از سقف رد می‌شود؟ خروجی: فهرست هشدارها */
-function entryGate(newRisk){
-  const m=moneyNow(), r=riskNow(), out=[];
+function entryGate(newRisk,dir){
+  const m=moneyNow(), r=riskNow(), out=riskGateExtra(dir);
   if(m.left<=0)out.push('امروز به حد ضرر روزانه ('+faN(S.daily)+'٪ حساب) رسیده‌ای؛ قانون خودت می‌گوید ورود تازه نه.');
   const pct=S.acct>0?(r.used+(newRisk||0))/S.acct*100:0;
   if(newRisk>0&&pct>r.cap)out.push('با این ورود ریسک باز کل به '+pct.toFixed(1)+'٪ حساب می‌رسد؛ سقفت '+faN(r.cap)+'٪ است'+

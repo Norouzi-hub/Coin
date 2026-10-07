@@ -56,6 +56,8 @@ function autoFeed(p,hi,lo,at,ev){
     // استاپِ تازه در همین کندل سنجیده نمی‌شود: معلوم نیست قیمت بعد از تارگت برگشته یا نه
     const f=p.dir==='long'?hi:lo;hi=lo=f;
   }
+  // ریسک‌فری و دنباله‌دار با سمتِ خوبِ همین بازه؛ استاپِ تازه از بازه‌ی بعد سنجیده می‌شود
+  if(p.status==='open')riskManage(p,hi,lo,at,ev);
 }
 function restoreSnap(snap){
   NOJUDGE=true;             // برگرداندن، خودش تخلف نیست (مثلاً استاپ به جای قبلش برمی‌گردد)
@@ -65,7 +67,7 @@ function restoreSnap(snap){
 }
 function autoReport(ev,snap){
   save();renderAll();
-  const one=e=>e.p.ticker+' '+(e.k==='tp'?'پله‌ی '+faN(e.i+1)+' نقشه اجرا شد':e.k==='liq'?'لیکوئید حساب شد':'استاپ خورد و بسته شد')+
+  const one=e=>e.p.ticker+' '+(e.k==='be'?'ریسک‌فری شد (استاپ '+fmtPrice(e.stop)+')':e.k==='trail'?'استاپ دنباله‌دار فعال شد ('+fmtPrice(e.stop)+')':e.k==='tp'?'پله‌ی '+faN(e.i+1)+' نقشه اجرا شد':e.k==='liq'?'لیکوئید حساب شد':'استاپ خورد و بسته شد')+
     (e.pnl?' · '+fmtUsd(e.pnl):'')+(e.k==='tp'&&e.p.status==='open'&&e.stop?' · استاپ '+(e.stop===e.p.entry?'روی ورود':fmtPrice(e.stop)):'');
   const msg=ev.length===1?one(ev[0]):'اجرای خودکار: '+ev.map(one).join('؛ ');
   const ids=[...new Set(ev.map(e=>e.p.id))];
@@ -77,7 +79,7 @@ function autoReport(ev,snap){
       if(q){q.autoOff=true;logAdd(q,'plan','اجرای خودکار برگردانده شد؛ برای این پوزیشن خاموش ماند');}}
     save();renderAll();toast('برگشت؛ اجرای خودکار این پوزیشن خاموش شد','info');
   });
-  const bad=ev.some(e=>e.k!=='tp');
+  const bad=ev.some(e=>e.k==='stop'||e.k==='liq');
   try{if(navigator.vibrate)navigator.vibrate(bad?[200,80,200]:[120,60,120]);}catch(e){}
   if(F('notify'))notify('میز سیگنال',msg,'auto'+ids.join(','));
 }

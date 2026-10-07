@@ -478,6 +478,7 @@ function buildPosCard(p,opt){
   more.title='کارهای بیشتر';more.setAttribute('aria-label','کارهای بیشتر');more.setAttribute('aria-expanded',mo?'true':'false');
   more.onclick=()=>{mo?POSMENU.delete(p.id):POSMENU.add(p.id);renderPositions();};
   a.appendChild(more);
+  posRiskBits(p,head,b,open?a:null);                  // مهلت، لیکوئید پیش از استاپ، بستن سریع، «چرا بستم»
   card.appendChild(a);
   if(mo){
     const pm=el('div','pmore');
@@ -512,6 +513,8 @@ function sheetClose(p){
      fldHtml('fee','کارمزد ($)',(p.margin*p.lev*(S.fee/100)).toFixed(3))+
      '<div class="fld"><label>تاریخ بستن</label><input id="f_when" type="datetime-local"></div>'+
    '</div>'+
+   '<div class="fld" style="margin-top:10px"><label>چرا می‌بندی؟</label><select id="f_why"><option value="">—</option>'+
+     Object.entries(WHY_FA).map(([k,v])=>'<option value="'+k+'">'+v+'</option>').join('')+'</select></div>'+
    '<div id="prev" class="kv" style="margin-top:12px"></div>'+
    '<div class="srow"><button class="btn pri" id="ok">ثبت بستن</button><button class="btn" id="cx">انصراف</button></div>',
    sh=>{
@@ -557,8 +560,9 @@ function sheetClose(p){
        p.fees=Math.max(0,parseFloat($('#f_fee').value)||0);
        const w=$('#f_when').value;
        p.closedAt=w?new Date(w).getTime():Date.now();
+       const why=$('#f_why').value;if(why)p.why=why;else delete p.why;
        const m=posMetrics(p);
-       logAdd(p,'close','بسته شد روی '+fmtPrice(ex)+' — '+fmtUsd(m.pnl)+' ('+fmtR(m.r)+')');
+       logAdd(p,'close','بسته شد روی '+fmtPrice(ex)+(why?' · '+WHY_FA[why]:'')+' — '+fmtUsd(m.pnl)+' ('+fmtR(m.r)+')');
        PENDING.delete(p.id);
        save();closeSheet();renderAll();
        toast('پوزیشن بسته شد: '+fmtUsd(m.pnl),m.pnl>=0?'ok':'info');
