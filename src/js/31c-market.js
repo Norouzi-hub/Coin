@@ -1,9 +1,9 @@
 /* ==================== حال بازار و رویدادهای هر ارز ====================
    از صفحه‌ی «سیگنال ارز دیجیتال» تبدیل الهام گرفته، ولی همه از داده‌ی خود صرافی‌ها (همان منبع‌های قیمت):
-   ۱) حال بازار: چند ارز در ۲۴ ساعت مثبت و چند منفی، پخش درصد تغییرها، و تغییر بیت‌کوین
-   ۲) رویدادهای هر ارز روی کارت سیگنال: شکست کف/سقف ۷ و ۳۰ روزه، تقاطع MA20/50 (۴ ساعته)،
+   1) حال بازار: چند ارز در 24 ساعت مثبت و چند منفی، پخش درصد تغییرها، و تغییر بیت‌کوین
+   2) رویدادهای هر ارز روی کارت سیگنال: شکست کف/سقف 7 و 30 روزه، تقاطع MA20/50 (4 ساعته)،
       رشد/ریزش ناگهانی؛ اگر خلاف جهتِ سیگنال است، هشدار
-   ۳) کانال‌سنج: لانگ‌ها و شورت‌های کانال در روزهای صعودی، خنثی و نزولیِ بیت‌کوین */
+   3) کانال‌سنج: لانگ‌ها و شورت‌های کانال در روزهای صعودی، خنثی و نزولیِ بیت‌کوین */
 
 /* ---- ۱) حال بازار ---- */
 const MKKEY='signaldesk.mkt.v1', MK_TTL=15*60000;
@@ -27,14 +27,14 @@ const MK_BIN_FA=['<−10٪','−10…−7','−7…−5','−5…−3','−3…�
 /* تابع خالص: ردیف‌های [نماد، درصد ۲۴ساعته، حجم دلاری] ← خلاصه‌ی بازار */
 function mkSummarize(rows){
   const bins=new Array(MK_BIN_FA.length).fill(0);
-  let n=0,up=0,down=0,btc=null;const all=[];
+  let n=0,up=0,down=0,btc=null;const all=[], vols=[];
   for(const [sym,pct,vol] of rows){
     if(!/USDT$/.test(sym)||pct==null||!isFinite(pct))continue;
     const base=sym.slice(0,-4);
     if(!base||MK_STABLE.test(base)||MK_LEV.test(base))continue;
     if(base==='BTC')btc=pct;
     if(vol!=null&&isFinite(vol)&&vol<20000)continue;            // بازار مرده (حجم ۲۴ ساعت زیر ۲۰ هزار دلار)
-    n++;all.push(pct);
+    n++;all.push(pct);if(vol!=null&&isFinite(vol))vols.push([base,vol]);
     if(pct>0.3)up++;else if(pct<-0.3)down++;
     for(let i=0;i<bins.length;i++)if(pct>=MK_BINS[i]&&pct<MK_BINS[i+1]){bins[i]++;break;}
   }
@@ -42,7 +42,9 @@ function mkSummarize(rows){
   all.sort((a,b)=>a-b);
   const med=all[all.length>>1], dn=down/n, upS=up/n;
   const reg=dn>=0.75?'bear2':dn>=0.6?'bear':upS>=0.75?'bull2':upS>=0.6?'bull':'flat';
-  return {at:Date.now(),n,up,down,flat:n-up-down,med,btc,bins,reg};
+  // پرحجم‌ترین‌ها: فهرستی که «پیشنهاد برنامه» بررسی می‌کند (31d-autosig.js)
+  const top=vols.sort((a,b)=>b[1]-a[1]).slice(0,40).map(x=>x[0]);
+  return {at:Date.now(),n,up,down,flat:n-up-down,med,btc,bins,reg,top};
 }
 const MK_REG_FA={bear2:'خیلی نزولی',bear:'نزولی',flat:'خنثی',bull:'صعودی',bull2:'خیلی صعودی'};
 async function mktLoad(force){
@@ -109,12 +111,21 @@ function mkEventsOf(C){
   if(F.length>=56){
     const ma=(n,i)=>{let s=0;for(let j=i-n+1;j<=i;j++)s+=F[j];return s/n;};
     const sg=i=>Math.sign(ma(20,i)-ma(50,i)), L=F.length-1;
-    for(let i=L;i>L-7;i--)if(sg(i)!==sg(i-1)&&sg(i)!==0){ev.push({k:'ma',bear:sg(L)<0,t:'تقاطع '+(sg(L)<0?'نزولی':'صعودی')+' MA20/50 (۴ ساعته)'});break;}
+    for(let i=L;i>L-7;i--)if(sg(i)!==sg(i-1)&&sg(i)!==0){ev.push({k:'ma',bear:sg(L)<0,t:'تقاطع '+(sg(L)<0?'نزولی':'صعودی')+' MA20/50 (4 ساعته)'});break;}
   }
   // حرکت ناگهانی: ۳ ساعت اخیر بیش از ۵٪
   const k3=C[Math.max(0,C.length-3)], mv=(C[C.length-1].c/k3.o-1)*100;
-  if(Math.abs(mv)>=5)ev.push({k:'move',bear:mv<0,t:(mv<0?'ریزش':'رشد')+' ناگهانی '+fmtPct(mv)+' در ۳ ساعت'});
+  if(Math.abs(mv)>=5)ev.push({k:'move',bear:mv<0,t:(mv<0?'ریزش':'رشد')+' ناگهانی '+fmtPct(mv)+' در 3 ساعت'});
   return ev;
+}
+/* کندل یک‌ساعته‌ی ~۴۱ روز هر ارز، نیم ساعت در حافظه؛ مشترکِ رویدادها و «پیشنهاد برنامه» */
+const MKC=new Map();
+async function mkCandles(tk){
+  const c=MKC.get(tk);if(c&&Date.now()-c.at<MKEV_TTL)return c.C;
+  const H=36e5, C=await audCandles(tk,'1h',Math.floor((Date.now()-1000*H)/H)*H,1000,true);
+  MKC.set(tk,{at:Date.now(),C});
+  if(MKC.size>60){const k=[...MKC.keys()][0];MKC.delete(k);}
+  return C;
 }
 function mkEvents(tk){
   if(!tk)return null;
@@ -128,7 +139,7 @@ function mkEvPump(){
     const tk=MKEVQ.shift();MKEVRUN++;
     (async()=>{
       let ev=null,err=false;
-      try{const C=await audCandles(tk,'1h',Math.floor((Date.now()-31*864e5)/36e5)*36e5,744,true);ev=mkEventsOf(C)||[];}
+      try{const C=await mkCandles(tk);ev=mkEventsOf(C)||[];}
       catch(e){err=true;}
       MKEV.set(tk,{at:Date.now(),ev,err});
       MKEVRUN--;mkEvPump();
@@ -210,7 +221,7 @@ function regimeTableHtml(rows){
   if(!covered){
     if(!BTCH.c.length)return '<div class="hint">در حال گرفتن تاریخچه‌ی بیت‌کوین برای «حال بازار»…</div>';}
   const m=groupBy(rows,x=>{const r=regimeAt(x.inp.t0);return r?r+'|'+x.inp.dir:null;});
-  const html=grpTable('به تفکیک حال بازار (تغییر بیت‌کوین در ۲۴ ساعتِ پیش از سیگنال: نزولی ≤ −۲٪، صعودی ≥ +۲٪)',m,REG_ORDER,regLabel);
+  const html=grpTable('به تفکیک حال بازار (تغییر بیت‌کوین در 24 ساعتِ پیش از سیگنال: نزولی ≤ −2٪، صعودی ≥ +2٪)',m,REG_ORDER,regLabel);
   // جمع‌بندی یک‌خطی: آیا لانگ در روزهای نزولی بدتر بوده؟
   const a=m.get('bear|long'), b=m.get('bull|long')||m.get('flat|long');
   let note='';
