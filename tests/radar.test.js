@@ -123,14 +123,17 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  console.log('=== بررسی کامل: ده‌تا‌ده‌تا، IndexedDB، دفتر پیشنهادها ===');
  const full=await p.evaluate(async()=>{RB.items=[];RD=rdEmpty();RDS.clear();RDV='sig';
    RDCAP={at:Date.now(),list:['BTC','ETH','SOL','XRP','ADA','DOGE','DOT','LINK','AVAX','NEAR','UNI','APT']};
-   const t0=performance.now();await rdScan('refresh');const ms=Math.round(performance.now()-t0);
    bucket='live';sigFilter='mkt';renderAll();
+   const t0=performance.now(),pr=rdScan('refresh');const seen=[];
+   for(let i=0;i<40&&RDQ.on;i++){await new Promise(r=>setTimeout(r,100));const b=document.getElementById('rdProgBox');if(b)seen.push(b.textContent);}
+   await pr;const ms=Math.round(performance.now()-t0);renderAll();
    const st=await idbGet('rdc:ETH'),fl=await idbGet('rdf:ETH');
    return {ms,n:RD.n,rank:RD.rank.length,nflow:RD.nflow,M:!!(RD.M&&RD.M.long&&RD.M.short),cal:Object.keys(RD.calib).length,rel:!!RD.rel,
      eth:RD.coins.ETH&&{wl:RD.coins.ETH.wl,flow:RD.coins.ETH.flow,sc:RD.coins.ETH.sc},sol:RD.coins.SOL&&RD.coins.SOL.flow,
      rows:st&&st.rows.length,flow:fl&&fl.top&&fl.top.length,pan:!!document.querySelector('#glance .rdpan'),
-     auto:RB.items.filter(i=>i.k==='auto').length,sig:rdList().filter(x=>x.dir!=='wait').length};});
+     auto:RB.items.filter(i=>i.k==='auto').length,sig:rdList().filter(x=>x.dir!=='wait').length,seen:seen.filter((x,i)=>i%5===0),gone:!document.getElementById('rdProgBox')};});
  console.log('   ',JSON.stringify(full),JSON.stringify(REQ));
+ ok(full.seen.length>2&&full.seen.every(x=>/\d+٪/.test(x)&&/\d:\d\d/.test(x))&&full.seen.some(x=>/ارز \d+ از 10/.test(x))&&full.gone,'نوار پیشرفت: درصد، کار الان و تایمر؛ آخر کار برداشته شد');
  ok(full.n===10&&full.rank===10,'بار اول فقط 10 ارز اول ('+full.rank+')، در '+full.ms+'ms');
  ok(full.rows>=2990&&full.flow>=490,'تاریخچه در IndexedDB: '+full.rows+' کندل یک‌ساعته، '+full.flow+' ساعت جریان پول');
  ok(full.M&&full.cal>0&&full.rel&&full.pan,'مدل لانگ و شورت، کارنامه، صداقت مدل و پنل ساخته شد');

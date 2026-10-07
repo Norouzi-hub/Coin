@@ -23,7 +23,7 @@ const RD_B=['70-85','85-95','95+'];
 const RD_SKIP=/^(USDT|USDC|FDUSD|TUSD|DAI|BUSD|USDP|USDD|USDE|SUSDE|USDS|PYUSD|USD0|USD1|RLUSD|EURC|EURT|PAXG|XAUT|WBTC|WETH|WBETH|STETH|WSTETH|WEETH|CBBTC|BTCB|RETH|METH|LEO|BSC-USD|BFUSD|USDF)$/;
 const rdEmpty=()=>({v:3,at:0,n:0,coins:{},calib:{},rel:null,M:null,fund:{},rank:[],reg:null,nflow:0,ns:0});
 let RD=(()=>{const a=lsGet(RD_KEY);return a&&a.v===3?a:rdEmpty();})();
-const RDQ={on:false,done:0,n:0,msg:''};
+const RDQ={on:false,done:0,n:0,msg:'',t0:0,tc:0,cur:new Map(),pm:0,fin:false,iv:null};
 const RDS=new Map();                       // نمونه‌های هر ارز (فقط در حافظه‌ی همین بار)
 const rdSave=()=>lsSet(RD_KEY,RD);
 const rdYield=()=>new Promise(r=>setTimeout(r,0));
@@ -200,13 +200,13 @@ async function rdModel(){
   const cut=[0.5,2/3,5/6,1].map(f=>t0+(t1-t0)*f);cut[3]=t1+1;
   const cal={},rel={long:Array.from({length:6},()=>[0,0,0]),short:Array.from({length:6},()=>[0,0,0])},busy=new Map();
   for(let k=0;k<3;k++){
-    RDQ.msg='سنجش دوره‌ی '+(k+1)+' از 3…';rdPaintProg();await rdYield();
+    RDQ.msg='سنجش صادقانه: دوره‌ی '+(k+1)+' از 3 (یادگیری روی گذشته، سنجش روی بعدش)…';RDQ.pm=k/4;rdPaintProg();await rdYield();
     const M={long:rdFit(SS,'long',cut[k])};await rdYield();M.short=rdFit(SS,'short',cut[k]);
     if(M.long&&M.short)rdEvalFold(SS,M,cut[k],cut[k+1],cal,rel,busy);
   }
-  RDQ.msg='یادگیری مدل نهایی…';rdPaintProg();await rdYield();
+  RDQ.msg='یادگیری مدل نهایی روی همه‌ی داده…';RDQ.pm=3/4;rdPaintProg();await rdYield();
   const ML=rdFit(SS,'long',Infinity);await rdYield();const MS=rdFit(SS,'short',Infinity);
-  RDQ.msg='';
+  RDQ.msg='';RDQ.pm=1;
   if(!ML||!MS)return false;
   const C2={};for(const k in cal)C2[k]=rdSum(cal[k]);
   Object.assign(RD,{M:{long:ML,short:MS},calib:C2,rel,ns:SS.reduce((s,x)=>s+x.t.length,0),span:[t0,t1],ncoin:SS.length});
@@ -281,33 +281,40 @@ async function rdScan(mode){
   if(RDQ.on)return;
   mode=mode||'refresh';
   const want=mode==='more'?Math.min(RD_MAX,(RD.n||0)+RD_STEP):Math.max(RD.n||0,RD_STEP);
-  Object.assign(RDQ,{on:true,done:0,n:0,msg:'فهرست ارزها…'});rdPaintProg();
+  Object.assign(RDQ,{on:true,done:0,n:0,msg:'گرفتن فهرست ارزها (ارزش بازار از CoinGecko)…',t0:Date.now(),tc:0,pm:0,fin:false,mode});RDQ.cur.clear();
+  clearInterval(RDQ.iv);RDQ.iv=setInterval(rdPaintProg,1000);rdPaintProg();
   try{
     await rdCapLoad();
     const U=rdUniverse(want), fresh=tk=>mode!=='more'||!RDS.has(tk);
-    RDQ.n=U.length;RDQ.msg='';
+    RDQ.n=U.filter(tk=>fresh(tk)||!RDS.has(tk)).length;RDQ.msg='گرفتن تاریخچه‌ی بیت‌کوین (برای روند و حال بازار)…';rdPaintProg();
     let B=null;try{B=await rdCandles('BTC',true);}catch(e){}
+    RDQ.msg='';RDQ.tc=Date.now();
     if(B&&B.length>30){const H=36e5,k=B[B.length-1].t+H>Date.now()?B.length-2:B.length-1;RD.reg=rdRegMap(B)(B[k].t)||RD.reg;}
     const fundP=rdFundLoad();
     const one=async tk=>{
-      if(!fresh(tk)&&RDS.has(tk))return;
+      if(!fresh(tk)&&RDS.has(tk))return false;
+      RDQ.cur.set(tk,1);rdPaintProg();
       try{const [C,FL]=await Promise.all([tk==='BTC'&&B?B:rdCandles(tk,fresh(tk)),rdFlow(tk,fresh(tk))]);
+        RDQ.cur.set(tk,2);rdPaintProg();await rdYield();
         if(C&&C.length>300){const P=rdPrep(C,B||C,FL),s=rdSamples(P,tk);s.live=rdLiveOf(P);RDS.set(tk,s);}}
       catch(e){}
+      RDQ.cur.delete(tk);return true;
     };
     for(let a=0;a<U.length;a+=RD_STEP){
       const q=U.slice(a,a+RD_STEP);
-      const worker=async()=>{while(q.length){const tk=q.shift();await one(tk);RDQ.done++;rdPaintProg();}};
+      const worker=async()=>{while(q.length){const tk=q.shift();if(await one(tk)){RDQ.done++;rdPaintProg();}}};
       await Promise.all([worker(),worker(),worker()]);
       // مدل: بار اول بعد از همان ده ارز اول (تا زود چیزی دیده شود)، و آخر کار روی همه؛ در میانه همان مدل قبلی
-      if(!RD.M||a+RD_STEP>=U.length)await rdModel();
+      RDQ.fin=a+RD_STEP>=U.length;
+      if(!RD.M||RDQ.fin){const m0=Date.now();RDQ.pm=0;await rdModel();if(RDQ.fin)RD.mt=Date.now()-m0;}
       rdLive(U);
       if(view==='signals')renderSignals();
     }
     RD.fund=(await fundP)||RD.fund||{};
+    if(RDQ.n)RD.ct=Math.round((Date.now()-RDQ.tc)/RDQ.n);
     rdLive(U);RD.at=Date.now();rdSave();
     try{rbLogAuto();}catch(e){}
-  }finally{RDQ.on=false;RDQ.msg='';}
+  }finally{RDQ.on=false;RDQ.msg='';RDQ.cur.clear();clearInterval(RDQ.iv);}
   if(view==='signals')renderSignals();
 }
 /* حال الانِ ارزها با مدل فعلی */
@@ -322,7 +329,26 @@ function rdLive(U){
   RD.coins=coins;RD.rank=rank;RD.n=Math.max(RD.n||0,Math.min(U.length,RD_MAX));
   RD.nflow=rank.filter(t=>coins[t].flow).length;
 }
-const rdPaintProg=()=>{const b=$('#rdProg');if(b)b.textContent=RDQ.on?(RDQ.msg||'در حال بررسی '+faN(RDQ.done)+' از '+faN(RDQ.n)+' ارز…'):(RD.at?ageTxt(RD.at):'');};
+/* نوار پیشرفت: درصد، کار الان، زمان گذشته و تخمین مانده (85٪ گرفتن ارزها، 15٪ سنجش و یادگیری) */
+const rdMmss=ms=>{const s=Math.max(0,Math.round(ms/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
+function rdProgInner(){
+  const now=Date.now(),n=RDQ.n,d=RDQ.done;
+  let pct=n?85*d/n:2;if(RDQ.fin)pct=85+15*RDQ.pm;pct=Math.max(1,Math.min(99,Math.round(pct)));
+  const STG={1:'دریافت',2:'محاسبه'};
+  const stage=RDQ.msg||(n?(RDQ.mode==='more'?'ارزهای تازه: ':'')+'ارز '+faN(Math.min(n,d+1))+' از '+faN(n)+
+    (RDQ.cur.size?' · '+[...RDQ.cur].map(([tk,st])=>'<b dir="ltr">'+esc(tk)+'</b> '+STG[st]).join('، '):''):'آماده‌سازی…');
+  // تخمین: سرعت همین بار، وگرنه بار قبل؛ به‌علاوه‌ی زمان سنجش بار قبل
+  let eta=null;const per=d&&RDQ.tc?(now-RDQ.tc)/d:RD.ct||null, mt=RD.mt||4000;
+  if(RDQ.fin&&!RDQ.msg&&d>=n)eta=null;else if(RDQ.fin&&RDQ.msg)eta=mt*(1-RDQ.pm);else if(per&&n)eta=per*(n-d)+mt;
+  return '<div class="rdpb"><i style="width:'+pct+'%"></i></div><div class="rdpt"><b class="rdpp">'+faN(pct)+'٪</b><span class="rdps">'+stage+'</span>'+
+    '<span class="rdtm">'+ic('clock')+'<bdi dir="ltr">'+rdMmss(now-RDQ.t0)+'</bdi>'+(eta!=null?' · حدود <bdi dir="ltr">'+rdMmss(eta)+'</bdi> مانده':'')+'</span></div>';
+}
+const rdProgHtml=()=>'<div class="rdprog" id="rdProgBox">'+rdProgInner()+'</div>';
+function rdPaintProg(){
+  const box=$('#rdProgBox');if(box&&RDQ.on)box.innerHTML=rdProgInner();
+  const b=$('#rdProg');if(b)b.textContent=RDQ.on?'':(RD.at?ageTxt(RD.at):'');
+  if(!RDQ.on&&box)box.remove();
+}
 /* رتبه‌ی هر ارز: کارنامه‌ی همان جهت و شدت در همان حال بازار (اگر بس است)، وگرنه بی حال بازار */
 function rdRate(x){
   if(x.dir==='wait')return null;
@@ -422,7 +448,7 @@ function rdHtml(){
   const n=RD.n||0;
   h+='<div class="rdbar"><span class="rdcnt">'+(n?'ارز 1 تا '+faN(Math.min(n,RD.rank.length||n))+' از '+faN(RD_MAX):'')+'</span>'+
     (n<RD_MAX?'<button class="btn sm" data-rdmore="1"'+(RDQ.on?' disabled':'')+'>'+ic('plus')+'<span>'+faN(RD_STEP)+' ارز بعدی</span></button>':'')+
-    '<button class="btn sm" data-rdrun="1"'+(RDQ.on?' disabled':'')+'>'+ic('refresh')+'<span>تازه کن</span></button><small id="rdProg">'+(RDQ.on?'':RD.at?ageTxt(RD.at):'')+'</small></div>';
+    '<button class="btn sm" data-rdrun="1"'+(RDQ.on?' disabled':'')+'>'+ic('refresh')+'<span>تازه کن</span></button><small id="rdProg">'+(RDQ.on?'':RD.at?ageTxt(RD.at):'')+'</small></div>'+(RDQ.on?rdProgHtml():'');
   if(!RD.at&&!RDQ.on)h+='<div class="hint">هنوز بررسی نشده؛ همین الان 10 ارز اول شروع می‌شود (بار اول هر ارز ~125 روز تاریخچه می‌گیرد؛ چند ثانیه برای هر ارز).</div>';
   if(MKT)h+=mktHtml(MKT,null);
   h+=rdPanelHtml();
