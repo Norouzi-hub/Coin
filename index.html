@@ -1283,6 +1283,8 @@ table.tp .num{direction:ltr;text-align:start}
 .tgbox{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
 #txtOut .txtprev{width:100%;min-height:120px;margin-top:8px;background:var(--inset);border:1px solid var(--line2);border-radius:11px;padding:9px;
   font:12px/1.6 ui-monospace,Menlo,Consolas,monospace;direction:ltr;text-align:left;color:var(--tx2);white-space:pre;overflow:auto}
+#txtOut .txchk{display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer}
+#txtOut .txchk input{width:18px;height:18px;accent-color:var(--gold)}
 #txtOut .txtopt{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .flink{margin-top:10px}
 .flh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:13px}
@@ -1976,7 +1978,7 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
       <div class="txtopt">
         <label for="txDays">بازه</label>
         <select id="txDays"><option value="1">۲۴ ساعت</option><option value="3">۳ روز</option><option value="7" selected>۷ روز</option><option value="30">۳۰ روز</option><option value="60">۶۰ روز</option></select>
-        <label class="shopt"><input type="checkbox" id="txOpen"><span>فقط باز (نگرفته، منقضی‌نشده)</span></label>
+        <label class="txchk"><input type="checkbox" id="txOpen"><span>فقط باز (نگرفته، منقضی‌نشده)</span></label>
       </div>
       <textarea class="txtprev" id="txPrev" readonly rows="6" aria-label="پیش‌نمایش خروجی متنی"></textarea>
       <div class="srow"><button class="btn pri" id="txCopy">کپی متن</button><button class="btn" id="txDl">دانلود فایل txt</button></div>

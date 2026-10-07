@@ -24,7 +24,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  await p.waitForTimeout(600);
  await p.evaluate(()=>document.querySelector('#ok').click());await p.waitForTimeout(300);
  ok(dialogs[0]&&dialogs[0].startsWith('⚠️')&&dialogs[0].includes('سقفت 12٪'),'فرم ورود (سقف ۱۲٪): اول هشدار سقف ریسک — '+(dialogs[0]||'').slice(0,60));
- await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
+ await p.evaluate(()=>closeSheet());await p.waitForTimeout(800);
  ok(await p.evaluate(()=>DB.positions.length)===2,'«نه» زدی: ثبت نشد');
  // حد ضرر روزانه پر
  await p.evaluate(()=>{DB.positions.push({id:'c1',ticker:'ETH',dir:'long',kind:'futures',entry:100,stop:90,margin:20,lev:5,openedAt:Date.now()-2*36e5,closedAt:Date.now()-60e3,exitPrice:89,fees:0,status:'closed',partials:[],log:[]});save();});

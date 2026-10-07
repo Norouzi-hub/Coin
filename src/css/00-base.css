@@ -1266,6 +1266,8 @@ table.tp .num{direction:ltr;text-align:start}
 .tgbox{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
 #txtOut .txtprev{width:100%;min-height:120px;margin-top:8px;background:var(--inset);border:1px solid var(--line2);border-radius:11px;padding:9px;
   font:12px/1.6 ui-monospace,Menlo,Consolas,monospace;direction:ltr;text-align:left;color:var(--tx2);white-space:pre;overflow:auto}
+#txtOut .txchk{display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer}
+#txtOut .txchk input{width:18px;height:18px;accent-color:var(--gold)}
 #txtOut .txtopt{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .flink{margin-top:10px}
 .flh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:13px}
