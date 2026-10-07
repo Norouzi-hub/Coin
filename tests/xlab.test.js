@@ -73,6 +73,6 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  console.log('=== کارت سیگنال ===');
  await p.evaluate(()=>go('signals',true));await p.waitForTimeout(600);
  await p.evaluate(()=>{const c=document.querySelector('#list .card');c&&c.click();});await p.waitForTimeout(500);
- ok(await p.evaluate(()=>[...document.querySelectorAll('.briefkv .bk b')].some(b=>b.textContent==='اهرم امن ایزوله')),'روی کارت سیگنال: «اهرم امن ایزوله»');
+ ok(await p.evaluate(()=>[...document.querySelectorAll('.isobox .xrline b')].some(b=>b.textContent==='ایزوله')),'روی کارت سیگنال: خطِ «ایزوله» (اهرم امن و مارجین)');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');})();

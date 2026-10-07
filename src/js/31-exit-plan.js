@@ -155,7 +155,7 @@ function buildShortLab(rows){
   if(!G.length){c.appendChild(el('div','hint','هنوز سیگنالی با جدول خروج کوتاه نیست.'));return c;}
   const body=el('div');c.appendChild(body);
   const paint=()=>{
-    const {k,h}=XSEL;
+    const {k,h}=XSEL, MR=xRule();
     const chips=(arr,key,cur)=>'<div class="afopts">'+arr.map((t,i)=>'<button class="catchip'+(cur===i?' on':'')+'" data-'+key+'="'+i+'">'+t+'</button>').join('')+'</div>';
     // بهترین‌ها روی همه‌ی ترکیب‌ها (با دست‌کم ۶۰٪ سیگنال‌ها، تا ترکیبی با نمونه‌ی کم برنده نشود)
     const minN=Math.max(3,Math.ceil(G.length*0.6));let best=null,bestS=null;
@@ -172,9 +172,12 @@ function buildShortLab(rows){
     let html='<div class="afrow"><span class="aflab">استاپ</span>'+chips(XK_FA,'k',k)+'</div>'+
       '<div class="afrow"><span class="aflab">سقف زمان</span>'+chips(XH_FA,'h',h)+'</div>'+
       '<div class="tscroll"><table class="tp xtab"><thead><tr><th>خروج با سود</th><th>سیگنال</th><th>برد</th><th>جمع</th><th>میانگین</th><th>نگه‌داری</th></tr></thead><tbody>'+
-      XT.map((t,ti)=>{const s=xStat(G,k,ti,h);return '<tr'+(best&&best.ki===k&&best.hi===h&&best.ti===ti?' class="on"':'')+'><td>'+XT_FA[ti]+'</td><td class="num">'+faN(s.n)+'</td><td class="num">'+(s.win==null?'—':faN(Math.round(s.win))+'٪')+
+      XT.map((t,ti)=>{const s=xStat(G,k,ti,h), mine=MR&&MR.k===k&&MR.h===h&&MR.t===ti;
+        return '<tr class="tap'+(best&&best.ki===k&&best.hi===h&&best.ti===ti?' on':'')+(mine?' mine':'')+'" data-t="'+ti+'"><td>'+XT_FA[ti]+(mine?' <span class="pill gold">قاعده‌ی من</span>':'')+'</td><td class="num">'+faN(s.n)+'</td><td class="num">'+(s.win==null?'—':faN(Math.round(s.win))+'٪')+
         '</td><td class="num '+cls(s.sum)+'"><bdi>'+(s.n?fmtR(s.sum):'—')+'</bdi></td><td class="num"><bdi>'+(s.avg==null?'—':fmtR(s.avg))+'</bdi></td><td class="num">'+(s.hold==null?'—':fmtNum(s.hold)+' س')+'</td></tr>';}).join('')+
       '</tbody></table></div>'+
+      '<div class="hint">روی هر ردیف بزن تا همان (با استاپ و سقف زمانِ بالا) «قاعده‌ی من» شود؛ روی هر کارت سیگنال آماده می‌آید.</div>'+
+      (MR?'<div class="xbest mine"><b>قاعده‌ی من:</b><span>'+esc(xRuleName(MR))+'</span><span><button class="btn xs" data-xr="0">برداشتن</button></span></div>':'')+
       line('بهترین کوتاه‌مدت (نگه‌داری تا ۸ ساعت):',bestS)+line('بهترین کل:',best)+
       '<div class="hint">مبنا — قاعده‌ی کانال (تارگت ۱، استاپ کانال، تا ۳ روز): '+(base.n?fmtR(base.sum)+' در '+faN(base.n)+' سیگنال، نگه‌داری '+fmtNum(base.hold)+' ساعت':'—')+'.</div>'+
       (sdM!=null?'<div class="hint">فاصله‌ی استاپِ معمولِ این کانال '+fmtNum(sdM)+'٪ است؛ اهرم امن در ایزوله: با استاپ کانال حدود <b>'+faN(isoLev(sdM))+'x</b>، با ۷۵٪ حدود <b>'+faN(isoLev(sdM*0.75))+'x</b>، با ۵۰٪ حدود <b>'+faN(isoLev(sdM*0.5))+'x</b>.</div>':'')+
@@ -182,6 +185,9 @@ function buildShortLab(rows){
     body.innerHTML=html;
     body.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{XSEL.k=+b.dataset.k;lsSet(XSELKEY,XSEL);paint();});
     body.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{XSEL.h=+b.dataset.h;lsSet(XSELKEY,XSEL);paint();});
+    body.querySelectorAll('tr[data-t]').forEach(tr=>tr.onclick=()=>{
+      const r={k:XSEL.k,t:+tr.dataset.t,h:XSEL.h};setXRule(r);paint();toast('قاعده‌ی من: '+xRuleName(r),'ok');});
+    const rm=body.querySelector('[data-xr]');if(rm)rm.onclick=()=>{setXRule(null);paint();toast('قاعده‌ی من برداشته شد','info');};
   };
   paint();
   return c;

@@ -147,6 +147,12 @@ function parseSignal(raw,id){
     entry,trigger:trig,tier2:t2?cleanNum(t2[1],t2[2]):null,stop,
     targets:allNums(RX.tgt,t),leverage:lm?cleanNum(lm[1]):null,hasNum:/\d/.test(t),dirSet};
   const go=RX_GO.test(t);
+  /* «اگر ۴ ساعته بالای X ببنده»: تریگر با بسته شدن کندل، نه با لمس — تایم‌فریمش را نگه می‌داریم */
+  if(trig!=null&&/ببند|بست|بسته|کلوز|close|کانفیرم|تایید/i.test(t)){
+    const tt=faNorm(t);
+    r.trigTf=/(?:4|چهار)\s*ساعت/.test(tt)?'4h':/روزانه|کندل\s*روز|(?:^|\s)daily/i.test(tt)?'1d':
+      /(?:یک|1)\s*ساعت|ساعتی|کندل\s*ساعت/.test(tt)?'1h':null;
+  }
   // ورود عددی نیامده ولی «ورود مجازه» یا فقط استاپ داده: ورود = قیمت بازارِ لحظه‌ی انتشار
   r.mktEntry=entry==null&&trig==null&&(stop!=null||go);
   const mk=detectMarket(t,r.direction,r.leverage);

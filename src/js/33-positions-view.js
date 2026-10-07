@@ -16,6 +16,8 @@ function buildPendingCard(w){
   if(w.market==='spot')head.appendChild(el('span','pill gold','اسپات'));
   else head.appendChild(el('span','pill '+w.dir,w.dir==='long'?'لانگ':'شورت'));
   head.appendChild(el('span','pill '+(w.hit?'win':'mut'),w.hit?'رسید':old?ic('clock')+'قدیمی شد':'منتظر'));
+  if(w.kind==='tier2')head.appendChild(el('span','pill gold','پله‌ی دوم'));
+  if(w.tf&&!w.hit)head.appendChild(el('span','pill mut',(w.touch?'لمس شد · ':'')+'بسته شدن کندل '+TF_FA[w.tf]));
   head.appendChild(el('div','when',relTime(new Date(w.at))));
   c.appendChild(head);
 

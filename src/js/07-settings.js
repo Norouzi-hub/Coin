@@ -52,6 +52,7 @@ function applySettingsToForm(){
   $('#sRisk').value=S.risk; $('#sMaxLev').value=S.maxLev; $('#sDaily').value=S.daily;
   $('#sMode').value=S.mode; $('#sStale').value=S.staleDays||7; $('#sCal').value=calMode(); $('#sPb').value=pbDefault(); $('#sR').value=S.rMul.join(', '); $('#sFee').value=S.fee; $('#sAuto').value=S.auto;
   $('#sSlip').value=S.slip; $('#sFund').value=S.fund; $('#sOpenRisk').value=S.openRisk;
+  $('#sRiskUsd').value=S.riskUsd>0?S.riskUsd:''; $('#sIsoSd').value=S.isoMaxSd||15;
 }
 function readSettings(){
   const prevCh=S.channel, prevAuto=S.auto, prevProxy=S.proxy;
@@ -78,6 +79,8 @@ function readSettings(){
   S.slip=Math.min(2,Math.max(0,parseFloat($('#sSlip').value)||0));
   S.fund=Math.min(1,Math.max(-1,parseFloat($('#sFund').value)||0));
   S.openRisk=Math.min(100,Math.max(1,parseFloat($('#sOpenRisk').value)||15));
+  {const r=parseFloat(normDig($('#sRiskUsd').value||''));S.riskUsd=r>0?Math.min(1e6,r):null;}
+  S.isoMaxSd=Math.min(60,Math.max(1,parseFloat($('#sIsoSd').value)||15));
   S.auto=parseInt($('#sAuto').value)||0;
   S.staleDays=Math.min(60,Math.max(1,parseInt($('#sStale').value,10)||7));
   S.exitPb=$('#sPb').value||'bal';

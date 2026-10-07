@@ -1495,3 +1495,19 @@ table.xtab td.u{color:var(--up)}table.xtab td.d{color:var(--dn)}
 .xbest{display:flex;flex-direction:column;gap:2px;margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--inset);border:1px solid var(--line);font-size:12.5px;color:var(--tx2);line-height:1.8}
 .xbest b{color:var(--up)}
 textarea.cptxt{width:100%;min-height:50vh;font:inherit;font-size:12px;direction:rtl;background:var(--inset);color:var(--tx);border:1px solid var(--line);border-radius:12px;padding:10px}
+/* ابزار ورود ایزوله روی کارت (27b-entry-tools.js) */
+.isobox{display:flex;flex-direction:column;gap:6px;margin:2px 0 10px}
+.isobox .flag{margin:0}
+.xrline{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;padding:7px 10px;border-radius:12px;background:var(--inset);
+  border:1px solid var(--line);font-size:12.5px;line-height:1.8;color:var(--tx2)}
+.xrline b{color:var(--gold);font-weight:800;flex:none}
+.xrline span{flex:1;min-width:0}
+.xrline small{flex:1 1 100%;color:var(--tx3);font-size:11.5px}
+.xrline.hist b{color:var(--tx2)}
+.xrline .u{color:var(--up)}.xrline .d{color:var(--dn)}
+.isobox .plink{align-self:flex-start}
+.btn.iso .ic{color:var(--gold)}
+table.xtab tr.mine td{box-shadow:inset 0 -2px 0 color-mix(in srgb,var(--gold) 55%,transparent)}
+table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
+.xbest.mine{border-color:color-mix(in srgb,var(--gold) 45%,transparent)}
+.pill.ltp{border-style:dashed}

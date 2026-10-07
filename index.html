@@ -1512,6 +1512,22 @@ table.xtab td.u{color:var(--up)}table.xtab td.d{color:var(--dn)}
 .xbest{display:flex;flex-direction:column;gap:2px;margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--inset);border:1px solid var(--line);font-size:12.5px;color:var(--tx2);line-height:1.8}
 .xbest b{color:var(--up)}
 textarea.cptxt{width:100%;min-height:50vh;font:inherit;font-size:12px;direction:rtl;background:var(--inset);color:var(--tx);border:1px solid var(--line);border-radius:12px;padding:10px}
+/* ابزار ورود ایزوله روی کارت (27b-entry-tools.js) */
+.isobox{display:flex;flex-direction:column;gap:6px;margin:2px 0 10px}
+.isobox .flag{margin:0}
+.xrline{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;padding:7px 10px;border-radius:12px;background:var(--inset);
+  border:1px solid var(--line);font-size:12.5px;line-height:1.8;color:var(--tx2)}
+.xrline b{color:var(--gold);font-weight:800;flex:none}
+.xrline span{flex:1;min-width:0}
+.xrline small{flex:1 1 100%;color:var(--tx3);font-size:11.5px}
+.xrline.hist b{color:var(--tx2)}
+.xrline .u{color:var(--up)}.xrline .d{color:var(--dn)}
+.isobox .plink{align-self:flex-start}
+.btn.iso .ic{color:var(--gold)}
+table.xtab tr.mine td{box-shadow:inset 0 -2px 0 color-mix(in srgb,var(--gold) 55%,transparent)}
+table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
+.xbest.mine{border-color:color-mix(in srgb,var(--gold) 45%,transparent)}
+.pill.ltp{border-style:dashed}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -1915,6 +1931,8 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
       <div class="fld"><label>لغزش روی استاپ (٪)</label><input id="sSlip" type="number" value="0.05" min="0" max="2" step="0.01"></div>
       <div class="fld"><label>فاندینگ تخمینی (٪ هر ۸ ساعت)</label><input id="sFund" type="number" value="0" min="-1" max="1" step="0.005"></div>
       <div class="fld"><label>سقف ریسک باز هم‌زمان (٪ حساب)</label><input id="sOpenRisk" type="number" value="15" min="1" max="100" step="1"></div>
+      <div class="fld"><label>ریسک هر معامله‌ی ایزوله ($)</label><input id="sRiskUsd" type="number" min="0" step="0.5" inputmode="decimal" placeholder="خالی = مارجین × ریسک هدف"></div>
+      <div class="fld"><label>بیشترین فاصله‌ی استاپ برای ایزوله (٪)</label><input id="sIsoSd" type="number" value="15" min="1" max="60" step="1"></div>
       <div class="fld"><label>سبک خروج پیش‌فرض</label><select id="sPb">
         <option value="s1">اسکلپ · تارگت 1</option><option value="s2">اسکلپ · تارگت 2</option>
         <option value="bal">متعادل</option><option value="sw">سوئینگ پله‌ای</option><option value="cu">دلخواه</option></select></div>
@@ -2527,6 +2545,7 @@ function applySettingsToForm(){
   $('#sRisk').value=S.risk; $('#sMaxLev').value=S.maxLev; $('#sDaily').value=S.daily;
   $('#sMode').value=S.mode; $('#sStale').value=S.staleDays||7; $('#sCal').value=calMode(); $('#sPb').value=pbDefault(); $('#sR').value=S.rMul.join(', '); $('#sFee').value=S.fee; $('#sAuto').value=S.auto;
   $('#sSlip').value=S.slip; $('#sFund').value=S.fund; $('#sOpenRisk').value=S.openRisk;
+  $('#sRiskUsd').value=S.riskUsd>0?S.riskUsd:''; $('#sIsoSd').value=S.isoMaxSd||15;
 }
 function readSettings(){
   const prevCh=S.channel, prevAuto=S.auto, prevProxy=S.proxy;
@@ -2553,6 +2572,8 @@ function readSettings(){
   S.slip=Math.min(2,Math.max(0,parseFloat($('#sSlip').value)||0));
   S.fund=Math.min(1,Math.max(-1,parseFloat($('#sFund').value)||0));
   S.openRisk=Math.min(100,Math.max(1,parseFloat($('#sOpenRisk').value)||15));
+  {const r=parseFloat(normDig($('#sRiskUsd').value||''));S.riskUsd=r>0?Math.min(1e6,r):null;}
+  S.isoMaxSd=Math.min(60,Math.max(1,parseFloat($('#sIsoSd').value)||15));
   S.auto=parseInt($('#sAuto').value)||0;
   S.staleDays=Math.min(60,Math.max(1,parseInt($('#sStale').value,10)||7));
   S.exitPb=$('#sPb').value||'bal';
@@ -2726,6 +2747,12 @@ function parseSignal(raw,id){
     entry,trigger:trig,tier2:t2?cleanNum(t2[1],t2[2]):null,stop,
     targets:allNums(RX.tgt,t),leverage:lm?cleanNum(lm[1]):null,hasNum:/\d/.test(t),dirSet};
   const go=RX_GO.test(t);
+  /* «اگر ۴ ساعته بالای X ببنده»: تریگر با بسته شدن کندل، نه با لمس — تایم‌فریمش را نگه می‌داریم */
+  if(trig!=null&&/ببند|بست|بسته|کلوز|close|کانفیرم|تایید/i.test(t)){
+    const tt=faNorm(t);
+    r.trigTf=/(?:4|چهار)\s*ساعت/.test(tt)?'4h':/روزانه|کندل\s*روز|(?:^|\s)daily/i.test(tt)?'1d':
+      /(?:یک|1)\s*ساعت|ساعتی|کندل\s*ساعت/.test(tt)?'1h':null;
+  }
   // ورود عددی نیامده ولی «ورود مجازه» یا فقط استاپ داده: ورود = قیمت بازارِ لحظه‌ی انتشار
   r.mktEntry=entry==null&&trig==null&&(stop!=null||go);
   const mk=detectMarket(t,r.direction,r.leverage);
@@ -3335,10 +3362,31 @@ function addPending(p,sig,trigger,px){
   const side=dir==='long'?'up':'down';
   DB.pending.push({id:uid(),postId:p.id,ticker:sig.ticker||'—',dir,trigger,side,
     market:I.market,postAt:p.date?p.date.getTime():null,
-    entry:I.entry!=null?I.entry:trigger,stop:I.stop||null,targets:sig.targets||[],
+    entry:I.entry!=null?I.entry:trigger,stop:I.stop||null,targets:sig.targets||[],tf:sig.trigTf||null,
     at:Date.now(),hit:null});
   save();renderAll();
-  toast('منتظر '+fmtPrice(trigger)+' ماند','ok');
+  toast('منتظر '+fmtPrice(trigger)+(sig.trigTf?' (بسته شدن کندل '+TF_FA[sig.trigTf]+')':'')+' ماند','ok');
+}
+const TF_FA={'1h':'یک‌ساعته','4h':'۴ ساعته','1d':'روزانه'}, TF_MS={'1h':36e5,'4h':144e5,'1d':864e5};
+/* تریگرِ «با بسته شدن کندل»: لمس کافی نیست؛ آخرین کندلِ بسته‌شده‌ی آن تایم‌فریم (هم‌مرز با UTC، مثل
+   بایننس) باید آن سوی تریگر بسته شده باشد. کندل ساعتی گرفته و بسته‌ی هر ۴ ساعت/روز از آن خوانده می‌شود. */
+const PCLOSE=new Map();
+async function pendCloseCheck(w){
+  const ms=TF_MS[w.tf];if(!ms)return;
+  const last=PCLOSE.get(w.id)||0;if(Date.now()-last<2*60000)return;
+  PCLOSE.set(w.id,Date.now());
+  const B=Math.floor(Date.now()/ms)*ms;                  // آخرین مرزِ بسته‌شده
+  if(B<=(w.postAt||w.at)||w.closeChecked===B)return;     // هنوز کندلی بعد از سیگنال بسته نشده، یا همین را دیده‌ایم
+  try{
+    const C=await audCandles(w.ticker,'1h',B-3*36e5,4,true);
+    const k=C.find(x=>x.t===B-36e5);if(!k)return;
+    w.closeChecked=B;
+    if(!(w.side==='up'?k.c>=w.trigger:k.c<=w.trigger)){save();return;}
+    w.hit=Date.now();
+    const msg=w.ticker+': کندل '+TF_FA[w.tf]+' '+(w.side==='up'?'بالای':'زیر')+' '+fmtPrice(w.trigger)+' بسته شد ('+fmtPrice(k.c)+')';
+    toast(msg,'ok');if(F('notify'))notify('میز سیگنال',msg,'trg'+w.id);
+    save();renderAll();
+  }catch(e){}
 }
 /* سفارش منتظری که تا قدیمی شدنِ سیگنالش نرسیده، دیگر منتظرش نیستیم */
 function pendingStale(w){
@@ -3354,9 +3402,14 @@ function checkPending(){
     const px=PRICES.get(w.ticker);
     if(px==null)continue;
     const reached=w.side==='up'?px>=w.trigger:px<=w.trigger;
+    if(w.tf){                                            // لمس فقط خبر؛ ورود با بسته شدن کندل
+      if(reached&&!w.touch){w.touch=Date.now();toast(w.ticker+' تریگر '+fmtPrice(w.trigger)+' را لمس کرد؛ منتظر بسته شدن کندل '+TF_FA[w.tf],'info');save();}
+      if(w.touch)pendCloseCheck(w);
+      continue;
+    }
     if(!reached)continue;
     w.hit=Date.now();
-    const msg=w.ticker+' به تریگر ورود رسید ('+fmtPrice(w.trigger)+')';
+    const msg=w.ticker+(w.kind==='tier2'?' به پله‌ی دوم رسید (':' به تریگر ورود رسید (')+fmtPrice(w.trigger)+')';
     toast(msg,'ok');
     if(F('notify'))notify('میز سیگنال',msg,'trg'+w.id);
   }
@@ -5175,6 +5228,8 @@ function buildCard(p,lite){
   if(isSig){
     const I=planInputsOf(p,sig,OVERRIDE[p.id]||{},null);
     if(I.spot)head.appendChild(el('span','pill gold','اسپات'));
+    const lt=longTermOf(p,sig,I);
+    if(lt&&!I.spot){const t=el('span','pill mut ltp','بلندمدت');t.title=lt+' — برای ایزوله‌ی کوتاه‌مدت مناسب نیست';head.appendChild(t);}
   }else head.appendChild(el('span','pill kind k-'+kind+(kind==='res'&&!resAuto(p)?' gold':''),KIND_FA[kind]||'یادداشت'));
   if(NEWIDS.has(p.id))head.appendChild(el('span','pill gold','تازه'));
   const stale=isSig&&!dec&&isStale(p);
@@ -5422,14 +5477,14 @@ function buildBrief(p,sig,ov,px){
     d.appendChild(el('span',c||null,v));kv.appendChild(d);};
   add(I.spot?'قیمت خرید':'ورود',I.entry!=null?fmtPrice(I.entry):'—');
   add('حد ضرر',I.stop!=null?fmtPrice(I.stop):'—');
-  // کانال با کراس کار می‌کند؛ در ایزوله اهرمِ بیشتر از این، لیکوئید را جلوتر از استاپ می‌آورد
-  if(!I.spot&&I.entry&&I.stop){const sd=Math.abs(I.entry-I.stop)/I.entry*100;
-    add('اهرم امن ایزوله','تا '+faN(isoLev(sd))+'x',sd>15?'w':null);}
+  // اهرم امن ایزوله در خطِ «ایزوله» زیر همین خانه‌هاست (با استاپِ قاعده‌ی من، اگر انتخاب شده)
   if(px!=null&&I.entry){
     const gap=((px-I.entry)/I.entry)*100*(I.dir==='long'?1:-1);
     add('فاصله تا ورود',fmtPct(gap),gap>3?'d':(gap>0?'w':'u'));
   }else add('قیمت الان','—','m');
   w.appendChild(kv);
+  // قاعده‌ی من، اندازه‌ی ایزوله، دیر رسیدی، سابقه (27b-entry-tools.js)
+  {const ib=buildIsoBox(p,sig,ov,px);if(ib)w.appendChild(ib);}
   /* کلیدی که قبل از هر عددی تکلیف را روشن می‌کند: اسپات یا فیوچرز */
   w.appendChild(mktToggle(I.market,I.marketGuess,k=>setOv(p,'market',k,true)));
   if(!decisionOf(p.id))w.appendChild(amtRow(I.amt,v=>setAmt(p,v),I.spot));
@@ -5448,6 +5503,13 @@ function buildBrief(p,sig,ov,px){
     q.onclick=()=>quickEnter(p,sig,ov,px);
     a.appendChild(q);
   }
+  // ورود ایزوله: اهرم امن و حجم از ریسک دلاری ثابت (و قاعده‌ی خروج من، اگر انتخاب شده)
+  if(!I.spot&&(I.entry||px)&&I.stop&&!decisionOf(p.id)){
+    const E=I.entry||px, pl=xRulePlan(I.dir,E,I.stop,sig.targets), z=isoSize(E,pl?pl.stop:I.stop);
+    if(z){const b=el('button','btn xs side iso',ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span>');
+      b.title='ورود ایزوله با ریسک '+fmtUsd(z.risk)+(pl?' و قاعده‌ی خروج من':'');
+      b.onclick=()=>isoEnter(p,sig,ov,px);a.appendChild(b);}
+  }
   // سیگنالی که تریگر دارد و هنوز نرسیده: به‌جای ورود زودهنگام، منتظرش می‌مانیم
   const trg=sig.trigger!=null?sig.trigger:(I.entry!=null?I.entry:null);
   const already=DB.pending.some(x=>x.postId===p.id);
@@ -5457,6 +5519,9 @@ function buildBrief(p,sig,ov,px){
     b3.onclick=()=>addPending(p,sig,trg,px);
     a.appendChild(b3);
   }else if(already)a.appendChild(el('span','markhint','در فهرست منتظرها'));
+  {const c=el('button','btn xs side',ic('share')+'<span>کپی برای صرافی</span>');
+   c.title='نماد، جهت، ورود، استاپ، تارگت، اهرم و مارجین برای چسباندن در اپ صرافی';
+   c.onclick=()=>copyExch(p,sig,ov,px);a.appendChild(c);}
   if(DB.revived[p.id]){
     const u=el('button','btn xs side','منقضی کن');
     u.title='برگرداندن را پس بگیر';
@@ -5689,7 +5754,8 @@ function quickEnter(p,sig,ov,px){
   DB.positions.push(pos);
   DB.decisions[p.id]={action:'taken',at:Date.now(),posId:pos.id,market:I.spot?'spot':'futures',
     snap:snapOf(p,sig,entry,I.stop)};
-  save();renderAll();toast(I.spot?'خرید اسپات ثبت شد':'پوزیشن ثبت شد','ok');
+  const t2=!I.spot&&addTier2Pending(p,sig,I.dir,entry);
+  save();renderAll();toast((I.spot?'خرید اسپات ثبت شد':'پوزیشن ثبت شد')+(t2?' · پله‌ی دوم '+fmtPrice(sig.tier2)+' منتظر ماند':''),'ok');
 }
 /* یک ورق برای هر دو بازار. اسپات همان فرم است با اهرم قفلِ 1: نه لیکوئید دارد،
    نه کشویی اهرم، و به‌جای «مارجین» می‌گوید «مبلغ خرید» و مقدار ارز را نشان می‌دهد. */
@@ -5720,7 +5786,8 @@ function liqStopBar(sd,ld){
       :'بین استاپ و لیکوئید '+((ld-sd)*100).toFixed(1)+'٪ فاصله هست')+'</div>';
   return w;
 }
-function sheetEnter(p,sig,ov,px){
+function sheetEnter(p,sig,ov,px,opt){
+  opt=opt||{};
   let MK=(planInputsOf(p,sig,ov,px)).market;
   const I0=planInputsOf(p,sig,ov,px);
   const entry0=I0.entry||px||'', stop0=I0.stop||'', amt0=I0.amt;
@@ -5758,7 +5825,7 @@ function sheetEnter(p,sig,ov,px){
      '<div class="fld" id="dirRow"><label>جهت</label><select id="f_d">'+
        '<option value="long"'+(I0.dir==='long'?' selected':'')+'>لانگ</option>'+
        '<option value="short"'+(I0.dir==='short'?' selected':'')+'>شورت</option></select></div>'+
-     '<div class="fld"><label>یادداشت</label><input id="f_n" placeholder="چرا وارد شدی؟"></div>'+
+     '<div class="fld"><label>یادداشت</label><input id="f_n" placeholder="چرا وارد شدی؟" value="'+esc(opt.note||'')+'"></div>'+
    '</div>'+
    tagPickHtml()+
    '<div id="riskBox"></div>'+
@@ -5986,11 +6053,14 @@ function sheetEnter(p,sig,ov,px){
        logAdd(pos,'open',sp
          ?('خرید اسپات '+fmtUsd(v.margin)+' روی '+fmtPrice(v.entry))
          :('ورود با '+fmtUsd(v.margin)+' مارجین و اهرم '+(+v.lev)+'x روی '+fmtPrice(v.entry)));
+       if(opt.until)pos.until=opt.until;               // سقف زمانِ قاعده‌ی من
+       if(opt.iso)pos.iso=true;
        if(pbTps(pos).length&&pbAttach(pos,pbSel))logAdd(pos,'plan','نقشه‌ی خروج: '+pos.pb.n);
        DB.positions.push(pos);
        DB.decisions[p.id]={action:'taken',at:Date.now(),posId:pos.id,market:sp?'spot':'futures',
          snap:snapOf(p,sig,v.entry,v.stop)};
-       save();closeSheet();renderAll();toast(sp?'خرید اسپات ثبت شد':'پوزیشن ثبت شد','ok');
+       const t2=!sp&&addTier2Pending(p,sigOf(p),v.dir,v.entry);
+       save();closeSheet();renderAll();toast((sp?'خرید اسپات ثبت شد':'پوزیشن ثبت شد')+(t2?' · پله‌ی دوم '+fmtPrice(sigOf(p).tier2)+' منتظر ماند':''),'ok');
      };
    });
 }
@@ -6144,6 +6214,15 @@ function renderFbar(){
     if(onc)requestAnimationFrame(()=>{const r=row.getBoundingClientRect(),c=onc.getBoundingClientRect();
       if(c.left<r.left||c.right>r.right)row.scrollLeft+=c.left<r.left?c.left-r.left-8:c.right-r.right+8;});
   }
+  // «در انتظار»: سیگنال‌های بلندمدت (استاپ دور، اسپات، هولد) برای ایزوله‌ی کوتاه‌مدت پنهان‌اند
+  if(bucket==='live'&&sigFilter==='new'&&(LTHID||VIEW.iso===false)){
+    const row=el('div','frow');
+    const on=VIEW.iso!==false;
+    chip(row,ic('shield')+(on?'فقط مناسب ایزوله':'همه، با بلندمدت‌ها'),on?LTHID:null,on,()=>setView({iso:!on}))
+      .title=on?faN(LTHID)+' سیگنال بلندمدت پنهان است؛ بزن تا دیده شوند':'بزن تا بلندمدت‌ها پنهان شوند';
+    if(on)row.appendChild(el('span','markhint',faN(LTHID)+' بلندمدت پنهان'));
+    bar.appendChild(row);
+  }
   if(day==='range'){
     const rg=el('div','frange');
     const inp=(key,lbl)=>{
@@ -6287,7 +6366,7 @@ function restoreAnchor(a){
   const dy=c.getBoundingClientRect().top-a.top;
   if(Math.abs(dy)>0.5)window.scrollBy(0,dy);
 }
-let RS_KEY='';
+let RS_KEY='', LTHID=0;          // LTHID: سیگنال‌های بلندمدتِ پنهان در «در انتظار»
 function renderSignals(){
   const list=$('#list');
   // بروزرسانی خودکار هر دقیقه همین را صدا می‌زند؛ جای خواندن نباید تکان بخورد
@@ -6305,7 +6384,8 @@ function renderSignals(){
   const closeSep=()=>{if(sepEl)sepEl.querySelector('.dsn').textContent=sepN+' پست';};
   const dp=dayPass(), kind=bucket==='live'&&sigFilter==='all'&&VIEW.kind!=='all'?VIEW.kind:'';
   // انیمیشن ورود کارت‌ها فقط وقتی فهرست واقعاً عوض شده (فیلتر، سطل، جستجو)، نه با هر بروزرسانی
-  const rk=[bucket,sigFilter,coinFilter,q,VIEW.day,kind].join('|'), animate=rk!==RS_KEY;RS_KEY=rk;
+  const rk=[bucket,sigFilter,coinFilter,q,VIEW.day,kind,VIEW.iso].join('|'), animate=rk!==RS_KEY;RS_KEY=rk;
+  LTHID=0;
   for(const p of POSTS){
     if(dp&&!dp(p))continue;
     const sig=sigOf(p), bk=bucketOf(p);
@@ -6315,6 +6395,7 @@ function renderSignals(){
     if(kind&&postKind(p)!==kind)continue;
     if(bucket==='live'&&sigFilter==='sig'&&!isSigPost(p))continue;
     if(bucket==='live'&&sigFilter==='new'&&!isOpenSig(p))continue;
+    if(bucket==='live'&&sigFilter==='new'&&VIEW.iso!==false&&isLongTerm(p)){LTHID++;continue;}
     if(q&&!((sig.ticker||'')+' '+p.text).toLowerCase().includes(q))continue;
     matched++;
     if(n>=shownMax)continue;                 // بقیه شمرده می‌شوند ولی ساخته نمی‌شوند
@@ -6479,6 +6560,157 @@ function showFetching(txt){
 }
 
 
+/* ==================== ابزار ورود کوتاه‌مدت در ایزوله ====================
+   پیشنهادهای ۱ تا ۱۰ (مهر ۱۴۰۵). هدف: سیگنال کانال را با سرمایه‌ی کم، ایزوله و چند ساعته بگیری،
+   بی‌آنکه هر بار حساب ذهنی کنی:
+     ۱ قاعده‌ی خروج من روی کارت       ۲ و ۳ ورود ایزوله با ریسک دلاری ثابت
+     ۴ هشدار «دیر رسیدی»               ۵ سابقه‌ی همین نماد و همین نوع ورود در کانال‌سنج
+     ۶ و ۷ برچسب «بلندمدت» و پنهان کردنش از «در انتظار»
+     ۸ تریگرِ «کندل ۴ ساعته بالای X بست» (در 14-pending.js)
+     ۹ پله‌ی دوم خودکار سفارش منتظر    ۱۰ کپی سریع برای اپ صرافی */
+
+/* ---- ۱) قاعده‌ی خروج من: در کانال‌سنج › خروج › خروج کوتاه انتخاب می‌شود ---- */
+const xRule=()=>{const r=S.xrule;return r&&XK[r.k]!=null&&XT[r.t]!=null&&XH[r.h]!=null?r:null;};
+const xRuleName=r=>XK_FA[r.k]+' · خروج '+XT_FA[r.t]+' · سقف '+XH_FA[r.h];
+function setXRule(r){S.xrule=r;DB.settings=Object.assign({},S);save();}
+/* همان تعریفِ جدول خروج کوتاه (audXGrid): استاپ = کسری از فاصله‌ی کانال، سود = درصد حرکت قیمت یا تارگت ۱ */
+function xRulePlan(dir,E,SL,tgs){
+  const r=xRule();if(!r||!(E>0)||!(SL>0))return null;
+  const sign=dir==='long'?1:-1, risk=Math.abs(E-SL);
+  if((E-SL)*sign<=0)return null;
+  const stop=+(E-sign*XK[r.k]*risk).toPrecision(8), t=XT[r.t];
+  let tp;
+  if(t==='t1'){
+    const T=(tgs||[]).filter(x=>isFinite(x)&&(x-E)*sign>0).sort((a,b)=>(a-b)*sign)[0];
+    tp=T!=null?T:+(E+sign*(S.rMul[0]||1.5)*risk).toPrecision(8);
+  }else tp=+(E*(1+sign*t/100)).toPrecision(8);
+  return {r,stop,tp,h:XH[r.h],sd:XK[r.k]*risk/E*100};
+}
+
+/* ---- ۲ و ۳) ریسک دلاری ثابت و اندازه‌ی ایزوله ----
+   «هر معامله حداکثر R دلار ضرر»: حجم = R ÷ (فاصله‌ی استاپ + کارمزد و لغزش)، اهرم = اهرم امن ایزوله
+   (لیکوئید آن سوی استاپ، با ۱۰٪ حاشیه) و نه بیشتر از سقف اهرم تنظیمات، مارجین = حجم ÷ اهرم. */
+const riskUsd=()=>+S.riskUsd>0?+S.riskUsd:Math.max(0.1,+((+S.cap||10)*(+S.risk||5)/100).toFixed(2));
+function isoSize(E,SL){
+  const sd=Math.abs(E-SL)/E;if(!(sd>0))return null;
+  const cost=((+S.fee||0)+(+S.slip||0))/100;
+  const lev=Math.max(1,Math.min(isoLev(sd*100),+S.maxLev||10));
+  const N=riskUsd()/(sd+cost);
+  return {lev,margin:+(N/lev).toFixed(2),notional:N,risk:riskUsd(),sd:sd*100,tooBig:N/lev>(+S.acct||Infinity)};
+}
+/* ورقِ همان فرم ورود، با عددهای ایزوله پرشده (چیزی روی سیگنال ذخیره نمی‌شود) */
+function isoEnter(p,sig,ov,px){
+  const I=planInputsOf(p,sig,ov,px), E=I.entry||px;
+  if(!E||!I.stop){toast('برای ورود ایزوله، ورود و حد ضرر لازم است','err');return sheetEnter(p,sig,ov,px);}
+  const pl=xRulePlan(I.dir,E,I.stop,sig.targets), SL=pl?pl.stop:I.stop, z=isoSize(E,SL);
+  if(!z){toast('فاصله‌ی استاپ معلوم نیست','err');return;}
+  if(z.tooBig)toast('مارجینِ لازم ('+fmtUsd(z.margin)+') از موجودی حساب بیشتر است','err');
+  const sg=pl?Object.assign({},sig,{targets:[pl.tp]}):sig;
+  sheetEnter(p,sg,Object.assign({},ov,{stop:SL,lev:z.lev,amt:z.margin,market:'futures'}),px,
+    {note:'ایزوله · ریسک '+fmtUsd(z.risk)+(pl?' · '+xRuleName(pl.r):''),until:pl?Date.now()+pl.h*36e5:null,iso:true});
+}
+
+/* ---- ۴) دیر رسیدی؟ چقدر از راهِ ورود تا تارگت ۱ را قیمت رفته ---- */
+function lateOf(I,tgs,px){
+  if(px==null||!I.entry)return null;
+  const sign=I.dir==='long'?1:-1, E=I.entry;
+  const T=(tgs||[]).filter(x=>isFinite(x)&&(x-E)*sign>0).sort((a,b)=>(a-b)*sign)[0];
+  if(T==null)return null;
+  const f=(px-E)*sign/((T-E)*sign);
+  return f>=1?{k:'past',f,T}:f>0.5?{k:'half',f,T}:null;
+}
+
+/* ---- ۵) سابقه در کانال‌سنج: همین نماد، و همین نوع ورود ---- */
+const SIGKIND_FA={full:'سیگنال‌های کامل',trig:'تریگرها',follow:'پیگیری‌ها («ورود مجدد»)',img:'سیگنال‌های تصویری'};
+const sigKindOf=(p,inp)=>inp.need?'img':inp.inh?'follow':inp.trig!=null?'trig':(p.img&&bareImg(p,sigOf(p))?'img':'full');
+let HISTV='',HIST=null;
+function sigHistory(){
+  const v=POSTS.length+'|'+KGEN+'|'+AUDQ.at+'|'+SETVER;
+  if(v===HISTV&&HIST)return HIST;
+  const tk=new Map(),kd=new Map();
+  const put=(m,k,x)=>{const o=m.get(k)||{n:0,w:0,r:0,ids:new Set()};o.n++;if(x.r.st==='win')o.w++;o.r+=x.R;o.ids.add(x.p.id);m.set(k,o);};
+  for(const x of audRows()){
+    if(!x.r||!['win','loss','exp'].includes(x.r.st)||x.R==null)continue;
+    put(tk,x.inp.tk,x);put(kd,sigKindOf(x.p,x.inp),x);
+  }
+  HISTV=v;HIST={tk,kd};return HIST;
+}
+function histLine(p){
+  const inp=audInput(p);if(!inp||!inp.tk)return '';
+  const H=sigHistory(), ex=o=>{if(!o)return null;const self=o.ids.has(p.id);
+    const n=o.n-(self?1:0);if(n<3)return null;
+    const a=AUD[p.id], R=self&&a?audR(a,inp,audRules().rule):0, w=o.w-(self&&a&&a.st==='win'?1:0);
+    return {n,w,avg:(o.r-(self?R||0:0))/n};};
+  const t=ex(H.tk.get(inp.tk)), k=ex(H.kd.get(sigKindOf(p,inp)));
+  if(!t&&!k)return '';
+  const part=(l,o)=>'<b>'+l+'</b> '+faN(o.w)+' از '+faN(o.n)+' برد <span class="'+cls(o.avg)+'" dir="ltr">'+fmtR(o.avg)+'</span>';
+  return [t?part(esc(inp.tk),t):'',k?part(SIGKIND_FA[sigKindOf(p,inp)],k):''].filter(Boolean).join(' · ');
+}
+
+/* ---- ۶ و ۷) بلندمدت: اسپات، «هولد/بلندمدت» در متن، یا استاپ دورتر از سقفِ ایزوله ---- */
+const isoMaxSd=()=>+S.isoMaxSd>0?+S.isoMaxSd:15;
+const RX_LONGT=/بلند\s*مدت|میان\s*مدت|هولد|\bhold\b|اسپات\s*(?:نگه|بلند)/i;
+function longTermOf(p,sig,I){
+  if(I.spot)return 'اسپات';
+  if(RX_LONGT.test(faNorm(p.origText||p.text||'')))return 'متن می‌گوید بلندمدت';
+  if(I.entry&&I.stop){const sd=Math.abs(I.entry-I.stop)/I.entry*100;if(sd>isoMaxSd())return 'استاپ '+fmtNum(sd)+'٪ دور';}
+  return null;
+}
+const isLongTerm=p=>{const s=sigOf(p);if(!s.isSignal&&!(OVERRIDE[p.id]||{}).sig)return false;
+  return !!longTermOf(p,s,planInputsOf(p,s,OVERRIDE[p.id]||{},null));};
+
+/* ---- ۹) پله‌ی دوم («رو X میانگین») بعد از ورود، خودش سفارش منتظر می‌شود ---- */
+function addTier2Pending(p,sig,dir,entry){
+  const t2=sig.tier2;
+  if(!(t2>0)||!(entry>0)||DB.pending.some(x=>x.postId===p.id&&x.kind==='tier2'))return false;
+  const sign=dir==='long'?1:-1;
+  if((entry-t2)*sign<=0)return false;                  // پله‌ی دوم باید بدتر از ورود باشد (میانگین)
+  DB.pending.push({id:uid(),postId:p.id,ticker:sig.ticker||'—',dir,trigger:t2,side:dir==='long'?'down':'up',
+    kind:'tier2',market:'futures',postAt:p.date?p.date.getTime():null,entry:t2,stop:sig.stop||null,
+    targets:sig.targets||[],at:Date.now(),hit:null});
+  return true;
+}
+
+/* ---- ۱۰) کپی برای اپ صرافی ---- */
+function exchText(p,sig,ov,px){
+  const I=planInputsOf(p,sig,ov,px), E=I.entry||px, sign=I.dir==='long'?1:-1;
+  const pl=!I.spot&&E&&I.stop?xRulePlan(I.dir,E,I.stop,sig.targets):null;
+  const SL=pl?pl.stop:I.stop, z=!I.spot&&E&&SL?isoSize(E,SL):null;
+  const tps=pl?[pl.tp]:(sig.targets||[]).filter(t=>E&&(t-E)*sign>0).slice(0,3);
+  return [(sig.ticker||'')+'USDT '+(I.spot?'اسپات (خرید)':(I.dir==='long'?'لانگ':'شورت')+(z?' · ایزوله':'')),
+    'ورود: '+(E?fmtPrice(E):'بازار'),
+    SL?'حد ضرر: '+fmtPrice(SL):'',
+    tps.length?'تارگت: '+tps.map(fmtPrice).join(' / '):'',
+    z?'اهرم: '+z.lev+'x · مارجین: '+fmtUsd(z.margin)+' (ریسک '+fmtUsd(z.risk)+')':'',
+    pl?'سقف زمان: '+XH_FA[pl.r.h]:''].filter(Boolean).join('\n');
+}
+async function copyExch(p,sig,ov,px){
+  const t=exchText(p,sig,ov,px);
+  try{await navigator.clipboard.writeText(t);toast('برای صرافی کپی شد','ok');}
+  catch(e){openSheet('<h3>کپی برای صرافی</h3><textarea class="cptxt" readonly>'+esc(t)+'</textarea>',sh=>{const ta=sh.querySelector('textarea');ta.focus();ta.select();});}
+}
+
+/* ---- روی کارت: خط قاعده‌ی من، دیر رسیدی، سابقه ---- */
+function buildIsoBox(p,sig,ov,px){
+  const I=planInputsOf(p,sig,ov,px);
+  const w=el('div','isobox');
+  const lt=lateOf(I,sig.targets,px);
+  if(lt)w.appendChild(el('div','flag '+(lt.k==='past'?'d':'w'),'<i>!</i><span>'+(lt.k==='past'
+    ?'دیر رسیدی: قیمت از تارگت ۱ ('+fmtPrice(lt.T)+') هم گذشته'
+    :'دیر رسیدی: قیمت '+faN(Math.round(lt.f*100))+'٪ از راه ورود تا تارگت ۱ را رفته؛ سود باقی‌مانده کم و ریسک همان است')+'</span>'));
+  const E=I.entry||px;
+  if(!I.spot&&E&&I.stop){
+    const pl=xRulePlan(I.dir,E,I.stop,sig.targets), z=isoSize(E,pl?pl.stop:I.stop);
+    if(pl)w.appendChild(el('div','xrline','<b>قاعده‌ی من</b><span>استاپ <bdi dir="ltr">'+fmtPrice(pl.stop)+'</bdi> · هدف <bdi dir="ltr">'+fmtPrice(pl.tp)+
+      '</bdi> · تا '+XH_FA[pl.r.h]+'</span><small>'+esc(xRuleName(pl.r))+'</small>'));
+    else{const b=el('button','plink',ic('flag')+'<span>قاعده‌ی خروج کوتاه را انتخاب کن (کانال‌سنج › خروج)</span>');
+      b.onclick=()=>{AUDOPEN='خروج';lsSet(AUDOPENKEY,AUDOPEN);XSEL.v='short';go('audit');};w.appendChild(b);}
+    if(z)w.appendChild(el('div','xrline','<b>ایزوله</b><span>اهرم '+faN(z.lev)+'x · مارجین '+fmtUsd(z.margin)+' · ضرر در استاپ '+fmtUsd(z.risk)+'</span>'));
+  }
+  const h=histLine(p);
+  if(h)w.appendChild(el('div','xrline hist','<b>سابقه</b><span>'+h+'</span>'));
+  return w.childNodes.length?w:null;
+}
 /* ==================== کارت اشتراک‌گذاری ==================== */
 /* چرا کانواس و نه اسکرین‌شات: تصویری که برای دیگران می‌فرستی نباید هرچه روی صفحه‌ی
    توست را لو بدهد — نه مانده‌ی حساب، نه بقیه‌ی پوزیشن‌ها. این کارت فقط همان چیزی
@@ -9718,7 +9950,7 @@ function buildShortLab(rows){
   if(!G.length){c.appendChild(el('div','hint','هنوز سیگنالی با جدول خروج کوتاه نیست.'));return c;}
   const body=el('div');c.appendChild(body);
   const paint=()=>{
-    const {k,h}=XSEL;
+    const {k,h}=XSEL, MR=xRule();
     const chips=(arr,key,cur)=>'<div class="afopts">'+arr.map((t,i)=>'<button class="catchip'+(cur===i?' on':'')+'" data-'+key+'="'+i+'">'+t+'</button>').join('')+'</div>';
     // بهترین‌ها روی همه‌ی ترکیب‌ها (با دست‌کم ۶۰٪ سیگنال‌ها، تا ترکیبی با نمونه‌ی کم برنده نشود)
     const minN=Math.max(3,Math.ceil(G.length*0.6));let best=null,bestS=null;
@@ -9735,9 +9967,12 @@ function buildShortLab(rows){
     let html='<div class="afrow"><span class="aflab">استاپ</span>'+chips(XK_FA,'k',k)+'</div>'+
       '<div class="afrow"><span class="aflab">سقف زمان</span>'+chips(XH_FA,'h',h)+'</div>'+
       '<div class="tscroll"><table class="tp xtab"><thead><tr><th>خروج با سود</th><th>سیگنال</th><th>برد</th><th>جمع</th><th>میانگین</th><th>نگه‌داری</th></tr></thead><tbody>'+
-      XT.map((t,ti)=>{const s=xStat(G,k,ti,h);return '<tr'+(best&&best.ki===k&&best.hi===h&&best.ti===ti?' class="on"':'')+'><td>'+XT_FA[ti]+'</td><td class="num">'+faN(s.n)+'</td><td class="num">'+(s.win==null?'—':faN(Math.round(s.win))+'٪')+
+      XT.map((t,ti)=>{const s=xStat(G,k,ti,h), mine=MR&&MR.k===k&&MR.h===h&&MR.t===ti;
+        return '<tr class="tap'+(best&&best.ki===k&&best.hi===h&&best.ti===ti?' on':'')+(mine?' mine':'')+'" data-t="'+ti+'"><td>'+XT_FA[ti]+(mine?' <span class="pill gold">قاعده‌ی من</span>':'')+'</td><td class="num">'+faN(s.n)+'</td><td class="num">'+(s.win==null?'—':faN(Math.round(s.win))+'٪')+
         '</td><td class="num '+cls(s.sum)+'"><bdi>'+(s.n?fmtR(s.sum):'—')+'</bdi></td><td class="num"><bdi>'+(s.avg==null?'—':fmtR(s.avg))+'</bdi></td><td class="num">'+(s.hold==null?'—':fmtNum(s.hold)+' س')+'</td></tr>';}).join('')+
       '</tbody></table></div>'+
+      '<div class="hint">روی هر ردیف بزن تا همان (با استاپ و سقف زمانِ بالا) «قاعده‌ی من» شود؛ روی هر کارت سیگنال آماده می‌آید.</div>'+
+      (MR?'<div class="xbest mine"><b>قاعده‌ی من:</b><span>'+esc(xRuleName(MR))+'</span><span><button class="btn xs" data-xr="0">برداشتن</button></span></div>':'')+
       line('بهترین کوتاه‌مدت (نگه‌داری تا ۸ ساعت):',bestS)+line('بهترین کل:',best)+
       '<div class="hint">مبنا — قاعده‌ی کانال (تارگت ۱، استاپ کانال، تا ۳ روز): '+(base.n?fmtR(base.sum)+' در '+faN(base.n)+' سیگنال، نگه‌داری '+fmtNum(base.hold)+' ساعت':'—')+'.</div>'+
       (sdM!=null?'<div class="hint">فاصله‌ی استاپِ معمولِ این کانال '+fmtNum(sdM)+'٪ است؛ اهرم امن در ایزوله: با استاپ کانال حدود <b>'+faN(isoLev(sdM))+'x</b>، با ۷۵٪ حدود <b>'+faN(isoLev(sdM*0.75))+'x</b>، با ۵۰٪ حدود <b>'+faN(isoLev(sdM*0.5))+'x</b>.</div>':'')+
@@ -9745,6 +9980,9 @@ function buildShortLab(rows){
     body.innerHTML=html;
     body.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{XSEL.k=+b.dataset.k;lsSet(XSELKEY,XSEL);paint();});
     body.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{XSEL.h=+b.dataset.h;lsSet(XSELKEY,XSEL);paint();});
+    body.querySelectorAll('tr[data-t]').forEach(tr=>tr.onclick=()=>{
+      const r={k:XSEL.k,t:+tr.dataset.t,h:XSEL.h};setXRule(r);paint();toast('قاعده‌ی من: '+xRuleName(r),'ok');});
+    const rm=body.querySelector('[data-xr]');if(rm)rm.onclick=()=>{setXRule(null);paint();toast('قاعده‌ی من برداشته شد','info');};
   };
   paint();
   return c;
@@ -11152,6 +11390,8 @@ function buildPendingCard(w){
   if(w.market==='spot')head.appendChild(el('span','pill gold','اسپات'));
   else head.appendChild(el('span','pill '+w.dir,w.dir==='long'?'لانگ':'شورت'));
   head.appendChild(el('span','pill '+(w.hit?'win':'mut'),w.hit?'رسید':old?ic('clock')+'قدیمی شد':'منتظر'));
+  if(w.kind==='tier2')head.appendChild(el('span','pill gold','پله‌ی دوم'));
+  if(w.tf&&!w.hit)head.appendChild(el('span','pill mut',(w.touch?'لمس شد · ':'')+'بسته شدن کندل '+TF_FA[w.tf]));
   head.appendChild(el('div','when',relTime(new Date(w.at))));
   c.appendChild(head);
 

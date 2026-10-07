@@ -115,6 +115,8 @@ function buildCard(p,lite){
   if(isSig){
     const I=planInputsOf(p,sig,OVERRIDE[p.id]||{},null);
     if(I.spot)head.appendChild(el('span','pill gold','اسپات'));
+    const lt=longTermOf(p,sig,I);
+    if(lt&&!I.spot){const t=el('span','pill mut ltp','بلندمدت');t.title=lt+' — برای ایزوله‌ی کوتاه‌مدت مناسب نیست';head.appendChild(t);}
   }else head.appendChild(el('span','pill kind k-'+kind+(kind==='res'&&!resAuto(p)?' gold':''),KIND_FA[kind]||'یادداشت'));
   if(NEWIDS.has(p.id))head.appendChild(el('span','pill gold','تازه'));
   const stale=isSig&&!dec&&isStale(p);
@@ -362,14 +364,14 @@ function buildBrief(p,sig,ov,px){
     d.appendChild(el('span',c||null,v));kv.appendChild(d);};
   add(I.spot?'قیمت خرید':'ورود',I.entry!=null?fmtPrice(I.entry):'—');
   add('حد ضرر',I.stop!=null?fmtPrice(I.stop):'—');
-  // کانال با کراس کار می‌کند؛ در ایزوله اهرمِ بیشتر از این، لیکوئید را جلوتر از استاپ می‌آورد
-  if(!I.spot&&I.entry&&I.stop){const sd=Math.abs(I.entry-I.stop)/I.entry*100;
-    add('اهرم امن ایزوله','تا '+faN(isoLev(sd))+'x',sd>15?'w':null);}
+  // اهرم امن ایزوله در خطِ «ایزوله» زیر همین خانه‌هاست (با استاپِ قاعده‌ی من، اگر انتخاب شده)
   if(px!=null&&I.entry){
     const gap=((px-I.entry)/I.entry)*100*(I.dir==='long'?1:-1);
     add('فاصله تا ورود',fmtPct(gap),gap>3?'d':(gap>0?'w':'u'));
   }else add('قیمت الان','—','m');
   w.appendChild(kv);
+  // قاعده‌ی من، اندازه‌ی ایزوله، دیر رسیدی، سابقه (27b-entry-tools.js)
+  {const ib=buildIsoBox(p,sig,ov,px);if(ib)w.appendChild(ib);}
   /* کلیدی که قبل از هر عددی تکلیف را روشن می‌کند: اسپات یا فیوچرز */
   w.appendChild(mktToggle(I.market,I.marketGuess,k=>setOv(p,'market',k,true)));
   if(!decisionOf(p.id))w.appendChild(amtRow(I.amt,v=>setAmt(p,v),I.spot));
@@ -388,6 +390,13 @@ function buildBrief(p,sig,ov,px){
     q.onclick=()=>quickEnter(p,sig,ov,px);
     a.appendChild(q);
   }
+  // ورود ایزوله: اهرم امن و حجم از ریسک دلاری ثابت (و قاعده‌ی خروج من، اگر انتخاب شده)
+  if(!I.spot&&(I.entry||px)&&I.stop&&!decisionOf(p.id)){
+    const E=I.entry||px, pl=xRulePlan(I.dir,E,I.stop,sig.targets), z=isoSize(E,pl?pl.stop:I.stop);
+    if(z){const b=el('button','btn xs side iso',ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span>');
+      b.title='ورود ایزوله با ریسک '+fmtUsd(z.risk)+(pl?' و قاعده‌ی خروج من':'');
+      b.onclick=()=>isoEnter(p,sig,ov,px);a.appendChild(b);}
+  }
   // سیگنالی که تریگر دارد و هنوز نرسیده: به‌جای ورود زودهنگام، منتظرش می‌مانیم
   const trg=sig.trigger!=null?sig.trigger:(I.entry!=null?I.entry:null);
   const already=DB.pending.some(x=>x.postId===p.id);
@@ -397,6 +406,9 @@ function buildBrief(p,sig,ov,px){
     b3.onclick=()=>addPending(p,sig,trg,px);
     a.appendChild(b3);
   }else if(already)a.appendChild(el('span','markhint','در فهرست منتظرها'));
+  {const c=el('button','btn xs side',ic('share')+'<span>کپی برای صرافی</span>');
+   c.title='نماد، جهت، ورود، استاپ، تارگت، اهرم و مارجین برای چسباندن در اپ صرافی';
+   c.onclick=()=>copyExch(p,sig,ov,px);a.appendChild(c);}
   if(DB.revived[p.id]){
     const u=el('button','btn xs side','منقضی کن');
     u.title='برگرداندن را پس بگیر';
@@ -629,7 +641,8 @@ function quickEnter(p,sig,ov,px){
   DB.positions.push(pos);
   DB.decisions[p.id]={action:'taken',at:Date.now(),posId:pos.id,market:I.spot?'spot':'futures',
     snap:snapOf(p,sig,entry,I.stop)};
-  save();renderAll();toast(I.spot?'خرید اسپات ثبت شد':'پوزیشن ثبت شد','ok');
+  const t2=!I.spot&&addTier2Pending(p,sig,I.dir,entry);
+  save();renderAll();toast((I.spot?'خرید اسپات ثبت شد':'پوزیشن ثبت شد')+(t2?' · پله‌ی دوم '+fmtPrice(sig.tier2)+' منتظر ماند':''),'ok');
 }
 /* یک ورق برای هر دو بازار. اسپات همان فرم است با اهرم قفلِ 1: نه لیکوئید دارد،
    نه کشویی اهرم، و به‌جای «مارجین» می‌گوید «مبلغ خرید» و مقدار ارز را نشان می‌دهد. */
@@ -660,7 +673,8 @@ function liqStopBar(sd,ld){
       :'بین استاپ و لیکوئید '+((ld-sd)*100).toFixed(1)+'٪ فاصله هست')+'</div>';
   return w;
 }
-function sheetEnter(p,sig,ov,px){
+function sheetEnter(p,sig,ov,px,opt){
+  opt=opt||{};
   let MK=(planInputsOf(p,sig,ov,px)).market;
   const I0=planInputsOf(p,sig,ov,px);
   const entry0=I0.entry||px||'', stop0=I0.stop||'', amt0=I0.amt;
@@ -698,7 +712,7 @@ function sheetEnter(p,sig,ov,px){
      '<div class="fld" id="dirRow"><label>جهت</label><select id="f_d">'+
        '<option value="long"'+(I0.dir==='long'?' selected':'')+'>لانگ</option>'+
        '<option value="short"'+(I0.dir==='short'?' selected':'')+'>شورت</option></select></div>'+
-     '<div class="fld"><label>یادداشت</label><input id="f_n" placeholder="چرا وارد شدی؟"></div>'+
+     '<div class="fld"><label>یادداشت</label><input id="f_n" placeholder="چرا وارد شدی؟" value="'+esc(opt.note||'')+'"></div>'+
    '</div>'+
    tagPickHtml()+
    '<div id="riskBox"></div>'+
@@ -926,11 +940,14 @@ function sheetEnter(p,sig,ov,px){
        logAdd(pos,'open',sp
          ?('خرید اسپات '+fmtUsd(v.margin)+' روی '+fmtPrice(v.entry))
          :('ورود با '+fmtUsd(v.margin)+' مارجین و اهرم '+(+v.lev)+'x روی '+fmtPrice(v.entry)));
+       if(opt.until)pos.until=opt.until;               // سقف زمانِ قاعده‌ی من
+       if(opt.iso)pos.iso=true;
        if(pbTps(pos).length&&pbAttach(pos,pbSel))logAdd(pos,'plan','نقشه‌ی خروج: '+pos.pb.n);
        DB.positions.push(pos);
        DB.decisions[p.id]={action:'taken',at:Date.now(),posId:pos.id,market:sp?'spot':'futures',
          snap:snapOf(p,sig,v.entry,v.stop)};
-       save();closeSheet();renderAll();toast(sp?'خرید اسپات ثبت شد':'پوزیشن ثبت شد','ok');
+       const t2=!sp&&addTier2Pending(p,sigOf(p),v.dir,v.entry);
+       save();closeSheet();renderAll();toast((sp?'خرید اسپات ثبت شد':'پوزیشن ثبت شد')+(t2?' · پله‌ی دوم '+fmtPrice(sigOf(p).tier2)+' منتظر ماند':''),'ok');
      };
    });
 }
@@ -1084,6 +1101,15 @@ function renderFbar(){
     if(onc)requestAnimationFrame(()=>{const r=row.getBoundingClientRect(),c=onc.getBoundingClientRect();
       if(c.left<r.left||c.right>r.right)row.scrollLeft+=c.left<r.left?c.left-r.left-8:c.right-r.right+8;});
   }
+  // «در انتظار»: سیگنال‌های بلندمدت (استاپ دور، اسپات، هولد) برای ایزوله‌ی کوتاه‌مدت پنهان‌اند
+  if(bucket==='live'&&sigFilter==='new'&&(LTHID||VIEW.iso===false)){
+    const row=el('div','frow');
+    const on=VIEW.iso!==false;
+    chip(row,ic('shield')+(on?'فقط مناسب ایزوله':'همه، با بلندمدت‌ها'),on?LTHID:null,on,()=>setView({iso:!on}))
+      .title=on?faN(LTHID)+' سیگنال بلندمدت پنهان است؛ بزن تا دیده شوند':'بزن تا بلندمدت‌ها پنهان شوند';
+    if(on)row.appendChild(el('span','markhint',faN(LTHID)+' بلندمدت پنهان'));
+    bar.appendChild(row);
+  }
   if(day==='range'){
     const rg=el('div','frange');
     const inp=(key,lbl)=>{
@@ -1227,7 +1253,7 @@ function restoreAnchor(a){
   const dy=c.getBoundingClientRect().top-a.top;
   if(Math.abs(dy)>0.5)window.scrollBy(0,dy);
 }
-let RS_KEY='';
+let RS_KEY='', LTHID=0;          // LTHID: سیگنال‌های بلندمدتِ پنهان در «در انتظار»
 function renderSignals(){
   const list=$('#list');
   // بروزرسانی خودکار هر دقیقه همین را صدا می‌زند؛ جای خواندن نباید تکان بخورد
@@ -1245,7 +1271,8 @@ function renderSignals(){
   const closeSep=()=>{if(sepEl)sepEl.querySelector('.dsn').textContent=sepN+' پست';};
   const dp=dayPass(), kind=bucket==='live'&&sigFilter==='all'&&VIEW.kind!=='all'?VIEW.kind:'';
   // انیمیشن ورود کارت‌ها فقط وقتی فهرست واقعاً عوض شده (فیلتر، سطل، جستجو)، نه با هر بروزرسانی
-  const rk=[bucket,sigFilter,coinFilter,q,VIEW.day,kind].join('|'), animate=rk!==RS_KEY;RS_KEY=rk;
+  const rk=[bucket,sigFilter,coinFilter,q,VIEW.day,kind,VIEW.iso].join('|'), animate=rk!==RS_KEY;RS_KEY=rk;
+  LTHID=0;
   for(const p of POSTS){
     if(dp&&!dp(p))continue;
     const sig=sigOf(p), bk=bucketOf(p);
@@ -1255,6 +1282,7 @@ function renderSignals(){
     if(kind&&postKind(p)!==kind)continue;
     if(bucket==='live'&&sigFilter==='sig'&&!isSigPost(p))continue;
     if(bucket==='live'&&sigFilter==='new'&&!isOpenSig(p))continue;
+    if(bucket==='live'&&sigFilter==='new'&&VIEW.iso!==false&&isLongTerm(p)){LTHID++;continue;}
     if(q&&!((sig.ticker||'')+' '+p.text).toLowerCase().includes(q))continue;
     matched++;
     if(n>=shownMax)continue;                 // بقیه شمرده می‌شوند ولی ساخته نمی‌شوند
