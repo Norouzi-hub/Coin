@@ -5,8 +5,8 @@
    42 «عکس‌ها فقط با زدن» (کلید امکانات): در اینترنت کند حجم دانلود را کم می‌کند (17-gallery.js)
    43 میان‌برهای آیکون برنامه (manifest) و باز شدن مستقیم با ?v= */
 
-const GLKEY='signaldesk.glance.v1', GLMAX=12;
-let GLSHUT=!!lsGet(GLKEY), GLALL=false;
+const GLMAX=12;
+let GLALL=false;
 /* سیگنال‌های قابل گرفتن: تصمیم‌نگرفته، منقضی‌نشده، نه بلندمدت، نه «دیر رسیدی». همه‌شان، نه فقط چهار تا،
    با عددها و دکمه‌ی اقدام، تا همین‌جا بررسی و وارد شوی. دیر رسیده‌ها و بلندمدت‌ها فقط شمرده می‌شوند. */
 function glanceData(){
@@ -58,7 +58,8 @@ function glSigHtml(x,i){
 }
 function paintGlance(){
   const g=$('#glance');if(!g)return;
-  if(view!=='signals'||bucket!=='live'||!POSTS.length){g.innerHTML='';return;}
+  if(view!=='signals'||bucket!=='live'||sigFilter!=='now'){g.innerHTML='';g.className='';return;}
+  if(!POSTS.length){g.className='glance gltab';g.innerHTML='<div class="empty">'+STAR+'هنوز پستی نیامده.</div>';return;}
   const d=glanceData();
   // حال بازار هر ۱۵ دقیقه؛ رسیدنش دوباره می‌کشد
   // اگر نیامد، حداکثر هر دو دقیقه یک بار؛ فقط وقتی داده‌ی تازه رسید دوباره می‌کشد (نه حلقه)
@@ -66,19 +67,20 @@ function paintGlance(){
     mktLoad().then(m=>{if(m&&m.at!==was&&view==='signals')paintGlance();}).catch(()=>{});}
   // پیشنهاد برنامه: هر نیم ساعت یک بار بررسی (در پس‌زمینه، دو ارز هم‌زمان)
   if(F('autosig')&&!ASQ.on&&Date.now()-AS.at>30*60000&&(SYMBOLS.size||MKT))setTimeout(()=>asScan(),400);
-  if(!d.take.length&&!d.dl&&!d.unread&&!d.lock&&!d.late&&!d.lt&&!MKT&&!F('autosig')){g.innerHTML='';return;}
-  g.className='glance'+(GLSHUT?' shut':'');
-  let h='<button class="glh" type="button"><b>'+ic('bolt')+'الان چه کنم؟</b><span>'+
+  g.className='glance gltab';
+  // تب است، نه کارت تاشو: سربرگ فقط خلاصه است
+  let h='<div class="glh"><b>'+ic('bolt')+'الان چه کنم؟</b><span>'+
     [d.take.length?faN(d.take.length)+' سیگنال قابل گرفتن':'سیگنال قابل گرفتنی نیست',d.dl?'مهلت '+d.dl.p.ticker+': '+(d.dl.t<=Date.now()?'گذشت':fmtLeft(d.dl.t-Date.now())):'',
-     d.unread?faN(d.unread)+' پیشنهاد تازه':'',MKT?'بازار '+MK_REG_FA[MKT.reg]:''].filter(Boolean).join(' · ')+'</span><i class="chev"></i></button>';
-  if(!GLSHUT){
+     d.unread?faN(d.unread)+' پیشنهاد تازه':'',MKT?'بازار '+MK_REG_FA[MKT.reg]:''].filter(Boolean).join(' · ')+'</span></div>';
+  {
     h+='<div class="glb">';
     if(d.lock)h+='<div class="flag d"><i>!</i><span>'+faN(d.lock.n)+' باخت پیاپی — تا فردا ورود تازه نه.</span></div>';
     {const dirs={long:0,short:0};for(const x of d.take)dirs[x.dir]++;h+=mktHtml(MKT,dirs);}
-    h+=asHtml();
     const list=GLALL?d.take:d.take.slice(0,GLMAX);
     list.forEach((x,i)=>h+=glSigHtml(x,i));
     if(d.take.length>list.length)h+='<button class="btn sm glmore" data-more="1">'+faN(d.take.length-list.length)+' سیگنال دیگر</button>';
+    // اول سیگنال‌های کانال، بعد پیشنهاد خود برنامه
+    h+=asHtml();
     if(d.late||d.lt||d.nost)h+='<div class="hint glskip">'+[d.nost?faN(d.nost)+' سیگنال بی‌استاپ (نه در متن، نه از سیگنال قبلی؛ برای ایزوله نه)':'',d.late?faN(d.late)+' سیگنال دیر رسیده (قیمت بیش از نیمی از راه تا تارگت 1 را رفته)':'',
       d.lt?faN(d.lt)+' سیگنال بلندمدت (اسپات یا استاپ دورتر از '+fmtNum(isoMaxSd())+'٪)':''].filter(Boolean).join(' · ')+' — در فهرست «در انتظار» هستند.</div>';
     if(d.dl)h+='<button class="glit" data-pos="'+esc(d.dl.p.id)+'"><b dir="ltr">'+esc(d.dl.p.ticker)+'</b><span>'+ic('clock')+(d.dl.t<=Date.now()?'مهلت گذشت — ببند':fmtLeft(d.dl.t-Date.now())+' تا پایان مهلت')+'</span></button>';
@@ -86,7 +88,6 @@ function paintGlance(){
     h+='</div>';
   }
   g.innerHTML=h;
-  g.querySelector('.glh').onclick=()=>{GLSHUT=!GLSHUT;lsSet(GLKEY,GLSHUT?1:0);paintGlance();};
   g.querySelectorAll('[data-sig]').forEach(b=>b.onclick=()=>advDo({t:'sig',id:b.dataset.sig}));
   g.querySelectorAll('[data-pos]').forEach(b=>b.onclick=()=>advDo({t:'pos',id:b.dataset.pos}));
   g.querySelectorAll('[data-bell]').forEach(b=>b.onclick=sheetAdvice);

@@ -12,7 +12,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    POSTS.unshift({id:'ccoineres/96001',num:96001,text:'#GLA لانگ\nورود 100\nحد ضرر 95\nتارگت 110',date:new Date(now-20*60000),link:'x'});
    PRICES.set('GLA',100.1);KGEN++;Object.assign(S,{riskUsd:2});
    DB.positions=[ensureBase({id:'gp1',ticker:'BTC',kind:'futures',dir:'long',entry:100,stop:95,stop0:95,margin:10,lev:5,targets:[],openedAt:now-36e5,until:now+2*36e5,status:'open',partials:[],log:[]})];
-   bucket='live';sigFilter='new';go('signals',true);renderAll();
+   bucket='live';sigFilter='now';go('signals',true);renderAll();
    const G=document.getElementById('glance');
    return {head:G.querySelector('.glh')?.textContent||'',items:[...G.querySelectorAll('.glit')].map(x=>x.textContent)};});
  console.log('   ',JSON.stringify(g));
@@ -20,8 +20,14 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(g.items.some(x=>/GLA/.test(x)&&/ایزوله/.test(x))&&g.items.some(x=>/BTC/.test(x)&&/تا پایان مهلت/.test(x)),'سیگنال GLA با اندازه‌ی ایزوله، و مهلت پوزیشن BTC');
  await p.evaluate(()=>document.querySelector('#glance .glit[data-sig]').click());await p.waitForTimeout(500);
  ok(await p.evaluate(()=>view==='signals'&&ACCOPEN==='ccoineres/96001'),'زدن روی سیگنال: کارتش باز شد');
- await p.evaluate(()=>document.querySelector('#glance .glh').click());await p.waitForTimeout(200);
- ok(await p.evaluate(()=>document.getElementById('glance').classList.contains('shut')&&!document.querySelector('#glance .glb')&&!!localStorage.getItem('signaldesk.glance.v1')),'جمع شد و یادش می‌ماند');
+ // تبِ کنار «در انتظار» و «همه»؛ در بقیه‌ی بخش‌ها نیست
+ const tab=await p.evaluate(()=>{const segs=[...document.querySelectorAll('#fbar .fseg .fb')].map(b=>b.querySelector('span').textContent);
+   sigFilter='new';renderSignals();const empty=!document.getElementById('glance').firstChild, cards=document.querySelectorAll('#list .card').length;
+   [...document.querySelectorAll('#fbar .fseg .fb')][0].click();
+   return {segs,empty,cards,back:sigFilter==='now'&&!!document.querySelector('#glance .glsig')&&!document.querySelector('#list .card')};});
+ ok(tab.segs.join(',')==='الان چه کنم؟,در انتظار,همه','نوار فیلتر: «الان چه کنم؟» | در انتظار | همه — '+tab.segs.join(','));
+ ok(tab.empty&&tab.cards>0,'در «در انتظار» فهرست کارت‌ها، بی «الان چه کنم؟»');
+ ok(tab.back,'زدن تب: «الان چه کنم؟» جای فهرست');
 
  console.log('=== ۴۱: پنل تنبل ===');
  const lz=await p.evaluate(()=>{AUDOPEN='کارنامه‌ی کانال';go('audit',true);renderAudit();

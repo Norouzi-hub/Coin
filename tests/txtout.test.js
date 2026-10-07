@@ -32,7 +32,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  console.log('=== یک کارت بالای سیگنال‌ها، دو بخش فیلتر ===');
  const top=await p.evaluate(()=>{go('signals',true);bucket='live';sigFilter='new';renderAll();paintGlance();
    const c=document.getElementById('topcard');return {kids:[...c.children].map(x=>x.id),segs:[...document.querySelectorAll('#fbar .fseg .fb span')].map(x=>x.textContent)};});
- ok(top.kids.join(',')==='status,glance','خلاصه و «الان چه کنم؟» در یک کارت');
- ok(top.segs.join(',')==='در انتظار,همه','نوار فیلتر: «در انتظار» و «همه»');
+ ok(top.kids.join(',')==='status','کارت خلاصه بالای صفحه؛ «الان چه کنم؟» تبِ خودش را دارد');
+ ok(top.segs.join(',')==='الان چه کنم؟,در انتظار,همه','نوار فیلتر: «الان چه کنم؟»، «در انتظار» و «همه»');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');})();

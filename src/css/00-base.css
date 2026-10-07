@@ -1541,8 +1541,10 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .glance{background:var(--card)}
 /* نوار خلاصه و «الان چه کنم؟» یک کارت‌اند */
 .topcard{margin:10px 0;border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden}
-.topcard:has(>.status:empty):has(>.glance:empty),.topcard:has(>.status:empty):has(>#glance:empty){display:none}
-.topcard:has(>.glance:not(:empty)){border-color:color-mix(in srgb,var(--gold) 35%,var(--line))}
+.topcard:has(>.status:empty){display:none}
+/* «الان چه کنم؟» به‌صورت تب: کادر طلایی، جای فهرست پست‌ها */
+.glance.gltab{margin:10px 0;border:1px solid color-mix(in srgb,var(--gold) 35%,var(--line));border-radius:var(--r);overflow:hidden}
+.glance.gltab .glh{cursor:default}
 .topcard>.status{margin:0;border:0;border-radius:0}
 .topcard>.status:not(:empty)+.glance:not(:empty){border-top:1px solid var(--line)}
 .glh{display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;background:none;border:0;color:var(--tx);font:inherit;cursor:pointer;text-align:start}

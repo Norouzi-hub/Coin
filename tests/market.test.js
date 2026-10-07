@@ -20,7 +20,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(m&&m.reg==='bear2'&&Math.abs(m.btc+3)<1e-9,'«خیلی نزولی»، بیت‌کوین −۳٪');
  const g=await p.evaluate(()=>{const now=Date.now();SYMBOLS.add('MKA');PRICES.set('MKA',100);SYMVER++;
    POSTS.unshift({id:'ccoineres/97100',num:97100,text:'#MKA لانگ\nورود 100\nحد ضرر 96\nتارگت 108',date:new Date(now-6e4),link:'x'});
-   KGEN++;GLSHUT=false;bucket='live';sigFilter='new';go('signals',true);renderAll();
+   KGEN++;bucket='live';sigFilter='now';go('signals',true);renderAll();
    const G=document.getElementById('glance');return {mkt:(G.querySelector('.mkst')||{}).textContent||'',head:G.querySelector('.glh').textContent,bars:G.querySelectorAll('.mkbars i').length};});
  console.log('   ',g.mkt.slice(0,160));
  ok(/حال بازار · خیلی نزولی/.test(g.mkt)&&/صعودی 10/.test(g.mkt)&&/نزولی 90/.test(g.mkt)&&g.bars===11,'در «الان چه کنم؟»: عددها و نمودار ۱۱ ستونه');
@@ -43,9 +43,11 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(e.ev.some(x=>/^move:b/.test(x)),'ریزش ناگهانی در ۳ ساعت');
  ok(e.up.includes('high:u')&&e.up.includes('ma:u')&&e.up.includes('move:u'),'آینه‌ی صعودی: شکست سقف، تقاطع صعودی، رشد ناگهانی');
  const card=await p.evaluate(async()=>{MKEV.set('MKA',{at:Date.now(),ev:[{k:'low',d:7,bear:true,t:'شکست کف 7 روزه'},{k:'ma',bear:false,t:'تقاطع صعودی MA20/50 (۴ ساعته)'}]});
-   renderAll();const c=document.querySelector('#list .card[data-id="ccoineres/97100"]');
-   const G=document.getElementById('glance');
-   return {flag:(c&&c.querySelector('.mkevf')||{}).textContent||'',gl:(G.querySelector('.mkev')||{}).textContent||''};});
+   sigFilter='new';renderAll();const c=document.querySelector('#list .card[data-id="ccoineres/97100"]');
+   const flag=(c&&c.querySelector('.mkevf')||{}).textContent||'';
+   sigFilter='now';renderAll();const G=document.getElementById('glance');
+   return {flag,gl:(G.querySelector('.mkev')||{}).textContent||''};
+});
  console.log('   ',JSON.stringify(card));
  ok(/خلاف لانگ: شکست کف 7 روزه/.test(card.flag)&&/هم‌جهت: تقاطع صعودی/.test(card.flag),'روی کارت: «خلاف لانگ» و «هم‌جهت»');
  ok(/⚠ شکست کف 7 روزه/.test(card.gl),'در «الان چه کنم؟» کنار همان سیگنال');

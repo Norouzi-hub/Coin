@@ -51,7 +51,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const g=await p.evaluate(()=>{const now=Date.now();
    for(let i=0;i<6;i++){const tk='GL'+i;SYMBOLS.add(tk);PRICES.set(tk,100);
      POSTS.unshift({id:'ccoineres/9800'+i,num:98000+i,text:'#'+tk+' لانگ\nورود 100\nحد ضرر 96\nتارگت 108',date:new Date(now-(i+1)*6e4),link:'x'});}
-   SYMVER++;KGEN++;Object.assign(S,{riskUsd:2});GLSHUT=false;bucket='live';sigFilter='new';go('signals',true);renderAll();
+   SYMVER++;KGEN++;Object.assign(S,{riskUsd:2});bucket='live';sigFilter='now';go('signals',true);renderAll();
    const G=document.getElementById('glance');
    return {n:G.querySelectorAll('.glsig').length,acts:[...G.querySelectorAll('.glsig')[0].querySelectorAll('[data-a]')].map(x=>x.dataset.a),
      num:G.querySelector('.glsig .glnum').textContent,head:G.querySelector('.glh').textContent};});

@@ -31,7 +31,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    const pl=(E,dir)=>({dir,E,SL:dir==='short'?E*1.02:E*0.98,TP:dir==='short'?E*0.97:E*1.03,sd:0.02,rr:1.5});
    AS={v:1,at:now,coins:{ASA:{low7:{n:14,w:9,r:5.6,fn:14,fw:9,fr:5.6},maUp:{n:12,w:3,r:-4,fn:12,fw:3,fr:-4}},ASB:{low7:{n:3,w:1,r:0.2,fn:3,fw:1,fr:0.2}}},
      live:[{tk:'ASA',k:'low7',i:0,t:now-36e5,pl:pl(50,'short')},{tk:'ASB',k:'maUp',i:0,t:now-36e5,pl:pl(20,'long')}]};
-   const sg=asSuggestions();GLSHUT=false;bucket='live';sigFilter='new';go('signals',true);renderAll();
+   const sg=asSuggestions();bucket='live';sigFilter='now';go('signals',true);renderAll();
    const G=document.getElementById('glance').querySelector('.assec');
    return {list:sg.list.map(x=>x.tk+':'+x.k),rej:sg.rej,txt:G&&G.textContent||'',btn:!!(G&&G.querySelector('.assig [data-a="iso"]'))};});
  console.log('   ',s.txt.slice(0,240));

@@ -1558,8 +1558,10 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .glance{background:var(--card)}
 /* نوار خلاصه و «الان چه کنم؟» یک کارت‌اند */
 .topcard{margin:10px 0;border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden}
-.topcard:has(>.status:empty):has(>.glance:empty),.topcard:has(>.status:empty):has(>#glance:empty){display:none}
-.topcard:has(>.glance:not(:empty)){border-color:color-mix(in srgb,var(--gold) 35%,var(--line))}
+.topcard:has(>.status:empty){display:none}
+/* «الان چه کنم؟» به‌صورت تب: کادر طلایی، جای فهرست پست‌ها */
+.glance.gltab{margin:10px 0;border:1px solid color-mix(in srgb,var(--gold) 35%,var(--line));border-radius:var(--r);overflow:hidden}
+.glance.gltab .glh{cursor:default}
 .topcard>.status{margin:0;border:0;border-radius:0}
 .topcard>.status:not(:empty)+.glance:not(:empty){border-top:1px solid var(--line)}
 .glh{display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;background:none;border:0;color:var(--tx);font:inherit;cursor:pointer;text-align:start}
@@ -1790,8 +1792,9 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
       <label class="search"><span id="qIc"></span><input id="q" placeholder="جستجو در نماد یا متن…" autocomplete="off"></label>
       <div class="fbar" id="fbar" role="tablist" aria-label="نمایش پست‌ها"></div>
     </div>
-    <!-- یک کارت: خط خلاصه (ریسک، سود/ضرر باز، قیمت) و زیرش «الان چه کنم؟» -->
-    <div class="topcard" id="topcard"><div class="status" id="status"></div><div id="glance"></div></div>
+    <!-- خط خلاصه (ریسک، سود/ضرر باز، قیمت)؛ «الان چه کنم؟» تبِ خودش را در نوار فیلتر دارد -->
+    <div class="topcard" id="topcard"><div class="status" id="status"></div></div>
+    <div id="glance"></div>
     <div id="incoming" class="incoming hide"></div>
     <div id="list"></div>
     <div id="moreSkel" class="hide"></div>
@@ -5361,7 +5364,7 @@ let bucket='live';
 const VIEWKEY='signaldesk.view.v1';
 const VIEW=Object.assign({day:'all',from:'',to:''},lsGet(VIEWKEY)||{});
 delete VIEW.cat;                  // دسته‌های دلخواه برداشته شد
-if(['new','all'].includes(VIEW.sf))sigFilter=VIEW.sf;
+if(['now','new','all'].includes(VIEW.sf))sigFilter=VIEW.sf;
 else if(VIEW.sf==='sig')sigFilter='all';   // بخش «سیگنال‌ها» برداشته شد
 delete VIEW.kind;                 // ردیف نوع پست برداشته شد
 if(['live','res','arch','exp'].includes(VIEW.bk))bucket=VIEW.bk;
@@ -6542,7 +6545,10 @@ function renderFbar(){
     if(kd!=='sig')continue;
     if(!decisionOf(p.id)&&!isStale(p))nNew++;
   }
+  let nNow=0;
+  try{if(POSTS.length){nNow=glanceData().take.length+(F('autosig')?asSuggestions().list.length:0);}}catch(e){}
   const segs=[
+    {k:'now', label:'الان چه کنم؟', n:nNow, hint:'همه‌ی سیگنال‌های قابل گرفتن با دکمه‌ی اقدام، حال بازار و پیشنهاد برنامه'},
     {k:'new', label:'در انتظار', n:nNew, hint:'سیگنال‌های این '+faN(S.staleDays||7)+' روز که هنوز تصمیمشان را نگرفته‌ای'},
     {k:'all', label:'همه',       n:nLive, hint:'سیگنال‌ها و نتیجه‌ها؛ خبر، اطلاع‌رسانی و یادداشت خودشان در آرشیوند'}
   ];
@@ -6757,6 +6763,13 @@ function renderSignals(){
      همان را نشان می‌دهیم. جستجوی بالای صفحه هم همان‌جا روی آموزش‌ها کار می‌کند. */
   if(bucket==='les')bucket='live';     // آموزش حالا تبِ خودش را دارد
   if(!POSTS.length&&busy){list.innerHTML=skelHTML(3);$('#btnMore').classList.add('hide');showStatus();return;}
+  // تبِ «الان چه کنم؟»: به‌جای کارت پست‌ها، همان فهرستِ اقدام (38b-simple.js)
+  if(bucket==='live'&&sigFilter==='now'){
+    CARDS.clear();list.innerHTML='';renderFbar();paintGlance();showStatus();
+    $('#btnMore').classList.add('hide');const mi=$('#moreInfo');if(mi)mi.textContent='';
+    return;
+  }
+  {const g=$('#glance');if(g&&g.firstChild){g.innerHTML='';g.className='';}}
   const q=query.trim().toLowerCase();
   const frag=document.createDocumentFragment();
   CARDS.clear();
@@ -13752,8 +13765,8 @@ function renderAll(){
    42 «عکس‌ها فقط با زدن» (کلید امکانات): در اینترنت کند حجم دانلود را کم می‌کند (17-gallery.js)
    43 میان‌برهای آیکون برنامه (manifest) و باز شدن مستقیم با ?v= */
 
-const GLKEY='signaldesk.glance.v1', GLMAX=12;
-let GLSHUT=!!lsGet(GLKEY), GLALL=false;
+const GLMAX=12;
+let GLALL=false;
 /* سیگنال‌های قابل گرفتن: تصمیم‌نگرفته، منقضی‌نشده، نه بلندمدت، نه «دیر رسیدی». همه‌شان، نه فقط چهار تا،
    با عددها و دکمه‌ی اقدام، تا همین‌جا بررسی و وارد شوی. دیر رسیده‌ها و بلندمدت‌ها فقط شمرده می‌شوند. */
 function glanceData(){
@@ -13805,7 +13818,8 @@ function glSigHtml(x,i){
 }
 function paintGlance(){
   const g=$('#glance');if(!g)return;
-  if(view!=='signals'||bucket!=='live'||!POSTS.length){g.innerHTML='';return;}
+  if(view!=='signals'||bucket!=='live'||sigFilter!=='now'){g.innerHTML='';g.className='';return;}
+  if(!POSTS.length){g.className='glance gltab';g.innerHTML='<div class="empty">'+STAR+'هنوز پستی نیامده.</div>';return;}
   const d=glanceData();
   // حال بازار هر ۱۵ دقیقه؛ رسیدنش دوباره می‌کشد
   // اگر نیامد، حداکثر هر دو دقیقه یک بار؛ فقط وقتی داده‌ی تازه رسید دوباره می‌کشد (نه حلقه)
@@ -13813,19 +13827,20 @@ function paintGlance(){
     mktLoad().then(m=>{if(m&&m.at!==was&&view==='signals')paintGlance();}).catch(()=>{});}
   // پیشنهاد برنامه: هر نیم ساعت یک بار بررسی (در پس‌زمینه، دو ارز هم‌زمان)
   if(F('autosig')&&!ASQ.on&&Date.now()-AS.at>30*60000&&(SYMBOLS.size||MKT))setTimeout(()=>asScan(),400);
-  if(!d.take.length&&!d.dl&&!d.unread&&!d.lock&&!d.late&&!d.lt&&!MKT&&!F('autosig')){g.innerHTML='';return;}
-  g.className='glance'+(GLSHUT?' shut':'');
-  let h='<button class="glh" type="button"><b>'+ic('bolt')+'الان چه کنم؟</b><span>'+
+  g.className='glance gltab';
+  // تب است، نه کارت تاشو: سربرگ فقط خلاصه است
+  let h='<div class="glh"><b>'+ic('bolt')+'الان چه کنم؟</b><span>'+
     [d.take.length?faN(d.take.length)+' سیگنال قابل گرفتن':'سیگنال قابل گرفتنی نیست',d.dl?'مهلت '+d.dl.p.ticker+': '+(d.dl.t<=Date.now()?'گذشت':fmtLeft(d.dl.t-Date.now())):'',
-     d.unread?faN(d.unread)+' پیشنهاد تازه':'',MKT?'بازار '+MK_REG_FA[MKT.reg]:''].filter(Boolean).join(' · ')+'</span><i class="chev"></i></button>';
-  if(!GLSHUT){
+     d.unread?faN(d.unread)+' پیشنهاد تازه':'',MKT?'بازار '+MK_REG_FA[MKT.reg]:''].filter(Boolean).join(' · ')+'</span></div>';
+  {
     h+='<div class="glb">';
     if(d.lock)h+='<div class="flag d"><i>!</i><span>'+faN(d.lock.n)+' باخت پیاپی — تا فردا ورود تازه نه.</span></div>';
     {const dirs={long:0,short:0};for(const x of d.take)dirs[x.dir]++;h+=mktHtml(MKT,dirs);}
-    h+=asHtml();
     const list=GLALL?d.take:d.take.slice(0,GLMAX);
     list.forEach((x,i)=>h+=glSigHtml(x,i));
     if(d.take.length>list.length)h+='<button class="btn sm glmore" data-more="1">'+faN(d.take.length-list.length)+' سیگنال دیگر</button>';
+    // اول سیگنال‌های کانال، بعد پیشنهاد خود برنامه
+    h+=asHtml();
     if(d.late||d.lt||d.nost)h+='<div class="hint glskip">'+[d.nost?faN(d.nost)+' سیگنال بی‌استاپ (نه در متن، نه از سیگنال قبلی؛ برای ایزوله نه)':'',d.late?faN(d.late)+' سیگنال دیر رسیده (قیمت بیش از نیمی از راه تا تارگت 1 را رفته)':'',
       d.lt?faN(d.lt)+' سیگنال بلندمدت (اسپات یا استاپ دورتر از '+fmtNum(isoMaxSd())+'٪)':''].filter(Boolean).join(' · ')+' — در فهرست «در انتظار» هستند.</div>';
     if(d.dl)h+='<button class="glit" data-pos="'+esc(d.dl.p.id)+'"><b dir="ltr">'+esc(d.dl.p.ticker)+'</b><span>'+ic('clock')+(d.dl.t<=Date.now()?'مهلت گذشت — ببند':fmtLeft(d.dl.t-Date.now())+' تا پایان مهلت')+'</span></button>';
@@ -13833,7 +13848,6 @@ function paintGlance(){
     h+='</div>';
   }
   g.innerHTML=h;
-  g.querySelector('.glh').onclick=()=>{GLSHUT=!GLSHUT;lsSet(GLKEY,GLSHUT?1:0);paintGlance();};
   g.querySelectorAll('[data-sig]').forEach(b=>b.onclick=()=>advDo({t:'sig',id:b.dataset.sig}));
   g.querySelectorAll('[data-pos]').forEach(b=>b.onclick=()=>advDo({t:'pos',id:b.dataset.pos}));
   g.querySelectorAll('[data-bell]').forEach(b=>b.onclick=sheetAdvice);
