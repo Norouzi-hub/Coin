@@ -12,12 +12,16 @@ let PX_LOADING=null;
 const PX_TTL=20000;                        // قیمت تازه‌تر از 20 ثانیه دوباره گرفته نمی‌شود
 const FLASH=new Map(); let FLASH_AT=0;     // جهت آخرین تغییر هر نماد، برای چشمک سبز/قرمز
 const flashOf=t=>(t&&Date.now()-FLASH_AT<4000&&FLASH.get(t))||'';
-function applyPrices(m,srcName,route,ms){
+function applyPrices(m,srcName,route,ms,extra){
   FLASH.clear();
   for(const [k,v] of m){const o=PRICES.get(k);if(o!=null&&o!==v)FLASH.set(k,v>o?'u':'d');}
   FLASH_AT=Date.now();
-  const symChanged=m.size!==SYMBOLS.size;
-  PRICES=m;SYMBOLS=new Set(m.keys());priceSrc=srcName;PX_AT=Date.now();
+  // سپر دوم: اگر مارک پرایس فیوچرز (تازه) بیش از 20٪ با قیمت اسپات فرق دارد، قیمت اسپات یخ‌زده است
+  if(MARK_AT&&Date.now()-MARK_AT<5*60e3)for(const [k,v] of m){const mk=MARK.get(k);
+    if(mk>0&&Math.abs(v/mk-1)>0.2){m.set(k,mk);if(!PXBAD.has(k)){PXBAD.add(k);logIt('warn','قیمت '+k+' از '+srcName+' ('+v+') با مارک پرایس ('+mk+') جور نبود؛ مارک به کار رفت');}}}
+  const syms=new Set(m.keys());if(extra)for(const k of extra)syms.add(k);
+  const symChanged=syms.size!==SYMBOLS.size;
+  PRICES=m;SYMBOLS=syms;priceSrc=srcName;PX_AT=Date.now();
   if(symChanged)SYMVER++;
   Object.assign(H.px,{state:'ok',src:srcName,route,ms,at:PX_AT,n:m.size,err:null});
   savePxCache();
@@ -25,6 +29,59 @@ function applyPrices(m,srcName,route,ms){
   try{did=checkAutoExec();}catch(e){logIt('err','اجرای خودکار: '+e.message);}
   try{if(!did)checkAlerts();checkPending();}catch(e){}
   try{rbCheck();}catch(e){}
+}
+/* ---- نمادهای مرده‌ی بایننس ----
+   ارزی که بایننس از بازار اسپات حذف کرده (مثل XMR در 2024) هنوز با آخرین قیمتِ یخ‌زده‌اش در
+   ticker/price می‌آید؛ ورود با آن قیمت ثبت می‌شد و مارک پرایسِ واقعی بلافاصله از هدف رد بود.
+   هر 6 ساعت فهرستشان از ticker/24hr (بی معامله در 24 ساعت) گرفته می‌شود؛ قیمتشان از بایننس کنار
+   می‌رود و برای نمادهایی که لازم داریم از صرافی دیگر (تکی) گرفته می‌شود. نماد در فهرست نمادها می‌ماند. */
+const PXDKEY='signaldesk.pxdead.v1', PXBAD=new Set(), PXFILL=new Map();
+let PXDEAD=lsGet(PXDKEY)||{at:0,list:[]}, PXDBUSY=null;
+async function pxDeadLoad(){
+  if(PXDEAD.at&&Date.now()-PXDEAD.at<6*36e5)return PXDEAD;
+  if(PXDBUSY)return PXDBUSY;
+  PXDBUSY=(async()=>{
+    try{const got=await fetchVia('https://api.binance.com/api/v3/ticker/24hr?type=MINI',{json:true,timeout:15000,kind:'px',quiet:true,
+        label:'نمادهای حذف‌شده‌ی بایننس',validate:d=>Array.isArray(d)&&d.length>100});
+      const now=Date.now(),L=[];
+      for(const x of got.data){if(!/USDT$/.test(x.symbol))continue;const ct=+x.closeTime||0;
+        if((x.count!=null&&+x.count===0)||(ct&&now-ct>864e5))L.push(x.symbol.slice(0,-4));}
+      PXDEAD={at:now,list:L};lsSet(PXDKEY,PXDEAD);}
+    catch(e){PXDEAD=Object.assign({},PXDEAD,{at:Date.now()-5*36e5});}   // یک ساعت بعد دوباره
+    return PXDEAD;
+  })();
+  try{return await PXDBUSY;}finally{PXDBUSY=null;}
+}
+/* نمادهایی که قیمتشان واقعاً لازم است: پوزیشن‌ها، منتظرها، آزمایشی‌ها، رادار و سیگنال‌های 3 روز اخیر */
+function pxNeed(){
+  const s=new Set();
+  try{for(const p of DB.positions)if(p.status==='open'&&p.ticker)s.add(p.ticker);}catch(e){}
+  try{for(const w of DB.pending)if(w.ticker)s.add(w.ticker);}catch(e){}
+  try{for(const it of RB.items)if(it.st==='open')s.add(it.tk);for(const t of RD.rank)s.add(t);}catch(e){}
+  try{const cut=Date.now()-3*864e5;for(const p of POSTS)if(p.date&&+p.date>=cut){const g=sigOf(p);if(g&&g.ticker)s.add(g.ticker);}}catch(e){}
+  return s;
+}
+const PX_ONE=[
+  [t=>'https://api.mexc.com/api/v3/ticker/price?symbol='+t+'USDT',d=>+d.price],
+  [t=>'https://api.gateio.ws/api/v4/spot/tickers?currency_pair='+t+'_USDT',d=>Array.isArray(d)&&d[0]?+d[0].last:NaN],
+  [t=>'https://api.kucoin.com/api/v1/market/orderbook/level1?symbol='+t+'-USDT',d=>d&&d.data?+d.data.price:NaN],
+  [t=>'https://fapi.binance.com/fapi/v1/premiumIndex?symbol='+t+'USDT',d=>+d.markPrice]];
+async function pxOne(t){
+  const c=PXFILL.get(t);if(c&&Date.now()-c.at<PX_TTL)return c.px;
+  for(const [u,p] of PX_ONE){try{const got=await fetchVia(u(t),{json:true,timeout:7000,kind:'px',quiet:true,minLen:12,label:'قیمت '+t,validate:d=>p(d)>0});
+    const px=p(got.data);if(px>0){PXFILL.set(t,{px,at:Date.now()});return px;}}catch(e){}}
+  PXFILL.set(t,{px:null,at:Date.now()});return null;
+}
+/* قیمت‌های بایننس بی نمادهای مرده، با پرکردن نمادهای لازم از صرافی دیگر */
+async function pxFixDead(m){
+  if(!PXDEAD.at)await Promise.race([pxDeadLoad(),new Promise(r=>setTimeout(r,5000))]);
+  else if(Date.now()-PXDEAD.at>6*36e5)pxDeadLoad();
+  const dead=(PXDEAD.list||[]).filter(k=>m.has(k));if(!dead.length)return [];
+  for(const k of dead)m.delete(k);
+  const need=pxNeed(),todo=dead.filter(k=>need.has(k));
+  const got=await Promise.all(todo.map(k=>pxOne(k).catch(()=>null)));
+  todo.forEach((k,i)=>{if(got[i]>0)m.set(k,got[i]);});
+  return dead;
 }
 /* ---- مارک پرایس فیوچرز ---- */
 /* قیمت اصلی از بازار اسپات می‌آید، ولی صرافی استاپ فیوچرز را با «مارک پرایس» اجرا می‌کند؛ در
@@ -101,7 +158,8 @@ async function loadPrices(force){
           // مارک همان موقع شروع شده؛ اگر زود رسید با قیمت اسپات یک‌جا بررسی می‌شود
           await Promise.race([markP,new Promise(r=>setTimeout(r,1500))]);
           const late=!MARK_AT||Date.now()-MARK_AT>PX_TTL;
-          applyPrices(m,s.n,got.route,got.ms);
+          let dead=null;if(s.n==='Binance'){try{dead=await pxFixDead(m);}catch(e){}}
+          applyPrices(m,s.n,got.route,got.ms,dead);
           if(late)markP.then(ok=>{if(ok)onMarks();});
           return true;
         }catch(e){}

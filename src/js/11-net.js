@@ -72,7 +72,7 @@ async function tryRoute(route,url,opt,onCtrl){
     if(!r.ok){seen('HTTP '+r.status);return {ok:false,ms,status:r.status,why:'http',
       msg:r.status===429?'پروکسی گفت درخواست زیاد بوده (429)':'پاسخ HTTP '+r.status};}
     let body=await r.text();
-    if(!body||body.length<40){seen('پاسخ خالی');return {ok:false,ms,why:'empty',msg:'پاسخ خالی برگشت'};}
+    if(!body||body.length<(opt.minLen||40)){seen('پاسخ خالی');return {ok:false,ms,why:'empty',msg:'پاسخ خالی برگشت'};}
     if(route.unwrap){
       const inner=route.unwrap(body);
       if(inner==null){seen('پوسته باز نشد');return {ok:false,ms,why:'unwrap',msg:'پوسته‌ی پاسخ پروکسی باز نشد'};}
