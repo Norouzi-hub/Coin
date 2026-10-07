@@ -479,7 +479,7 @@ function audStats(rows){
   return s;
 }
 /* منحنی R تجمعی — همان زبانِ منحنی سرمایه‌ی کارنامه */
-function rCurve(pts,dd){
+function rCurve(pts,dd,title){
   if(pts.length<2)return el('div','hint','برای منحنی، دست‌کم دو سیگنالِ تعیین‌تکلیف‌شده لازم است.');
   const W=600,H=140,pad=8;
   const min=Math.min(0,...pts),max=Math.max(0,...pts),rng=(max-min)||1;
@@ -491,8 +491,8 @@ function rCurve(pts,dd){
   const area=d+'L'+X(pts.length-1).toFixed(1)+' '+zero.toFixed(1)+' L'+X(0).toFixed(1)+' '+zero.toFixed(1)+' Z';
   const w=el('div');
   w.innerHTML='<div style="font-size:12px;color:var(--tx2);font-weight:700;margin:12px 0 4px">'+
-    'اگر همه‌ی این سیگنال‌ها را با ریسک ثابت گرفته بودی · بیشترین افت از سقف: '+
-    '<span style="color:var(--dn);direction:ltr;display:inline-block">'+fmtR(-dd)+'</span></div>'+
+    (title||'اگر همه‌ی این سیگنال‌ها را با ریسک ثابت گرفته بودی · بیشترین افت از سقف: '+
+    '<span style="color:var(--dn);direction:ltr;display:inline-block">'+fmtR(-dd)+'</span>')+'</div>'+
     '<svg class="eq" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="--len:'+Math.ceil(len)+'">'+
     '<path d="'+area+'" fill="'+col+'" opacity=".10"/>'+
     '<line x1="0" y1="'+zero.toFixed(1)+'" x2="'+W+'" y2="'+zero.toFixed(1)+'" stroke="var(--line2)" stroke-width="1" stroke-dasharray="3 3"/>'+
@@ -507,6 +507,8 @@ let AUDOPEN=lsGet(AUDOPENKEY);if(AUDOPEN==null)AUDOPEN='کارنامه‌ی کا
 // بخش‌هایی که یکی شدند یا رفتند
 if(AUDOPEN==='آزمایشگاه خروج'||AUDOPEN==='خروج کوتاه')AUDOPEN='خروج';
 else if(AUDOPEN==='نمادها')AUDOPEN='';
+// نوسان‌سنج، صحت‌سنجی و «شما در برابر کانال» دیگر پنل جدا نیستند
+else if(['نوسان‌سنج','صحت‌سنجی','شما در برابر کانال'].includes(AUDOPEN))AUDOPEN='کارنامه‌ی کانال';
 function audAcc(n,name){
   n.dataset.acc=name;
   if(n.tagName==='DETAILS'){
@@ -529,9 +531,8 @@ function audAcc(n,name){
   n.addEventListener('click',e=>{if(n.classList.contains('shut')&&!head.contains(e.target))audAccToggle(n,name);});
 }
 const AUD_LAZY={'خروج':ic('flag')+'خروج: کدام قاعده بهتر جواب داده','سرمایه و الگوها':ic('trend')+'سرمایه و الگوها',
-  'نوسان‌سنج':'نوسان‌سنج: افت پیش از سود','شما در برابر کانال':'شما در برابر کانال','صحت‌سنجی':'صحت‌سنجی: کانال راست می‌گوید؟',
   'فهرست سیگنال‌ها':'همه‌ی سیگنال‌ها'};
-const AUD_LITE_HIDE=new Set(['فیلتر','نوسان‌سنج','شما در برابر کانال','صحت‌سنجی','سرمایه و الگوها']);
+const AUD_LITE_HIDE=new Set(['فیلتر','سرمایه و الگوها']);
 function audAccToggle(n,name){
   const y0=n.getBoundingClientRect().top, open=n.classList.contains('shut');
   if(open&&n.dataset.lazy){                               // پنلِ تنبل: حالا بساز، سربرگ سر جایش بماند
@@ -628,7 +629,14 @@ function renderAudit(){
    if(nd>0&&nd<SMALL_N)g.insertAdjacentHTML('beforeend','<div class="stnote">'+ic('info')+'<span>فقط '+faN(nd)+
      ' سیگنال به نتیجه رسیده — برای قضاوت درباره‌ی کانال دست‌کم '+faN(SMALL_N)+' لازم است.</span></div>');}
   sc.appendChild(g);
-  sc.appendChild(rCurve(st.curve,st.dd));
+  /* یک منحنی: سرمایه با «قاعده‌ی من» و ریسک دلاری (اگر داده‌اش هست)، وگرنه R قانون کانال‌سنج */
+  {const cc=capCurve(rows);
+   if(cc.pts.length>2)sc.appendChild(rCurve(cc.pts,cc.worst?cc.dd/cc.risk:0,
+     'سرمایه با '+(xRule()?'قاعده‌ی من':'قانون کانال‌سنج')+' و ریسک '+fmtUsd(cc.risk)+' در هر معامله: '+fmtUsd(cc.start)+' ← <b class="'+cls(cc.cap-cc.start)+'">'+fmtUsd(cc.cap)+'</b>'+
+     ' · بیشترین افت <span style="color:var(--dn)">'+fmtUsd(-cc.dd)+'</span>'));
+   else sc.appendChild(rCurve(st.curve,st.dd));}
+  // صحت‌سنجی در یک خط؛ جزئیات در برگه
+  sc.appendChild(verifyLine(all));
   if(st.late||st.chase)sc.appendChild(el('div','hint',
     (st.late?faN(st.late)+' سیگنال بعد از رسیدن قیمت به تارگت اول منتشر شده بود'+(AF.noLate?' (در آمار نیامده)':'')+'. ':'')+
     (st.chase?faN(st.chase)+' سیگنال وقتی منتشر شد که بیش از نیمی از راه تا تارگت طی شده بود.':'')));
@@ -638,9 +646,6 @@ function renderAudit(){
   // ترتیب به اهمیت برای هدفِ «خروج کوتاه در ایزوله»: خروج، بعد افت پیش از سود
   safe('خروج',()=>buildExitPanel(rows));
   safe('سرمایه و الگوها',()=>buildInsights(rows));
-  safe('نوسان‌سنج',()=>buildSwingPanel(rows));
-  safe('شما در برابر کانال',()=>buildVsChannel(rows));
-  safe('صحت‌سنجی',()=>buildVerify(all));
   safe('فهرست سیگنال‌ها',()=>buildAudList(rows));
 
   paintAudProgress();
@@ -765,32 +770,16 @@ function buildAudDiag(all){
   const last=AUDQ.at?'آخرین سنجش '+ageTxt(AUDQ.at):'هنوز سنجشی انجام نشده';
   d.appendChild(el('div','hint',last+(AUDQ.err?' · آخرین خطا: <span dir="ltr">'+esc(AUDQ.err)+'</span>':'')+
     (AUDSRC.$!=null&&AUD_SRC[AUDSRC.$]?' · منبع کندل: '+esc(AUD_SRC[AUDSRC.$].n):'')));
-  const out=el('div','audprobe');
+  // آزمایش منبع‌های کندل در همان برگه‌ی «وضعیت و عیب‌یابی» (یک جا برای همه‌ی تست‌های اتصال)
   const bt=el('button','btn sm',ic('wifi')+'<span>آزمایش اتصال کندل</span>');
-  bt.onclick=async()=>{
-    btnBusy(bt,true,'در حال آزمایش');out.innerHTML='';
-    const st=Date.now()-3*3600e3;
-    await Promise.all(AUD_SRC.map(async(src,i)=>{
-      const row=el('div','apr','<b>'+esc(src.n)+'</b><span class="m">…</span>');out.appendChild(row);
-      const t0=performance.now();
-      try{
-        const url=src.u('BTC',src.iv['5m'],Math.floor(st/3e5)*3e5,5);
-        const got=await fetchVia(url,{json:true,timeout:12000,kind:'px',label:'آزمایش کندل · '+src.n,validate:src.ok||(x=>Array.isArray(x))});
-        const n=audParse(src,got.data).length;
-        row.lastChild.className=n?'u':'w';
-        row.lastChild.textContent=n?'باز است · '+Math.round(performance.now()-t0)+'ms · '+got.route:'جواب داد ولی کندلی نداشت';
-      }catch(e){row.lastChild.className='d';const m=String(e&&e.message||e);
-        row.lastChild.textContent='بسته · '+(m==='no-route'?'از هیچ مسیری جواب نیامد':m.slice(0,90));}
-    }));
-    btnBusy(bt,false);
-  };
+  bt.onclick=sheetHealthCandles;
   const again=el('button','btn sm pri',ic('refresh')+'<span>سنجیدنِ سنجیده‌نشده‌ها</span>');
   again.onclick=()=>{
     for(const k in AUD){const a=AUD[k];if(a&&a.st==='bad'&&a.why==='nocandle'){a.tries=0;a.at=0;}}
     audSave();AUDQ.on=false;audRun(false);toast('سنجش شروع شد','info');
   };
   const row=el('div','srow');row.appendChild(bt);row.appendChild(again);
-  d.appendChild(row);d.appendChild(out);
+  d.appendChild(row);
   return d;
 }
 function buildAudFilter(all){
@@ -837,10 +826,8 @@ function buildAudFilter(all){
   return d;
 }
 
-/* صحت‌سنجی، جمع‌وجور: یک جمله‌ی نتیجه و سه عدد؛ فهرست‌ها (ادعاهای نادرست، ویرایش و حذف) زیر «جزئیات» */
-function buildVerify(all){
-  const c=el('div','panel');
-  c.appendChild(el('div','panelhead','<b>صحت‌سنجی: کانال راست می‌گوید؟</b>'));
+/* صحت‌سنجی: یک خط در «کارنامه‌ی کانال» (نتیجه + چند عدد)؛ با زدن، برگه‌ی جزئیات */
+function verifyData(all){
   const claims=claimsAll();
   const ok=claims.filter(x=>x.vd.v==='ok'), no=claims.filter(x=>x.vd.v==='no');
   /* «گزارش شد» یعنی کانال راستش را گفته: برای برد، ادعایی که کندل تأییدش کرد؛ برای
@@ -859,34 +846,45 @@ function buildVerify(all){
     :bad?'احتیاط: '+[no.length?faN(no.length)+' ادعای نادرست':'',gap>30?'بردها خیلی بیشتر از باخت‌ها گزارش می‌شوند':'',
         ed.length+gone.length?faN(ed.length+gone.length)+' پستِ ویرایش‌شده/حذف‌شده':''].filter(Boolean).join('، ')+'.'
     :warn?'تقریباً قابل اعتماد، با چند مورد مشکوک.':'تا اینجا گزارش‌های کانال با قیمت واقعی جور است.';
-  c.appendChild(el('div','flag '+(bad?'d':warn?'w':'u'),'<i>'+(bad?'!':'✓')+'</i><span>'+verdict+'</span>'));
-  const g=el('div','stats');
-  g.innerHTML=
-    stHtml('ادعای نادرست',faN(no.length),no.length?'d':'u','از '+faN(ok.length+no.length)+' ادعای سنجیده')+
-    stHtml('گزارش برد / باخت',pw==null||pl==null?'—':faN(pw.toFixed(0))+'٪ / '+faN(pl.toFixed(0))+'٪',enough&&gap>15?'d':'m',
-      enough?'چند درصد بردها و باخت‌ها را خودش گفت':'دست‌کم ۵ برد و ۵ باخت لازم است')+
-    stHtml('ویرایش عدد / حذف',faN(ed.length)+' / '+faN(gone.length),ed.length||gone.length?'d':'m','پست بعد از انتشار عوض شد');
-  c.appendChild(g);
-  if(no.length||ed.length||gone.length){
-    const d=el('details','sec sub2');
-    d.innerHTML='<summary>جزئیات</summary>';
-    for(const x of no.slice(0,8))d.appendChild(claimRow(x));
-    for(const [id,e] of ed.slice(0,6)){
+  return {ok,no,pw,pl,ed,gone,enough,gap,bad,warn,verdict};
+}
+function verifyLine(all){
+  const v=verifyData(all);
+  const b=el('button','flag vline '+(v.bad?'d':v.warn?'w':'u'),'<i>'+(v.bad?'!':'✓')+'</i><span><b>صحت‌سنجی:</b> '+v.verdict+
+    (!v.bad&&(v.no.length||v.ed.length||v.gone.length)?' <small>'+faN(v.no.length)+' ادعای نادرست · '+faN(v.ed.length)+' ویرایش · '+faN(v.gone.length)+' حذف</small>':'')+
+    '</span><em>جزئیات ›</em>');
+  b.type='button';b.onclick=()=>sheetVerify(all);
+  return b;
+}
+function sheetVerify(all){
+  const v=verifyData(all);
+  openSheet('<h3>صحت‌سنجی: کانال راست می‌گوید؟</h3><div id="vfBody"></div><div class="srow"><button class="btn" id="cx">بستن</button></div>',sh=>{
+    $('#cx').onclick=closeSheet;
+    const c=sh.querySelector('#vfBody');
+    c.appendChild(el('div','flag '+(v.bad?'d':v.warn?'w':'u'),'<i>'+(v.bad?'!':'✓')+'</i><span>'+v.verdict+'</span>'));
+    const g=el('div','stats');
+    g.innerHTML=
+      stHtml('ادعای نادرست',faN(v.no.length),v.no.length?'d':'u','از '+faN(v.ok.length+v.no.length)+' ادعای سنجیده')+
+      stHtml('گزارش برد / باخت',v.pw==null||v.pl==null?'—':faN(v.pw.toFixed(0))+'٪ / '+faN(v.pl.toFixed(0))+'٪',v.enough&&v.gap>15?'d':'m',
+        v.enough?'چند درصد بردها و باخت‌ها را خودش گفت':'دست‌کم ۵ برد و ۵ باخت لازم است')+
+      stHtml('ویرایش عدد / حذف',faN(v.ed.length)+' / '+faN(v.gone.length),v.ed.length||v.gone.length?'d':'m','پست بعد از انتشار عوض شد');
+    c.appendChild(g);
+    const go=p=>{closeSheet();setTimeout(()=>sheetAudPost(p),260);};
+    for(const x of v.no.slice(0,8)){const r=claimRow(x);if(x.tg)r.onclick=()=>go(x.tg.p);c.appendChild(r);}
+    for(const [id,e] of v.ed.slice(0,6)){
       const r=el('button','arow');
       r.innerHTML='<span class="pill lose">عدد عوض شد</span><span class="atx">'+esc((e.old||'').slice(0,70))+'</span>';
-      r.onclick=()=>{const p=POSTS.find(x=>x.id===id);if(p)sheetAudPost(p);};
-      d.appendChild(r);
+      r.onclick=()=>{const p=POSTS.find(x=>x.id===id);if(p)go(p);};
+      c.appendChild(r);
     }
-    for(const [id] of gone.slice(0,6)){
+    for(const [id] of v.gone.slice(0,6)){
       const p=POSTS.find(x=>x.id===id);
       const r=el('button','arow');
       r.innerHTML='<span class="pill lose">حذف شد</span><span class="atx">'+esc(p?(p.text||'').slice(0,70):id)+'</span>';
-      r.onclick=()=>{if(p)sheetAudPost(p);};
-      d.appendChild(r);
+      r.onclick=()=>{if(p)go(p);};
+      c.appendChild(r);
     }
-    c.appendChild(d);
-  }
-  return c;
+  });
 }
 function claimRow(x){
   const r=el('button','arow');

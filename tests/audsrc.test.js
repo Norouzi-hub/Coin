@@ -53,8 +53,9 @@ async function run(open){
  if(open==='gate'){
    await p.evaluate(()=>{document.querySelector('#audBody .audiag').open=true;});
    await p.$$eval('#audBody .audiag .btn',bs=>bs.find(b=>b.textContent.includes('آزمایش')).click());
-   await p.waitForFunction(()=>[...document.querySelectorAll('.audprobe .apr span')].every(s=>s.textContent!=='…'),{timeout:60000});
-   const pr=await p.$$eval('.audprobe .apr',e=>e.map(x=>x.querySelector('b').textContent+': '+x.querySelector('span').className));
+   // در برگه‌ی «وضعیت و عیب‌یابی»، جدول «کندل‌ها»
+   await p.waitForFunction(()=>document.querySelector('#diagBox .kdt')&&document.querySelector('#diagBox .flag'),{timeout:60000});
+   const pr=await p.$$eval('#diagBox .kdt tbody tr',e=>e.map(x=>x.cells[0].textContent+': '+(x.cells[1].textContent==='✓'?'u':'d')));
    console.log('  ',pr.join(' · '));
    ok(pr.find(x=>x.startsWith('Gate')).endsWith(': u')&&pr.find(x=>x.startsWith('Binance:')).endsWith(': d'),'آزمایش اتصال: Gate باز، بایننس بسته');
    await p.screenshot({path:require('./lib').out('audiag.png'),fullPage:false});

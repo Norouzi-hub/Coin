@@ -21,7 +21,7 @@ const html = `<html><body><div class="tgme_widget_message" data-post="c/1893051/
   // باز کردن فرم ورود
   // «بررسی و ورود» حالا یک مرحله است: مستقیم فرم ورود
   await p.evaluate(() => [...document.querySelectorAll('#list .card button')]
-    .find(b => b.textContent.includes('بررسی و ورود')).click());
+    .find(b => /بررسی و ورود|فرم کامل/.test(b.textContent)).click());
 
   await p.waitForTimeout(600);
 

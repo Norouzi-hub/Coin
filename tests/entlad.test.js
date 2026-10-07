@@ -24,7 +24,7 @@ const html = `<html><body>
   console.log('=== نردبان در فرم ورود ===');
   // «بررسی و ورود» حالا یک مرحله است: مستقیم فرم ورود
   await p.evaluate(() => [...document.querySelectorAll('#list .card button')]
-    .find(b => b.textContent.includes('بررسی و ورود')).click());
+    .find(b => /بررسی و ورود|فرم کامل/.test(b.textContent)).click());
 
   await p.waitForTimeout(800);
   console.log('  نردبان:', await p.$('#entLad .ladder') ? '✅ هست' : '❌ نیست');

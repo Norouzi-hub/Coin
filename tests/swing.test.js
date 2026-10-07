@@ -1,4 +1,4 @@
-/* نوسان‌سنج: موتور روی یک مسیر ساختگی با جواب معلوم، و رابط در کانال‌سنج (فقط با دکمه) */
+/* نوسان‌سنج: موتور روی یک مسیر ساختگی با جواب معلوم، برگه‌ی نوسان یک سیگنال، و تب اسکلپ */
 const {pw}=require('./lib');const {chromium}=pw;const {route,seed}=require('./fixture');
 let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);};
 (async()=>{
@@ -44,28 +44,19 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    return A.map(k=>[new Date(k.t).toISOString().slice(11,16),k.o,k.h,k.l,k.c].join(':'));});
  ok(ag.join(' ')==='00:00:10:16:9:15.5 00:30:16:18:15:17.5','۸ کندل ۵ دقیقه‌ای → ۲ کندل ۳۰ دقیقه‌ای (باز/سقف/کف/بسته درست): '+ag.join(' '));
 
- console.log('=== رابط: آکاردئون کانال‌سنج ===');
+ console.log('=== رابط: نوسانِ یک سیگنال از برگه‌ی خودش (پنل جدا در کانال‌سنج برداشته شد) ===');
  await p.evaluate(()=>{AF.noLate=false;SWOPT.style='range';swOptSave();localStorage.removeItem('signaldesk.audopen.v1');AUDOPEN='کارنامه‌ی کانال';go('audit',true);});
  await p.waitForTimeout(6000);                      // کانال‌سنج خودش سیگنال‌ها را می‌سنجد (کار قبلی)
- const acc=await p.evaluate(()=>[...document.querySelectorAll('#audBody .panel.acc')].map(x=>x.dataset.acc+':'+(x.classList.contains('shut')?0:1)));
+ const acc=await p.evaluate(()=>[...document.querySelectorAll('#audBody [data-acc]')].map(x=>x.dataset.acc));
  console.log('   ',acc.join(' | '));
- ok(acc.filter(x=>x.endsWith(':1')).length===1&&acc.includes('کارنامه‌ی کانال:1'),'فقط «کارنامه‌ی کانال» باز است؛ بقیه بسته');
- await p.evaluate(()=>document.querySelector('#audBody .panel.acc[data-acc="نوسان‌سنج"] > .panelhead').click());
- const acc2=await p.evaluate(()=>[...document.querySelectorAll('#audBody .panel.acc')].filter(x=>!x.classList.contains('shut')).map(x=>x.dataset.acc));
- ok(acc2.length===1&&acc2[0]==='نوسان‌سنج','زدن روی «نوسان‌سنج»: همان باز شد و کارنامه بسته شد');
- const subs=await p.evaluate(()=>({sec:document.querySelectorAll('#audBody .swsec').length,sig:!!document.querySelector('#audBody .swsig'),tok:!!document.querySelector('#audBody #swTk')}));
- ok(subs.sec===0&&subs.sig&&!subs.tok,'نوسان‌سنجِ کانال‌سنج فقط سیگنال‌ها را دارد؛ ابزار توکن در تب اسکلپ است');
-
- console.log('=== سیگنال‌ها: فقط با دکمه ===');
+ ok(!acc.includes('نوسان‌سنج')&&!(await p.$('#audBody .swsig')),'کانال‌سنج دیگر پنل «نوسان‌سنج» ندارد');
  ok(await p.evaluate(()=>Object.keys(SWING).length)===0,'باز کردن کانال‌سنج: نوسان چیزی نسنجید');
- const btn=await p.evaluate(()=>{const b=[...document.querySelectorAll('.swp .btn')].find(x=>/سنجش نوسان/.test(x.textContent));return b&&{t:b.textContent,d:b.disabled};});
- ok(btn&&!btn.d,'دکمه: '+(btn&&btn.t));
- await p.evaluate(()=>[...document.querySelectorAll('.swp .btn')].find(x=>/سنجش نوسان/.test(x.textContent)).click());
- for(let i=0;i<120&&await p.evaluate(()=>SWQ.on);i++)await p.waitForTimeout(500);
- const agg=await p.evaluate(()=>({n:Object.keys(SWING).length,stats:[...document.querySelectorAll('.swp .stats .st b')].map(x=>x.textContent),items:document.querySelectorAll('.swp .swit').length}));
- ok(agg.n>=3&&agg.stats.includes('افت پیش از سود')&&agg.stats.includes('نزدیک استاپ')&&agg.stats.length===3&&agg.items>=1,'بعد از دکمه: فقط افت پیش از سود و نزدیک استاپ، و فهرست ('+agg.n+')');
- await p.evaluate(()=>document.querySelector('.swp .swit').click());await p.waitForTimeout(500);
- ok(await p.evaluate(()=>/لمس تارگت ۱|نزدیک استاپ/.test(document.querySelector('#sheet').textContent)&&!!document.querySelector('#sheet .swsvg')),'جزئیات یک سیگنال با نمودار');
+ const sid=await p.evaluate(()=>{const x=audRows().find(x=>x.r&&x.r.tAct&&x.inp.tk&&!audPre(x.inp));if(!x)return null;sheetSwing(x.p);return x.p.id;});
+ await p.waitForTimeout(400);
+ ok(sid&&await p.evaluate(()=>/هنوز سنجیده نشده/.test(document.querySelector('#sheet').textContent)&&!!document.querySelector('#swGo')),'برگه‌ی نوسان یک سیگنال: «بسنج» '+sid);
+ await p.evaluate(()=>document.querySelector('#swGo').click());
+ for(let i=0;i<60&&!(await p.evaluate(()=>!!document.querySelector('#sheet .swsvg')));i++)await p.waitForTimeout(400);
+ ok(await p.evaluate(id=>!!SWING[id]&&/لمس تارگت ۱|نزدیک استاپ/.test(document.querySelector('#sheet').textContent)&&!!document.querySelector('#sheet .swsvg'),sid),'جزئیات یک سیگنال با نمودار');
  await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
 
  console.log('=== تایم‌فریم دستی (تب اسکلپ) ===');
@@ -73,8 +64,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(await p.evaluate(()=>view==='scalp'&&scView()==='opt'&&!!document.querySelector('.swtf')),'تنظیم تایم‌فریم در تب اسکلپ، صفحه‌ی «تنظیم»');
  await p.evaluate(()=>[...document.querySelectorAll('.swtf .pbc')].find(b=>b.textContent==='۳ دقیقه').click());await p.waitForTimeout(300);
  ok(await p.evaluate(()=>SWOPT.tf==='3m'&&/کندل ۳ دقیقه/.test(document.querySelector('#scBody .scsum').textContent)),'۳ دقیقه انتخاب شد (در خلاصه‌ی بالای تب)');
- await p.evaluate(()=>go('audit',true));await p.waitForTimeout(600);
- ok(await p.evaluate(()=>/^0 از/.test(document.querySelector('#audBody .swsig .hint').textContent)),'تایم‌فریم عوض شد ← نتیجه‌های قبلی برای این تنظیم معتبر نیست: '+await p.evaluate(()=>document.querySelector('#audBody .swsig .hint').textContent));
+ ok(await p.evaluate(id=>{const q=POSTS.find(x=>x.id===id);return !swOf(q,audInput(q));},sid),'تایم‌فریم عوض شد ← نتیجه‌ی قبلی برای این تنظیم معتبر نیست');
  await p.evaluate(()=>go('scalp',true));await p.waitForTimeout(400);
  const ivs=[];p.on('request',r=>{const m=r.url().match(/interval=(\w+)/);if(m)ivs.push(m[1]);});
 

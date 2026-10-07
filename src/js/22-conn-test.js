@@ -1,8 +1,10 @@
 /* ==================== تست اتصال ==================== */
 /* همه‌ی مسیرها را یکی‌یکی امتحان می‌کند و نتیجه‌ی هر کدام را جدا برمی‌گرداند */
-async function runDiag(onRow){
+async function runDiag(onRow,only){
   logIt('info','— شروع تست اتصال —');
   const rows=[];
+  // only==='kd': فقط منبع‌های کندل (دکمه‌ی «آزمایش اتصال» در کانال‌سنج)
+  if(only==='kd'){await diagCandles(rows,onRow);logIt('info','— پایان تست اتصال —');return rows;}
   const url=tgUrl(null);
   for(const route of allRoutes()){
     const busyRow={kind:'tg',name:route.name,busy:true};
@@ -20,6 +22,7 @@ async function runDiag(onRow){
     logIt(res.ok?'ok':'warn','تست قیمت · '+s.n+' — '+busyRow.msg,{route:'مستقیم',ms:res.ms,status:res.status,why:res.why});
     onRow&&onRow(busyRow);
   }
+  await diagCandles(rows,onRow);
   logIt('info','— پایان تست اتصال —');
   // مسیری که در تست جواب داد، همان لحظه مسیر پیش‌فرض می‌شود تا بروزرسانی بعدی از آن برود
   const win=rows.find(r=>r.kind==='tg'&&r.ok);
@@ -30,3 +33,19 @@ async function runDiag(onRow){
   return rows;
 }
 
+/* منبع‌های کندل کانال‌سنج: از هر کدام چند کندل ۵ دقیقه‌ای بیت‌کوین، هم‌زمان (از هر مسیری که باز است) */
+async function diagCandles(rows,onRow){
+  const st=Date.now()-3*3600e3;
+  await Promise.all(AUD_SRC.map(async src=>{
+    const row={kind:'kd',name:src.n,busy:true};rows.push(row);onRow&&onRow(row);
+    const t0=performance.now();
+    try{
+      const url=src.u('BTC',src.iv['5m'],Math.floor(st/3e5)*3e5,5);
+      const got=await fetchVia(url,{json:true,timeout:12000,kind:'px',label:'آزمایش کندل · '+src.n,validate:src.ok||(x=>Array.isArray(x))});
+      const n=audParse(src,got.data).length;
+      Object.assign(row,{busy:false,ok:!!n,ms:Math.round(performance.now()-t0),msg:n?'باز است · '+got.route:'جواب داد ولی کندلی نداشت'});
+    }catch(e){const m=String(e&&e.message||e);
+      Object.assign(row,{busy:false,ok:false,msg:'بسته · '+(m==='no-route'?'از هیچ مسیری جواب نیامد':m.slice(0,90))});}
+    onRow&&onRow(row);
+  }));
+}

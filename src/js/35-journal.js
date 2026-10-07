@@ -59,6 +59,7 @@ function journalPanel(list){
     (viol.length?'<div class="hint">'+faN(viol.length)+' معامله با تخلف: جمعاً '+fmtUsd(vs.pnl)+
       (cost<0?'؛ اگر مثل بقیه‌ی معامله‌هایت بودند حدود <b>'+fmtUsd(-cost)+'</b> بیشتر داشتی':'')+'.</div>':''),true);
   if(viol.length)sec('تخلف‌ها',table(Object.keys(VIOL_FA).map(k=>[VIOL_FA[k],viol.filter(p=>p.viol.some(v=>v.k===k))])));
+  sec('چرا بستی',table(by(p=>p.why?WHY_FA[p.why]||p.why:'بدون برچسب')),list.some(p=>p.why));
   sec('ستاپ',table(by(p=>p.setup||'بدون برچسب')));
   sec('حال موقع ورود',table(by(p=>p.mood?MOOD_FA[p.mood]||p.mood:'بدون برچسب')));
   sec('روز هفته (روز ورود)',table(by(p=>p.openedAt?WEEK_FA[new Date(p.openedAt).getDay()]:null,[6,0,1,2,3,4,5].map(i=>WEEK_FA[i]))));
@@ -73,7 +74,7 @@ const SMALL_N=10;
 /* برچسب «فیلتر» کانال‌سنج باید بگوید چه چیزی کنار رفته؛ «دیرهنگام‌ها» پیش‌فرض کنار می‌روند و
    قبلاً بی‌توضیح «8 از 9» دیده می‌شد */
 function audFilterPill(all,rows){
-  const user=(AF.dir!=='all')+(AF.mkt!=='all')+(!!AF.rr)+(!!AF.span)+(!!AF.sym);
+  const user=(AF.dir!=='all')+(AF.mkt!=='all')+(!!AF.rr)+(!!AF.span)+(!!AF.sym)+(!!AF.iso);
   const late=AF.noLate?all.filter(x=>x.r&&x.r.late).length:0;
   const t=user?'فیلتر: '+faN(rows.length)+' از '+faN(all.length):faN(late)+' دیرهنگام در آمار نیامد';
   return '<span class="pill gold" title="از بخش «فیلتر» عوضش کن">'+t+'</span>';
@@ -149,24 +150,15 @@ function equityCurve(closed){
   svg.addEventListener('pointermove',show);svg.addEventListener('pointerdown',show);
   return wrap;
 }
-/* پراکندگی نتیجه‌ها بر حسب R: چند معامله کمتر از یک ریسک باختند، چندتا بالای 2R بردند.
-   بدون R (استاپ نداشته) در این نمودار نمی‌آید. */
-function rDist(closed){
-  const rs=closed.map(p=>posMetrics(p).r).filter(v=>v!=null&&isFinite(v));
-  if(rs.length<3)return el('div','hint','برای پراکندگی R دست‌کم سه معامله‌ی بسته‌شده با حد ضرر لازم است.');
-  // بازه‌ها فقط با نماد، بدون کلمه‌ی فارسی وسطشان، تا جهت متن به هم نریزد
-  const B=[['< −1R',-Infinity,-1,'d'],['−1R … −0.5R',-1,-.5,'d'],['−0.5R … 0',-.5,0,'d'],
-    ['0 … 1R',0,1,'u'],['1R … 2R',1,2,'u'],['2R … 3R',2,3,'u'],['≥ 3R',3,Infinity,'u']];
-  const n=B.map(([,a,b])=>rs.filter(v=>v>=a&&v<b).length), mx=Math.max(...n)||1;
-  const w=el('div','rdist');
-  w.innerHTML='<div class="rdt">پراکندگی نتیجه‌ها (R) · '+faN(rs.length)+' معامله</div>'+
-    B.map(([l,,,c],i)=>'<div class="rdr"><span dir="ltr">'+l+'</span><i><s class="'+c+'" style="width:'+(n[i]/mx*100)+'%"></s></i><b>'+faN(n[i])+'</b></div>').join('');
-  return w;
-}
 /* جای گزارش قدیمیِ «نگرفته‌ها» که با قیمت همین لحظه حساب می‌کرد: همان مقایسه، ولی با
    نتیجه‌ی واقعیِ کانال‌سنج. اگر هنوز سنجیده نشده، سنجش همین‌جا شروع می‌شود. */
-function repVsChannel(){
+function repVsChannel(list){
   const c=buildVsChannel(audRows());
+  // «اجرای تو در برابر قاعده‌ی من» هم همین‌جا: سه مقایسه در یک بخش
+  const vr=vsRule(list||[]);
+  if(vr){const gap=vr.me-vr.ru;
+    c.appendChild(el('div','flag '+(gap<-0.3?'d':gap>0.3?'u':'i'),'<i>'+(gap<-0.3?'!':'✓')+'</i><span>در برابر قاعده‌ی من: روی '+faN(vr.n)+' معامله‌ای که از سیگنال گرفتی، خودت '+fmtR(vr.me)+
+      '، اگر دقیقاً «قاعده‌ی من» را اجرا کرده بودی '+fmtR(vr.ru)+'. '+(gap<-0.3?'اجرای دستی‌ات '+fmtR(gap)+' هزینه داشته.':gap>0.3?'اجرای تو بهتر از قاعده بوده.':'تقریباً همان.')+'</span>'));}
   if(!AUDQ.on&&Date.now()-AUDQ.at>60000&&audJobs().length)setTimeout(()=>audRun(),50);
   return c;
 }

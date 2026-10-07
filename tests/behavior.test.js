@@ -17,13 +17,14 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    const n=buildBehavior(inR);document.body.appendChild(n);
    const t=n.textContent, strip=n.querySelectorAll('.daystrip i').length, stripU=n.querySelectorAll('.daystrip i.u').length;
    const w=weekSummary(), vr=vsRule(inR);n.remove();
-   return {t,strip,stripU,w:{n:w.n,pnl:+w.pnl.toFixed(2),fees:+w.fees.toFixed(2)},vr};});
+   const j=journalPanel(inR), why=[...j.querySelectorAll('details')].find(d=>/چرا بستی/.test(d.querySelector('summary').textContent));
+   return {t,strip,stripU,w:{n:w.n,pnl:+w.pnl.toFixed(2),fees:+w.fees.toFixed(2)},vr,why:why&&why.textContent};});
  console.log('   ',JSON.stringify(Object.assign({},r,{t:r.t.slice(0,160)})));
  // سود: (110-100)*0.5 −0.05 = 4.95 ؛ (95-100)*0.5 −0.05 = −2.55 ؛ (104-100)*0.5 −0.05 = 1.95 → 4.35 در ۸ ساعت
  ok(/سود هر ساعت\$0\.54/.test(r.t),'سود هر ساعت: ۴٫۳۵ دلار در ۸ ساعت ≈ ۰٫۵۴');
  ok(/هدف این ماه\$4\.35 از \$20\.00/.test(r.t),'هدف ماهانه: ۴٫۳۵ از ۲۰ دلار (۲۰٪ حساب)');
  ok(/کارمزد این ماه/.test(r.t)&&r.w.fees===0.15,'کارمزد: ۰٫۱۵ دلار در ۳ معامله');
- ok(/تارگت · 1/.test(r.t)&&/ترس · 1/.test(r.t)&&/سقف زمان · 1/.test(r.t),'«چرا بستی»: تارگت، ترس، سقف زمان');
+ ok(r.why&&/چرا بستی/.test(r.why)&&/تارگت/.test(r.why)&&/ترس/.test(r.why)&&/سقف زمان/.test(r.why)&&!/چرا بستی/.test(r.t),'«چرا بستی» در دفتر معامله (نه در «رفتار و هدف»): تارگت، ترس، سقف زمان');
  ok(r.vr&&r.vr.n===2&&Math.abs(r.vr.ru)<1e-9&&Math.abs(r.vr.me-0.48)<0.01,'در برابر قاعده: خودت +0.48R (با کارمزد)، قاعده 0R روی ۲ معامله');
  ok(r.strip===30&&r.stripU===1,'نوار ۳۰ روز، امروز سبز');
  ok(r.w.n===3&&r.w.pnl===4.35&&/هفتگی/.test(r.t),'خلاصه‌ی هفتگی: ۳ معامله، ۴٫۳۵ دلار');

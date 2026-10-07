@@ -319,33 +319,6 @@ async function swOne(p,inp,o){
   return swingProfile(inp,C,r,o);
 }
 
-/* ---- صف سنجش: فقط با دکمه ---- */
-const SWQ={on:false,n:0,done:0,fail:0,stop:false};
-async function swRun(list){
-  if(SWQ.on)return;
-  const o=Object.assign({},SWOPT);
-  Object.assign(SWQ,{on:true,n:list.length,done:0,fail:0,stop:false});
-  paintSwProg();
-  const work=list.slice();
-  const worker=async()=>{
-    while(work.length&&!SWQ.stop){
-      const {p,inp}=work.shift();
-      try{const prof=await swOne(p,inp,o);SWING[p.id]={k:swKey(inp,o),at:Date.now(),prof};}
-      catch(e){SWQ.fail++;}
-      SWQ.done++;paintSwProg();
-    }
-  };
-  await Promise.all([worker(),worker()]);       // دو تا هم‌زمان؛ بیشتر، منبع‌های کندل را خسته می‌کند
-  swSave();SWQ.on=false;
-  if(!$('#vAudit').classList.contains('hide'))renderAudit();
-  toast(SWQ.stop?'سنجش نوسان نیمه‌کاره متوقف شد':'نوسان '+faN(SWQ.done-SWQ.fail)+' سیگنال سنجیده شد','ok');
-}
-function paintSwProg(){
-  const b=$('#swProg');if(!b)return;
-  b.classList.toggle('hide',!SWQ.on);
-  if(SWQ.on)b.innerHTML='<i style="width:'+(SWQ.n?SWQ.done/SWQ.n*100:0).toFixed(1)+'%"></i><span>'+faN(SWQ.done)+' از '+faN(SWQ.n)+
-    (SWQ.fail?' · '+faN(SWQ.fail)+' ناموفق':'')+'</span>';
-}
 const swOf=(p,inp)=>{const s=SWING[p.id];return s&&s.k===swKey(inp,SWOPT)?s.prof:null;};
 
 /* ---- نمودار کوچک: حرکت قیمت (٪ در جهت معامله) با خط‌های ورود، باند، تارگت ۱ و استاپ ---- */
@@ -369,16 +342,8 @@ const fmtNum=v=>v==null||!isFinite(v)?'—':String(+(+v).toFixed(v<1?2:1));
 
 /* ---- پنل‌ها ----
    تب اسکلپ: دو بخشِ آکاردئونی (فقط یکی باز): تنظیم‌ها، بررسی توکن و سناریوی دستی.
-   کانال‌سنج: فقط نوسانِ سیگنال‌های کانال (با همان تنظیم‌ها). */
+   نوسانِ یک سیگنال: از برگه‌ی همان سیگنال در کانال‌سنج («نوسان»، sheetSwing). */
 const swRerender=()=>{if(view==='scalp')renderScalp();else if(view==='audit')renderAudit();};
-/* پنل نوسان‌سنج در کانال‌سنج (تب اسکلپ صفحه‌های خودش را دارد: 30c-scalpbot.js) */
-function buildSwingPanel(rows){
-  const c=el('div','panel swp');
-  c.appendChild(el('div','panelhead','<b>نوسان‌سنج: افت پیش از سود</b><span class="markhint">فقط وقتی بزنی می‌سنجد</span>'));
-  c.appendChild(el('div','hint','سیگنال‌های برنده پیش از رسیدن به سود چقدر به استاپ نزدیک شدند؟ جواب می‌گوید استاپ را چقدر می‌شود نزدیک‌تر گذاشت (برای ایزوله).'));
-  c.appendChild(swSigBody(rows,SWOPT));
-  return c;
-}
 /* تنظیم‌های سنجش (تب اسکلپ، صفحه‌ی «تنظیم») */
 function swOptBody(b){
   const o=SWOPT;
@@ -483,30 +448,6 @@ function swTokBody(b){
   paintSwCoin();
   },0);
   }
-/* نوسانِ سیگنال‌های کانال (داخل کانال‌سنج) */
-function swSigBody(rows,o){
-  const b=el('div','swsig');
-  const meas=rows.filter(x=>x.inp.tk&&!audPre(x.inp)&&x.r&&x.r.tAct);
-  const have=meas.filter(x=>swOf(x.p,x.inp)), todo=meas.filter(x=>!swOf(x.p,x.inp));
-  b.appendChild(el('div','hint',faN(have.length)+' از '+faN(meas.length)+' سیگنال سنجیده'+(AF.sym?' · '+esc(AF.sym):'')+(SWQ.on?' · در حال سنجش':'')));
-  const bar=el('div','srow');
-  const bRun=el('button','btn pri sm',ic('bars')+'<span>'+(todo.length?'سنجش نوسان '+faN(todo.length)+' سیگنال':'همه سنجیده شده‌اند')+'</span>');
-  bRun.disabled=!todo.length||SWQ.on;
-  bRun.onclick=()=>swRun(todo.map(x=>({p:x.p,inp:x.inp})));
-  bar.appendChild(bRun);
-  if(have.length){const bAll=el('button','btn sm','دوباره همه ('+faN(meas.length)+')');bAll.disabled=SWQ.on;
-  bAll.onclick=()=>swRun(meas.map(x=>({p:x.p,inp:x.inp})));bar.appendChild(bAll);}
-  const bStop=el('button','btn sm'+(SWQ.on?'':' hide'),'توقف');bStop.onclick=()=>{SWQ.stop=true;};
-  bar.appendChild(bStop);
-  b.appendChild(bar);
-  const pg=el('div','audprog'+(SWQ.on?'':' hide'));pg.id='swProg';b.appendChild(pg);
-  if(!meas.length)b.appendChild(el('div','hint','هنوز سیگنالِ فعال‌شده‌ای در کانال‌سنج نیست؛ اول باید سنجیده شوند (ورودشان فعال شده باشد).'));
-  else if(!have.length)b.appendChild(el('div','hint',faN(meas.length)+' سیگنال آماده‌ی سنجش'+(AF.sym||AF.dir!=='all'||AF.span?' (با فیلتر بالا)':'')+
-  '. برای هر کدام کندل '+SW_TF[o.tf||'5m']+' گرفته می‌شود؛ چند دقیقه طول می‌کشد.'));
-  else b.appendChild(swAggregate(have));
-  setTimeout(paintSwProg,0);
-  return b;
-}
 /* نمایش اسکلپ رنج. full: فهرست کامل معامله‌ها (سناریوی دستی)؛ وگرنه فقط خلاصه */
 const swMg=()=>+normDig(String(SWOPT.mg||'')).replace(/,/g,'')||+S.cap||10;
 function scalpHtml(sc,full){
@@ -671,44 +612,6 @@ function paintSwCoin(){
   const ul=$('#swUseL'), us=$('#swUseS');
   if(ul)ul.onclick=()=>use('long',pr.supp,pr.res);
   if(us)us.onclick=()=>use('short',pr.res,pr.supp);
-}
-/* جمع‌بندی سیگنال‌های سنجیده‌شده + جدول نماد + پرنوسان‌ترین‌ها */
-/* فقط دو چیز که برای تصمیمِ «استاپ نزدیک‌تر» به کار می‌آید: افت پیش از سود و نزدیک استاپ */
-function swAggregate(have){
-  const w=el('div');
-  const P=have.map(x=>({x,pr:swOf(x.p,x.inp)})).filter(z=>z.pr&&z.pr.act);
-  if(!P.length){w.appendChild(el('div','hint','هیچ‌کدام از سیگنال‌های سنجیده‌شده در این بازه داده نداشتند.'));return w;}
-  const avg=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:null;
-  const pct=(n,d)=>d?Math.round(n/d*100):null;
-  const withTp=P.filter(z=>z.pr.tpN>0), mb=withTp.filter(z=>z.pr.maeBR!=null);
-  const near=+SWOPT.near||0.75;
-  const nearAny=P.filter(z=>z.pr.nearN>0).length;
-  const nearBefore=mb.filter(z=>z.pr.maeBR<=-near).length;
-  // چند درصد برنده‌ها با استاپِ ۷۵٪ و ۵۰٪ فاصله هم زنده می‌ماندند
-  const keep=k=>pct(mb.filter(z=>z.pr.maeBR>-k).length,mb.length);
-  const st=el('div','stats');
-  st.innerHTML=
-    stHtml('سنجیده',faN(P.length),'',faN(withTp.length)+' به تارگت ۱ رسید')+
-    stHtml('افت پیش از سود',mb.length?fmtR(avg(mb.map(z=>z.pr.maeBR))):'—','d',
-      nearBefore?faN(nearBefore)+' تا پیش از سود تا نزدیک استاپ رفتند':'میانگین، پیش از تارگت ۱')+
-    stHtml('نزدیک استاپ',pct(nearAny,P.length)+'٪',nearAny?'w':'u','دست‌کم یک بار تا −'+fmtNum(near)+'R');
-  w.appendChild(st);
-  if(mb.length>=3)w.appendChild(el('div','swtips','<ul>'+
-    '<li>با استاپ <b>۷۵٪</b> فاصله، '+keep(0.75)+'٪ برنده‌ها زنده می‌ماندند؛ با <b>۵۰٪</b>، '+keep(0.5)+'٪.</li>'+
-    (pct(nearBefore,mb.length)>=30?'<li>'+pct(nearBefore,mb.length)+'٪ برنده‌ها پیش از سود تا نزدیک استاپ رفته‌اند؛ استاپ تنگ‌تر برنده‌ها را هم می‌بُرد.</li>':'')+
-    '</ul>'));
-  w.appendChild(el('div','sechd','بیشترین افت پیش از سود'));
-  const L=el('div','swlist');
-  for(const z of mb.slice().sort((a,b)=>a.pr.maeBR-b.pr.maeBR).slice(0,8)){
-    const it=el('button','swit');it.type='button';
-    it.innerHTML='<div class="swh"><b dir="ltr">'+esc(z.x.inp.tk)+'</b><span class="pill '+z.x.inp.dir+'">'+(z.x.inp.dir==='long'?'لانگ':'شورت')+'</span>'+
-      '<span>'+(z.x.p.date?jStampFa(z.x.p.date).slice(0,10):'')+'</span><span class="d" dir="ltr">'+fmtR(z.pr.maeBR)+'</span></div>'+swSvg(z.pr.spark,swLines(z.pr),46);
-    it.onclick=()=>sheetSwing(z.x.p);
-    L.appendChild(it);
-  }
-  w.appendChild(L);
-  w.appendChild(el('div','hint','عددها از لحظه‌ی فعال شدن ورود، '+SW_WIN[SWOPT.win]+'؛ R یعنی فاصله‌ی ورود تا استاپ کانال.'));
-  return w;
 }
 /* جزئیات نوسانِ یک سیگنال؛ اگر سنجیده نشده، همین‌جا با یک دکمه */
 function sheetSwing(p){

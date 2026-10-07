@@ -75,7 +75,7 @@ function buildInsights(rows){
     stHtml('بدترین سری',faN(cc.worst)+' باخت',cc.worst>=4?'d':'','پشت سر هم')+
     stHtml('سود هر ساعت',cc.perH==null?'—':fmtUsd(cc.perH),cc.perH==null?'m':cls(cc.perH),cc.hold!=null?'میانگین نگه‌داری '+fmtNum(cc.hold)+' ساعت':'');
   c.appendChild(g);
-  if(cc.pts.length>2)c.appendChild(rCurve(cc.pts,cc.worst?cc.dd/cc.risk:0));
+  // منحنی همین سرمایه در «کارنامه‌ی کانال» است
   // ۳۰) در برابر نگه‌داشتن بیت‌کوین
   const bt=el('div','hint btcref');c.appendChild(bt);
   if(cc.t0)btcRef(cc.t0).then(o=>{const now=PRICES.get('BTC');if(!o||!now){bt.textContent='';return;}

@@ -16,7 +16,7 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
  await p.waitForTimeout(3500);
  await p.evaluate(()=>{PRICES=new Map([['BTC',65000],['ETH',3000]]);SYMBOLS=new Set(PRICES.keys());SYMVER++;sigFilter='all';renderAll();});
  await p.waitForTimeout(300);
- const open=async n=>{await p.evaluate(n=>[...document.querySelectorAll('#list .card')].find(c=>c.dataset.id.endsWith('/'+n)).querySelector('.brief .btn.ok').click(),n);await p.waitForTimeout(500);};
+ const open=async n=>{await p.evaluate(n=>[...[...document.querySelectorAll('#list .card')].find(c=>c.dataset.id.endsWith('/'+n)).querySelectorAll('.brief .acts .btn')].find(b=>/بررسی و ورود|فرم کامل/.test(b.textContent)).click(),n);await p.waitForTimeout(500);};
  // یک مرحله
  await open(739);
  ok(!!(await p.$('#levRow .levtrack')),'«بررسی و ورود» مستقیم فرم ورود را باز کرد');

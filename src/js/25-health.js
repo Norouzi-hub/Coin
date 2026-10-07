@@ -92,12 +92,17 @@ function diagRowHTML(r){
 function paintDiag(rows,done){
   const box=$('#diagBox');
   if(!box)return;
-  const tg=rows.filter(r=>r.kind==='tg'), px=rows.filter(r=>r.kind==='px');
-  const tbl=(title,list)=>'<div class="sechd" style="margin:12px 0 6px">'+title+'</div>'+
-    '<div class="tscroll"><table class="tp"><thead><tr><th>مسیر</th><th>نتیجه</th><th>زمان</th><th>توضیح</th></tr></thead>'+
+  const tg=rows.filter(r=>r.kind==='tg'), px=rows.filter(r=>r.kind==='px'), kd=rows.filter(r=>r.kind==='kd');
+  const tbl=(title,list,k)=>'<div class="sechd" style="margin:12px 0 6px">'+title+'</div>'+
+    '<div class="tscroll"><table class="tp'+(k?' '+k:'')+'"><thead><tr><th>مسیر</th><th>نتیجه</th><th>زمان</th><th>توضیح</th></tr></thead>'+
     '<tbody>'+list.map(diagRowHTML).join('')+'</tbody></table></div>';
-  let h=tbl('رسیدن به کانال تلگرام',tg)+ (px.length?tbl('رسیدن به صرافی‌ها (برای قیمت)',px):'');
-  if(done){
+  let h=(tg.length?tbl('رسیدن به کانال تلگرام',tg):'')+(px.length?tbl('رسیدن به صرافی‌ها (برای قیمت)',px):'')+
+    (kd.length?tbl('کندل‌ها (برای کانال‌سنج)',kd,'kdt'):'');
+  if(done&&!tg.length){                                     // فقط کندل
+    const ok=kd.filter(r=>r.ok).map(r=>r.name);
+    h+='<div class="flag '+(ok.length?'u':'d')+'" style="margin-top:12px"><i>'+(ok.length?'✓':'✕')+'</i><span>'+
+      (ok.length?'کندل از این منبع(ها) می‌آید: <b>'+ok.map(esc).join('، ')+'</b>.':'از هیچ منبع کندلی جواب نیامد؛ کانال‌سنج نمی‌تواند بسنجد.')+'</span></div>';
+  }else if(done){
     const tgOk=tg.filter(r=>r.ok).map(r=>r.name);
     const pxOk=px.filter(r=>r.ok).map(r=>r.name);
     h+='<div class="flag '+(tgOk.length?'u':'d')+'" style="margin-top:12px"><i>'+(tgOk.length?'✓':'✕')+'</i><span>'+
@@ -129,6 +134,12 @@ function paintLog(){
     (LOG.length>60?'<div class="hint">60 رخداد آخر نشان داده شده؛ در فایل گزارش همه‌شان هست.</div>':'');
 }
 
+/* از کانال‌سنج: همین برگه، و فقط آزمایش منبع‌های کندل */
+function sheetHealthCandles(){
+  sheetHealth();
+  setTimeout(async()=>{const rows=[];await runDiag(r=>{if(!rows.includes(r))rows.push(r);paintDiag(rows,false);},'kd');paintDiag(rows,true);
+    const b=$('#diagBox');if(b)b.scrollIntoView({block:'nearest'});},280);
+}
 function sheetHealth(){
   openSheet(
     '<h3>وضعیت و عیب‌یابی</h3>'+

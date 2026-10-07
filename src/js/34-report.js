@@ -81,7 +81,7 @@ function renderReportList(){
   const closed=DB.positions.filter(p=>p.status==='closed'&&p.closedAt);
   if(!closed.length){
     body.appendChild(el('div','empty',STAR+'هنوز معامله بسته‌شده‌ای نداری.<br>وقتی پوزیشنی را ببندی، کارنامه‌ات اینجا ساخته می‌شود.'));
-    body.appendChild(repVsChannel());
+    body.appendChild(repVsChannel([]));
     return;
   }
   const groups=new Map();
@@ -106,7 +106,6 @@ function renderReportList(){
   head.appendChild(ht);
   head.appendChild(statsOf(total,true));
   head.appendChild(equityCurve(inRange));
-  if(!F('lite'))head.appendChild(rDist(inRange));
   body.appendChild(head);
   body.appendChild(buildBehavior(inRange));
   if(!F('lite'))body.appendChild(journalPanel(inRange));
@@ -143,5 +142,5 @@ function renderReportList(){
     tb2.innerHTML=rows;tb.appendChild(tb2);bd.appendChild(tWrap(tb));
     c.appendChild(bd);body.appendChild(c);
   }
-  body.appendChild(repVsChannel());
+  body.appendChild(repVsChannel(inRange));
 }

@@ -37,7 +37,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const li=await p.evaluate(()=>{S.feat.lite=true;renderAudit();const acc=[...document.querySelectorAll('#audBody [data-acc]')].map(x=>x.dataset.acc);
    S.feat.lite=false;renderAudit();return acc;});
  console.log('    '+li.join('، '));
- ok(!li.includes('نوسان‌سنج')&&!li.includes('صحت‌سنجی')&&!li.includes('سرمایه و الگوها')&&li.includes('خروج')&&li.includes('کارنامه‌ی کانال'),'«فقط ضروری»: پنل‌های تحلیلی پنهان، کارنامه و خروج می‌مانند');
+ ok(!li.includes('فیلتر')&&!li.includes('سرمایه و الگوها')&&li.includes('خروج')&&li.includes('کارنامه‌ی کانال'),'«فقط ضروری»: پنل‌های تحلیلی پنهان، کارنامه و خروج می‌مانند');
 
  console.log('=== ۴۲: عکس فقط با زدن ===');
  const im=await p.evaluate(async()=>{S.feat.imgtap=true;

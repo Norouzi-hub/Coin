@@ -97,12 +97,16 @@ const channelHtml=()=>'<html><body>'+POSTS_SRC.map(x=>mkPost(...x)).join('')+'</
  ok(/نرخ برد=75٪/.test(ui.stats),'نرخ برد: 3 برد از 4 = 75٪');
  // BTC ×2: +2R+2R ؛ DOGE: (0.12-0.1)/0.005 = +4R ؛ ETH −1R → مجموع +7R
  ok(/مجموع R=\+7\.00R/.test(ui.stats),'مجموع R = 2 + 2 + 4 − 1 = +7R');
- ok(ui.panels.length>=6,'همه‌ی بخش‌ها ساخته شدند');
+ ok(ui.panels.length>=4,'همه‌ی بخش‌ها ساخته شدند');
  ok(ui.rows===7,'هفت سیگنال در فهرست');
  ok(ui.badge==='2','نشان تب: 2 ادعای نادرست');
- const sel=await p.evaluate(()=>{AUDOPEN='صحت‌سنجی';renderAudit();const x=[...document.querySelectorAll('#audBody .st')];
+ // صحت‌سنجی: یک خط در «کارنامه‌ی کانال»؛ زدنش برگه‌ی جزئیات
+ const vl=await p.evaluate(()=>{AUDOPEN='کارنامه‌ی کانال';renderAudit();const v=document.querySelector('#audBody [data-acc="کارنامه‌ی کانال"] .vline');return v&&v.textContent;});
+ ok(vl&&/صحت‌سنجی/.test(vl)&&/2 ادعای نادرست/.test(vl),'یک خط صحت‌سنجی در کارنامه‌ی کانال: '+vl);
+ const sel=await p.evaluate(()=>{document.querySelector('#audBody .vline').click();const x=[...document.querySelectorAll('#sheet .st')];
    const g=l=>{const s=x.find(q=>q.querySelector('b').textContent===l);return s?s.querySelector('span').textContent:null;};
    const v=g('گزارش برد / باخت')||'';return {w:v.split(' / ')[0],l:v.split(' / ')[1]};});
+ await p.waitForTimeout(300);await p.evaluate(()=>closeSheet());await p.waitForTimeout(400);
  console.log('  گزارش بردها:',sel.w,'· اعتراف باخت‌ها:',sel.l);
  ok(sel.l==='0٪','ادعای دروغِ برد روی باختِ ETH «اعتراف به باخت» شمرده نمی‌شود');
 

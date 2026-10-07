@@ -341,9 +341,6 @@ html.busy .prog{opacity:1}
 .audiag .ag small{font-size:12px;color:var(--tx3)}
 .audwhy{margin:4px 0 8px;padding-inline-start:18px;font-size:12.5px;line-height:1.9;color:var(--tx2)}
 .audwhy b{color:var(--tx)}
-.audprobe{display:flex;flex-direction:column;gap:4px;margin-top:8px}
-.audprobe .apr{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:6px 10px;background:var(--inset);border-radius:10px}
-.audprobe .apr span{text-align:end;overflow-wrap:anywhere}
 .audiag .u{color:var(--up)}.audiag .d{color:var(--dn)}.audiag .w{color:var(--warn)}.audiag .m{color:var(--tx3)}
 .audfail{border-color:color-mix(in srgb,var(--dn) 45%,transparent)!important;color:var(--tx2);font-size:12.5px;line-height:1.9}
 .audfail b{color:var(--dn)}
@@ -686,14 +683,6 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .eqax{display:flex;justify-content:space-between;direction:ltr;font-size:12px;color:var(--tx3);margin-top:2px}
 .eqcap{font-size:12.5px;color:var(--tx2);margin-top:6px;min-height:22px}
 .eqcap .u{color:var(--up)}.eqcap .d{color:var(--dn)}
-.rdist{margin-top:14px}
-.rdt{font-size:12px;color:var(--tx2);font-weight:700;margin-bottom:6px}
-.rdr{display:grid;grid-template-columns:104px 1fr 26px;align-items:center;gap:8px;font-size:12px;color:var(--tx2);margin:4px 0}
-.rdr span{text-align:right;font-variant-numeric:tabular-nums}
-.rdr i{height:12px;border-radius:6px;background:var(--inset);overflow:hidden;display:block}
-.rdr s{display:block;height:100%;border-radius:6px}
-.rdr s.u{background:var(--up)}.rdr s.d{background:var(--dn)}
-.rdr b{text-align:center;color:var(--tx);font-variant-numeric:tabular-nums}
 /* مرتب‌سازی پوزیشن‌ها */
 .psort{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px;font-size:12.5px;color:var(--tx2);font-weight:700}
 .psort select{min-height:38px;padding:4px 10px;border-radius:10px;background:var(--inset);border:1px solid var(--line2);
@@ -1527,7 +1516,6 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .daystrip{display:grid;grid-template-columns:repeat(30,1fr);gap:3px;direction:ltr;margin:4px 0 10px}
 .daystrip i{aspect-ratio:1;border-radius:3px;background:var(--inset);border:1px solid var(--line)}
 .daystrip i.u{background:var(--up);border-color:transparent}.daystrip i.d{background:var(--dn);border-color:transparent}
-.whyagg{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
 /* مرکز اعلان (15b-advisor.js) */
 .bellb{position:relative}
 .bellb .cnt{position:absolute;top:-4px;inset-inline-end:-4px;min-width:18px;height:18px;padding:0 5px;border-radius:99px;
@@ -1562,3 +1550,7 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .panel.lazy{padding-top:12px;padding-bottom:12px}
 .shot.tapimg{min-height:0}
 .tapload{width:100%;background:none;border:0;cursor:pointer;justify-content:center;color:var(--gold)}
+/* صحت‌سنجی در یک خط («کارنامه‌ی کانال»)؛ زدنش برگه‌ی جزئیات */
+.flag.vline{width:100%;text-align:start;cursor:pointer;font-family:inherit;border:0;margin-top:10px;font-size:12.5px}
+.flag.vline small{display:block;color:var(--tx3);font-size:11.5px;margin-top:2px}
+.flag.vline em{font-style:normal;color:var(--gold);font-size:12px;white-space:nowrap;align-self:center;margin-inline-start:auto}

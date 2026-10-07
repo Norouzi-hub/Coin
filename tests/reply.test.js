@@ -47,7 +47,7 @@ const html = `<html><body>
 
   console.log('\n=== «بررسی و ورود» یک مرحله: مستقیم فرم ورود ===');
   await p.evaluate(() => [...document.querySelectorAll('#list .brief .btn')]
-    .find(b => b.textContent.includes('بررسی و ورود')).click());
+    .find(b => /بررسی و ورود|فرم کامل/.test(b.textContent)).click());
   await p.waitForTimeout(500);
   console.log('  فرم ورود باز شد:', await p.$('#levRow') ? '✅' : '❌', '| پلنِ کارت:', await p.$$eval('#list .plan', e=>e.length)===0 ? '✅ نیست' : '❌');
   await p.click('#cx'); await p.waitForTimeout(400);

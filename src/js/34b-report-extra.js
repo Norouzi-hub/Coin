@@ -1,6 +1,6 @@
 /* ==================== کارنامه: رفتار و هدف (پیشنهادهای ۳۱ تا ۳۷) ====================
-   ۳۱ سود به ازای ساعتِ پول درگیر   ۳۲ گزارش هفتگی   ۳۳ هدف ماهانه   ۳۴ «چرا بستم»
-   ۳۵ اجرای تو در برابر قاعده‌ی من   ۳۶ نوار روزهای سبز و قرمز   ۳۷ کارمزد کل ماه */
+   ۳۱ سود به ازای ساعتِ پول درگیر   ۳۲ گزارش هفتگی   ۳۳ هدف ماهانه   ۳۶ نوار روزهای سبز و قرمز   ۳۷ کارمزد کل ماه
+   (۳۴ «چرا بستم» در دفتر معامله؛ ۳۵ «در برابر قاعده» در «شما در برابر کانال»؛ vsRule همین‌جاست) */
 
 const holdH=p=>p.closedAt&&p.openedAt?Math.max(0,(p.closedAt-p.openedAt)/36e5):0;
 const thisMonthKey=()=>{const p=jParts(new Date());return p.jy*100+p.jm;};
@@ -60,19 +60,7 @@ function buildBehavior(inRange){
     strip+='<i class="'+(v==null?'':v>=0?'u':'d')+'" title="'+esc(jStampFa(d).slice(0,10))+(v!=null?' · '+fmtUsd(v):'')+'"></i>';}
   c.appendChild(el('div','sechd','۳۰ روز اخیر'));
   c.appendChild(el('div','daystrip',strip));
-  // ۳۴) چرا بستم
-  const why=new Map();
-  for(const p of inRange){if(!p.why)continue;const o=why.get(p.why)||{n:0,pnl:0};o.n++;o.pnl+=posMetrics(p).pnl||0;why.set(p.why,o);}
-  if(why.size){
-    c.appendChild(el('div','sechd','چرا بستی'));
-    c.appendChild(el('div','whyagg',[...why].sort((a,b)=>a[1].pnl-b[1].pnl).map(([k,o])=>
-      '<span class="pill '+(o.pnl>=0?'win':'lose')+'">'+WHY_FA[k]+' · '+faN(o.n)+' · '+fmtUsd(o.pnl)+'</span>').join('')));
-  }
-  // ۳۵) در برابر قاعده‌ی من
-  const vr=vsRule(inRange);
-  if(vr){const gap=vr.me-vr.ru;
-    c.appendChild(el('div','flag '+(gap<-0.3?'d':gap>0.3?'u':'i'),'<i>'+(gap<-0.3?'!':'✓')+'</i><span>روی '+faN(vr.n)+' معامله‌ای که از سیگنال گرفتی: خودت '+fmtR(vr.me)+
-      '، اگر دقیقاً «قاعده‌ی من» را اجرا کرده بودی '+fmtR(vr.ru)+'. '+(gap<-0.3?'اجرای دستی‌ات '+fmtR(gap)+' هزینه داشته.':gap>0.3?'اجرای تو بهتر از قاعده بوده.':'تقریباً همان.')+'</span>'));}
+  // ۳۴) «چرا بستم» در «دفتر معامله»؛ ۳۵) «در برابر قاعده‌ی من» در «شما در برابر کانال»
   // ۳۲) هفتگی
   c.appendChild(el('div','hint weekly','<b>هفتگی:</b> '+weekText(weekSummary())));
   return c;

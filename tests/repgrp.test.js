@@ -12,9 +12,8 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    localStorage.setItem('signaldesk.v1',JSON.stringify(d));});
  await p.goto('http://localhost:8899/index.html');await p.waitForTimeout(3000);
  await p.evaluate(()=>{go('report',true);repPeriod='all';renderReport();});await p.waitForTimeout(300);
- const eq=await p.evaluate(()=>({ax:[...document.querySelectorAll('.eqax span')].map(s=>s.textContent),rd:document.querySelectorAll('.rdist .rdr').length,
-   rdt:document.querySelector('.rdt')?.textContent}));
- ok(eq.ax.length===2&&eq.rd===7,'نمودار با تاریخ شروع/پایان و پراکندگی R: '+JSON.stringify(eq));
+ const eq=await p.evaluate(()=>({ax:[...document.querySelectorAll('.eqax span')].map(s=>s.textContent),rd:document.querySelectorAll('.rdist').length}));
+ ok(eq.ax.length===2&&eq.rd===0,'نمودار با تاریخ شروع/پایان؛ پراکندگی R برداشته شد: '+JSON.stringify(eq));
  await p.evaluate(()=>document.querySelector('.eqw').scrollIntoView({block:'center'}));await p.waitForTimeout(200);const svg=await p.$('.eqw svg');const bb=await svg.boundingBox();
  await p.mouse.click(bb.x+bb.width*0.5,bb.y+bb.height/2);await p.waitForTimeout(200);
  const cap=await p.$eval('.eqcap',e=>e.textContent);
