@@ -17,6 +17,9 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    const out=[],now=Date.now();
    for(let t=+st;t<now&&out.length<+lim;t+=ms){const o=px(t),c=px(t+ms),w=Math.abs(c-o)*0.6+o*0.0015;out.push([t,String(o),String(Math.max(o,c)+w),String(Math.min(o,c)-w),String(c),String(1000+400*Math.sin(t/H/5+sd)),t+ms-1]);}
    return r.fulfill({status:200,headers:{'content-type':'application/json','access-control-allow-origin':'*'},body:JSON.stringify(out)});});
+ await ctx.route('**/fapi/v1/fundingRate**',r=>{const u=r.request().url(),n=Date.now(),st=+(u.match(/startTime=(\d+)/)||[0,n-130*864e5])[1];REQ['fund']=(REQ['fund']||0)+1;
+   const out=[];for(let t=Math.ceil(st/(8*36e5))*8*36e5;t<n&&out.length<1000;t+=8*36e5)out.push({symbol:'X',fundingTime:t,fundingRate:String(0.0001*(1+Math.sin(t/864e5)))});
+   return r.fulfill({status:200,headers:{'content-type':'application/json','access-control-allow-origin':'*'},body:JSON.stringify(/BTCUSDT|ETHUSDT/.test(u)?out:[])});});
  await ctx.route('**/futures/data/**',r=>{const u=r.request().url(),H=36e5,now=Math.floor(Date.now()/H)*H,lim=+(u.match(/limit=(\d+)/)||[0,500])[1];
    REQ['flow']=(REQ['flow']||0)+1;
    const row=i=>{const t=now-(lim-1-i)*H;return /taker/.test(u)?{buySellRatio:String(1+0.2*Math.sin(t/H/9)),timestamp:t}:/openInterest/.test(u)?{sumOpenInterestValue:String(1e8*(1+Math.sin(t/H/50)*0.1)),timestamp:t}:{longShortRatio:String(/top/.test(u)?1.4+0.3*Math.sin(t/H/11):2+0.5*Math.cos(t/H/13)),timestamp:t};};
@@ -38,13 +41,17 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    const P=rdPrep(up,B), r=rdParts(P,1400);
    // پیش‌نگری نه: عامل‌های کندل i با کندل‌های بعدی عوض نمی‌شوند
    const v1=rdVec(rdParts(rdPrep(up.slice(0,1201),B),1200).p), v2=rdVec(rdParts(rdPrep(up,B),1200).p);
+   const H2=36e5,FU=[];for(let t=up[0].t;t<=up[up.length-1].t;t+=8*H2)FU.push([t,0.03]);
+   const r2=rdParts(rdPrep(up,B,null,FU),1400);
    const S1=rdSamples(P,'UP');
-   return {p:r.p,rsv:r.m.rsv,same:JSON.stringify(v1)===JSON.stringify(v2),n:S1.t.length,F:S1.F,xl:S1.X.length,
+   return {p2:r2.p,adx:r2.m.adx,p:r.p,rsv:r.m.rsv,same:JSON.stringify(v1)===JSON.stringify(v2),n:S1.t.length,F:S1.F,xl:S1.X.length,
      longWin:S1.R.long.filter(x=>x>0).length/S1.t.length, shortWin:S1.R.short.filter(x=>x>0).length/S1.t.length,exitOk:S1.J.long.every((j,q)=>j>S1.t[q])};});
  console.log('   ',JSON.stringify(e).slice(0,400));
  ok(e.p.t4>0&&e.p.rs>0&&e.p.d50>0&&e.p.volc!=null,'روند صعودی قوی‌تر از بیت‌کوین ← روند 4ساعته، قدرت نسبی و روند روزانه مثبت');
  ok(e.same,'عامل‌های هر کندل فقط از گذشته (بی نگاه به آینده)');
- ok(e.n>500&&e.xl===e.n*e.F&&e.exitOk,'نمونه‌ها: هر 2 ساعت، 17 عامل، خروج بعد از ورود ('+e.n+')');
+ ok(e.p2.ma200>0&&e.p2.ma200s>0&&e.p2.adx>0&&e.adx>20&&e.p2.mom>0&&e.p2.obv>0&&e.p2.hl30>0.5,'عامل‌های تازه در روند صعودی: بالای میانگین 200 و رو به بالا، ADX '+Math.round(e.adx)+' صعودی، مومنتوم و OBV مثبت، نزدیک سقف 30 روزه');
+ ok(Math.abs(e.p2.fund-0.6)<1e-9&&e.p2.hs!=null&&e.p2.wknd!=null&&e.p2.bbp!=null&&e.p2.vwap!=null,'فاندینگ 0.03٪ ← 0.6؛ ساعت روز، آخر هفته، بولینگر، VWAP');
+ ok(e.n>500&&e.xl===e.n*e.F&&e.exitOk,'نمونه‌ها: هر 2 ساعت، '+e.F+' عامل قیمتی، خروج بعد از ورود ('+e.n+')');
  ok(e.longWin>e.shortWin,'در روند صعودی لانگ بیشتر سود داده تا شورت ('+e.longWin.toFixed(2)+' در برابر '+e.shortWin.toFixed(2)+')');
 
  console.log('=== مدل لجستیک و کارنامه‌ی صادق ===');
@@ -166,7 +173,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    await pr;const ms=Math.round(performance.now()-t0);renderAll();
    const st=await idbGet('rdc:ETH'),fl=await idbGet('rdf:ETH');
    return {ms,n:RD.n,rank:RD.rank.length,nflow:RD.nflow,M:!!(RD.M&&RD.M.long&&RD.M.short),cal:Object.keys(RD.calib).length,rel:!!RD.rel,
-     eth:RD.coins.ETH&&{wl:RD.coins.ETH.wl,flow:RD.coins.ETH.flow,sc:RD.coins.ETH.sc},sol:RD.coins.SOL&&RD.coins.SOL.flow,
+     eth:RD.coins.ETH&&{wl:RD.coins.ETH.wl,flow:RD.coins.ETH.flow,sc:RD.coins.ETH.sc,fund:RD.coins.ETH.parts.fund},solfund:RD.coins.SOL&&RD.coins.SOL.parts.fund,sol:RD.coins.SOL&&RD.coins.SOL.flow,
      rows:st&&st.rows.length,flow:fl&&fl.top&&fl.top.length,pan:!!document.querySelector('#glance .rdpan'),
      exP:RD.ex,exs:!!(RD.exs&&RD.exs.lad&&RD.exs.lad.all),extab:!!document.querySelector('#glance .rdex'),auto:RB.items.filter(i=>i.k==='auto').length,sig:rdList().filter(x=>x.dir!=='wait').length,seen:seen.filter((x,i)=>i%5===0),gone:!document.getElementById('rdProgBox')};});
  console.log('   ',JSON.stringify(full),JSON.stringify(REQ));
@@ -175,17 +182,18 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(full.rows>=2990&&full.flow>=490,'تاریخچه در IndexedDB: '+full.rows+' کندل یک‌ساعته، '+full.flow+' ساعت جریان پول');
  ok(RD_EXN_OK(full),'سه نقشه‌ی خروج بیرون از یادگیری سنجیده شد؛ بهترین: '+full.exP);
  ok(full.M&&full.cal>0&&full.rel&&full.pan,'مدل لانگ و شورت، کارنامه، صداقت مدل و پنل ساخته شد');
+ ok(full.eth&&full.eth.fund!=null&&full.solfund==null,'تاریخچه‌ی فاندینگ: ETH دارد، SOL (بی فیوچرز) ندارد');
  ok(full.eth&&full.eth.flow&&full.eth.wl>50&&full.sol===false&&full.nflow===2,'ETH با داده‌ی نهنگ/مردم؛ SOL بی فیوچرز');
  ok(full.auto===full.sig,'همه‌ی پیشنهادهای 70+ در «دفتر پیشنهادها» ثبت شد ('+full.auto+')');
  const mk2=await p.evaluate(()=>{const r=mdMetrics(MD);RDV='sig';bucket='live';sigFilter='mkt';paintGlance();const G=document.getElementById('glance');
    const tiles=[...G.querySelectorAll('.mdt')].map(x=>x.textContent);AS.at=Date.now();sigFilter='now';paintGlance();const now=!!document.querySelector('#glance .mdbox');sigFilter='mkt';paintGlance();
    return {r,tiles,flags:[...G.querySelectorAll('.mdbox .flag')].map(x=>x.textContent),now,mf:RDMF.size,w:RD.M&&RD.M.long.w.length,last:RD.mk7&&{tot:RD.mk7.tot.slice(-1)[0],bd:RD.mk7.bd.slice(-1)[0],ud:RD.mk7.ud.slice(-1)[0],n:RD.mk7.tot.length},mkl:RD.mkl,
-     mrow:[...RDMF.values()].slice(-1)[0]};});
+     mrow:[...RDMF.values()].slice(-1)[0],nF:RD_FEAT.length};});
  console.log('   ',JSON.stringify(mk2).slice(0,900));
  ok(mk2.r&&Math.abs(mk2.r.t3[0]-3.2e12*(1-0.575-0.121))<1e6&&mk2.r.bd[1]>0.3&&mk2.r.ud[1]>0.1&&mk2.r.t3[1]<mk2.r.tot[1],'TOTAL3 = بی BTC و ETH؛ دامیننس بیت‌کوین و تتر بالا رفت، آلت‌ها ضعیف‌تر');
  ok(mk2.tiles.length===6&&/TOTAL3/.test(mk2.tiles.join())&&/USDT\.D/.test(mk2.tiles.join())&&/\$3\.20T/.test(mk2.tiles[0])&&/57\.50%/.test(mk2.tiles[3])&&mk2.now,'شش کارت جدا: TOTAL، TOTAL2، TOTAL3، BTC.D، USDT.D، ETH.D (در «بازار» و «الان چه کنم؟»)');
  ok(mk2.flags.some(x=>/پول به تتر فرار/.test(x))&&mk2.flags.some(x=>/روز آلت‌کوین نیست/.test(x)),'خوانش: فرار به تتر و ضعف آلت‌ها');
- ok(mk2.mf>2000&&mk2.w===23&&mk2.last&&Math.abs(mk2.last.tot/3.2e12-1)<0.001&&Math.abs(mk2.last.bd-57.5)<0.01&&mk2.last.n>40&&mk2.mrow.length===5,'تاریخچه‌ی ساعتی کل بازار بازسازی شد ('+mk2.mf+' ساعت)، ساعت آخر = CoinGecko؛ 5 عامل بازار در مدل');
+ ok(mk2.mf>2000&&mk2.w===mk2.nF+1&&mk2.last&&Math.abs(mk2.last.tot/3.2e12-1)<0.001&&Math.abs(mk2.last.bd-57.5)<0.01&&mk2.last.n>40&&mk2.mrow.length===5,'تاریخچه‌ی ساعتی کل بازار بازسازی شد ('+mk2.mf+' ساعت)، ساعت آخر = CoinGecko؛ 5 عامل بازار در مدل');
  const R0=Object.assign({},REQ);
  const more=await p.evaluate(async()=>{await rdScan('more');return {n:RD.n,rank:RD.rank.length,uni:RD.rank.includes('UNI')&&RD.rank.includes('APT')};});
  const d=k=>(REQ[k]||0)-(R0[k]||0);

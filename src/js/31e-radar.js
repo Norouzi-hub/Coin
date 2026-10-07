@@ -3,7 +3,8 @@
    - کندل یک‌ساعته‌ی ~125 روز (3000 کندل) در IndexedDB؛ بار اول کامل، بعد فقط کندل‌های تازه
    - جریان پول از فیوچرز بایننس (همان داده‌ی جدول‌های کوین‌گلس)؛ بایننس فقط ~20 روز اخیر را می‌دهد،
      پس هر بار که می‌گیریم روی گوشی جمع می‌شود تا تاریخچه‌اش کم‌کم بلند شود
-   22 عامل: روند 4 و 1 ساعته، MACD، RSI، شکست 7 روزه، حجم، روند بیت‌کوین، فاصله از میانگین، قدرت نسبی
+   35 عامل: روند 4 و 1 ساعته، MACD، RSI، شکست 7 روزه، میانگین 200 و شیبش، ADX، بولینگر، VWAP، OBV، مومنتوم 14 روزه،
+   بازده 24 ساعته، جای قیمت در سقف/کف 30 روزه، فاندینگ، ساعت روز و آخر هفته، حجم، روند بیت‌کوین، فاصله از میانگین، قدرت نسبی
    به بیت‌کوین (7 روز)، روند روزانه (EMA50)، فشردگی نوسان، نهنگ‌ها در برابر مردم، ازدحام مردم، خرید/فروش
    تهاجمی، OI همراه قیمت، حال بازار (صعودی/نزولی)، و کل بازار: TOTAL، TOTAL2، TOTAL3، دامیننس بیت‌کوین و تتر.
    مدل: رگرسیون لجستیک (با کوچک‌سازی L2)، جدا برای لانگ و شورت، مستقیم روی نتیجه‌ی همان معامله‌ای که
@@ -13,19 +14,23 @@
    کارنامه‌ی صادق: آزمون پیش‌رونده (یادگیری روی گذشته، سنجش روی دوره‌ی بعد، سه بار)، برای هر ارز در هر
    لحظه فقط یک معامله‌ی باز، و ستاره از «بدترین حالت محتمل» (کران پایین 90٪، با خوشه‌بندی روزانه چون
    ارزها با هم بالا و پایین می‌روند). */
-const RD_KEY='signaldesk.radar.v4', RD_HIST=3000, RD_STEP=10, RD_MAX=100, RD_MIN=70;
-const RD_CF=['t4','t1','macd','rsi','brk','vol','btc','ext','rs','d50','volc','whale','crowd','taker','oi','rbull','rbear'];
+const RD_KEY='signaldesk.radar.v5', RD_HIST=3000, RD_STEP=10, RD_MAX=100, RD_MIN=70;
+const RD_CF=['t4','t1','macd','rsi','brk','vol','btc','ext','rs','d50','volc','whale','crowd','taker','oi','rbull','rbear',
+  // عامل‌های شناخته‌شده‌ی دیگر (هر کدام فقط اگر در آزمون بیرون از یادگیری کمک کند وزن می‌گیرد):
+  'ma200','ma200s','adx','bbp','vwap','obv','mom','r24','hl30','fund','hs','hc','wknd'];
 /* عامل‌های کل بازار (برای همه‌ی ارزها در یک لحظه یکی): همه طوری که «+» یعنی به نفع بالا رفتن */
 const RD_MF=['mtot','mt2','mt3','mbd','mud'], RD_FEAT=RD_CF.concat(RD_MF), RD_F0=RD_CF.length;
-const RD_FLOW=['whale','crowd','taker','oi'], RD_NOSIGN=['volc','rbull','rbear'];
+const RD_FLOW=['whale','crowd','taker','oi'], RD_NOSIGN=['volc','rbull','rbear','hs','hc','wknd'];
 const RD_FA={t4:'روند 4 ساعته',t1:'روند 1 ساعته',macd:'MACD',rsi:'RSI',brk:'شکست 7 روزه',vol:'حجم',btc:'روند بیت‌کوین',ext:'فاصله از میانگین',
   rs:'قدرت نسبی به بیت‌کوین',d50:'روند روزانه',volc:'فشردگی نوسان',
   whale:'نهنگ‌ها در برابر مردم',crowd:'ازدحام مردم',taker:'خرید/فروش تهاجمی',oi:'Open Interest',rbull:'بازار صعودی',rbear:'بازار نزولی',
+  ma200:'میانگین 200 (4 ساعته)',ma200s:'شیب میانگین 200',adx:'قدرت روند (ADX)',bbp:'باند بولینگر',vwap:'VWAP روزانه',obv:'OBV (حجم تجمعی)',
+  mom:'مومنتوم 14 روزه',r24:'بازده 24 ساعته',hl30:'جای قیمت در سقف/کف 30 روزه',fund:'فاندینگ',hs:'ساعت روز',hc:'ساعت روز',wknd:'آخر هفته',
   mtot:'کل بازار (TOTAL)',mt2:'TOTAL2',mt3:'TOTAL3 (آلت‌ها)',mbd:'دامیننس بیت‌کوین',mud:'دامیننس تتر'};
 const RD_B=['70-85','85-95','95+'];
 const RD_SKIP=/^(USDT|USDC|FDUSD|TUSD|DAI|BUSD|USDP|USDD|USDE|SUSDE|USDS|PYUSD|USD0|USD1|RLUSD|EURC|EURT|PAXG|XAUT|WBTC|WETH|WBETH|STETH|WSTETH|WEETH|CBBTC|BTCB|RETH|METH|LEO|BSC-USD|BFUSD|USDF)$/;
-const rdEmpty=()=>({v:4,at:0,n:0,coins:{},calib:{},rel:null,M:null,fund:{},rank:[],reg:null,nflow:0,ns:0});
-let RD=(()=>{const a=lsGet(RD_KEY);return a&&a.v===4?a:rdEmpty();})();
+const rdEmpty=()=>({v:5,at:0,n:0,coins:{},calib:{},rel:null,M:null,fund:{},rank:[],reg:null,nflow:0,ns:0});
+let RD=(()=>{const a=lsGet(RD_KEY);return a&&a.v===5?a:rdEmpty();})();
 const RDQ={on:false,done:0,n:0,msg:'',t0:0,tc:0,cur:new Map(),pm:0,fin:false,iv:null};
 const RDS=new Map(), RDMF=new Map();   // RDMF: ساعت ← عامل‌های کل بازار                       // نمونه‌های هر ارز (فقط در حافظه‌ی همین بار)
 const rdSave=()=>lsSet(RD_KEY,RD);
@@ -43,7 +48,7 @@ const clamp1=v=>Math.max(-1,Math.min(1,v));
 function rdRegMap(B){if(!B||!B.length)return null;const m=new Map(B.map(k=>[k.t,k.c]));
   return t=>{const a=m.get(t-24*36e5),b=m.get(t);return a&&b?regOfBtc((b/a-1)*100):null;};}
 /* همه‌ی سری‌های لازم؛ 4 ساعته و روزانه فقط از کندل‌های کاملِ گذشته (بی نگاه به آینده) */
-function rdPrep(C,B,FL){
+function rdPrep(C,B,FL,FU){
   const H=36e5,c=C.map(k=>k.c),v=C.map(k=>k.v||0);
   const e20=emaArr(c,20),e50=emaArr(c,50),m12=emaArr(c,12),m26=emaArr(c,26);
   const macd=c.map((_,i)=>m12[i]-m26[i]),sig=emaArr(macd,9),hist=macd.map((x,i)=>x-sig[i]),rsi=rsiArr(c,14);
@@ -52,10 +57,20 @@ function rdPrep(C,B,FL){
   // ATR (میانگین ساده‌ی 14 TR) و جمع تجمعی TR برای «فشردگی نوسان»
   const tr=C.map((k,i)=>i?Math.max(k.h-k.l,Math.abs(k.h-C[i-1].c),Math.abs(k.l-C[i-1].c)):k.h-k.l), pre=[0];
   for(let i=0;i<tr.length;i++)pre.push(pre[i]+tr[i]);
+  // میانگین 200 روی کندل 4 ساعته (~33 روز) و ADX وایلدر (14) روی همان
+  const f200=emaArr(f,200), adx=new Array(F.length).fill(null), adir=new Array(F.length).fill(0);
+  {let atr=0,sp=0,sm=0,ax=null;const n=14;
+    for(let j=1;j<F.length;j++){const a=F[j],b=F[j-1],up=a.h-b.h,dn=b.l-a.l,trj=Math.max(a.h-a.l,Math.abs(a.h-b.c),Math.abs(a.l-b.c));
+      const pdm=up>dn&&up>0?up:0,mdm=dn>up&&dn>0?dn:0;
+      if(j<=n){atr+=trj;sp+=pdm;sm+=mdm;if(j<n)continue;}else{atr=atr-atr/n+trj;sp=sp-sp/n+pdm;sm=sm-sm/n+mdm;}
+      const pdi=atr>0?100*sp/atr:0,mdi=atr>0?100*sm/atr:0,dx=pdi+mdi>0?100*Math.abs(pdi-mdi)/(pdi+mdi):0;
+      ax=ax==null?dx:(ax*(n-1)+dx)/n;if(j>=2*n){adx[j]=ax;adir[j]=Math.sign(pdi-mdi);}}}
+  // OBV: حجم تجمعی با علامت حرکت قیمت
+  const obv=new Array(c.length).fill(0);for(let i=1;i<c.length;i++)obv[i]=obv[i-1]+(c[i]>c[i-1]?v[i]:c[i]<c[i-1]?-v[i]:0);
   let bt=null,bc=null;
   if(B&&B.length>250&&B!==C){const BF=swAggr(B,4*H),bf=BF.map(k=>k.c),b20=emaArr(bf,20),b50=emaArr(bf,50);
     bt=new Map(BF.map((k,j)=>[k.t,j>=50?clamp1((b20[j]-b50[j])/b50[j]/0.01):null]));bc=new Map(B.map(k=>[k.t,k.c]));}
-  return {C,c,v,e20,e50,hist,rsi,F,f20,f50,fIdx,D,d50,dIdx,pre,bt,bc,FL:FL||null,reg:rdRegMap(B||C)};
+  return {C,c,v,e20,e50,hist,rsi,F,f20,f50,fIdx,D,d50,dIdx,pre,bt,bc,f200,adx,adir,obv,FU:FU&&FU.length?FU:null,FL:FL||null,reg:rdRegMap(B||C)};
 }
 /* عامل‌ها در کندل i (بسته‌شده): هر کدام حدود −1..+1، یا null اگر داده نیست */
 function rdParts(P,i){
@@ -86,6 +101,33 @@ function rdParts(P,i){
   if(i>=720){const avg=(pre[i+1]-pre[i-719])/720;if(avg>0){vr=atr/avg;p.volc=clamp1((1-vr)/0.5);}}
   const g=P.reg?P.reg(C[i].t):null;p.rbull=g==='bull'?1:0;p.rbear=g==='bear'?1:0;
   const m={rsi:r,rv,atrPct:atr/c[i]*100,rsv,vr};
+  // میانگین 200 (4 ساعته) و شیبش در 5 روز
+  const {f200,adx,adir,obv,FU}=P;
+  p.ma200=j>=200?clamp1((c[i]/f200[j]-1)/0.08):null;
+  p.ma200s=j>=230?clamp1((f200[j]/f200[j-30]-1)/0.03):null;
+  // ADX: قدرت روند (40 = کامل) با جهت +DI/−DI
+  p.adx=adx[j]!=null?adir[j]*Math.min(1,adx[j]/40):null;m.adx=adx[j];
+  // بولینگر (20، 2) روی 1 ساعته: %B
+  {let s1=0,s2=0;for(let q=i-19;q<=i;q++){s1+=c[q];s2+=c[q]*c[q];}const mu=s1/20,sd=Math.sqrt(Math.max(0,s2/20-mu*mu));
+    p.bbp=sd>0?clamp1(((c[i]-(mu-2*sd))/(4*sd)-0.5)*2):0;m.bbp=sd>0?(c[i]-(mu-2*sd))/(4*sd)*100:50;}
+  // VWAP 24 ساعته: فاصله به ATR
+  {let pv=0,vv=0;for(let q=i-23;q<=i;q++){const tp=(C[q].h+C[q].l+c[q])/3;pv+=tp*v[q];vv+=v[q];}
+    p.vwap=vv>0?clamp1((c[i]-pv/vv)/atr/3):null;}
+  // OBV: جهت حجم در 24 ساعت (−1 همه فروش، +1 همه خرید)
+  {let vv=0;for(let q=i-23;q<=i;q++)vv+=v[q];p.obv=vv>0?clamp1((obv[i]-obv[i-24])/vv):null;}
+  // مومنتوم 14 روزه و بازده 24 ساعته
+  p.mom=i>=336?clamp1((c[i]/c[i-336]-1)/0.25):null;m.mom=i>=336?(c[i]/c[i-336]-1)*100:null;
+  p.r24=clamp1((c[i]/c[i-24]-1)/0.06);m.r24=(c[i]/c[i-24]-1)*100;
+  // جای قیمت میان کف و سقف 30 روز کامل گذشته
+  {const jd2=dIdx.get(Math.floor((C[i].t+H)/(24*H))*24*H-24*H);
+    if(jd2!=null&&jd2>=29){let lo=Infinity,hi=-Infinity;for(let q=jd2-29;q<=jd2;q++){if(D[q].l<lo)lo=D[q].l;if(D[q].h>hi)hi=D[q].h;}
+      p.hl30=hi>lo?clamp1(((c[i]-lo)/(hi-lo)-0.5)*2):0;}else p.hl30=null;}
+  // فاندینگ: آخرین نرخ منتشرشده تا بسته شدن کندل (٪؛ 0.05٪ = کامل)
+  p.fund=null;
+  if(FU){const tt=C[i].t+H;let lo2=0,hi2=FU.length-1;if(FU[0][0]<=tt){while(lo2<hi2){const md=(lo2+hi2+1)>>1;if(FU[md][0]<=tt)lo2=md;else hi2=md-1;}
+    if(tt-FU[lo2][0]<=9*H){p.fund=clamp1(FU[lo2][1]/0.05);m.fu=FU[lo2][1];}}}
+  // فصلی: ساعت روز (UTC) و آخر هفته
+  {const dt=new Date(C[i].t+H),hh=dt.getUTCHours(),wd=dt.getUTCDay();p.hs=Math.sin(2*Math.PI*hh/24);p.hc=Math.cos(2*Math.PI*hh/24);p.wknd=wd===0||wd===6?1:0;}
   // جریان پول: مقدارِ ساعتِ همان کندل (منتشرشده تا بسته شدنش)
   const t=C[i].t;
   for(const k of RD_FLOW)p[k]=null;
@@ -185,7 +227,7 @@ function rdFit(SS,d,tEnd){
   const F=RD_FEAT.length,F0=RD_F0,K=F+1,rows=[];
   for(const s of SS)for(let q=0;q<s.t.length;q++)if(s.J[d][q]<tEnd)rows.push(s,q);
   const n=rows.length/2;if(n<300)return null;
-  const step=Math.max(1,Math.ceil(n/40000)), lam=0.02*n/step;
+  const step=Math.max(1,Math.ceil(n/25000)), lam=0.02*n/step;
   const w=new Float64Array(K);
   for(let it=0;it<7;it++){
     const g=new Float64Array(K),A=new Float64Array(K*K),x=new Float64Array(K);x[F]=1;
@@ -362,6 +404,18 @@ async function rdMktBuild(B){
   RD.mk7={tot:pick(tot),t2:pick(t2),t3:pick(t3),bd:pick(bd),ud:pick(ud),ed:pick(ed)};
   return true;
 }
+/* تاریخچه‌ی فاندینگ فیوچرز بایننس (هر 8 ساعت)، در IndexedDB و هر بار فقط تکه‌ی تازه */
+async function rdFundH(tk,fresh){
+  const H=36e5,key='rdfu:'+tk,now=Date.now(),st=await idbGet(key)||{};
+  if(st.at&&(!fresh||(st.none&&now-st.at<864e5)||now-st.at<4*H))return st.a||null;
+  const last=st.a&&st.a.length?st.a[st.a.length-1][0]:0, from=last?last+1:now-130*864e5;
+  try{const got=await fetchVia('https://fapi.binance.com/fapi/v1/fundingRate?symbol='+tk+'USDT&startTime='+from+'&limit=1000',
+      {json:true,timeout:12000,kind:'px',quiet:true,minLen:2,label:'فاندینگ '+tk,validate:d=>Array.isArray(d)});
+    const m=new Map(st.a||[]);for(const x of got.data){const r=+x.fundingRate;if(isFinite(r))m.set(+x.fundingTime,r*100);}
+    const a=[...m].filter(x=>x[0]>=now-180*864e5).sort((x,y)=>x[0]-y[0]);
+    const o={at:now,a,none:!a.length};await idbSet(key,o);return a.length?a:null;}
+  catch(e){return st.a||null;}
+}
 /* بررسی پله‌پله: «more» = ده ارز بعدی، «refresh» = تازه کردن همه‌ی ارزهای بررسی‌شده (ده‌تا‌ده‌تا) */
 async function rdScan(mode){
   if(RDQ.on)return;
@@ -384,9 +438,9 @@ async function rdScan(mode){
     const one=async tk=>{
       if(!fresh(tk)&&RDS.has(tk))return false;
       RDQ.cur.set(tk,1);rdPaintProg();
-      try{const [C,FL]=await Promise.all([tk==='BTC'&&B?B:rdCandles(tk,fresh(tk)),rdFlow(tk,fresh(tk))]);
+      try{const [C,FL,FU]=await Promise.all([tk==='BTC'&&B?B:rdCandles(tk,fresh(tk)),rdFlow(tk,fresh(tk)),rdFundH(tk,fresh(tk))]);
         RDQ.cur.set(tk,2);rdPaintProg();await rdYield();
-        if(C&&C.length>300){const P=rdPrep(C,B||C,FL),s=rdSamples(P,tk);s.live=rdLiveOf(P);RDS.set(tk,s);}}
+        if(C&&C.length>300){const P=rdPrep(C,B||C,FL,FU),s=rdSamples(P,tk);s.live=rdLiveOf(P);RDS.set(tk,s);}}
       catch(e){}
       RDQ.cur.delete(tk);return true;
     };
@@ -476,6 +530,19 @@ function rdReasons(x){
     else if(k==='crowd')t=v>0?'مردم بیشتر شورت‌اند':'مردم بیش از حد لانگ‌اند';
     else if(k==='taker')t=v>0?'خرید تهاجمی غالب':'فروش تهاجمی غالب';
     else if(k==='oi')t='OI '+fmtPct(x.doi)+' با قیمت '+fmtPct(x.dp);
+    else if(k==='ma200')t=(v>0?'بالای':'زیر')+' میانگین 200 (4 ساعته)';
+    else if(k==='ma200s')t='میانگین 200 '+(v>0?'رو به بالا':'رو به پایین');
+    else if(k==='adx')t=(x.adx!=null&&x.adx>=25?'روند قوی':'روند ضعیف')+' '+(v>0?'صعودی':'نزولی')+' (ADX '+fmtNum(x.adx||0)+')';
+    else if(k==='bbp')t=v>0?'نزدیک باند بالای بولینگر':'نزدیک باند پایین بولینگر';
+    else if(k==='vwap')t=(v>0?'بالای':'زیر')+' VWAP روزانه';
+    else if(k==='obv')t=v>0?'حجم خرید غالب (OBV)':'حجم فروش غالب (OBV)';
+    else if(k==='mom')t='مومنتوم 14 روزه '+fmtPct(x.mom);
+    else if(k==='r24')t='بازده 24 ساعته '+fmtPct(x.r24);
+    else if(k==='hl30')t=v>0?'نزدیک سقف 30 روزه':'نزدیک کف 30 روزه';
+    else if(k==='fund')t='فاندینگ '+fmtNum(x.fu)+'٪ '+(v>0?'(لانگ‌ها شلوغ)':'(شورت‌ها شلوغ)');
+    else if(k==='hc')return;
+    else if(k==='hs')t='ساعت روز (UTC '+new Date(x.t+36e5).getUTCHours()+')';
+    else if(k==='wknd')t='آخر هفته';
     else if(k==='mtot')t='کل بازار (TOTAL) '+(v>0?'بالای':'زیر')+' میانگین 7 روزه';
     else if(k==='mt2'||k==='mt3'){const q=RD.mkl&&RD.mkl[k==='mt2'?'t2c':'t3c'];t=RD_FA[k]+' '+(q!=null?fmtPct(q):v>0?'رو به بالا':'رو به پایین')+' در 24 ساعت';}
     else if(k==='mbd'||k==='mud'){const q=RD.mkl&&RD.mkl[k==='mbd'?'bdD':'udD'];t=RD_FA[k]+' '+(v>0?'در حال افت':'در حال رشد')+(q!=null?' ('+(q>0?'+':'')+q.toFixed(2)+' واحد در 24 ساعت)':'');}
@@ -570,7 +637,7 @@ function rdHtml(){
   act.forEach((x,i)=>{h+=rdRowHtml(x,i);});
   if(hid)h+='<div class="hint">'+faN(hid)+' سیگنال دیگر با فیلتر بالای صفحه پنهان است.</div>';
   if(wait.length)h+='<div class="hint rdwait"><b>صبر</b> (امتیاز زیر '+faN(RD_MIN)+'): '+wait.map(x=>esc(x.tk)+' <span class="'+(x.best==='long'?'win':'lose')+'">'+(x.best==='long'?'L':'S')+faN(x.sc)+'</span>').join('، ')+'</div>';
-  h+='<div class="hint">مدل: رگرسیون لجستیک، جدا برای لانگ و شورت، روی نتیجه‌ی همین معامله (بعد از کارمزد و با ریسک‌فری). 22 عامل: قیمت، بیت‌کوین، قدرت نسبی، روند روزانه، نوسان، جریان پول فیوچرز بایننس'+
+  h+='<div class="hint">مدل: رگرسیون لجستیک، جدا برای لانگ و شورت، روی نتیجه‌ی همین معامله (بعد از کارمزد). '+faN(RD_FEAT.length)+' عامل: قیمت، میانگین 200، ADX، بولینگر، VWAP، OBV، مومنتوم، بیت‌کوین، قدرت نسبی، روند روزانه، نوسان، فاندینگ، ساعت و روز، جریان پول فیوچرز بایننس'+
     (RD.nflow!=null?' ('+faN(RD.nflow)+' ارز داده‌اش را داشتند)':'')+'، و کل بازار (TOTAL، TOTAL2، TOTAL3، دامیننس بیت‌کوین و تتر)'+(RD.mkl&&RD.mkl.cov?'؛ تاریخچه‌اش از ارزهای بررسی‌شده بازسازی شده که '+faN(Math.round(RD.mkl.cov*100))+'٪ کل بازارند':'')+'. کارنامه با آزمون پیش‌رونده: مدل هر دوره را ندیده سنجیده شده. سود گذشته تضمین آینده نیست؛ «تست» بزن و در «دفتر پیشنهادها» ببین در عمل چه شد.</div></div>';
   return h;
 }
