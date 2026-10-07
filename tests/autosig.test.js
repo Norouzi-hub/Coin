@@ -68,5 +68,14 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  console.log('   ',ih.it.slice(0,120),'|',ih.skip.slice(0,80));
  ok(/استاپ 9.6 \(4٪\) از سیگنال قبلی/.test(ih.it)&&/ایزوله/.test(ih.it),'«ورود مجدد» IHX با استاپ 9.6 از سیگنال قبلی و دکمه‌ی ایزوله');
  ok(!ih.ns&&/1 سیگنال بی‌استاپ/.test(ih.skip),'NSX بی‌استاپ در فهرست نیست، فقط شمرده شد');
+ const sh=await p.evaluate(()=>{const now=Date.now();SYMBOLS.add('SHX');PRICES.set('SHX',20);SYMVER++;
+   POSTS.unshift({id:'ccoineres/97311',num:97311,text:'#SHX شورت\nورود 20\nحد ضرر 20.8\nتارگت 18',date:new Date(now-5*36e5),link:'x'});
+   POSTS.unshift({id:'ccoineres/97312',num:97312,text:'#SHX ورود مجدد 20 مجازه',date:new Date(now-30*6e4),link:'x'});
+   DB.decisions['ccoineres/97311']={action:'skipped',at:now};KGEN++;renderAll();
+   const G=document.getElementById('glance'), it=[...G.querySelectorAll('.glsig')].find(x=>/SHX/.test(x.textContent));
+   return {it:it&&it.textContent||'',dir:(G.querySelector('.gldir')||{}).textContent||'',hdr:!!document.getElementById('btnSet')};});
+ ok(/شورت/.test(sh.it)&&!/لانگ/.test(sh.it)&&/استاپ 20.8/.test(sh.it),'«ورود مجدد» یک شورت، شورت می‌ماند (نه لانگِ پیش‌فرض) با استاپ 20.8');
+ ok(/کانال در 30 روز اخیر: \d+ لانگ · \d+ شورت/.test(sh.dir),'شمار لانگ و شورت کانال: '+sh.dir.slice(0,60));
+ ok(!sh.hdr&&await p.evaluate(()=>!!document.querySelector('.moreit[data-go="settings"]')),'دکمه‌ی تنظیمات از سربرگ رفت؛ در «سایر» هست');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');})();

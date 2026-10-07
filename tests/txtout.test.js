@@ -20,7 +20,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(t.day.n<t.all.n,'بازه‌ی ۲۴ ساعت کمتر: '+t.day.n);
 
  console.log('=== تنظیمات ===');
- await p.click('#btnSet');await p.waitForTimeout(400);
+ await p.evaluate(()=>{document.querySelector('.tab[data-v="more"]').click();document.querySelector('.moreit[data-go="settings"]').click();});await p.waitForTimeout(400);
  const ui=await p.evaluate(()=>{const d=document.querySelector('details[data-sec="txtout"]');d.open=true;d.dispatchEvent(new Event('toggle'));
    return {feed:!!document.querySelector('[data-sec="feed"],#feedBox'),prev:document.querySelector('#txPrev').value};});
  ok(!ui.feed,'بخش «لینک خروجی» برداشته شد');

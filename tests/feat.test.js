@@ -70,7 +70,7 @@ const html = `<html><body>
   console.log('  (خاموش کردنش در بارگذاری بعدی اعمال می‌شود)');
 
   console.log('=== کلیدها در تنظیمات ===');
-  await p.click('#btnSet'); await p.waitForTimeout(500);
+  await p.evaluate(()=>{document.querySelector('.tab[data-v="more"]').click();document.querySelector('.moreit[data-go="settings"]').click();}); await p.waitForTimeout(500);
   console.log(' ', await p.$$eval('.featrow .featttl', e => e.map(x=>x.textContent)).then(a=>a.join(' · ')));
   await b.close();
 })();

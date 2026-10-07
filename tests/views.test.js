@@ -39,7 +39,7 @@ const html=`<html><body>${posts.map(p=>`<div class="tgme_widget_message" data-po
    await p.evaluate(v=>go(v),v);await p.waitForTimeout(600);
    await p.screenshot({path:require('./lib').out('w-')+name+'.png'});
  }
- await p.click('#btnSet');await p.waitForTimeout(600);
+ await p.evaluate(()=>{document.querySelector('.tab[data-v="more"]').click();document.querySelector('.moreit[data-go="settings"]').click();});await p.waitForTimeout(600);
  await p.screenshot({path:require('./lib').out('w-set.png')});
  const setH=await p.evaluate(()=>{const b=document.querySelector('#setVeil .panelbody')||document.querySelector('#setVeil > div');
    return b?Math.round(b.scrollHeight):null;});

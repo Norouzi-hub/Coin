@@ -35,7 +35,7 @@ const CAND='button,[role=button],summary,a.mark,label.shopt,.fc,select';
      try{const v=document.getElementById('setVeil');if(v&&!v.classList.contains('hide'))closePanel('setVeil');}catch(e){}
      const lb=document.getElementById('lb');if(lb&&!lb.classList.contains('hide'))lb.classList.add('hide');
      go(tab,true);window.scrollTo(0,0);
-     if(open==='settings')document.getElementById('btnSet').click();},sc);
+     if(open==='settings')openPanel('setVeil');},sc);
    await p.waitForTimeout(open(sc)?500:250);
  };
  const open=sc=>sc.open;

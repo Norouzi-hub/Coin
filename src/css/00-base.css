@@ -1592,3 +1592,4 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .flag.mkevf{margin-top:6px}
 .assec{display:flex;flex-direction:column;gap:6px;padding:9px 10px;border-radius:12px;border:1px dashed color-mix(in srgb,var(--gold) 45%,var(--line))}
 .assec .assig{background:var(--card)}
+.gldir b.u{color:var(--up)}.gldir b.d{color:var(--dn)}

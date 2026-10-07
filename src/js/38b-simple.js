@@ -20,7 +20,9 @@ function glanceData(){
     // پیگیری («ورود مجدد») استاپ ندارد: همان استاپی که کانال‌سنج از سیگنال قبلیِ همین نماد برمی‌دارد
     let ov2=ov;
     if(!I.stop&&!I.spot){const inp=audInput(p);
-      if(inp&&inp.inh&&inp.stop){I.stop=inp.stop;I.stopInh=true;ov2=Object.assign({},ov,{stop:inp.stop});}}
+      // جهت هم از همان سیگنال قبلی (پیگیریِ یک شورت، شورت است؛ پارسر بی‌جهت را لانگ می‌گیرد)
+      if(inp&&inp.inh&&inp.stop){I.stop=inp.stop;I.stopInh=true;if(!sig.dirSet&&inp.dir)I.dir=inp.dir;
+        ov2=Object.assign({},ov,{stop:inp.stop},!sig.dirSet&&inp.dir?{dir:inp.dir}:{});}}
     // بی‌استاپ برای ایزوله‌ی کوتاه‌مدت قابل گرفتن نیست؛ فقط شمرده می‌شود
     if(!I.stop&&!I.spot){nost++;continue;}
     const E=I.entry||px;
@@ -29,7 +31,10 @@ function glanceData(){
   }
   let dl=null;
   for(const q of DB.positions){const d=posDeadline(q);if(d&&(!dl||d<dl.t))dl={t:d,p:q};}
-  return {take,late,lt,nost,dl,open:openPos().length,unread:advUnread(),lock:lossLockOn()};
+  let nL=0,nS=0;
+  for(const p of POSTS){if(!p.date||now-p.date>30*864e5)break;if(!isSigPost(p))continue;
+    const s=sigOf(p);if(!s.dirSet)continue;if(s.direction==='short')nS++;else nL++;}
+  return {take,late,lt,nost,nL,nS,dl,open:openPos().length,unread:advUnread(),lock:lossLockOn()};
 }
 function glSigHtml(x,i){
   const {p,sig,I,px,z,pl}=x, E=I.entry, sd=E&&I.stop?Math.abs(E-I.stop)/E*100:null;
@@ -76,6 +81,8 @@ function paintGlance(){
     h+='<div class="glb">';
     if(d.lock)h+='<div class="flag d"><i>!</i><span>'+faN(d.lock.n)+' باخت پیاپی — تا فردا ورود تازه نه.</span></div>';
     {const dirs={long:0,short:0};for(const x of d.take)dirs[x.dir]++;h+=mktHtml(MKT,dirs);}
+    if(d.nL+d.nS)h+='<div class="hint gldir">کانال در 30 روز اخیر: <b class="u">'+faN(d.nL)+' لانگ</b> · <b class="d">'+faN(d.nS)+' شورت</b>'+
+      (d.nS<d.nL*0.15?' — کانال تقریباً فقط لانگ می‌دهد؛ شورت را «پیشنهاد برنامه» (شکست کف، تقاطع نزولی) پیدا می‌کند.':'')+'</div>';
     const list=GLALL?d.take:d.take.slice(0,GLMAX);
     list.forEach((x,i)=>h+=glSigHtml(x,i));
     if(d.take.length>list.length)h+='<button class="btn sm glmore" data-more="1">'+faN(d.take.length-list.length)+' سیگنال دیگر</button>';

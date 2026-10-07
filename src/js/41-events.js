@@ -1,7 +1,6 @@
 /* ==================== رویدادها ==================== */
 function wire(){
   $('#emblem').innerHTML=STAR;
-  $('#btnSet').innerHTML=ic('sliders');
   $('#btnRef').innerHTML=ic('refresh')+'<span>بروزرسانی</span>';
   $('#qIc').innerHTML=ic('search');
   $('#lqIc').innerHTML=ic('search');
@@ -58,7 +57,7 @@ function wire(){
   /* آموزش ورکر وقتی واسط شخصی داری و جواب داده، کارش تمام است */
   const wsx=$('#wSetup');
   if(wsx&&!proxyList().length&&!goodFor('tg'))wsx.open=true;
-  $('#btnSet').onclick=()=>openPanel('setVeil');
+  // تنظیمات از منوی «سایر» باز می‌شود (دکمه‌ی سربرگ برداشته شد)
   $('#btnBell').onclick=sheetAdvice;paintBell();
   $('#setX').innerHTML=ic('x');          // بدون این، دکمه‌ی بستن تنظیمات یک مربع خالی بود
   $('#setX').onclick=()=>closePanel('setVeil');

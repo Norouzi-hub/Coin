@@ -4,12 +4,12 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const errs=[];p.on('pageerror',e=>errs.push(e.message));const dl=[];p.on('dialog',d=>{dl.push(d.message().slice(0,40));d.dismiss();});
  await route(p.context());await p.goto('http://localhost:8899/index.html');await p.evaluate(seed);await p.goto('http://localhost:8899/index.html');await p.waitForTimeout(3500);
  // 14) مبلغ‌های آماده از تنظیمات
- await p.click('#btnSet');await p.waitForTimeout(400);await p.evaluate(()=>document.querySelectorAll('#setVeil details').forEach(d=>d.open=true));
+ await p.evaluate(()=>{document.querySelector('.tab[data-v="more"]').click();document.querySelector('.moreit[data-go="settings"]').click();});await p.waitForTimeout(400);await p.evaluate(()=>document.querySelectorAll('#setVeil details').forEach(d=>d.open=true));
  await p.fill('#sAmts','5, 15, 40, 200');await p.dispatchEvent('#sAmts','change');await p.click('#setDone');await p.waitForTimeout(400);
  const chips=await p.evaluate(()=>amtChips().join(','));
  ok(chips==='5,10,15,40,200','مبلغ‌های آماده از تنظیمات: '+chips);
  // 15) جداکننده‌ی هزارگان در تنظیمات
- await p.click('#btnSet');await p.waitForTimeout(400);
+ await p.evaluate(()=>{document.querySelector('.tab[data-v="more"]').click();document.querySelector('.moreit[data-go="settings"]').click();});await p.waitForTimeout(400);
  await p.fill('#sAcct','');await p.type('#sAcct','12500');
  ok(await p.$eval('#sAcct',i=>i.value)==='12,500','«12500» → «12,500» موقع تایپ');
  await p.click('#setDone');await p.waitForTimeout(300);
