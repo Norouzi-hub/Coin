@@ -1640,3 +1640,9 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .mdsp{width:100%;height:16px;color:var(--tx3)}.mdsp.u{color:var(--up)}.mdsp.d{color:var(--dn)}.mdsp.w{color:var(--warn)}
 
 .rdtime .lnk{background:none;border:0;padding:0;color:var(--gold);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
+.pill.psrc.ch{background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc);border-color:color-mix(in srgb,var(--acc) 40%,transparent)}
+.pill.psrc.me{background:color-mix(in srgb,var(--gold) 16%,transparent);color:var(--gold);border-color:color-mix(in srgb,var(--gold) 40%,transparent)}
+.psrcbar{margin:0 0 8px}.srcwrap{margin-top:8px}.srccmp tr.sub td{font-size:11.5px;color:var(--tx2)}.srccmp tr.sub td:first-child{padding-inline-start:14px}
+
+.ftab{gap:10px}.fcg{display:flex;align-items:center;gap:4px;flex:none}.fcl{font-size:11px;color:var(--tx3);padding-inline-end:2px}
+.frow.ftab{flex-wrap:wrap;overflow:visible;row-gap:6px}

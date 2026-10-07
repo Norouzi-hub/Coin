@@ -1657,6 +1657,12 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .mdsp{width:100%;height:16px;color:var(--tx3)}.mdsp.u{color:var(--up)}.mdsp.d{color:var(--dn)}.mdsp.w{color:var(--warn)}
 
 .rdtime .lnk{background:none;border:0;padding:0;color:var(--gold);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
+.pill.psrc.ch{background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc);border-color:color-mix(in srgb,var(--acc) 40%,transparent)}
+.pill.psrc.me{background:color-mix(in srgb,var(--gold) 16%,transparent);color:var(--gold);border-color:color-mix(in srgb,var(--gold) 40%,transparent)}
+.psrcbar{margin:0 0 8px}.srcwrap{margin-top:8px}.srccmp tr.sub td{font-size:11.5px;color:var(--tx2)}.srccmp tr.sub td:first-child{padding-inline-start:14px}
+
+.ftab{gap:10px}.fcg{display:flex;align-items:center;gap:4px;flex:none}.fcl{font-size:11px;color:var(--tx3);padding-inline-end:2px}
+.frow.ftab{flex-wrap:wrap;overflow:visible;row-gap:6px}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -5512,6 +5518,13 @@ const postDay=p=>{let v=DNMEMO.get(p);if(v==null){v=dayNo(p.date);DNMEMO.set(p,v
 const ymdNo=v=>{const m=/^(\d{4})-(\d\d)-(\d\d)$/.exec(v||'');return m?Math.floor(Date.UTC(+m[1],m[2]-1,+m[3])/864e5):null;};
 // برچسب‌ها کوتاه‌اند چون انتخاب‌گر یک‌چهارمِ ردیف است؛ «تاریخ» یعنی بدون فیلتر روز
 const DAY_FA={all:'تاریخ',today:'امروز',yest:'دیروز',week:'7 روز',range:'بازه'};
+/* فیلترهای تب «در انتظار»: جهت و بازار */
+function newPass(p,sig){
+  const d=VIEW.newDir, m=VIEW.newMkt;
+  if(d&&d!=='all'&&(sig.direction||'long')!==d)return false;
+  if(m&&m!=='all'){const ov=OVERRIDE[p.id]||{},mk=ov.market||sig.market||'futures';if(mk!==m)return false;}
+  return true;
+}
 function dayPass(){
   const d=VIEW.day;
   if(!DAY_FA[d]||d==='all')return null;
@@ -6668,16 +6681,15 @@ function renderFbar(){
   let nLive=0,nNew=0,nRes=0,nArch=0,nExp=0;
   const dp=dayPass();
   for(const p of POSTS){
-    if(dp&&!dp(p))continue;
     const bk=bucketOf(p);
+    if(bk==='les')continue;
+    // «در انتظار» فیلتر روز ندارد (فقط مال «همه» است)، ولی فیلتر جهت و بازارِ خودش را دارد
+    if(bk==='live'&&postKind(p)==='sig'&&!decisionOf(p.id)&&!isStale(p)&&newPass(p,sigOf(p)))nNew++;
+    if(dp&&!dp(p))continue;
     if(bk==='arch'){nArch++;continue;}
     if(bk==='exp'){nExp++;continue;}
-    if(bk==='les')continue;
     nLive++;
-    const kd=postKind(p);
-    if(kd==='res')nRes++;
-    if(kd!=='sig')continue;
-    if(!decisionOf(p.id)&&!isStale(p))nNew++;
+    if(postKind(p)==='res')nRes++;
   }
   let nNow=0;
   try{if(POSTS.length){nNow=glanceData().take.length+(F('autosig')?asSuggestions().list.length:0);}}catch(e){}
@@ -6687,7 +6699,9 @@ function renderFbar(){
     {k:'new', label:'در انتظار', n:nNew, hint:'سیگنال‌های این '+faN(S.staleDays||7)+' روز که هنوز تصمیمشان را نگرفته‌ای'},
     {k:'all', label:'همه',       n:nLive, hint:'سیگنال‌ها و نتیجه‌ها؛ خبر، اطلاع‌رسانی و یادداشت خودشان در آرشیوند'}
   ];
-  const cur=bucket==='live'?sigFilter:bucket;
+  // نتایج، منقضی، آرشیو و فیلتر روز زیرمجموعه‌ی «همه»اند
+  const inAll=bucket!=='live'||sigFilter==='all';
+  const cur=inAll?'all':sigFilter;
   bar.innerHTML='';
   const grp=el('div','fseg');
   for(const sg of segs){
@@ -6700,6 +6714,33 @@ function renderFbar(){
     grp.appendChild(b);
   }
   bar.appendChild(grp);
+  const chip=(row,label,n,on,fn,cls)=>{
+    const b=el('button','fc'+(on?' on':'')+(cls?' '+cls:''),'<span>'+label+'</span>'+(n!=null?'<i>'+faN(n)+'</i>':''));
+    b.setAttribute('aria-pressed',on?'true':'false');b.onclick=fn;row.appendChild(b);return b;
+  };
+  /* فیلترهای مخصوص هر تب: هر تب کار خودش را دارد، پس فیلترهای خودش را */
+  const seg=(row,lab,key,opts)=>{const g=el('div','fcg');if(lab)g.appendChild(el('span','fcl',lab));
+    for(const [v,t] of opts)chip(g,t,null,(VIEW[key]||'all')===v,()=>setView({[key]:v}));row.appendChild(g);};
+  const DIRS=[['all','همه'],['long','لانگ'],['short','شورت']];
+  if(!inAll){
+    const row=el('div','frow ftab');
+    if(sigFilter==='now'){
+      seg(row,'منبع','nowSrc',[['all','همه'],['ch','کانال'],['app','برنامه']]);
+      seg(row,'جهت','nowDir',DIRS);
+    }else if(sigFilter==='mkt'){
+      seg(row,'جهت','mktDir',DIRS);
+      chip(row,'فقط ۳ ستاره به بالا',null,!!VIEW.mktOk,()=>setView({mktOk:!VIEW.mktOk}));
+    }else if(sigFilter==='new'){
+      seg(row,'جهت','newDir',DIRS);
+      seg(row,'بازار','newMkt',[['all','همه'],['futures','فیوچرز'],['spot','اسپات']]);
+      // سیگنال‌های بلندمدت (استاپ دور، اسپات، هولد) برای ایزوله‌ی کوتاه‌مدت پنهان‌اند
+      if(LTHID||VIEW.iso===false){const on=VIEW.iso!==false;
+        chip(row,ic('shield')+(on?'فقط مناسب ایزوله':'همه، با بلندمدت‌ها'),on?LTHID:null,on,()=>setView({iso:!on}))
+          .title=on?faN(LTHID)+' سیگنال بلندمدت پنهان است؛ بزن تا دیده شوند':'بزن تا بلندمدت‌ها پنهان شوند';}
+    }
+    bar.appendChild(row);
+    return;
+  }
   /* دو سطلِ کنارِ گروه: «جای دیگر»اند نه «فیلتر دیگر»، پس بیرون از گروه می‌ایستند. */
   const side=el('div','fside');
   const mkSide=(key,icon,label,count,hint)=>{
@@ -6707,7 +6748,7 @@ function renderFbar(){
     b.setAttribute('role','tab');b.setAttribute('aria-selected',bucket===key?'true':'false');
     b.setAttribute('aria-label',label);b.title=hint;
     b.innerHTML='<span>'+ic(icon)+label+'</span><i>'+faN(count)+'</i>';
-    b.onclick=()=>{bucket=bucket===key?'live':key;setView({});
+    b.onclick=()=>{bucket=bucket===key?'live':key;sigFilter='all';setView({});
       window.scrollTo({top:0,behavior:'smooth'});};
     side.appendChild(b);
   };
@@ -6730,20 +6771,6 @@ function renderFbar(){
   };
   dl.appendChild(sel);side.appendChild(dl);
   bar.appendChild(side);
-  const chip=(row,label,n,on,fn,cls)=>{
-    const b=el('button','fc'+(on?' on':'')+(cls?' '+cls:''),'<span>'+label+'</span>'+(n!=null?'<i>'+faN(n)+'</i>':''));
-    b.setAttribute('aria-pressed',on?'true':'false');b.onclick=fn;row.appendChild(b);return b;
-  };
-  /* ردیف نوع پست برداشته شد: خبر، اطلاع‌رسانی و یادداشت خودشان در آرشیوند؛ «همه» = سیگنال‌ها و نتیجه‌ها */
-  // «در انتظار»: سیگنال‌های بلندمدت (استاپ دور، اسپات، هولد) برای ایزوله‌ی کوتاه‌مدت پنهان‌اند
-  if(bucket==='live'&&sigFilter==='new'&&(LTHID||VIEW.iso===false)){
-    const row=el('div','frow');
-    const on=VIEW.iso!==false;
-    chip(row,ic('shield')+(on?'فقط مناسب ایزوله':'همه، با بلندمدت‌ها'),on?LTHID:null,on,()=>setView({iso:!on}))
-      .title=on?faN(LTHID)+' سیگنال بلندمدت پنهان است؛ بزن تا دیده شوند':'بزن تا بلندمدت‌ها پنهان شوند';
-    if(on)row.appendChild(el('span','markhint',faN(LTHID)+' بلندمدت پنهان'));
-    bar.appendChild(row);
-  }
   if(day==='range'){
     const rg=el('div','frange');
     const inp=(key,lbl)=>{
@@ -6912,9 +6939,9 @@ function renderSignals(){
   const acc=F('accordion');
   let firstId=null, lastDay=null, sepEl=null, sepN=0;
   const closeSep=()=>{if(sepEl)sepEl.querySelector('.dsn').textContent=sepN+' پست';};
-  const dp=dayPass();
+  const dp=bucket!=='live'||sigFilter==='all'?dayPass():null;
   // انیمیشن ورود کارت‌ها فقط وقتی فهرست واقعاً عوض شده (فیلتر، سطل، جستجو)، نه با هر بروزرسانی
-  const rk=[bucket,sigFilter,coinFilter,q,VIEW.day,VIEW.iso].join('|'), animate=rk!==RS_KEY;RS_KEY=rk;
+  const rk=[bucket,sigFilter,coinFilter,q,VIEW.day,VIEW.iso,VIEW.newDir,VIEW.newMkt].join('|'), animate=rk!==RS_KEY;RS_KEY=rk;
   LTHID=0;
   for(const p of POSTS){
     if(dp&&!dp(p))continue;
@@ -6922,7 +6949,7 @@ function renderSignals(){
     if(bucket==='res'){if(bk!=='live'||postKind(p)!=='res')continue;}
     else if(bk!==bucket)continue;
     if(coinFilter&&(sig.ticker||'')!==coinFilter)continue;
-    if(bucket==='live'&&sigFilter==='new'&&!isOpenSig(p))continue;
+    if(bucket==='live'&&sigFilter==='new'&&(!isOpenSig(p)||!newPass(p,sig)))continue;
     if(bucket==='live'&&sigFilter==='new'&&VIEW.iso!==false&&isLongTerm(p)){LTHID++;continue;}
     if(q&&!((sig.ticker||'')+' '+p.text).toLowerCase().includes(q))continue;
     matched++;
@@ -6974,7 +7001,7 @@ function renderSignals(){
     const BK={res:'نتایج',exp:'منقضی',arch:'آرشیو'};
     // بخش‌های بالا (در انتظار/همه) خودشان روشن دیده می‌شوند؛ اینجا فقط چیزهایی که از چشم می‌افتند
     if(bucket!=='live'&&BK[bucket])tags.push([BK[bucket],()=>{bucket='live';}]);
-    if(DAY_FA[VIEW.day]&&VIEW.day!=='all')tags.push(['روز: '+DAY_FA[VIEW.day],()=>{VIEW.day='all';}]);
+    if((bucket!=='live'||sigFilter==='all')&&DAY_FA[VIEW.day]&&VIEW.day!=='all')tags.push(['روز: '+DAY_FA[VIEW.day],()=>{VIEW.day='all';}]);
     if(coinFilter)tags.push(['فقط '+esc(coinFilter),()=>{coinFilter=null;}]);
     if(q)tags.push(['جستجو: '+esc(query.trim().slice(0,16)),()=>{query='';$('#q').value='';}]);
     if(tags.length){
@@ -11327,6 +11354,7 @@ function asHtml(){
   let h='<div class="assec"><div class="mkh"><b>'+ic('bolt')+'پیشنهاد برنامه (از بازار، نه کانال)</b><small id="asProg">'+(ASQ.on?'':AS.at?ageTxt(AS.at):'')+'</small></div>';
   if(!AS.at&&!ASQ.on)h+='<div class="hint">هنوز بررسی نشده.</div>';
   for(const [i,x] of sg.list.slice(0,6).entries()){
+    if(VIEW.nowDir&&VIEW.nowDir!=='all'&&x.dir!==VIEW.nowDir)continue;   // فیلتر جهتِ تب «الان چه کنم؟»
     const z=isoSize(x.pl.E,x.pl.SL);
     h+='<div class="glsig assig" data-as="'+i+'"><div class="glit"><b dir="ltr">'+esc(x.tk)+'</b><span class="pill '+x.dir+'">'+(x.dir==='long'?'لانگ':'شورت')+'</span><span>'+esc(AS_RULES[x.k].t)+'</span><small>'+relTime(new Date(x.t))+'</small></div>'+
       '<div class="glnum">ورود <b dir="ltr">'+fmtPrice(x.pl.E)+'</b> · استاپ <b dir="ltr">'+fmtPrice(x.pl.SL)+'</b> ('+fmtNum(x.pl.sd*100)+'٪) · هدف <b dir="ltr">'+fmtPrice(x.pl.TP)+'</b> · حداکثر '+faN(AS_HOLD)+' ساعت</div>'+
@@ -11879,7 +11907,10 @@ function rdRowHtml(x,i){
 }
 let RDV=(()=>{try{return localStorage.getItem('signaldesk.rdview')||'sig';}catch(e){return 'sig';}})();
 function rdHtml(){
-  const L=rdList(), act=L.filter(x=>x.dir!=='wait'), wait=L.filter(x=>x.dir==='wait'), ob=rbOpen();
+  const L=rdList(), wait=L.filter(x=>x.dir==='wait'), ob=rbOpen();
+  // فیلترهای تب «بازار»: جهت و «فقط 3 ستاره به بالا»
+  const fd=VIEW.mktDir||'all', act=L.filter(x=>x.dir!=='wait'&&(fd==='all'||x.dir===fd)&&(!VIEW.mktOk||x.ok)),
+    hid=L.filter(x=>x.dir!=='wait').length-act.length;
   let h='<div class="glh"><b>'+ic('trend')+'رادار بازار</b><span>'+(L.length?faN(L.filter(x=>x.ok).length)+' فرصت با رتبه‌ی خوب از '+faN(L.length)+' ارز':'')+'</span></div><div class="glb">';
   h+='<div class="pbpick rdv">'+[['sig','سیگنال‌ها'],['test','آزمایشی'+(ob.test?' ('+faN(ob.test)+' باز)':'')],['log','دفتر پیشنهادها']].map(([k,t])=>'<button class="pbc'+(RDV===k?' on':'')+'" data-rdv="'+k+'">'+t+'</button>').join('')+'</div>';
   if(RDV!=='sig')return h+rbHtml(RDV)+'</div>';
@@ -11899,6 +11930,7 @@ function rdHtml(){
   h+=mdHtml();
   h+=rdPanelHtml();
   act.forEach((x,i)=>{h+=rdRowHtml(x,i);});
+  if(hid)h+='<div class="hint">'+faN(hid)+' سیگنال دیگر با فیلتر بالای صفحه پنهان است.</div>';
   if(wait.length)h+='<div class="hint rdwait"><b>صبر</b> (امتیاز زیر '+faN(RD_MIN)+'): '+wait.map(x=>esc(x.tk)+' <span class="'+(x.best==='long'?'win':'lose')+'">'+(x.best==='long'?'L':'S')+faN(x.sc)+'</span>').join('، ')+'</div>';
   h+='<div class="hint">مدل: رگرسیون لجستیک، جدا برای لانگ و شورت، روی نتیجه‌ی همین معامله (بعد از کارمزد و با ریسک‌فری). 22 عامل: قیمت، بیت‌کوین، قدرت نسبی، روند روزانه، نوسان، جریان پول فیوچرز بایننس'+
     (RD.nflow!=null?' ('+faN(RD.nflow)+' ارز داده‌اش را داشتند)':'')+'، و کل بازار (TOTAL، TOTAL2، TOTAL3، دامیننس بیت‌کوین و تتر)'+(RD.mkl&&RD.mkl.cov?'؛ تاریخچه‌اش از ارزهای بررسی‌شده بازسازی شده که '+faN(Math.round(RD.mkl.cov*100))+'٪ کل بازارند':'')+'. کارنامه با آزمون پیش‌رونده: مدل هر دوره را ندیده سنجیده شده. سود گذشته تضمین آینده نیست؛ «تست» بزن و در «دفتر پیشنهادها» ببین در عمل چه شد.</div></div>';
@@ -13141,6 +13173,31 @@ const PENDING=new Map();          // استاپ جابجاشده و هنوز ت�
    اسپات یا وقتی مارک در دسترس نیست با قیمت لحظه‌ای بازار اسپات */
 const markOf=p=>p&&p.kind!=='spot'&&MARK_AT&&Date.now()-MARK_AT<5*60e3&&MARK.get(p.ticker)||null;
 const pxOf=p=>markOf(p)||PRICES.get(p.ticker)||null;
+/* منبع پوزیشن: «کانال» (از پست کانال) یا «خودم» (رادار، پیشنهاد برنامه، یا دستی).
+   از شناسه‌ی پستی که از آن وارد شدی؛ کاربر در فرم ویرایش می‌تواند عوضش کند (p.srcK). */
+function posSrc(p){
+  let sid=p&&(p.sigId||p.postId);
+  if(p&&!sid)for(const [k,d] of Object.entries(DB.decisions))if(d&&d.posId===p.id){sid=k;break;}
+  const sub=sid&&/^radar\//.test(sid)?'radar':sid&&/^auto\//.test(sid)?'auto':sid?'ch':'manual';
+  const k=p&&(p.srcK==='ch'||p.srcK==='me')?p.srcK:sub==='ch'?'ch':'me';
+  return {k,sub:k==='ch'?'ch':sub==='ch'?'manual':sub};
+}
+const POSSRC_FA={ch:'کانال',radar:'خودم · رادار',auto:'خودم · پیشنهاد برنامه',manual:'خودم · دستی'};
+const posSrcPill=p=>{const s=posSrc(p);return el('span','pill psrc '+s.k,s.k==='ch'?'کانال':s.sub==='radar'?'رادار':s.sub==='auto'?'برنامه':'خودم');};
+let POSSRC=(()=>{try{return localStorage.getItem('signaldesk.possrc')||'all';}catch(e){return 'all';}})();
+/* کانال در برابر خودم: معامله‌های بسته، هر گروه جدا */
+function srcCompareHtml(closed,noHead){
+  if(!closed.length)return '';
+  const G={ch:[],me:[],radar:[],auto:[],manual:[]};
+  for(const p of closed){const s=posSrc(p);G[s.k].push(p);if(s.k==='me')G[s.sub].push(p);}
+  const row=(k,lab,sub)=>{const L=G[k];if(!L.length)return '';const a=agg(L);
+    return '<tr'+(sub?' class="sub"':'')+'><td>'+lab+'</td><td class="num">'+faN(a.n)+'</td><td class="num">'+(a.winRate!=null?faN(Math.round(a.winRate))+'٪':'—')+'</td>'+
+      '<td class="num '+cls(a.pnl)+'"><bdi>'+fmtUsd(a.pnl)+'</bdi></td><td class="num '+cls(a.avgR)+'"><bdi>'+(a.avgR!=null?fmtR(a.avgR):'—')+'</bdi></td></tr>';};
+  const subs=['radar','auto','manual'].filter(k=>G[k].length);
+  return '<div class="srccmp">'+(noHead?'':'<div class="sechd">کانال در برابر خودم (بسته‌شده‌ها)</div>')+'<div class="tscroll"><table class="tp xtab"><thead><tr><th></th><th>تعداد</th><th>برد</th><th>خالص</th><th>میانگین R</th></tr></thead><tbody>'+
+    row('ch','<span class="pill psrc ch">کانال</span>')+row('me','<span class="pill psrc me">خودم</span>')+
+    (G.me.length?subs.map(k=>row(k,'— '+POSSRC_FA[k].replace('خودم · ',''),true)).join(''):'')+'</tbody></table></div></div>';
+}
 
 function buildPendingCard(w){
   const px=PRICES.get(w.ticker);
@@ -13227,7 +13284,16 @@ function renderPositions0(){
       wrap.appendChild(buildPendingCard(w));
     return;
   }
-  const all=[...DB.positions].sort((a,b)=>(b.closedAt||b.openedAt)-(a.closedAt||a.openedAt));
+  const every=[...DB.positions].sort((a,b)=>(b.closedAt||b.openedAt)-(a.closedAt||a.openedAt));
+  // فیلتر منبع: همه / کانال / خودم (روی دستگاه می‌ماند)؛ آمار بالا هم مال همان منبع است
+  if(every.length){
+    const nC=every.filter(p=>posSrc(p).k==='ch').length, row=el('div','frow psrcbar');
+    for(const [k,t,n] of [['all','همه',every.length],['ch','کانال',nC],['me','خودم',every.length-nC]]){
+      const b=el('button','fc'+(POSSRC===k?' on':''),'<span>'+t+'</span><i>'+faN(n)+'</i>');b.setAttribute('aria-pressed',POSSRC===k?'true':'false');
+      b.onclick=()=>{POSSRC=k;try{localStorage.setItem('signaldesk.possrc',k);}catch(e){}renderPositions();};row.appendChild(b);}
+    sum.appendChild(row);
+  }
+  const all=POSSRC==='all'?every:every.filter(p=>posSrc(p).k===POSSRC);
   const open=all.filter(p=>p.status==='open');
 
   let unreal=0,hasLive=false;
@@ -13245,6 +13311,7 @@ function renderPositions0(){
     const totalClosed=all.filter(p=>p.status==='closed').reduce((s,p)=>s+(posMetrics(p).pnl||0),0);
     add('مجموع خالص',fmtUsd(totalClosed),cls(totalClosed));
     st.innerHTML=h;sum.appendChild(st);
+    if(POSSRC==='all'){const cmp=srcCompareHtml(every.filter(p=>p.status==='closed'),true);if(cmp){const d=el('details','sec sub2 srcwrap','<summary>کانال در برابر خودم (بسته‌شده‌ها)</summary>'+cmp);sum.appendChild(d);}}
     const limit=S.acct*(S.daily/100);
     if(todayPnl<0&&Math.abs(todayPnl)>=limit){
       sum.appendChild(el('div','status bad','امروز '+fmtUsd(todayPnl)+' ضرر کرده‌ای و این از حد روزانه‌ات ('+
@@ -13461,6 +13528,7 @@ function buildPosCard(p,opt){
   const fw=open?followsFor(p):[];
   const head=el('div','chead');
   head.appendChild(el('span','tick',p.ticker));
+  {const sp=posSrcPill(p);sp.title='منبع: '+POSSRC_FA[posSrc(p).sub];head.appendChild(sp);}
   if(isSpot)head.appendChild(el('span','pill gold','اسپات'));
   else{
     head.appendChild(el('span','pill '+p.dir,p.dir==='long'?'لانگ':'شورت'));
@@ -13863,7 +13931,11 @@ function sheetEditPos(p){
      fldHtml('x','قیمت خروج',d.exitPrice==null?'':d.exitPrice)+fldHtml('f','کارمزد ($)',d.fees==null?0:d.fees)+
      '<div class="fld"><label>زمان بستن</label><input id="f_c" type="datetime-local" value="'+dt(d.closedAt)+'"></div>'+
    '</div>'+
-   '<div class="fld" style="margin-top:10px"><label>یادداشت</label><input id="f_n" value="'+esc(d.note||'')+'"></div>'+
+   '<div class="grid" style="margin-top:10px">'+
+     '<div class="fld"><label>یادداشت</label><input id="f_n" value="'+esc(d.note||'')+'"></div>'+
+     (()=>{const k=posSrc(d).k;return '<div class="fld"><label>منبع</label><select id="f_src"><option value="ch"'+(k==='ch'?' selected':'')+'>کانال</option>'+
+       '<option value="me"'+(k==='me'?' selected':'')+'>خودم</option></select></div>';})()+
+   '</div>'+
    '<div id="prev" class="kv" style="margin-top:12px"></div>'+
    '<div class="srow"><button class="btn pri" id="ok">ذخیره</button><button class="btn" id="cx">انصراف</button></div>',
    sh=>{
@@ -13874,7 +13946,7 @@ function sheetEditPos(p){
        dir:spot()?'long':$('#f_d').value,kind:MK,
        entry:num('f_e'),stop:num('f_s'),margin:num('f_m'),lev:spot()?1:num('f_l'),
        status:$('#f_st').value,exitPrice:num('f_x'),fees:Math.max(0,parseFloat($('#f_f').value)||0),
-       note:($('#f_n').value||'').trim()});
+       note:($('#f_n').value||'').trim(),srcK:$('#f_src')?$('#f_src').value:undefined});
      const paintMkt=()=>{
        const mb=$('#mktBox');mb.innerHTML='';
        mb.appendChild(mktPicker(MK,k=>{MK=k;paintMkt();upd();}));
@@ -14107,6 +14179,7 @@ function agg(list){
   r.expectancy=decided?r.pnl/decided:null;
   return r;
 }
+let REPSRC=(()=>{try{return localStorage.getItem('signaldesk.repsrc')||'all';}catch(e){return 'all';}})();
 function renderReport(){
   $$('#vReport .fb[data-p]').forEach(b=>{
     const on=b.dataset.p===repPeriod;
@@ -14125,9 +14198,18 @@ function renderReportList(){
     }
   }
   const body=$('#repBody');body.innerHTML='';
-  const closed=DB.positions.filter(p=>p.status==='closed'&&p.closedAt);
+  const closedAll=DB.positions.filter(p=>p.status==='closed'&&p.closedAt);
+  // منبع: همه / کانال / خودم — کل کارنامه (تصویر کلی، رفتار، دوره‌ها) برای همان منبع
+  if(closedAll.length){
+    const nC=closedAll.filter(p=>posSrc(p).k==='ch').length, row=el('div','frow psrcbar');
+    for(const [k,t,n] of [['all','همه',closedAll.length],['ch','کانال',nC],['me','خودم',closedAll.length-nC]]){
+      const b=el('button','fc'+(REPSRC===k?' on':''),'<span>'+t+'</span><i>'+faN(n)+'</i>');b.setAttribute('aria-pressed',REPSRC===k?'true':'false');
+      b.onclick=()=>{REPSRC=k;try{localStorage.setItem('signaldesk.repsrc',k);}catch(e){}renderReportList();};row.appendChild(b);}
+    body.appendChild(row);
+  }
+  const closed=REPSRC==='all'?closedAll:closedAll.filter(p=>posSrc(p).k===REPSRC);
   if(!closed.length){
-    body.appendChild(el('div','empty',STAR+'هنوز معامله بسته‌شده‌ای نداری.<br>وقتی پوزیشنی را ببندی، کارنامه‌ات اینجا ساخته می‌شود.'));
+    body.appendChild(el('div','empty',STAR+(closedAll.length?'در این منبع معامله‌ی بسته‌ای نیست.':'هنوز معامله بسته‌شده‌ای نداری.<br>وقتی پوزیشنی را ببندی، کارنامه‌ات اینجا ساخته می‌شود.')));
     body.appendChild(repVsChannel([]));
     return;
   }
@@ -14154,6 +14236,7 @@ function renderReportList(){
   head.appendChild(statsOf(total,true));
   head.appendChild(equityCurve(inRange));
   body.appendChild(head);
+  if(REPSRC==='all'){const cmp=srcCompareHtml(inRange);if(cmp){const pn=el('div','panel',cmp);body.appendChild(pn);}}
   body.appendChild(buildBehavior(inRange));
   if(!F('lite'))body.appendChild(journalPanel(inRange));
 
@@ -14724,6 +14807,8 @@ function paintGlance(){
   if(view!=='signals'||bucket!=='live'||sigFilter!=='now'){g.innerHTML='';g.className='';return;}
   if(!POSTS.length){g.className='glance gltab';g.innerHTML='<div class="empty">'+STAR+'هنوز پستی نیامده.</div>';return;}
   const d=glanceData();
+  // فیلترهای همین تب: منبع (کانال / برنامه) و جهت
+  const src=VIEW.nowSrc||'all', dirF=VIEW.nowDir||'all', take=d.take.filter(x=>dirF==='all'||x.dir===dirF);
   // حال بازار هر ۱۵ دقیقه؛ رسیدنش دوباره می‌کشد
   // اگر نیامد، حداکثر هر دو دقیقه یک بار؛ فقط وقتی داده‌ی تازه رسید دوباره می‌کشد (نه حلقه)
   if((!MKT||Date.now()-MKT.at>MK_TTL)&&Date.now()-MKTRY>120000){MKTRY=Date.now();const was=MKT&&MKT.at;
@@ -14738,14 +14823,17 @@ function paintGlance(){
   {
     h+='<div class="glb">';
     if(d.lock)h+='<div class="flag d"><i>!</i><span>'+faN(d.lock.n)+' باخت پیاپی — تا فردا ورود تازه نه.</span></div>';
-    {const dirs={long:0,short:0};for(const x of d.take)dirs[x.dir]++;h+=mktHtml(MKT,dirs)+mdHtml();}
+    {const dirs={long:0,short:0};for(const x of take)dirs[x.dir]++;h+=mktHtml(MKT,dirs)+mdHtml();}
     if(d.nL+d.nS)h+='<div class="hint gldir">کانال در 30 روز اخیر: <b class="u">'+faN(d.nL)+' لانگ</b> · <b class="d">'+faN(d.nS)+' شورت</b>'+
       (d.nS<d.nL*0.15?' — کانال تقریباً فقط لانگ می‌دهد؛ شورت را «پیشنهاد برنامه» (شکست کف، تقاطع نزولی) پیدا می‌کند.':'')+'</div>';
-    const list=GLALL?d.take:d.take.slice(0,GLMAX);
-    list.forEach((x,i)=>h+=glSigHtml(x,i));
-    if(d.take.length>list.length)h+='<button class="btn sm glmore" data-more="1">'+faN(d.take.length-list.length)+' سیگنال دیگر</button>';
+    const list=GLALL?take:take.slice(0,GLMAX);
+    if(src!=='app'){
+      list.forEach((x,i)=>h+=glSigHtml(x,i));
+      if(take.length>list.length)h+='<button class="btn sm glmore" data-more="1">'+faN(take.length-list.length)+' سیگنال دیگر</button>';
+      if(!take.length&&d.take.length)h+='<div class="hint">سیگنال کانالی با این فیلتر نیست ('+faN(d.take.length)+' سیگنال دیگر پنهان است).</div>';
+    }
     // اول سیگنال‌های کانال، بعد پیشنهاد خود برنامه
-    h+=asHtml();
+    if(src!=='ch')h+=asHtml();
     if(d.late||d.lt||d.nost)h+='<div class="hint glskip">'+[d.nost?faN(d.nost)+' سیگنال بی‌استاپ (نه در متن، نه از سیگنال قبلی؛ برای ایزوله نه)':'',d.late?faN(d.late)+' سیگنال دیر رسیده (قیمت بیش از نیمی از راه تا تارگت 1 را رفته)':'',
       d.lt?faN(d.lt)+' سیگنال بلندمدت (اسپات یا استاپ دورتر از '+fmtNum(isoMaxSd())+'٪)':''].filter(Boolean).join(' · ')+' — در فهرست «در انتظار» هستند.</div>';
     if(d.dl)h+='<button class="glit" data-pos="'+esc(d.dl.p.id)+'"><b dir="ltr">'+esc(d.dl.p.ticker)+'</b><span>'+ic('clock')+(d.dl.t<=Date.now()?'مهلت گذشت — ببند':fmtLeft(d.dl.t-Date.now())+' تا پایان مهلت')+'</span></button>';
@@ -14759,7 +14847,7 @@ function paintGlance(){
   const mb=g.querySelector('[data-more]');if(mb)mb.onclick=()=>{GLALL=true;paintGlance();};
   asWire(g);
   g.querySelectorAll('.glsig').forEach(w=>{
-    const x=d.take[+w.dataset.i];if(!x)return;
+    const x=take[+w.dataset.i];if(!x)return;
     w.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{
       const a=b.dataset.a;
       if(a==='iso')isoEnter(x.p,x.sig,x.ov,x.px);

@@ -985,16 +985,15 @@ function renderFbar(){
   let nLive=0,nNew=0,nRes=0,nArch=0,nExp=0;
   const dp=dayPass();
   for(const p of POSTS){
-    if(dp&&!dp(p))continue;
     const bk=bucketOf(p);
+    if(bk==='les')continue;
+    // «در انتظار» فیلتر روز ندارد (فقط مال «همه» است)، ولی فیلتر جهت و بازارِ خودش را دارد
+    if(bk==='live'&&postKind(p)==='sig'&&!decisionOf(p.id)&&!isStale(p)&&newPass(p,sigOf(p)))nNew++;
+    if(dp&&!dp(p))continue;
     if(bk==='arch'){nArch++;continue;}
     if(bk==='exp'){nExp++;continue;}
-    if(bk==='les')continue;
     nLive++;
-    const kd=postKind(p);
-    if(kd==='res')nRes++;
-    if(kd!=='sig')continue;
-    if(!decisionOf(p.id)&&!isStale(p))nNew++;
+    if(postKind(p)==='res')nRes++;
   }
   let nNow=0;
   try{if(POSTS.length){nNow=glanceData().take.length+(F('autosig')?asSuggestions().list.length:0);}}catch(e){}
@@ -1004,7 +1003,9 @@ function renderFbar(){
     {k:'new', label:'در انتظار', n:nNew, hint:'سیگنال‌های این '+faN(S.staleDays||7)+' روز که هنوز تصمیمشان را نگرفته‌ای'},
     {k:'all', label:'همه',       n:nLive, hint:'سیگنال‌ها و نتیجه‌ها؛ خبر، اطلاع‌رسانی و یادداشت خودشان در آرشیوند'}
   ];
-  const cur=bucket==='live'?sigFilter:bucket;
+  // نتایج، منقضی، آرشیو و فیلتر روز زیرمجموعه‌ی «همه»اند
+  const inAll=bucket!=='live'||sigFilter==='all';
+  const cur=inAll?'all':sigFilter;
   bar.innerHTML='';
   const grp=el('div','fseg');
   for(const sg of segs){
@@ -1017,6 +1018,33 @@ function renderFbar(){
     grp.appendChild(b);
   }
   bar.appendChild(grp);
+  const chip=(row,label,n,on,fn,cls)=>{
+    const b=el('button','fc'+(on?' on':'')+(cls?' '+cls:''),'<span>'+label+'</span>'+(n!=null?'<i>'+faN(n)+'</i>':''));
+    b.setAttribute('aria-pressed',on?'true':'false');b.onclick=fn;row.appendChild(b);return b;
+  };
+  /* فیلترهای مخصوص هر تب: هر تب کار خودش را دارد، پس فیلترهای خودش را */
+  const seg=(row,lab,key,opts)=>{const g=el('div','fcg');if(lab)g.appendChild(el('span','fcl',lab));
+    for(const [v,t] of opts)chip(g,t,null,(VIEW[key]||'all')===v,()=>setView({[key]:v}));row.appendChild(g);};
+  const DIRS=[['all','همه'],['long','لانگ'],['short','شورت']];
+  if(!inAll){
+    const row=el('div','frow ftab');
+    if(sigFilter==='now'){
+      seg(row,'منبع','nowSrc',[['all','همه'],['ch','کانال'],['app','برنامه']]);
+      seg(row,'جهت','nowDir',DIRS);
+    }else if(sigFilter==='mkt'){
+      seg(row,'جهت','mktDir',DIRS);
+      chip(row,'فقط ۳ ستاره به بالا',null,!!VIEW.mktOk,()=>setView({mktOk:!VIEW.mktOk}));
+    }else if(sigFilter==='new'){
+      seg(row,'جهت','newDir',DIRS);
+      seg(row,'بازار','newMkt',[['all','همه'],['futures','فیوچرز'],['spot','اسپات']]);
+      // سیگنال‌های بلندمدت (استاپ دور، اسپات، هولد) برای ایزوله‌ی کوتاه‌مدت پنهان‌اند
+      if(LTHID||VIEW.iso===false){const on=VIEW.iso!==false;
+        chip(row,ic('shield')+(on?'فقط مناسب ایزوله':'همه، با بلندمدت‌ها'),on?LTHID:null,on,()=>setView({iso:!on}))
+          .title=on?faN(LTHID)+' سیگنال بلندمدت پنهان است؛ بزن تا دیده شوند':'بزن تا بلندمدت‌ها پنهان شوند';}
+    }
+    bar.appendChild(row);
+    return;
+  }
   /* دو سطلِ کنارِ گروه: «جای دیگر»اند نه «فیلتر دیگر»، پس بیرون از گروه می‌ایستند. */
   const side=el('div','fside');
   const mkSide=(key,icon,label,count,hint)=>{
@@ -1024,7 +1052,7 @@ function renderFbar(){
     b.setAttribute('role','tab');b.setAttribute('aria-selected',bucket===key?'true':'false');
     b.setAttribute('aria-label',label);b.title=hint;
     b.innerHTML='<span>'+ic(icon)+label+'</span><i>'+faN(count)+'</i>';
-    b.onclick=()=>{bucket=bucket===key?'live':key;setView({});
+    b.onclick=()=>{bucket=bucket===key?'live':key;sigFilter='all';setView({});
       window.scrollTo({top:0,behavior:'smooth'});};
     side.appendChild(b);
   };
@@ -1047,20 +1075,6 @@ function renderFbar(){
   };
   dl.appendChild(sel);side.appendChild(dl);
   bar.appendChild(side);
-  const chip=(row,label,n,on,fn,cls)=>{
-    const b=el('button','fc'+(on?' on':'')+(cls?' '+cls:''),'<span>'+label+'</span>'+(n!=null?'<i>'+faN(n)+'</i>':''));
-    b.setAttribute('aria-pressed',on?'true':'false');b.onclick=fn;row.appendChild(b);return b;
-  };
-  /* ردیف نوع پست برداشته شد: خبر، اطلاع‌رسانی و یادداشت خودشان در آرشیوند؛ «همه» = سیگنال‌ها و نتیجه‌ها */
-  // «در انتظار»: سیگنال‌های بلندمدت (استاپ دور، اسپات، هولد) برای ایزوله‌ی کوتاه‌مدت پنهان‌اند
-  if(bucket==='live'&&sigFilter==='new'&&(LTHID||VIEW.iso===false)){
-    const row=el('div','frow');
-    const on=VIEW.iso!==false;
-    chip(row,ic('shield')+(on?'فقط مناسب ایزوله':'همه، با بلندمدت‌ها'),on?LTHID:null,on,()=>setView({iso:!on}))
-      .title=on?faN(LTHID)+' سیگنال بلندمدت پنهان است؛ بزن تا دیده شوند':'بزن تا بلندمدت‌ها پنهان شوند';
-    if(on)row.appendChild(el('span','markhint',faN(LTHID)+' بلندمدت پنهان'));
-    bar.appendChild(row);
-  }
   if(day==='range'){
     const rg=el('div','frange');
     const inp=(key,lbl)=>{
@@ -1229,9 +1243,9 @@ function renderSignals(){
   const acc=F('accordion');
   let firstId=null, lastDay=null, sepEl=null, sepN=0;
   const closeSep=()=>{if(sepEl)sepEl.querySelector('.dsn').textContent=sepN+' پست';};
-  const dp=dayPass();
+  const dp=bucket!=='live'||sigFilter==='all'?dayPass():null;
   // انیمیشن ورود کارت‌ها فقط وقتی فهرست واقعاً عوض شده (فیلتر، سطل، جستجو)، نه با هر بروزرسانی
-  const rk=[bucket,sigFilter,coinFilter,q,VIEW.day,VIEW.iso].join('|'), animate=rk!==RS_KEY;RS_KEY=rk;
+  const rk=[bucket,sigFilter,coinFilter,q,VIEW.day,VIEW.iso,VIEW.newDir,VIEW.newMkt].join('|'), animate=rk!==RS_KEY;RS_KEY=rk;
   LTHID=0;
   for(const p of POSTS){
     if(dp&&!dp(p))continue;
@@ -1239,7 +1253,7 @@ function renderSignals(){
     if(bucket==='res'){if(bk!=='live'||postKind(p)!=='res')continue;}
     else if(bk!==bucket)continue;
     if(coinFilter&&(sig.ticker||'')!==coinFilter)continue;
-    if(bucket==='live'&&sigFilter==='new'&&!isOpenSig(p))continue;
+    if(bucket==='live'&&sigFilter==='new'&&(!isOpenSig(p)||!newPass(p,sig)))continue;
     if(bucket==='live'&&sigFilter==='new'&&VIEW.iso!==false&&isLongTerm(p)){LTHID++;continue;}
     if(q&&!((sig.ticker||'')+' '+p.text).toLowerCase().includes(q))continue;
     matched++;
@@ -1291,7 +1305,7 @@ function renderSignals(){
     const BK={res:'نتایج',exp:'منقضی',arch:'آرشیو'};
     // بخش‌های بالا (در انتظار/همه) خودشان روشن دیده می‌شوند؛ اینجا فقط چیزهایی که از چشم می‌افتند
     if(bucket!=='live'&&BK[bucket])tags.push([BK[bucket],()=>{bucket='live';}]);
-    if(DAY_FA[VIEW.day]&&VIEW.day!=='all')tags.push(['روز: '+DAY_FA[VIEW.day],()=>{VIEW.day='all';}]);
+    if((bucket!=='live'||sigFilter==='all')&&DAY_FA[VIEW.day]&&VIEW.day!=='all')tags.push(['روز: '+DAY_FA[VIEW.day],()=>{VIEW.day='all';}]);
     if(coinFilter)tags.push(['فقط '+esc(coinFilter),()=>{coinFilter=null;}]);
     if(q)tags.push(['جستجو: '+esc(query.trim().slice(0,16)),()=>{query='';$('#q').value='';}]);
     if(tags.length){

@@ -26,6 +26,13 @@ const postDay=p=>{let v=DNMEMO.get(p);if(v==null){v=dayNo(p.date);DNMEMO.set(p,v
 const ymdNo=v=>{const m=/^(\d{4})-(\d\d)-(\d\d)$/.exec(v||'');return m?Math.floor(Date.UTC(+m[1],m[2]-1,+m[3])/864e5):null;};
 // برچسب‌ها کوتاه‌اند چون انتخاب‌گر یک‌چهارمِ ردیف است؛ «تاریخ» یعنی بدون فیلتر روز
 const DAY_FA={all:'تاریخ',today:'امروز',yest:'دیروز',week:'7 روز',range:'بازه'};
+/* فیلترهای تب «در انتظار»: جهت و بازار */
+function newPass(p,sig){
+  const d=VIEW.newDir, m=VIEW.newMkt;
+  if(d&&d!=='all'&&(sig.direction||'long')!==d)return false;
+  if(m&&m!=='all'){const ov=OVERRIDE[p.id]||{},mk=ov.market||sig.market||'futures';if(mk!==m)return false;}
+  return true;
+}
 function dayPass(){
   const d=VIEW.day;
   if(!DAY_FA[d]||d==='all')return null;

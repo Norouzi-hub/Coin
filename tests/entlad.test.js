@@ -69,6 +69,8 @@ const html = `<html><body>
   await p.waitForTimeout(500);
   const n1 = await p.$$eval('#list .card', e=>e.length);
   console.log('  کارت‌ها:', n0, '→', n1, n1===n0-1 ? '✅ از فعال رفت' : '❌');
+  // نتایج، منقضی و آرشیو زیر «همه»اند
+  await p.evaluate(() => { bucket='live'; sigFilter='all'; renderSignals(); });
   await p.evaluate(() => [...document.querySelectorAll('#fbar .fside .fb')]
     .find(c => c.textContent.includes('آرشیو')).click());
   await p.waitForTimeout(500);

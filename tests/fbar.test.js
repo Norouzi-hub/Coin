@@ -44,6 +44,8 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
   });
 
   console.log('=== نوار فیلتر: ساختار ===');
+  // نتایج، منقضی، آرشیو و فیلتر روز فقط زیر «همه»اند
+  await p.evaluate(()=>{bucket='live';sigFilter='all';renderSignals();});await p.waitForTimeout(300);
   let s=await read();
   console.log('  بخش‌ها:', s.segs.map(x=>x.label+'('+x.n+')').join(' | '));
   ok(s.segs.length===4,'چهار بخش فیلتر دارد (الان چه کنم؟، بازار، در انتظار، همه)');
@@ -68,6 +70,9 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
     ok(onIdx===i,label+': فقط همین بخش روشن است (idx '+onIdx+')');
     ok(s.segs.filter(x=>x.sel==='true').length===1,label+': aria-selected یکتاست');
     ok(s.cards===num(s.segs[i].n),label+': عدد بخش = تعداد کارت‌ها ('+s.cards+')');
+    if(k==='new'){const t=await p.evaluate(()=>({side:!!document.querySelector('#fbar .fside'),tab:(document.querySelector('#fbar .ftab')||{}).textContent||''}));
+      ok(!t.side&&/جهت/.test(t.tab)&&/بازار/.test(t.tab)&&/فیوچرز/.test(t.tab),'«در انتظار»: فیلترهای خودش (جهت، بازار)؛ نتایج و آرشیو نه — '+t.tab);}
+    if(k==='all')ok(!!s.arch,'«همه»: نتایج/منقضی/آرشیو و فیلتر روز');
   }
 
   console.log('\n=== تمایز بصری بخش فعال ===');
@@ -95,7 +100,7 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
   s=await read();
   ok(s.showArch===true,'سطل آرشیو باز شد');
   ok(s.arch.on,'دکمه‌ی آرشیو روشن است');
-  ok(s.segs.every(x=>!x.on),'هیچ بخشی روشن نیست وقتی در آرشیوی');
+  ok(s.segs[3].on&&s.segs.filter(x=>x.on).length===1,'در آرشیو «همه» روشن است (آرشیو زیرمجموعه‌ی همه است)');
   ok(!s.tidy,'در آرشیو دکمه‌ی کنارگذاشتن نیست');
   const bulk=await p.evaluate(()=>{bucket='live';renderSignals();
     const t=document.querySelector('.tidy'); if(t){t.click();return true;} return false;});

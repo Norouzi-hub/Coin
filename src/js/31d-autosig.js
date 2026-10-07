@@ -139,6 +139,7 @@ function asHtml(){
   let h='<div class="assec"><div class="mkh"><b>'+ic('bolt')+'پیشنهاد برنامه (از بازار، نه کانال)</b><small id="asProg">'+(ASQ.on?'':AS.at?ageTxt(AS.at):'')+'</small></div>';
   if(!AS.at&&!ASQ.on)h+='<div class="hint">هنوز بررسی نشده.</div>';
   for(const [i,x] of sg.list.slice(0,6).entries()){
+    if(VIEW.nowDir&&VIEW.nowDir!=='all'&&x.dir!==VIEW.nowDir)continue;   // فیلتر جهتِ تب «الان چه کنم؟»
     const z=isoSize(x.pl.E,x.pl.SL);
     h+='<div class="glsig assig" data-as="'+i+'"><div class="glit"><b dir="ltr">'+esc(x.tk)+'</b><span class="pill '+x.dir+'">'+(x.dir==='long'?'لانگ':'شورت')+'</span><span>'+esc(AS_RULES[x.k].t)+'</span><small>'+relTime(new Date(x.t))+'</small></div>'+
       '<div class="glnum">ورود <b dir="ltr">'+fmtPrice(x.pl.E)+'</b> · استاپ <b dir="ltr">'+fmtPrice(x.pl.SL)+'</b> ('+fmtNum(x.pl.sd*100)+'٪) · هدف <b dir="ltr">'+fmtPrice(x.pl.TP)+'</b> · حداکثر '+faN(AS_HOLD)+' ساعت</div>'+

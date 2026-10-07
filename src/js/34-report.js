@@ -60,6 +60,7 @@ function agg(list){
   r.expectancy=decided?r.pnl/decided:null;
   return r;
 }
+let REPSRC=(()=>{try{return localStorage.getItem('signaldesk.repsrc')||'all';}catch(e){return 'all';}})();
 function renderReport(){
   $$('#vReport .fb[data-p]').forEach(b=>{
     const on=b.dataset.p===repPeriod;
@@ -78,9 +79,18 @@ function renderReportList(){
     }
   }
   const body=$('#repBody');body.innerHTML='';
-  const closed=DB.positions.filter(p=>p.status==='closed'&&p.closedAt);
+  const closedAll=DB.positions.filter(p=>p.status==='closed'&&p.closedAt);
+  // منبع: همه / کانال / خودم — کل کارنامه (تصویر کلی، رفتار، دوره‌ها) برای همان منبع
+  if(closedAll.length){
+    const nC=closedAll.filter(p=>posSrc(p).k==='ch').length, row=el('div','frow psrcbar');
+    for(const [k,t,n] of [['all','همه',closedAll.length],['ch','کانال',nC],['me','خودم',closedAll.length-nC]]){
+      const b=el('button','fc'+(REPSRC===k?' on':''),'<span>'+t+'</span><i>'+faN(n)+'</i>');b.setAttribute('aria-pressed',REPSRC===k?'true':'false');
+      b.onclick=()=>{REPSRC=k;try{localStorage.setItem('signaldesk.repsrc',k);}catch(e){}renderReportList();};row.appendChild(b);}
+    body.appendChild(row);
+  }
+  const closed=REPSRC==='all'?closedAll:closedAll.filter(p=>posSrc(p).k===REPSRC);
   if(!closed.length){
-    body.appendChild(el('div','empty',STAR+'هنوز معامله بسته‌شده‌ای نداری.<br>وقتی پوزیشنی را ببندی، کارنامه‌ات اینجا ساخته می‌شود.'));
+    body.appendChild(el('div','empty',STAR+(closedAll.length?'در این منبع معامله‌ی بسته‌ای نیست.':'هنوز معامله بسته‌شده‌ای نداری.<br>وقتی پوزیشنی را ببندی، کارنامه‌ات اینجا ساخته می‌شود.')));
     body.appendChild(repVsChannel([]));
     return;
   }
@@ -107,6 +117,7 @@ function renderReportList(){
   head.appendChild(statsOf(total,true));
   head.appendChild(equityCurve(inRange));
   body.appendChild(head);
+  if(REPSRC==='all'){const cmp=srcCompareHtml(inRange);if(cmp){const pn=el('div','panel',cmp);body.appendChild(pn);}}
   body.appendChild(buildBehavior(inRange));
   if(!F('lite'))body.appendChild(journalPanel(inRange));
 

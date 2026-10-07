@@ -20,7 +20,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  await p.evaluate(()=>{const id=n=>'c/1893051/'+n;
    DB.decisions[id(958)]={action:'skipped',at:Date.now()};
    DB.positions.push({id:'pp1',ticker:'XRP',dir:'long',status:'open',entry:2,stop:1.9,qty:1,openedAt:Date.now(),exits:[]});
-   DB.decisions[id(957)]={action:'taken',at:Date.now(),posId:'pp1'};save();renderAll();});
+   DB.decisions[id(957)]={action:'taken',at:Date.now(),posId:'pp1'};save();bucket='live';sigFilter='all';renderAll();});
  const fb=async()=>p.evaluate(()=>Object.fromEntries([...document.querySelectorAll('#fbar .fb:not(.fday)')].map(b=>[b.querySelector('span').textContent.trim(),+b.querySelector('i').textContent])));
  const ids=async()=>p.$$eval('#list .card',e=>e.map(c=>c.dataset.id.split('/').pop()).join(','));
  let c=await fb();console.log('  ',JSON.stringify(c));

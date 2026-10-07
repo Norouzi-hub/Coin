@@ -7,7 +7,9 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const REQ={},PXN={};
  await ctx.route(/klines\?symbol=/,r=>{const u=r.request().url(),m=u.match(/symbol=([A-Z0-9]+)USDT&interval=(\w+)&startTime=(\d+)&limit=(\d+)/);
    if(!m)return r.fallback();const [,s,iv,st,lim]=m,ms={'1h':36e5,'5m':3e5}[iv];if(!ms||s==='GRAM')return r.fallback();
-   REQ[s+':'+iv]=(REQ[s+':'+iv]||0)+1;
+   // درخواست 1000 ساعت اخیرِ mkCandles (رویدادهای کارت‌ها و پیشنهاد برنامه) مال رادار نیست؛ جدا شمرده می‌شود
+   const mk=iv==='1h'&&Math.abs(Date.now()-1000*36e5-(+st))<3*36e5;
+   REQ[s+':'+iv+(mk?':mk':'')]=(REQ[s+':'+iv+(mk?':mk':'')]||0)+1;
    const sd=[...s].reduce((a,c)=>a+c.charCodeAt(0),0)%17, H=36e5, base={BTC:60000,ETH:3000}[s]||10+sd;
    const P=PXN[s+':'+iv];
    const px=t=>P?P(t):base*(1+0.06*Math.sin(t/H/41+sd)+0.03*Math.sin(t/H/13+2*sd)+0.012*Math.sin(t/H/3.1+sd)+0.004*Math.sin(t/H*1.7));

@@ -30,7 +30,7 @@ const fa=t=>+String(t).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
  ok(k[958]==='res','«تارگت ۲ زده شد» → نتیجه');
  ok(k[957]==='ann','کمپین/ثبت نام → اطلاع‌رسانی');
  ok(k[955]==='note','بقیه → یادداشت');
- const fb=await p.evaluate(()=>Object.fromEntries([...document.querySelectorAll('#fbar .fb:not(.fday)')].map(b=>[b.querySelector('span').textContent.trim(),b.querySelector('i').textContent])));
+ const fb=await p.evaluate(()=>{bucket='live';sigFilter='all';renderSignals();return 0;}).then(()=>p.evaluate(()=>Object.fromEntries([...document.querySelectorAll('#fbar .fb:not(.fday)')].map(b=>[b.querySelector('span').textContent.trim(),b.querySelector('i').textContent]))));
  console.log('  ',JSON.stringify(fb));
  ok(fb['سیگنال‌ها']==null&&fa(fb['در انتظار'])===2,'در انتظار: فقط ۲ سیگنال (بخش «سیگنال‌ها» برداشته شد)');
  ok(fa(fb['همه'])===3,'همه: سیگنال‌ها و نتیجه (خبر، اطلاع‌رسانی، یادداشت در آرشیو)');

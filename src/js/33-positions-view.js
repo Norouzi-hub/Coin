@@ -6,6 +6,31 @@ const PENDING=new Map();          // استاپ جابجاشده و هنوز ت�
    اسپات یا وقتی مارک در دسترس نیست با قیمت لحظه‌ای بازار اسپات */
 const markOf=p=>p&&p.kind!=='spot'&&MARK_AT&&Date.now()-MARK_AT<5*60e3&&MARK.get(p.ticker)||null;
 const pxOf=p=>markOf(p)||PRICES.get(p.ticker)||null;
+/* منبع پوزیشن: «کانال» (از پست کانال) یا «خودم» (رادار، پیشنهاد برنامه، یا دستی).
+   از شناسه‌ی پستی که از آن وارد شدی؛ کاربر در فرم ویرایش می‌تواند عوضش کند (p.srcK). */
+function posSrc(p){
+  let sid=p&&(p.sigId||p.postId);
+  if(p&&!sid)for(const [k,d] of Object.entries(DB.decisions))if(d&&d.posId===p.id){sid=k;break;}
+  const sub=sid&&/^radar\//.test(sid)?'radar':sid&&/^auto\//.test(sid)?'auto':sid?'ch':'manual';
+  const k=p&&(p.srcK==='ch'||p.srcK==='me')?p.srcK:sub==='ch'?'ch':'me';
+  return {k,sub:k==='ch'?'ch':sub==='ch'?'manual':sub};
+}
+const POSSRC_FA={ch:'کانال',radar:'خودم · رادار',auto:'خودم · پیشنهاد برنامه',manual:'خودم · دستی'};
+const posSrcPill=p=>{const s=posSrc(p);return el('span','pill psrc '+s.k,s.k==='ch'?'کانال':s.sub==='radar'?'رادار':s.sub==='auto'?'برنامه':'خودم');};
+let POSSRC=(()=>{try{return localStorage.getItem('signaldesk.possrc')||'all';}catch(e){return 'all';}})();
+/* کانال در برابر خودم: معامله‌های بسته، هر گروه جدا */
+function srcCompareHtml(closed,noHead){
+  if(!closed.length)return '';
+  const G={ch:[],me:[],radar:[],auto:[],manual:[]};
+  for(const p of closed){const s=posSrc(p);G[s.k].push(p);if(s.k==='me')G[s.sub].push(p);}
+  const row=(k,lab,sub)=>{const L=G[k];if(!L.length)return '';const a=agg(L);
+    return '<tr'+(sub?' class="sub"':'')+'><td>'+lab+'</td><td class="num">'+faN(a.n)+'</td><td class="num">'+(a.winRate!=null?faN(Math.round(a.winRate))+'٪':'—')+'</td>'+
+      '<td class="num '+cls(a.pnl)+'"><bdi>'+fmtUsd(a.pnl)+'</bdi></td><td class="num '+cls(a.avgR)+'"><bdi>'+(a.avgR!=null?fmtR(a.avgR):'—')+'</bdi></td></tr>';};
+  const subs=['radar','auto','manual'].filter(k=>G[k].length);
+  return '<div class="srccmp">'+(noHead?'':'<div class="sechd">کانال در برابر خودم (بسته‌شده‌ها)</div>')+'<div class="tscroll"><table class="tp xtab"><thead><tr><th></th><th>تعداد</th><th>برد</th><th>خالص</th><th>میانگین R</th></tr></thead><tbody>'+
+    row('ch','<span class="pill psrc ch">کانال</span>')+row('me','<span class="pill psrc me">خودم</span>')+
+    (G.me.length?subs.map(k=>row(k,'— '+POSSRC_FA[k].replace('خودم · ',''),true)).join(''):'')+'</tbody></table></div></div>';
+}
 
 function buildPendingCard(w){
   const px=PRICES.get(w.ticker);
@@ -92,7 +117,16 @@ function renderPositions0(){
       wrap.appendChild(buildPendingCard(w));
     return;
   }
-  const all=[...DB.positions].sort((a,b)=>(b.closedAt||b.openedAt)-(a.closedAt||a.openedAt));
+  const every=[...DB.positions].sort((a,b)=>(b.closedAt||b.openedAt)-(a.closedAt||a.openedAt));
+  // فیلتر منبع: همه / کانال / خودم (روی دستگاه می‌ماند)؛ آمار بالا هم مال همان منبع است
+  if(every.length){
+    const nC=every.filter(p=>posSrc(p).k==='ch').length, row=el('div','frow psrcbar');
+    for(const [k,t,n] of [['all','همه',every.length],['ch','کانال',nC],['me','خودم',every.length-nC]]){
+      const b=el('button','fc'+(POSSRC===k?' on':''),'<span>'+t+'</span><i>'+faN(n)+'</i>');b.setAttribute('aria-pressed',POSSRC===k?'true':'false');
+      b.onclick=()=>{POSSRC=k;try{localStorage.setItem('signaldesk.possrc',k);}catch(e){}renderPositions();};row.appendChild(b);}
+    sum.appendChild(row);
+  }
+  const all=POSSRC==='all'?every:every.filter(p=>posSrc(p).k===POSSRC);
   const open=all.filter(p=>p.status==='open');
 
   let unreal=0,hasLive=false;
@@ -110,6 +144,7 @@ function renderPositions0(){
     const totalClosed=all.filter(p=>p.status==='closed').reduce((s,p)=>s+(posMetrics(p).pnl||0),0);
     add('مجموع خالص',fmtUsd(totalClosed),cls(totalClosed));
     st.innerHTML=h;sum.appendChild(st);
+    if(POSSRC==='all'){const cmp=srcCompareHtml(every.filter(p=>p.status==='closed'),true);if(cmp){const d=el('details','sec sub2 srcwrap','<summary>کانال در برابر خودم (بسته‌شده‌ها)</summary>'+cmp);sum.appendChild(d);}}
     const limit=S.acct*(S.daily/100);
     if(todayPnl<0&&Math.abs(todayPnl)>=limit){
       sum.appendChild(el('div','status bad','امروز '+fmtUsd(todayPnl)+' ضرر کرده‌ای و این از حد روزانه‌ات ('+
@@ -326,6 +361,7 @@ function buildPosCard(p,opt){
   const fw=open?followsFor(p):[];
   const head=el('div','chead');
   head.appendChild(el('span','tick',p.ticker));
+  {const sp=posSrcPill(p);sp.title='منبع: '+POSSRC_FA[posSrc(p).sub];head.appendChild(sp);}
   if(isSpot)head.appendChild(el('span','pill gold','اسپات'));
   else{
     head.appendChild(el('span','pill '+p.dir,p.dir==='long'?'لانگ':'شورت'));
@@ -728,7 +764,11 @@ function sheetEditPos(p){
      fldHtml('x','قیمت خروج',d.exitPrice==null?'':d.exitPrice)+fldHtml('f','کارمزد ($)',d.fees==null?0:d.fees)+
      '<div class="fld"><label>زمان بستن</label><input id="f_c" type="datetime-local" value="'+dt(d.closedAt)+'"></div>'+
    '</div>'+
-   '<div class="fld" style="margin-top:10px"><label>یادداشت</label><input id="f_n" value="'+esc(d.note||'')+'"></div>'+
+   '<div class="grid" style="margin-top:10px">'+
+     '<div class="fld"><label>یادداشت</label><input id="f_n" value="'+esc(d.note||'')+'"></div>'+
+     (()=>{const k=posSrc(d).k;return '<div class="fld"><label>منبع</label><select id="f_src"><option value="ch"'+(k==='ch'?' selected':'')+'>کانال</option>'+
+       '<option value="me"'+(k==='me'?' selected':'')+'>خودم</option></select></div>';})()+
+   '</div>'+
    '<div id="prev" class="kv" style="margin-top:12px"></div>'+
    '<div class="srow"><button class="btn pri" id="ok">ذخیره</button><button class="btn" id="cx">انصراف</button></div>',
    sh=>{
@@ -739,7 +779,7 @@ function sheetEditPos(p){
        dir:spot()?'long':$('#f_d').value,kind:MK,
        entry:num('f_e'),stop:num('f_s'),margin:num('f_m'),lev:spot()?1:num('f_l'),
        status:$('#f_st').value,exitPrice:num('f_x'),fees:Math.max(0,parseFloat($('#f_f').value)||0),
-       note:($('#f_n').value||'').trim()});
+       note:($('#f_n').value||'').trim(),srcK:$('#f_src')?$('#f_src').value:undefined});
      const paintMkt=()=>{
        const mb=$('#mktBox');mb.innerHTML='';
        mb.appendChild(mktPicker(MK,k=>{MK=k;paintMkt();upd();}));
