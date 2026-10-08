@@ -33,11 +33,11 @@ function rbPathStats(it,C){
 }
 /* یک آستانه‌ی خروج روی مسیر: اولین لمسِ آستانه پیش از استاپ ← برد؛ استاپ اول ← −1R؛ هیچ ← قیمت پایان 24 ساعت */
 function rbThSim(it,C,thR){
-  const s=it.dir==='long'?1:-1, u=it.E*it.sd, M5=3e5, t1=Math.floor(it.t/M5)*M5+M5, c=rbCost(it);let last=null;
+  const s=it.dir==='long'?1:-1, u=it.E*it.sd, M5=3e5, t1=Math.floor(it.t/M5)*M5+M5, c=exCost({tpf:0},it.sd), cT=exCost({tpf:1},it.sd);let last=null;
   for(const k of C){if(k.t<t1)continue;
     const fav=s>0?(k.h-it.E)/u:(it.E-k.l)/u, adv=s>0?(k.l-it.E)/u:(it.E-k.h)/u;
     if(adv<=-1)return {R:-1-c,how:'sl'};
-    if(fav>=thR)return {R:thR-c,how:'th'};
+    if(fav>=thR)return {R:thR-cT,how:'th'};       // خروج در آستانه با Limit
     last=k;}
   if(!last)return null;
   const done=last.t>=it.t+AS_HOLD*36e5-2*M5;

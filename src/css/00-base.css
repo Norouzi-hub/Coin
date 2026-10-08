@@ -1739,3 +1739,4 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rbfr b.u{color:var(--up)}.rbfr b.d{color:var(--dn)}
 .rbfa{gap:6px}
 #posSummary .rbfp{margin-bottom:8px}
+.rdcost{display:flex;gap:8px;align-items:flex-start;padding:9px 11px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-size:12.5px;line-height:1.85;color:var(--tx2)}.rdcost .ic{flex:none;width:16px;height:16px;margin-top:4px;color:var(--gold)}.rdcost b{color:var(--tx)}.rdord{color:var(--tx2)}

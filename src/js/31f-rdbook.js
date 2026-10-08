@@ -8,7 +8,8 @@ const RB_KEY='signaldesk.rdbook.v1';
 let RB=(()=>{const o=lsGet(RB_KEY);return o&&Array.isArray(o.items)?o:{items:[]};})();
 const RBLC=new Map();let RBCU=0,RBCUON=false,RBT=null;
 const rbSave=()=>lsSet(RB_KEY,RB);
-const rbCost=it=>(2*(+S.fee||0)+(+S.slip||0))/100/it.sd;
+/* هزینه‌ی معامله‌ی آزمایشی (به R): همان مدل سنجش — ورود و هدف‌ها با Limit (میکر)، بقیه با مارکت و لغزش */
+const rbCost=(it,st)=>exCost(it.x||{tpf:st==='tp'?1:0},it.sd);
 /* نقشه‌ی خروج: «خودکار» = همان که رادار در آزمون بیرون از یادگیری بهتر دیده؛ یا انتخاب خودت */
 let RBEX=(()=>{try{return localStorage.getItem('signaldesk.rdex')||'auto';}catch(e){return 'auto';}})();
 const rbExEff=()=>RBEX!=='auto'&&RD_EXN.includes(RBEX)?RBEX:(RD.ex||'lad');
@@ -25,6 +26,7 @@ function rbAdd(kind,x,quiet){
   if(RB.items.some(it=>it.k===kind&&it.st==='open'&&it.tk===x.tk&&(kind==='auto'||it.dir===x.dir))){if(!quiet)toast('همین معامله‌ی آزمایشی باز است','err');return null;}
   // سقف هم‌جهت: دفتر پیشنهادها همان قانون سنجش را دارد؛ تست با پرسیدن
   if(kind==='auto'&&RB.items.filter(it=>it.k==='auto'&&it.st==='open'&&it.dir===x.dir).length>=RD_CAP)return null;
+  if(kind==='auto'&&x.why==='cost')return null;
   if(kind==='test'&&!quiet){const n=rdOpenDir(x.dir);
     if(n>=RD_CAP&&!confirm(faN(n)+' معامله‌ی '+(x.dir==='long'?'لانگ':'شورت')+' باز داری (سقف '+faN(RD_CAP)+'). ارزها با هم حرکت می‌کنند و این‌ها عملاً یک شرط‌اند. باز هم ثبت شود؟'))return null;}
   const pl=rdPlanAt(x.pl,PRICES.get(x.tk)||x.pl.E), now=Date.now();
@@ -104,7 +106,7 @@ const rbPx=(it,r)=>it.E*(1+(it.dir==='long'?1:-1)*it.sd*r);              // R �
 /* R الانِ یک معامله‌ی باز: بخش بسته‌شده + باقی با قیمت الان، بعد از کارمزد */
 const rbLiveR=(it,px)=>it.x?exR(it.x,rbRof(it,px))-rbCost(it):rbRof(it,px)-rbCost(it);
 function rbClose(it,st,px,t){
-  const c=rbCost(it);
+  const c=rbCost(it,st);
   it.st=st;it.xt=t||Date.now();it.xp=px;
   if(it.x)it.R=+((st==='time'||st==='man'?exR(it.x,rbRof(it,px)):it.x.acc)-c).toFixed(3);
   else it.R=+(st==='tp'?it.rr-c:st==='sl'?-1-c:st==='be'?-c:rbRof(it,px)-c).toFixed(3);

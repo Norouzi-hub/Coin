@@ -183,6 +183,9 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(full.seen.length>2&&full.seen.every(x=>/\d+٪/.test(x)&&/\d:\d\d/.test(x))&&full.seen.some(x=>/ارز \d+ از 10/.test(x))&&full.gone,'نوار پیشرفت: درصد، کار الان و تایمر؛ آخر کار برداشته شد');
  ok(full.n===10&&full.rank===10,'بار اول فقط 10 ارز اول ('+full.rank+')، در '+full.ms+'ms');
  ok(full.rows>=2990&&full.flow>=490,'تاریخچه در IndexedDB: '+full.rows+' کندل یک‌ساعته، '+full.flow+' ساعت جریان پول');
+ const cst=await p.evaluate(()=>{RDV='model';renderRadar();const t=(document.querySelector('#rdView .rdcost')||{}).textContent||'';RDV='sig';renderRadar();return {c:RD.cost,t,cs:RD.cs===rdCostSig()};});
+ console.log('   ',JSON.stringify(cst).slice(0,300));
+ ok(cst.c&&cst.c.n>0&&cst.c.avg>0&&cst.c.avg<cst.c.mkt&&cst.c.mkt<cst.c.old&&cst.cs&&/هزینه‌ی هر معامله/.test(cst.t)&&/Limit/.test(cst.t),'«کارنامه»: هزینه‌ی میانگین هر معامله با Limit کمتر از Market و هر دو کمتر از روش قبلی');
  ok(RD_EXN_OK(full),'سه نقشه‌ی خروج بیرون از یادگیری سنجیده شد؛ بهترین: '+full.exP);
  ok(full.M&&full.cal>0&&full.rel&&full.pan,'مدل لانگ و شورت، کارنامه، صداقت مدل و پنل ساخته شد');
  ok(full.eth&&full.eth.fund!=null&&full.solfund==null,'تاریخچه‌ی فاندینگ: ETH دارد، SOL (بی فیوچرز) ندارد');
@@ -217,10 +220,21 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(pr.dup&&pr.kept&&pr.zero&&pr.weak>=pr.nF-8&&Math.abs(pr.w0)>0.1,'هرس خودکار: کپیِ یک عامل «تکراری» و عامل‌های بی‌اثر «کم‌اثر» کنار رفتند؛ عامل‌های مفید ماندند');
  // خروج سریع: همه در +0.5R، نصف در +0.5R، و خروج بعد از 1 ساعت با قیمت همان لحظه
  const qx=await p.evaluate(()=>{const C=Array.from({length:30},(_,j)=>j===0?{t:0,o:10,h:10,l:10,c:10}:j===1?{t:36e5,o:10,h:10.05,l:9.95,c:10.04}:{t:j*36e5,o:10.1,h:10.32,l:10.05,c:10.3});
-   const cost=(2*(+S.fee||0)+(+S.slip||0))/100/0.02,w=rdWalkX(C,0,{dir:'long',E:10,sd:0.02});
-   return {n:RD_EXN.length,q:+(w.q05.R+cost).toFixed(6),qj:w.q05.j,h:+(w.h05.R+cost).toFixed(6),t:+(w.t1h.R+cost).toFixed(6),tj:w.t1h.j,th:w.t1h.how,rows:(()=>{RDV='model';renderRadar();const n=document.querySelectorAll('#rdView .rdex tbody tr').length;RDV='sig';renderRadar();return n;})()};});
+   const cT=exCost({tpf:1},0.02),cM=exCost({tpf:0},0.02),w=rdWalkX(C,0,{dir:'long',E:10,sd:0.02});
+   return {n:RD_EXN.length,q:+(w.q05.R+cT).toFixed(6),qj:w.q05.j,h:+(w.h05.R+cT).toFixed(6),t:+(w.t1h.R+cM).toFixed(6),tj:w.t1h.j,th:w.t1h.how,rows:(()=>{RDV='model';renderRadar();const n=document.querySelectorAll('#rdView .rdex tbody tr').length;RDV='sig';renderRadar();return n;})()};});
  console.log('   ',JSON.stringify(qx));
  ok(qx.n===6&&qx.rows===6&&qx.q===0.5&&qx.qj===2&&qx.h===1&&qx.t===0.2&&qx.tj===1&&qx.th==='time','خروج سریع در سنجش: +0.5R، نصف +0.5R/باقی +1.5R، بعد از 1 ساعت (+0.2R)؛ شش ردیف در جدول نقشه‌ی خروج');
+ // هزینه: کارمزد رفت‌وبرگشت یک بار (نه دو بار)؛ Limit برای ورود و هدف، مارکت + لغزش برای استاپ؛ استاپ خیلی نزدیک کنار می‌رود
+ const cm=await p.evaluate(()=>{const keep={fee:S.fee,feeMk:S.feeMk,slip:S.slip,rdOrd:S.rdOrd};Object.assign(S,{fee:0.1,feeMk:0.04,slip:0.05,rdOrd:'lmt'});
+   const a={tp:exCost({tpf:1},0.02),sl:exCost({tpf:0},0.02),half:exCost({tpf:0.5},0.02),tight:exCostSl(0.006),ok2:exCostSl(0.02)};
+   S.rdOrd='mkt';a.mtp=exCost({tpf:1},0.02);a.msl=exCost({tpf:0},0.02);
+   // Limit که قیمت به آن نرسید: معامله‌ای نیست
+   S.rdOrd='lmt';const C=Array.from({length:30},(_,j)=>({t:j*36e5,o:10+j*0.2,h:10.1+j*0.2,l:j?10.05+j*0.2:10,c:10+j*0.2}));
+   const w=rdWalkX(C,0,{dir:'long',E:10,sd:0.02});a.nf=w&&w.tp.how;a.sig=rdCostSig();Object.assign(S,keep);return a;});
+ console.log('   ',JSON.stringify(cm));
+ const near=(x,y)=>Math.abs(x-y)<1e-9;
+ ok(near(cm.tp,0.02)&&near(cm.sl,0.06)&&near(cm.half,0.04)&&near(cm.mtp,0.05)&&near(cm.msl,0.075),'هزینه با استاپ 2٪: Limit تا هدف 0.02R، تا استاپ 0.06R؛ همه مارکت 0.05–0.075R (قبلاً همیشه 0.125R)');
+ ok(cm.tight>0.15&&cm.ok2<0.15&&cm.nf==='nofill'&&/v2/.test(cm.sig),'استاپ 0.6٪ (هزینه بیش از 0.15R) کنار می‌رود؛ Limit بی‌لمس = بی‌معامله');
  const R0=Object.assign({},REQ);
  const more=await p.evaluate(async()=>{await rdScan('more');return {n:RD.n,rank:RD.rank.length,uni:RD.rank.includes('UNI')&&RD.rank.includes('APT')};});
  const d=k=>(REQ[k]||0)-(R0[k]||0);

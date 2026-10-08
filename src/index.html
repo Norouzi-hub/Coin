@@ -319,7 +319,9 @@
       <div class="fld"><label>سقف زمان هر پوزیشن (ساعت)</label><input id="sMaxHold" type="number" min="0" max="720" step="0.5" placeholder="خالی = فقط قاعده‌ی من"></div>
       <div class="fld"><label>هدف ماهانه (٪ حساب)</label><input id="sGoal" type="number" min="0" max="1000" step="1" placeholder="مثلاً 20"></div>
       <div class="fld"><label>تارگت‌ها (R)</label><input id="sR" value="1.5, 3, 5" dir="ltr"></div>
-      <div class="fld"><label>کارمزد رفت‌وبرگشت (٪)</label><input id="sFee" type="number" value="0.1" min="0" max="2" step="0.01"></div>
+      <div class="fld"><label>کارمزد رفت‌وبرگشت مارکت (٪)</label><input id="sFee" type="number" value="0.1" min="0" max="2" step="0.01"></div>
+      <div class="fld"><label>کارمزد رفت‌وبرگشت Limit / میکر (٪)</label><input id="sFeeMk" type="number" value="0.04" min="0" max="2" step="0.01"></div>
+      <div class="fld"><label>سفارش ورود و هدف‌های رادار</label><select id="sRdOrd"><option value="lmt">Limit (میکر، کارمزد کمتر)</option><option value="mkt">Market (تیکر)</option></select></div>
       <div class="fld"><label>لغزش روی استاپ (٪)</label><input id="sSlip" type="number" value="0.05" min="0" max="2" step="0.01"></div>
       <div class="fld"><label>فاندینگ تخمینی (٪ هر ۸ ساعت)</label><input id="sFund" type="number" value="0" min="-1" max="1" step="0.005"></div>
       <div class="fld"><label>سبک خروج پیش‌فرض</label><select id="sPb">

@@ -23,7 +23,7 @@ function fxGuard(){
   if(S.feat&&S.feat.fx===false&&!lsGet('signaldesk.fxuser')){S.feat.fx=true;return true;}
   return false;
 }
-const S={lossLock:2,channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,slip:0.05,fund:0,openRisk:15,auto:60,proxy:'',feat:featDefaults(),staleDays:7,exitPb:'bal',cal:'j',
+const S={lossLock:2,channel:'ccoineres',acct:100,cap:10,risk:5,maxLev:10,daily:10,mode:'margin',rMul:[1.5,3,5],fee:0.1,feeMk:0.04,rdOrd:'lmt',slip:0.05,fund:0,openRisk:15,auto:60,proxy:'',feat:featDefaults(),staleDays:7,exitPb:'bal',cal:'j',
   aud:{days:30,entryDays:3,tol:1,rule:'tp1'}};
 const F=k=>!!(S.feat&&S.feat[k]);
 let BOOTED=false;
@@ -51,7 +51,7 @@ function applySettingsToForm(){
   $('#sAmts').value=amtPresets().join(', ');
   $('#sMaxLev').value=S.maxLev; $('#sDaily').value=S.daily;
   $('#sStale').value=S.staleDays||7; $('#sCal').value=calMode(); $('#sPb').value=pbDefault(); $('#sR').value=S.rMul.join(', '); $('#sFee').value=S.fee; $('#sAuto').value=S.auto;
-  $('#sSlip').value=S.slip; $('#sFund').value=S.fund; $('#sOpenRisk').value=S.openRisk;
+  $('#sSlip').value=S.slip;{const a=$('#sFeeMk');if(a)a.value=S.feeMk!=null?S.feeMk:0.04;const b=$('#sRdOrd');if(b)b.value=S.rdOrd==='mkt'?'mkt':'lmt';} $('#sFund').value=S.fund; $('#sOpenRisk').value=S.openRisk;
   if(typeof advApplyForm==='function')advApplyForm();
   $('#sRiskUsd').value=S.riskUsd>0?S.riskUsd:'';$('#sRiskUsd').placeholder='خالی = '+fmtUsd(riskUsd()); $('#sIsoSd').value=S.isoMaxSd||15;
   $('#sBeAt').value=S.beAt>0?S.beAt:''; $('#sTrail').value=S.trail>0?S.trail:''; $('#sMaxHold').value=S.maxHold>0?S.maxHold:'';
@@ -79,6 +79,7 @@ function readSettings(){
   S.daily=Math.min(100,Math.max(1,parseFloat($('#sDaily').value)||10));
   S.mode='margin'; S.fee=Math.max(0,parseFloat($('#sFee').value)||0);
   S.slip=Math.min(2,Math.max(0,parseFloat($('#sSlip').value)||0));
+  {const a=$('#sFeeMk');if(a){const v=parseFloat(a.value);S.feeMk=isFinite(v)?Math.min(2,Math.max(0,v)):0.04;}const b=$('#sRdOrd');if(b)S.rdOrd=b.value==='mkt'?'mkt':'lmt';}
   S.fund=Math.min(1,Math.max(-1,parseFloat($('#sFund').value)||0));
   S.openRisk=Math.min(100,Math.max(1,parseFloat($('#sOpenRisk').value)||15));
   {const r=parseFloat(normDig($('#sRiskUsd').value||''));S.riskUsd=r>0?Math.min(1e6,r):null;}
