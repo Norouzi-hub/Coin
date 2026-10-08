@@ -652,6 +652,7 @@ function rdList(){
   // سقف هم‌جهت: بازها (تست و واقعی) + فرصت‌های بالای فهرست
   const used={long:rdOpenDir('long'),short:rdOpenDir('short')};
   for(const x of out)if(x.ok){if(used[x.dir]>=RD_CAP){x.ok=false;x.why='cap';}else used[x.dir]++;}
+  try{rdStarTrack(out);}catch(e){}
   return out.sort(rank);
 }
 const rdCount=()=>rdList().filter(x=>x.ok).length;
@@ -748,6 +749,7 @@ function rdModelHtml(){
   const kpi=(v,l,c)=>'<div class="rdk"><b class="'+(c||'')+'" dir="ltr">'+v+'</b><small>'+l+'</small></div>';
   const kd=d=>{const o=H.d[d];return kpi(o.n?fmtR(o.avg):'—',(d==='long'?'لانگ':'شورت')+(o.n?' · '+faN(Math.round(o.win*100))+'٪ برد · '+faN(o.n):''),o.n?cls(o.avg):'');};
   h+='<div class="rdkpis">'+kpi(H.avg!=null?fmtR(H.avg):'—','میانگین هر معامله · '+faN(H.n)+(sp?' در '+faN(sp)+' روز':''),H.avg!=null?cls(H.avg):'')+kd('long')+kd('short')+kpi(faN(RD.ncoin||0),'ارز',H.few?'w':'')+'</div>';
+  h+='<button class="lnk rdhelpl" data-rdhelp="1">'+ic('info')+'امتیاز و ستاره یعنی چه؟ کِی وارد شوم؟ (راهنما)</button>';
   h+='<div class="hint">همه‌ی سیگنال‌های امتیاز '+faN(RD_MIN)+'+، روی دوره‌ای که مدل ندیده، با نقشه‌ی خروج انتخاب‌شده، بعد از کارمزد، هر ارز یک معامله و در هر جهت حداکثر '+faN(RD_CAP)+' معامله‌ی هم‌زمان'+
     (RD.capN?' (سقف هم‌جهت '+faN(RD.capN)+' معامله‌ی هم‌زمانِ اضافه را کنار گذاشت)':'')+'.</div>';
   if(H.neg)h+='<div class="flag d"><i>!</i><span><b>مدل در هر دو جهت زیان‌ده است.</b> تا وقتی یکی مثبت نشده، هیچ سیگنالی «قابل گرفتن» نیست؛ ارزهای بیشتر یا چند روز داده‌ی تازه کمک می‌کند.</span></div>';
@@ -762,12 +764,86 @@ function rdModelHtml(){
     (RD.nflow!=null?' ('+faN(RD.nflow)+' ارز داده‌اش را داشتند)':'')+'، و کل بازار (TOTAL، TOTAL2، TOTAL3، دامیننس بیت‌کوین و تتر)'+(RD.mkl&&RD.mkl.cov?'؛ تاریخچه‌اش از ارزهای بررسی‌شده بازسازی شده که '+faN(Math.round(RD.mkl.cov*100))+'٪ کل بازارند':'')+'. کارنامه با آزمون پیش‌رونده: مدل هر دوره را ندیده سنجیده شده. سود گذشته تضمین آینده نیست؛ «تست» بزن و در «دفتر» ببین در عمل چه شد.</div>';
   return h;
 }
+/* ---- ستاره‌ی دیروز و امروز: هر وقت ستاره‌ی یک ارز عوض شد، قبلی و دلیلش نگه داشته می‌شود ----
+   ستاره مال «دسته» است (جهت × بازه‌ی امتیاز × روند بیت‌کوین) و از کارنامه‌ی مدل می‌آید؛ پس با عوض شدن
+   امتیاز، روند بیت‌کوین یا یادگیری دوباره‌ی مدل عوض می‌شود، حتی اگر خود ارز تغییری نکرده باشد. */
+const RDSTH_KEY='signaldesk.rdsth';
+let RDSTH=(()=>{const a=lsGet(RDSTH_KEY);return a&&typeof a==='object'?a:{};})();
+function rdStarTrack(L){
+  let dirty=false;const now=Date.now();
+  for(const x of L){if(x.dir==='wait')continue;
+    const cur={s:x.stars,bk:rdBucket(x.sc),reg:RD.reg||null,mt:RD.mt0||0,dir:x.dir,at:now},o=RDSTH[x.tk];
+    if(!o||!o.cur){RDSTH[x.tk]={cur};dirty=true;continue;}
+    const c=o.cur;
+    if(c.s!==cur.s||c.dir!==cur.dir){
+      const why=[];
+      if(c.dir!==cur.dir)why.push('جهت از '+(c.dir==='long'?'لانگ':'شورت')+' به '+(cur.dir==='long'?'لانگ':'شورت')+' عوض شد');
+      if(c.bk!==cur.bk)why.push('امتیاز از دسته‌ی '+c.bk+' به '+cur.bk+' رفت');
+      if(c.reg!==cur.reg)why.push('روند بیت‌کوین از '+(RDREG_FA[c.reg]||'نامعلوم')+' به '+(RDREG_FA[cur.reg]||'نامعلوم')+' رفت');
+      if(c.mt!==cur.mt)why.push('مدل از نو یاد گرفت و کارنامه دوباره حساب شد');
+      if(!why.length)why.push('کارنامه‌ی همین دسته یا قانون‌های اعتبار به‌روز شد');
+      RDSTH[x.tk]={cur,prev:Object.assign({},c,{why})};dirty=true;}
+    else if(c.bk!==cur.bk||c.reg!==cur.reg||c.mt!==cur.mt){o.cur=cur;dirty=true;}}
+  if(dirty)lsSet(RDSTH_KEY,RDSTH);
+}
+/* تغییر ستاره در 36 ساعت اخیر (برای کارت) */
+const rdStarChg=x=>{const o=RDSTH[x.tk];return o&&o.prev&&o.cur&&o.cur.s===x.stars&&Date.now()-o.cur.at<36*36e5&&o.prev.s!==x.stars?o.prev:null;};
+function rdStarChgHtml(x,full){const p=rdStarChg(x);if(!p)return '';
+  const up=x.stars>p.s;
+  if(!full)return '<span class="pill '+(up?'win':'mut')+' rdchg" title="'+esc(p.why.join('؛ '))+'">قبلاً '+faN(p.s)+'★ → الان '+faN(x.stars)+'★</span>';
+  return '<div class="glnum rdchgd">ستاره از <b>'+faN(p.s)+'</b> ('+ageTxt(p.at)+') به <b>'+faN(x.stars)+'</b> رسید: '+esc(p.why.join('؛ '))+'. '+
+    'ستاره مال «دسته» است (جهت، بازه‌ی امتیاز و روند بیت‌کوین)، نه خود ارز.</div>';}
+
+/* راهنمای تب «بازار»: امتیاز، ستاره، کِی وارد شویم و تا کی صبر کنیم */
+function rdGuideHtml(){
+  const sec=(t,b,open)=>'<details class="sec sub2 rdgd"'+(open?' open':'')+'><summary>'+t+'</summary><div class="rdgdb">'+b+'</div></details>';
+  return '<h3>'+ic('info')+'راهنمای رادار بازار</h3><div class="rdguide">'+
+  sec('برنامه چه کار می‌کند؟','<ol>'+
+    '<li><b>داده جمع می‌کند:</b> برای هر ارز حدود 125 روز کندل یک‌ساعته، جریان پول فیوچرز (نهنگ‌ها، مردم، خرید/فروش تهاجمی، Open Interest)، فاندینگ و کل بازار (TOTAL و دامیننس‌ها).</li>'+
+    '<li><b>گذشته را دوباره بازی می‌کند:</b> در هر 2 ساعتِ گذشته '+faN(RD_FEAT.length)+' عامل را حساب می‌کند (روند، RSI، MACD، واگرایی، حجم، بیت‌کوین، جریان پول و …) و می‌بیند اگر همان لحظه لانگ یا شورت می‌گرفتیم چه می‌شد: استاپ 1.5 برابر نوسان معمول، خروج با نقشه‌ی خروج، حداکثر '+faN(AS_HOLD)+' ساعت، بعد از کارمزد.</li>'+
+    '<li><b>یاد می‌گیرد:</b> جدا برای لانگ و شورت، کدام ترکیب عامل‌ها قبل از معامله‌ی سودده بوده.</li>'+
+    '<li><b>خودش را صادقانه امتحان می‌کند:</b> روی بخشی از گذشته یاد می‌گیرد و روی بخش بعدی که <b>ندیده</b> سنجیده می‌شود (سه دور)؛ هر ارز یک معامله‌ی باز و در هر جهت حداکثر '+faN(RD_CAP)+' معامله‌ی هم‌زمان. نتیجه همان «کارنامه» است.</li></ol>'+
+    '<p><b>R چیست؟</b> 1R یعنی مبلغی که اگر استاپ بخورد از دست می‌دهی (ریسک هر معامله در تنظیمات: '+fmtUsd(riskUsd())+'). +0.2R یعنی به‌طور میانگین هر معامله 0.2 برابر ریسکش سود داده.</p>',true)+
+  sec('امتیاز چیست؟','<p>امتیاز <b>احتمال برد نیست</b>؛ می‌گوید وضعیت الانِ این ارز در مقایسه با همه‌ی لحظه‌های گذشته چقدر امیدوارکننده است. <b>امتیاز 90</b> یعنی از 90٪ لحظه‌های گذشته امیدوارکننده‌تر.</p>'+
+    '<ul><li>زیر '+faN(RD_MIN)+': سیگنال نیست (فهرست «صبر»).</li><li>'+faN(RD_MIN)+' به بالا: سیگنال است؛ جهتش لانگ یا شورت، هر کدام امتیاز بالاتری دارد.</li><li>در سه دسته سنجیده می‌شود: 70-85، 85-95، 95+.</li>'+
+    '<li>امتیاز فقط با بسته شدن هر کندل یک‌ساعته عوض می‌شود. احتمال واقعی به گفته‌ی مدل در «جزئیات» هر کارت است.</li></ul>')+
+  sec('ستاره‌ها چه می‌گویند؟','<p>ستاره کارنامه‌ی <b>همان دسته</b> است (همان جهت، همان بازه‌ی امتیاز و اگر سابقه بس باشد همان روند بیت‌کوین) در امتحانی که مدل ندیده بود. حداکثر 5 ستاره.</p>'+
+    '<table class="rdtab rdgt"><tbody>'+
+    '<tr><td>'+rdStarHtml(0)+'</td><td>کمتر از 20 معامله یا 5 روز سابقه؛ هنوز معلوم نیست</td></tr>'+
+    '<tr><td>'+rdStarHtml(1)+'</td><td>در گذشته <b>ضرر</b> داده</td></tr>'+
+    '<tr><td>'+rdStarHtml(2)+'</td><td>سود داده ولی <b>ممکن است شانس بوده باشد</b></td></tr>'+
+    '<tr><td>'+rdStarHtml(3)+'</td><td>حتی در بدترین حالت محتمل هم سودده</td></tr>'+
+    '<tr><td>'+rdStarHtml(5)+'</td><td>بدترین حالت محتمل هم سود خوبی داشته (4: دست‌کم +0.1R، 5: دست‌کم +0.25R)</td></tr></tbody></table>'+
+    '<p><b>فرق 2 و 3 ستاره مهم‌ترین نکته است.</b> میانگین سود کافی نیست؛ چند روز خوب می‌تواند آن را بالا ببرد. برنامه حساب می‌کند «در 90٪ حالت‌ها میانگین واقعی دست‌کم چقدر است» و چون ارزها با هم بالا و پایین می‌روند، معامله‌های یک روز را یک نمونه می‌شمارد. اگر حتی این عدد بدبینانه مثبت باشد، 3 ستاره؛ اگر میانگین مثبت ولی عدد بدبینانه نه، 2 ستاره.</p>'+
+    '<p>تا '+faN(RD_NC_MIN)+' ارز بررسی نشده، هیچ سیگنالی بیش از 3 ستاره نمی‌گیرد؛ برای اعتماد دست‌کم '+faN(RD_NC_OK)+' ارز لازم است.</p>')+
+  sec('چرا ستاره‌ی یک ارز عوض می‌شود؟','<p>ستاره مال <b>دسته</b> است، نه خود ارز؛ پس بی آنکه ارز کاری کرده باشد عوض می‌شود وقتی:</p><ul>'+
+    '<li><b>امتیاز دسته‌اش عوض شود:</b> مثلاً از 95+ (که سابقه‌اش 5 ستاره بود) به 85-95 (که 2 ستاره است). امتیاز هر ساعت با کندل تازه جابه‌جا می‌شود.</li>'+
+    '<li><b>روند بیت‌کوین عوض شود:</b> بیت‌کوین در 24 ساعت بیش از 2٪ بریزد (نزولی) یا بالا برود (صعودی). از آن لحظه کارنامه‌ی همان حال بازار ملاک است که می‌تواند خیلی فرق کند؛ لانگی که در بازار خنثی 5 ستاره بود در بازار نزولی ممکن است 2 ستاره باشد.</li>'+
+    '<li><b>مدل از نو یاد بگیرد:</b> روزی یک بار، با ارزهای تازه یا با «یادگیری دوباره». داده‌ی تازه و ارزهای بیشتر کارنامه را دقیق‌تر می‌کند؛ ستاره‌ای که روی نمونه‌ی کم بالا بود معمولاً پایین می‌آید.</li>'+
+    '<li><b>قانون‌های اعتبار:</b> با کمتر از '+faN(RD_NC_MIN)+' ارز سقف 3 ستاره؛ و سنجش با سقف '+faN(RD_CAP)+' معامله‌ی هم‌جهت سخت‌گیرتر از قبل است.</li></ul>'+
+    '<p>روی هر کارت اگر ستاره در 36 ساعت اخیر عوض شده باشد، «قبلاً N★ → الان M★» می‌آید و دلیلش در «جزئیات».</p>')+
+  sec('کِی مجاز به ورودیم؟','<p>وقتی سیگنال در گروه سبز <b>«قابل گرفتن»</b> است؛ یعنی همه با هم:</p><ol>'+
+    '<li>امتیاز '+faN(RD_MIN)+' یا بیشتر</li><li><b>3 ستاره یا بیشتر</b></li><li>همان جهت (لانگ یا شورت) در کل زیان‌ده نیست</li>'+
+    '<li>خلاف روند بیت‌کوین نیست (لانگ وقتی بیت‌کوین بیش از 2٪ ریخته)، مگر همان دسته در همین حال بازار 3 ستاره داشته باشد</li>'+
+    '<li>در آن جهت کمتر از '+faN(RD_CAP)+' معامله‌ی باز داری (تست یا واقعی)</li></ol>'+
+    '<p>اگر یکی نباشد، کارت در «بی اعتبار کافی» است و دلیلش با برچسب قرمز روی خودش.</p>')+
+  sec('روال عملی: کارت بالای صفحه','<ul>'+
+    '<li><b class="win">سبز «N فرصت قابل گرفتن»:</b> همان‌ها را با «ایزوله» بگیر (اندازه با ریسک ثابت حساب شده). برای ورود بهتر «جزئیات» ← «تأیید 5 دقیقه‌ای». بعد کاری لازم نیست: خروج با نقشه و حداکثر '+faN(AS_HOLD)+' ساعت.</li>'+
+    '<li><b>زرد «فرصت مطمئنی نیست»:</b> وارد نشو؛ اگر خواستی «تست» بزن.</li>'+
+    '<li><b class="lose">قرمز «امروز معامله نکن»:</b> هر دو جهت در امتحان زیان داده‌اند؛ معامله‌ی واقعی نه.</li></ul>'+
+    '<p><b>هر چند وقت؟</b> امتیاز ساعتی و مدل روزی یک بار عوض می‌شود؛ هر یکی دو ساعت سر زدن کافی است.</p>'+
+    '<p><b>تا کی صبر؟</b> تا چیزی در گروه سبز بیاید؛ ممکن است چند ساعت یا چند روز. با کارت قرمز، صبر یعنی بهتر کردن مدل: «رساندن به '+faN(RD_NC_OK)+' ارز»، چند روز داده‌ی تازه، و فقط تست.</p>')+
+  sec('یک واقعیت','<p>حتی سیگنال 3 تا 5 ستاره هم زیاد می‌بازد؛ درصد برد معمولاً 45 تا 60٪ است. سود از <b>میانگین</b> می‌آید، نه تک‌تک معامله‌ها. ریسک هر معامله را ثابت و کوچک نگه دار، حداکثر '+faN(RD_CAP)+' معامله‌ی هم‌جهت بگیر و بعد از ده‌ها معامله قضاوت کن. ستاره‌ها از گذشته‌اند و آینده را تضمین نمی‌کنند؛ «دفتر» همین را می‌سنجد.</p>')+
+  '</div><div class="srow"><button class="btn" id="cx">بستن</button></div>';
+}
+function rdGuide(){openSheet(rdGuideHtml(),sh=>{const c=sh.querySelector('#cx');if(c)c.onclick=closeSheet;});}
 /* کارت سیگنال: سربرگ (نماد، جهت، امتیاز، ستاره)، سه عدد اصلی، چند برچسب، دکمه‌ها؛ بقیه در «جزئیات» */
 function rdRowHtml(x,i){
   const z=x.pl?isoSize(x.pl.E,x.pl.SL):null, f=RD.fund&&RD.fund[x.tk], R=rdReasons(x), dn=x.dir==='long'?'لانگ':'شورت';
   const rk=rdRankOf(x.tk), ex=rbExEff(), PL=rdExPlans()[ex], dv=rdDivOf(x);
   const tags=[];
   if(!x.ok&&x.why)tags.push('<span class="pill lose rdwhy0">'+esc(x.why==='neg'?(x.dir==='long'?'لانگ‌ها':'شورت‌ها')+'ی مدل در کل زیان‌ده‌اند':RD_WHY[x.why]+(x.why==='reg'?' ('+RDREG_FA[RD.reg]+')':''))+'</span>');
+  {const c=rdStarChgHtml(x);if(c)tags.push(c);}
   if(dv)tags.push('<span class="pill '+(dv>0?'win':'lose')+' rddv">'+(dv>0?'✓ واگرایی هم‌جهت':'✗ واگرایی خلاف')+'</span>');
   R.slice(0,dv?2:3).forEach(r=>tags.push('<span class="pill '+(r.good==null?'mut':r.good?'win':'lose')+'">'+(r.good?'✓ ':r.good===false?'✗ ':'')+esc(r.t)+'</span>'));
   const kv=x.pl?'<div class="rdkv"><div><small>ورود</small><b dir="ltr">'+fmtPrice(x.pl.E)+'</b></div><div><small>استاپ</small><b dir="ltr">'+fmtPrice(x.pl.SL)+'</b><small dir="ltr">'+fmtNum(x.pl.sd*100)+'%</small></div>'+
@@ -781,7 +857,7 @@ function rdRowHtml(x,i){
     (tags.length?'<div class="glnum rdwhy">'+tags.join('')+'</div>':'')+
     '<div class="glact">'+(z?'<button class="btn sm '+(x.ok?'ok':'')+'" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
       (x.pl?'<button class="btn sm" data-a="test" title="معامله‌ی آزمایشی: مثل واقعی دنبال می‌شود، بی پول">'+ic('flag')+'<span>تست</span></button>':'')+'</div>'+
-    '<details class="rdmore"><summary>جزئیات و دلیل‌ها</summary>'+
+    '<details class="rdmore"><summary>جزئیات و دلیل‌ها</summary>'+rdStarChgHtml(x,true)+
       (x.cb?'<div class="glnum">سابقه‌ی '+dn+'‌های امتیاز '+rdBucket(x.sc)+(x.rt.reg?' در بازار '+RDREG_FA[RD.reg]:'')+': '+faN(x.cb.n)+' بار در '+faN(x.cb.g||0)+' روز، '+faN(Math.round(x.cb.w/x.cb.n*100))+'٪ برد، میانگین <b class="'+cls(x.cb.r/x.cb.n)+'" dir="ltr">'+fmtR(x.cb.r/x.cb.n)+'</b>'+
         (x.cb.lb!=null&&isFinite(x.cb.lb)?'، بدترین حالت محتمل <b class="'+cls(x.cb.lb)+'" dir="ltr">'+fmtR(x.cb.lb)+'</b>':'')+(x.rt&&x.rt.s0>x.stars?' (ستاره‌ی خامش '+faN(x.rt.s0)+'؛ با ارزهای کم حداکثر '+faN(x.stars)+')':'')+'</div>':'')+
       (x.p!=null?'<div class="glnum">احتمال سود به گفته‌ی مدل: <b>'+faN(Math.round(x.p*100))+'٪</b>'+(x.since?' · سیگنال از ساعت <b dir="ltr">'+rdHH(x.since)+'</b>':'')+'</div>':'')+
@@ -859,6 +935,7 @@ function rdHeroHtml(L){
       (need?'<button class="btn sm" data-rd50="1"'+(RDQ.on?' disabled':'')+'>'+ic('plus')+'<span>رساندن به '+faN(RD_NC_OK)+' ارز</span></button>':'')+'</div>';}
   h+='<div class="rdbar"><span class="rdcnt">'+(n?faN(n)+' ارز':'')+'</span><small id="rdProg">'+(RDQ.on?'':RD.at?ageTxt(RD.at):'')+'</small>'+
     '<button class="btn sm" data-rdrun="1"'+(RDQ.on?' disabled':'')+'>'+ic('refresh')+'<span>تازه کن</span></button>'+
+    '<button class="btn sm side" data-rdhelp="1" title="امتیاز، ستاره، کِی وارد شوم" aria-label="راهنما">'+ic('info')+'<span>راهنما</span></button>'+
     (n<RD_MAX?'<button class="btn sm" data-rdmore="1"'+(RDQ.on?' disabled':'')+'>'+ic('plus')+'<span>'+faN(RD_STEP)+' ارز بعدی</span></button>':'')+'</div>'+
     (RDQ.on?rdProgHtml():'')+'</div>';
   return h;
@@ -937,6 +1014,7 @@ function paintRadar(g){
   if(ad)ad.onclick=doAdd;if(inp)inp.onkeydown=e=>{if(e.key==='Enter')doAdd();};
   const r50=g.querySelector('[data-rd50]');if(r50)r50.onclick=()=>{const L0=rdListOf(),nw=rdUniverse(RD_NC_OK).filter(t=>!L0.includes(t)).slice(0,Math.max(0,RD_MAX-L0.length));
     if(!nw.length)return;toast(faN(nw.length)+' ارز تازه بررسی می‌شود (چند دقیقه)','info');rdScan('add',nw);paintRadar(g);};
+  g.querySelectorAll('[data-rdhelp]').forEach(b=>b.onclick=rdGuide);
   const mk=g.querySelector('.rdmk');if(mk)mk.ontoggle=()=>{RDMKOPEN=mk.open;try{localStorage.setItem('signaldesk.rdmk',RDMKOPEN?'1':'0');}catch(e){}};
   const fs=g.querySelector('[data-rdfavscan]');if(fs)fs.onclick=()=>{VIEW.mktFav=true;lsSet(VIEWKEY,VIEW);rdScan('add',RDFAV.slice());renderRadar();};
   const rs=g.querySelector('[data-rdreset]');if(rs)rs.onclick=()=>{if(!confirm('فهرست رادار به '+faN(RD_STEP)+' ارز اول'+(RDFAV.length?' و واچ‌لیست':'')+' برگردد؟'))return;

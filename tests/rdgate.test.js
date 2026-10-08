@@ -80,6 +80,21 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const btn=await p.evaluate(()=>{RDV='test';renderRadar();const b=!!document.querySelector('#rdView .rbtop [data-rbl="dl"]');RDV='sig';renderRadar();return b;});
  ok(btn,'دکمه‌ی «خروجی برای بررسی» بالای «آزمایشی»');
 
+ console.log('=== تغییر ستاره و راهنما ===');
+ const sc=await p.evaluate(()=>{const now=Date.now(),c=(n,w,r,g,lb)=>({n,w,r,g,lb});
+   __mk({ncoin:60,calib:{long:c(400,240,80,60,0.1),short:c(200,110,20,40,0.05),'long|95+':c(200,140,80,50,0.3),'long|85-95':c(200,100,10,50,-0.05),'short|85-95':c(100,60,20,40,0.15)}});
+   RDSTH={};RD.coins.L1.sc=96;renderRadar();const s1=rdList().find(x=>x.tk==='L1').stars;
+   RD.coins.L1.sc=88;RD.reg='bear';RD.mt0=now+1;renderRadar();const x=rdList().find(y=>y.tk==='L1');
+   const card=document.querySelector('#rdView .rdit[data-rd="L1"]');
+   return {s1,s2:x.stars,pill:(card.querySelector('.rdchg')||{}).textContent||'',det:(card.querySelector('.rdchgd')||{}).textContent||'',saved:!!(lsGet('signaldesk.rdsth')||{}).L1};});
+ console.log('   ',JSON.stringify(sc).slice(0,400));
+ ok(sc.s1===5&&sc.s2===2&&sc.pill==='قبلاً 5★ → الان 2★'&&/95\+ به 85-95/.test(sc.det)&&/روند بیت‌کوین/.test(sc.det)&&/مدل از نو یاد گرفت/.test(sc.det)&&sc.saved,
+   'ستاره‌ی 5 → 2: روی کارت «قبلاً 5★ → الان 2★» و دلیل‌ها (دسته‌ی امتیاز، روند بیت‌کوین، یادگیری دوباره)');
+ const gd=await p.evaluate(async()=>{document.querySelector('#rdView [data-rdhelp]').click();await new Promise(r=>setTimeout(r,300));
+   const t=document.getElementById('sheet').textContent;closeSheet();return t;});
+ ok(/امتیاز چیست/.test(gd)&&/احتمال برد نیست/.test(gd)&&/فرق 2 و 3 ستاره/.test(gd)&&/چرا ستاره‌ی یک ارز عوض می‌شود/.test(gd)&&/کِی مجاز به ورودیم/.test(gd)&&/تا کی صبر/.test(gd),'دکمه‌ی «راهنما»: امتیاز، ستاره، تغییر ستاره، کِی ورود و تا کی صبر');
+ await p.waitForTimeout(400);
+
  console.log('=== چیدمان ===');
  const ui=await p.evaluate(()=>{__mk({ncoin:60});const g=document.getElementById('rdView');
    const card=g.querySelector('.rdit'),det=card&&card.querySelector('details.rdmore');

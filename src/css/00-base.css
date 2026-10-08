@@ -1663,3 +1663,15 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rdsec .rdtab{margin-top:6px}
 .rbtop .btn.ok{flex:1}
 .rdwarn.bad{background:color-mix(in srgb,var(--dn) 7%,var(--inset));border-color:color-mix(in srgb,var(--dn) 45%,var(--line))}.rdwarn.bad b{color:var(--dn)}
+/* راهنمای رادار (ورق) و تغییر ستاره */
+.rdguide{display:flex;flex-direction:column;gap:8px}
+.rdguide .rdgd>summary{font-weight:800}
+.rdgdb{font-size:13px;line-height:2;color:var(--tx2);padding:4px 2px 2px}
+.rdgdb b{color:var(--tx)}.rdgdb b.win{color:var(--up)}.rdgdb b.lose{color:var(--dn)}
+.rdgdb ol,.rdgdb ul{margin:4px 0;padding-inline-start:20px;display:flex;flex-direction:column;gap:4px}
+.rdgdb p{margin:6px 0}
+.rdgt td{padding:6px 8px;font-size:12.5px;line-height:1.7}.rdgt td:first-child{white-space:nowrap}
+.rdhelpl{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;font-size:12.5px}
+.rdhelpl .ic{width:15px;height:15px}
+.rdchgd{color:var(--tx2)}
+.pill.rdchg{font-weight:800}
