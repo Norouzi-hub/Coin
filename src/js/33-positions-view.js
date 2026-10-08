@@ -118,6 +118,10 @@ function renderPositions0(){
     return;
   }
   const every=[...DB.positions].sort((a,b)=>(b.closedAt||b.openedAt)-(a.closedAt||a.openedAt));
+  // پوزیشن‌های رادار که شاید فقط امتحانی ثبت شده‌اند: یک کادر، یک زدن ← فهرست تیک‌دار
+  {const R=rbRadarAsk();if(R.length){const o=R.filter(p=>p.status==='open').length;
+    const w=el('div','rdwarn rbfp','<span><b>'+faN(R.length)+' پوزیشن از رادار</b>'+(o?' ('+faN(o)+' باز)':'')+' ثبت شده. اگر در صرافی نگرفته‌ای و فقط امتحانی بودند، به «تست‌ها» ببرشان تا کارنامه‌ی واقعی‌ات قاطی نشود.</span>');
+    const b=el('button','btn sm',ic('undo')+'<span>انتقال به تست‌ها</span>');b.onclick=()=>sheetRadarToTest();w.appendChild(b);sum.appendChild(w);}}
   // فیلتر منبع: همه / کانال / خودم (روی دستگاه می‌ماند)؛ آمار بالا هم مال همان منبع است
   if(every.length){
     const nC=every.filter(p=>posSrc(p).k==='ch').length, row=el('div','frow psrcbar');

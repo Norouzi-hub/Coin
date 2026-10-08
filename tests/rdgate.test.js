@@ -110,6 +110,21 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(fp.k===2&&!/rp/.test(fp.left)&&/cp1/.test(fp.left)&&fp.o&&fp.o.st==='open'&&fp.o.t&&fp.o.sc===90&&fp.o.stars===4&&fp.o.ex&&fp.c&&fp.c.st==='man'&&fp.c.R>0.3&&fp.c.R<0.45,
    'انتقال: باز با همان زمان ورود و امتیاز، بسته با همان قیمت خروج (+'+(fp.c&&fp.c.R)+'R)؛ پوزیشن کانال دست نخورد');
  ok(fp.before===1&&fp.after===1,'سقف هم‌جهت همان می‌ماند (باز واقعی ← باز آزمایشی)');
+ // راه آسان: کادر بالای «پوزیشن‌ها» ← فهرست تیک‌دار؛ تیکِ واقعی را برمی‌داری، یک زدن
+ const fs=await p.evaluate(async()=>{const n=Date.now(),H=36e5;RBREAL.clear();rbRealSave();
+   DB.positions.push({id:'rq1',sigId:'radar/L3/1',ticker:'L3',dir:'long',kind:'futures',entry:12,stop:11.76,stop0:11.76,margin:2,baseMargin:2,lev:10,openedAt:n-2*H,status:'open',note:'امتیاز 88',partials:[],log:[]},
+     {id:'rq2',sigId:'radar/L4/1',ticker:'L4',dir:'long',kind:'futures',entry:13,stop:12.74,stop0:12.74,margin:2,baseMargin:2,lev:10,openedAt:n-2*H,status:'open',note:'امتیاز 87',partials:[],log:[]});save();
+   go('positions',true);renderAll();const ban=(document.querySelector('#posSummary .rbfp')||{}).textContent||'';
+   document.querySelector('#posSummary .rbfp button').click();await new Promise(r=>setTimeout(r,300));
+   const rows=[...document.querySelectorAll('#sheet .rbfl input')];const all=rows.every(x=>x.checked);
+   rows.find(x=>x.dataset.id==='rq2').checked=false;rows.forEach(x=>x.dispatchEvent(new Event('change')));
+   const lab=document.querySelector('#rbfGo').textContent;document.querySelector('#rbfGo').click();await new Promise(r=>setTimeout(r,300));
+   const ids=DB.positions.map(x=>x.id);renderAll();
+   return {ban,n:rows.length,all,lab,moved:RB.items.some(i=>i.from==='pos'&&i.tk==='L3'),q1:ids.includes('rq1'),q2:ids.includes('rq2'),real:RBREAL.has('rq2'),
+     ban2:!!document.querySelector('#posSummary .rbfp')};});
+ console.log('   ',JSON.stringify(fs));
+ ok(/2 پوزیشن از رادار/.test(fs.ban)&&fs.n===2&&fs.all&&/انتقال 1 پوزیشن/.test(fs.lab),'«پوزیشن‌ها»: کادر «2 پوزیشن از رادار» ← فهرست تیک‌دار (همه تیک‌خورده)');
+ ok(fs.moved&&!fs.q1&&fs.q2&&fs.real&&!fs.ban2,'با یک زدن: L3 به تست‌ها رفت؛ L4 (بی تیک) واقعی ماند و دیگر پرسیده نمی‌شود');
  await p.evaluate(()=>{go('radar',true);RDV='sig';renderRadar();});
 
  console.log('=== چیدمان ===');

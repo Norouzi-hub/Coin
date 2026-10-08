@@ -45,6 +45,37 @@ function rbAdd(kind,x,quiet){
    بازها از لحظه‌ی ورود با کندل 5 دقیقه‌ای و نقشه‌ی خروج فعلی دوباره دنبال می‌شوند؛ بسته‌ها با همان قیمت خروج.
    پوزیشن از «پوزیشن‌ها» و کارنامه‌ی اصلی بیرون می‌رود. */
 const rbRadarPos=()=>(DB.positions||[]).filter(p=>posSrc(p).sub==='radar');
+/* پوزیشن‌های رادار که گفته‌ای واقعی‌اند (در صرافی گرفته‌ای): دیگر پیشنهاد انتقال برایشان نمی‌آید */
+let RBREAL=(()=>{try{return new Set(JSON.parse(localStorage.getItem('signaldesk.rdreal')||'[]'));}catch(e){return new Set();}})();
+const rbRealSave=()=>{try{localStorage.setItem('signaldesk.rdreal',JSON.stringify([...RBREAL]));}catch(e){}};
+const rbRadarAsk=()=>rbRadarPos().filter(p=>!RBREAL.has(p.id));
+/* یک فهرست تیک‌دار از همه‌ی پوزیشن‌های رادار: تیک یعنی «امتحانی بود، به تست‌ها برود»؛ بی تیک یعنی «واقعی است» */
+function sheetRadarToTest(after){
+  const P=rbRadarPos().sort((a,b)=>(b.openedAt||0)-(a.openedAt||0));
+  if(!P.length){toast('پوزیشن رادار نداری','info');return;}
+  const row=p=>{const m=posMetrics(p,p.status==='open'?pxOf(p):undefined);
+    return '<label class="rbfr"><input type="checkbox" data-id="'+esc(p.id)+'"'+(RBREAL.has(p.id)?'':' checked')+'>'+
+      '<b dir="ltr">'+esc(p.ticker||'')+'</b><span class="pill '+p.dir+'">'+(p.dir==='long'?'لانگ':'شورت')+'</span>'+
+      '<span class="pill '+(p.status==='open'?'open':'mut')+'">'+(p.status==='open'?'باز':'بسته')+'</span>'+
+      '<small>'+(p.openedAt?relTime(new Date(p.openedAt)):'')+'</small>'+
+      (m.pnl!=null?'<b class="'+cls(m.pnl)+'" dir="ltr">'+fmtUsd(m.pnl)+'</b>':'')+'</label>';};
+  openSheet('<h3>'+ic('undo')+'پوزیشن‌های رادار ← تست‌ها</h3>'+
+    '<div class="hint">تیک‌خورده‌ها از «پوزیشن‌ها» و کارنامه‌ی واقعی بیرون می‌روند و در «بازار ← آزمایشی» از لحظه‌ی ورود دنبال می‌شوند (بسته‌ها با همان قیمت خروج). '+
+    'تیکِ آن‌هایی را که <b>واقعاً در صرافی گرفته‌ای</b> بردار؛ آن‌ها همین‌جا می‌مانند و دیگر پرسیده نمی‌شوند.</div>'+
+    '<div class="srow rbfa"><button class="btn xs" data-all="1">همه</button><button class="btn xs" data-all="0">هیچ‌کدام</button></div>'+
+    '<div class="rbfl">'+P.map(row).join('')+'</div>'+
+    '<div class="srow"><button class="btn ok" id="rbfGo">'+ic('undo')+'<span>انتقال</span></button><button class="btn" id="cx">بستن</button></div>',
+  sh=>{const boxes=[...sh.querySelectorAll('.rbfl input')],go=sh.querySelector('#rbfGo');
+    const upd=()=>{const n=boxes.filter(b=>b.checked).length;go.querySelector('span').textContent=n?'انتقال '+faN(n)+' پوزیشن به تست‌ها':'ذخیره (همه واقعی‌اند)';};
+    boxes.forEach(b=>b.onchange=upd);upd();
+    sh.querySelectorAll('[data-all]').forEach(b=>b.onclick=()=>{boxes.forEach(x=>x.checked=b.dataset.all==='1');upd();});
+    sh.querySelector('#cx').onclick=closeSheet;
+    go.onclick=()=>{const sel=new Set(boxes.filter(b=>b.checked).map(b=>b.dataset.id));
+      for(const b of boxes)if(!b.checked)RBREAL.add(b.dataset.id);else RBREAL.delete(b.dataset.id);rbRealSave();
+      closeSheet();const L=P.filter(p=>sel.has(p.id));
+      if(L.length)rbFromPosAll(L);else{toast('همه واقعی ماندند','info');renderAll();}
+      if(after)after();};});
+}
 function rbFromPos(p){
   const E=+p.entry,SL=+(p.stop0||p.stop),dir=p.dir;if(!(E>0&&SL>0)||!p.ticker)return null;
   const sd=Math.abs(E-SL)/E;if(!(sd>0))return null;
@@ -167,7 +198,7 @@ function rbHtml(kind){
     if(open.length){const px=it=>PRICES.get(it.tk),liv=open.filter(it=>px(it)>0),sum=liv.reduce((a,it)=>a+rbLiveR(it,px(it)),0);
       h+='<div class="rbsum"><b>بازها الان</b><span>'+faN(open.length)+' معامله · جمع <b class="'+cls(sum)+'" dir="ltr">'+fmtR(sum)+'</b> · به دلار <b class="'+cls(sum)+'" dir="ltr">'+fmtUsd(sum*riskUsd())+'</b></span>'+
         '<button class="btn sm" data-rb="closeall">'+ic('x')+'<span>بستن همه با قیمت الان</span></button></div>';}
-    {const P=rbRadarPos(),po=P.filter(p=>p.status==='open').length;
+    {const P=rbRadarAsk(),po=P.filter(p=>p.status==='open').length;
       if(P.length)h+='<div class="rdwarn rbfp"><span><b>'+faN(P.length)+' پوزیشن رادار</b> در «پوزیشن‌ها» ثبت شده'+(po?' ('+faN(po)+' باز)':'')+'. اگر این‌ها را در صرافی <b>نگرفته‌ای</b> و فقط برای امتحان بودند، بیاورشان این‌جا تا کارنامه‌ی واقعی‌ات قاطی نشود؛ دنبال کردنشان از لحظه‌ی ورود ادامه پیدا می‌کند.</span>'+
         '<button class="btn sm" data-rb="frompos">'+ic('undo')+'<span>انتقال به آزمایشی</span></button></div>';}
     if(L.length)h+='<div class="srow rbtop"><button class="btn sm ok" data-rbl="dl" title="همه‌ی تست‌ها با مسیر واقعی قیمت، عامل‌های لحظه‌ی ورود و خلاصه‌ی مدل">'+ic('down')+'<span>خروجی برای بررسی</span></button>'+
@@ -206,9 +237,7 @@ function rbBind(g){
     if(a==='closeall'){const L=RB.items.filter(it=>it.k==='test'&&it.st==='open'&&PRICES.get(it.tk)>0);
       if(!L.length)return;if(!confirm(faN(L.length)+' معامله‌ی آزمایشیِ باز با قیمت الان بسته شود؟'))return;
       for(const it of L)rbClose(it,'man',PRICES.get(it.tk));rbSave();paintRadar(g);toast(faN(L.length)+' معامله بسته شد','ok');return;}
-    if(a==='frompos'){const P=rbRadarPos();if(!P.length)return;
-      if(!confirm(faN(P.length)+' پوزیشن رادار ('+P.map(p=>p.ticker+' '+(p.dir==='long'?'لانگ':'شورت')).join('، ')+') از «پوزیشن‌ها» و کارنامه بیرون برود و در «آزمایشی» دنبال شود؟\n\nفقط وقتی که در صرافی واقعاً نگرفته‌ای.'))return;
-      rbFromPosAll(P);paintRadar(g);return;}
+    if(a==='frompos'){sheetRadarToTest(()=>paintRadar(g));return;}
     if(a==='clear'){const keep=RB.items;RB.items=RB.items.filter(it=>it.k!=='test'||it.st==='open');rbSave();paintRadar(g);toastUndo('بسته‌های آزمایشی پاک شد',()=>{RB.items=keep;rbSave();paintRadar(g);});return;}
     const row=b.closest('[data-id]'), it=row&&RB.items.find(x=>x.id===row.dataset.id);if(!it)return;
     if(a==='close'){const px=PRICES.get(it.tk);if(!(px>0)){toast('قیمت الان معلوم نیست','err');return;}rbClose(it,'man',px);}

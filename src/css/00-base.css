@@ -1732,3 +1732,10 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .pmlab .u{color:var(--up)}.pmlab .d{color:var(--dn)}
 .psrow .psort>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}.psrow .psort select{min-height:36px}
 .rdhelpl.lnk{background:none;border:0;padding:4px 0;color:var(--gold);font-weight:800;cursor:pointer}
+.rbfl{display:flex;flex-direction:column;gap:6px;margin:8px 0;max-height:52vh;overflow:auto}
+.rbfr{display:flex;align-items:center;gap:8px;padding:10px;border-radius:12px;background:var(--inset);border:1px solid var(--line);cursor:pointer;min-height:48px}
+.rbfr input{width:20px;height:20px;accent-color:var(--gold);flex:none}
+.rbfr small{color:var(--tx3);font-size:11px;margin-inline-start:auto}
+.rbfr b.u{color:var(--up)}.rbfr b.d{color:var(--dn)}
+.rbfa{gap:6px}
+#posSummary .rbfp{margin-bottom:8px}
