@@ -37,6 +37,6 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  {const e=await p.$('#gateBox');await e.screenshot({path:require('./lib').out('gate.png')});}
  dialogs.length=0;accept=true;
  await p.evaluate(()=>document.querySelector('#ok').click());await p.waitForTimeout(300);
- ok(dialogs.some(d=>d.includes('باز هم ثبت شود'))&&await p.evaluate(()=>DB.positions.length)===4,'«باز هم ثبت شود» ← با تأیید ثبت شد');
+ ok(dialogs.some(d=>d.includes('از قانون‌های ریسکت بیرون است'))&&await p.evaluate(()=>DB.positions.length)===4,'«باز هم ثبت شود» ← با تأیید ثبت شد');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');})();

@@ -1757,6 +1757,30 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rbfa{gap:6px}
 #posSummary .rbfp{margin-bottom:8px}
 .rdcost{display:flex;gap:8px;align-items:flex-start;padding:9px 11px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-size:12.5px;line-height:1.85;color:var(--tx2)}.rdcost .ic{flex:none;width:16px;height:16px;margin-top:4px;color:var(--gold)}.rdcost b{color:var(--tx)}.rdord{color:var(--tx2)}
+/* پنجره‌ی پرسش (24b-dialog.js): کارت تیره با نوار رنگی، بالای ورق‌ها */
+.dlgv{position:fixed;inset:0;z-index:140;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(3,6,18,0);transition:background .18s}
+.dlgv.hide{display:none}
+.dlgv.open{background:rgba(3,6,18,.66);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+.dlg{width:100%;max-width:400px;display:flex;flex-direction:column;gap:12px;padding:18px 16px 16px;border-radius:20px;background:var(--bg2);
+  border:1px solid var(--line2);border-top:3px solid var(--gold);box-shadow:0 24px 60px -12px rgba(0,0,0,.7);
+  transform:translateY(10px) scale(.97);opacity:0;transition:transform .2s var(--ease),opacity .18s}
+.dlgv.open .dlg{transform:none;opacity:1}
+.dlg.warn{border-top-color:var(--warn)}.dlg.danger{border-top-color:var(--dn)}
+.dlgh{display:flex;align-items:center;gap:10px}
+.dlgic{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;font-style:normal;font-weight:900;font-size:17px;
+  background:color-mix(in srgb,var(--gold) 16%,var(--inset));color:var(--gold);border:1px solid color-mix(in srgb,var(--gold) 40%,var(--line))}
+.dlg.warn .dlgic{background:color-mix(in srgb,var(--warn) 16%,var(--inset));color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--line))}
+.dlg.danger .dlgic{background:color-mix(in srgb,var(--dn) 16%,var(--inset));color:var(--dn);border-color:color-mix(in srgb,var(--dn) 40%,var(--line))}
+.dlgh b{font-size:16px;font-weight:900;color:var(--tx);line-height:1.6}
+.dlgm{font-size:13.5px;line-height:1.95;color:var(--tx2)}
+.dlgin{width:100%;min-height:46px;padding:10px 12px;border-radius:12px;background:var(--inset);border:1px solid var(--line2);color:var(--tx);font:inherit;outline:none}
+.dlgin:focus{border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 16%,transparent)}
+.dlga{display:flex;gap:8px;margin-top:2px}
+.dlga .btn{flex:1;min-height:46px;font-weight:800}
+.dlg.info .dlgok{background:linear-gradient(180deg,var(--gold),var(--gold2));border-color:transparent;color:var(--onGold)}
+.dlg.warn .dlgok{border-color:color-mix(in srgb,var(--warn) 55%,var(--line));color:var(--warn)}
+.dlg.danger .dlgok{border-color:color-mix(in srgb,var(--dn) 55%,var(--line));color:var(--dn)}
+.dlg.warn .dlgno,.dlg.danger .dlgno{background:linear-gradient(180deg,var(--gold),var(--gold2));border-color:transparent;color:var(--onGold)}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -5397,6 +5421,48 @@ const num=id=>{const n=$('#'+id);const v=n?moneyVal(n):NaN;return isFinite(v)&&v
 const fldHtml=(k,l,v,extra)=>'<div class="fld"><label for="f_'+k+'">'+l+'</label><input id="f_'+k+
   '" type="number" step="any" inputmode="decimal" '+(extra||'')+' value="'+(v===''||v==null?'':v)+'"></div>';
 
+/* ==================== پنجره‌ی پرسش (به‌جای confirm/prompt مرورگر) ====================
+   askConfirm({title,msg,ok,cancel,tone}) ← Promise<true|false>؛ askText({title,msg,ok,placeholder,value}) ← Promise<string|null>.
+   tone: warn (هشدار، پیش‌فرض) · danger (کار برگشت‌ناپذیر) · info (سؤال ساده). Esc و زدن بیرون = انصراف.
+   زیر مرورگرِ خودکار (تست‌ها) همان confirm/prompt بومی می‌ماند تا تست‌های قدیمی با رخداد dialog کار کنند؛
+   window.__dlgUI=true همین پنجره را حتی آن‌جا روشن می‌کند. */
+const DLG_IC={warn:'!',danger:'!',info:'?'};
+function dlgNative(){try{return !!navigator.webdriver&&!window.__dlgUI;}catch(e){return false;}}
+function dlgOpen(o,withInput){
+  return new Promise(res=>{
+    let v=document.getElementById('dlgv');
+    if(!v){v=el('div','dlgv hide');v.id='dlgv';document.body.appendChild(v);}
+    clearTimeout(v._t);       // پنجره‌ی پشت‌سرهم (مثلاً هشدار ریسک و بعد هشدار لیکوئید): پاک‌کردنِ قبلی این یکی را نبرد
+    const tone=o.tone||'warn', prev=document.activeElement;
+    v.innerHTML='<div class="dlg '+tone+'" role="alertdialog" aria-modal="true" aria-labelledby="dlgT" aria-describedby="dlgM">'+
+      '<div class="dlgh"><i class="dlgic">'+(o.icon||DLG_IC[tone]||'!')+'</i><b id="dlgT">'+esc(o.title||'مطمئنی؟')+'</b></div>'+
+      (o.msg?'<div class="dlgm" id="dlgM">'+esc(o.msg).replace(/\n/g,'<br>')+'</div>':'')+
+      (withInput?'<input class="dlgin" id="dlgIn" autocomplete="off" dir="auto" placeholder="'+esc(o.placeholder||'')+'" value="'+esc(o.value||'')+'">':'')+
+      '<div class="dlga"><button class="btn dlgok">'+esc(o.ok||'بله')+'</button><button class="btn dlgno">'+esc(o.cancel||'انصراف')+'</button></div></div>';
+    v.classList.remove('hide');requestAnimationFrame(()=>v.classList.add('open'));
+    const inp=v.querySelector('#dlgIn'), done=val=>{document.removeEventListener('keydown',key,true);v.classList.remove('open');
+      v._t=setTimeout(()=>{v.classList.add('hide');v.innerHTML='';},180);try{prev&&prev.focus&&prev.focus({preventScroll:true});}catch(e){}res(val);};
+    const yes=()=>done(withInput?String(inp.value||'').trim()||null:true), no=()=>done(withInput?null:false);
+    const key=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();no();}
+      else if(e.key==='Enter'&&(withInput||tone==='info')){e.preventDefault();yes();}
+      else if(e.key==='Tab'){const f=[...v.querySelectorAll('button,input')];const i=f.indexOf(document.activeElement);e.preventDefault();f[(i+(e.shiftKey?-1:1)+f.length)%f.length].focus();}};
+    document.addEventListener('keydown',key,true);
+    v.querySelector('.dlgok').onclick=yes;v.querySelector('.dlgno').onclick=no;
+    v.onclick=e=>{if(e.target===v)no();};
+    // فوکوس روی کار بی‌خطر (انصراف) برای هشدارها؛ روی کادر متن برای پرسش متنی
+    setTimeout(()=>{(inp||v.querySelector(tone==='info'?'.dlgok':'.dlgno')).focus({preventScroll:true});},30);
+  });
+}
+function askConfirm(o){
+  if(typeof o==='string')o={msg:o};
+  if(dlgNative())return Promise.resolve(confirm([o.title,o.msg].filter(Boolean).join('\n\n')));
+  return dlgOpen(o,false);
+}
+function askText(o){
+  if(typeof o==='string')o={title:o};
+  if(dlgNative()){const v=prompt(o.title||'',o.value||'');return Promise.resolve(v==null?null:String(v).trim()||null);}
+  return dlgOpen(o,true);
+}
 /* ==================== وضعیت سرویس‌ها ==================== */
 /* دو نقطه‌ی رنگی در هدر خلاصه را می‌گویند؛ کلیک روی آن‌ها این پنجره را باز می‌کند
    تا معلوم باشد داده از کجا آمده، کدام مسیر جواب داده، و اگر نیامده کدام حلقه قطع است */
@@ -6700,7 +6766,7 @@ function sheetEnter(p,sig,ov,px,opt){
      sh.querySelectorAll('#f_e,#f_s,#f_d,#f_auto,#f_n').forEach(i=>{i.oninput=upd;i.onchange=upd;});
      upd();
      $('#cx').onclick=closeSheet;
-     $('#ok').onclick=()=>{
+     $('#ok').onclick=async()=>{
        const v=grab(), sp=spot();
        if(!v.entry||v.entry<=0)return toast('قیمت ورود را وارد کن','err');
        if(!v.margin||v.margin<=0)return toast((sp?'مبلغ خرید':'مارجین')+' را وارد کن','err');
@@ -6708,12 +6774,12 @@ function sheetEnter(p,sig,ov,px,opt){
        if(v.stop&&((v.dir==='long'&&v.stop>=v.entry)||(v.dir==='short'&&v.stop<=v.entry)))
          return toast('استاپ با جهت معامله نمی‌خواند','err');
        const gate=entryGate(riskOfPlan(v),spot()?'spot':v.dir);
-       if(gate.length&&!confirm('⚠️ '+gate.join('\n\n')+'\n\nباز هم ثبت شود؟'))return;
+       if(gate.length&&!(await askConfirm({title:'⚠️ این ورود از قانون‌های ریسکت بیرون است',msg:gate.join('\n\n'),ok:'باز هم ثبت کن',cancel:'نه، ثبت نکن'})))return;
        const gateV=gate.length?[{k:'gate',at:Date.now(),t:gate.join(' ')}]:undefined;
        // تنها جایی که هنوز «مطمئنی؟» می‌پرسیم: لیکوئید پیش از استاپ یعنی حد ضرر عملاً وجود ندارد
        if(!sp&&v.stop&&v.lev>1.05){const ld=1/v.lev-MMR, sd=Math.abs(v.entry-v.stop)/v.entry;
-         if(ld>0&&sd>=ld&&!confirm('با اهرم '+(+v.lev)+'x قیمت لیکوئید ('+(ld*100).toFixed(1)+'٪) قبل از حد ضرر ('+(sd*100).toFixed(1)+
-           '٪) است؛ یعنی کل مارجین پیش از رسیدن به استاپ از بین می‌رود.\n\nبا همین اهرم ثبت شود؟'))return;}
+         if(ld>0&&sd>=ld&&!(await askConfirm({title:'لیکوئید پیش از حد ضرر',tone:'danger',msg:'با اهرم '+(+v.lev)+'x قیمت لیکوئید ('+(ld*100).toFixed(1)+'٪) قبل از حد ضرر ('+(sd*100).toFixed(1)+
+           '٪) است؛ یعنی کل مارجین پیش از رسیدن به استاپ از بین می‌رود.',ok:'با همین اهرم ثبت کن',cancel:'اهرم را کم می‌کنم'})))return;}
        const pos=ensureBase({id:uid(),sigId:p.id,ticker:sig.ticker||'—',kind:sp?'spot':'futures',
          dir:v.dir,entry:v.entry,
          stop:v.stop||null,stop0:v.stop||null,margin:v.margin,baseMargin:v.margin,lev:v.lev,
@@ -8190,9 +8256,9 @@ function sheetLessonText(L,n,title,idx,after){
   ()=>{
     const back=()=>{if(after)after();else closeSheet();};
     $('#cx').onclick=back;
-    $('#leReset').onclick=()=>{
+    $('#leReset').onclick=async()=>{
       if(!DB.ledit[key])return toast('متن همین حالا اصلی است','info');
-      if(!confirm('همه‌ی ویرایش‌های این آموزش پاک شود و متن اصلی برگردد؟'))return;
+      if(!(await askConfirm({title:'برگرداندن متن اصلی',tone:'danger',msg:'همه‌ی ویرایش‌های این آموزش پاک می‌شود و متن اصلی برمی‌گردد.',ok:'پاک کن و برگردان',cancel:'نه'})))return;
       delete DB.ledit[key];save();renderLessons();toast('متن اصلی برگشت','ok');back();
     };
     $('#leOk').onclick=()=>{
@@ -10827,7 +10893,7 @@ function paintRadar(g){
   g.querySelectorAll('[data-gos]').forEach(b=>b.onclick=()=>{openPanel('setVeil');setTimeout(()=>{const f=$('#sFeeMk');if(f){const d=f.closest('details');if(d)d.open=true;f.scrollIntoView({block:'center',behavior:'smooth'});}},150);});
   mkStripBind(g);
   const fs=g.querySelector('[data-rdfavscan]');if(fs)fs.onclick=()=>{VIEW.mktFav=true;lsSet(VIEWKEY,VIEW);rdScan('add',RDFAV.slice());renderRadar();};
-  const rs=g.querySelector('[data-rdreset]');if(rs)rs.onclick=()=>{if(!confirm('فهرست رادار به '+faN(RD_STEP)+' ارز اول'+(RDFAV.length?' و واچ‌لیست':'')+' برگردد؟'))return;
+  const rs=g.querySelector('[data-rdreset]');if(rs)rs.onclick=async()=>{if(!(await askConfirm({title:'فهرست رادار از نو',tone:'danger',msg:'فهرست به '+faN(RD_STEP)+' ارز اول'+(RDFAV.length?' و واچ‌لیست':'')+' برمی‌گردد و بقیه‌ی ارزها از رادار بیرون می‌روند.',ok:'از نو',cancel:'نه'})))return;
     const keep=new Set(rdUniverse(RD_STEP).concat(RDFAV));for(const t of rdListOf())if(!keep.has(t))rdRemove(t);
     RD.list=[...keep];rdSave();rdScan('add',[]);paintRadar(g);};
   g.querySelectorAll('[data-favtk]').forEach(b=>b.onclick=()=>{rdFavToggle(b.dataset.favtk);paintRadar(g);});
@@ -10841,7 +10907,7 @@ function paintRadar(g){
     const k={tk:x.tk,k:'radar',t:RD.at,pl:x.pl,dir:x.dir};
     w.querySelectorAll('[data-a]:not([data-a="fav"]):not([data-a="rm"])').forEach(b=>b.onclick=()=>{
       const p={id:'radar/'+x.tk+'/'+RD.at,num:0,text:'رادار بازار: '+x.tk+' '+(x.dir==='long'?'لانگ':'شورت')+' · امتیاز '+x.sc,date:new Date(),link:null,img:null,auto:true};
-      if(b.dataset.a==='test'){rbAdd('test',x);paintRadar(g);return;}
+      if(b.dataset.a==='test'){const r=rbAddAsk(x);paintRadar(g);r.then(v=>{if(v)paintRadar(g);});return;}
       if(b.dataset.a==='iso'){const z=isoSize(x.pl.E,x.pl.SL),ex=rbExEff(),sg=asSig(k);
         // نقشه‌ی خروج رادار روی پوزیشن واقعی: تارگت‌ها به واحد R و سبک خروج هم‌ارز
         // (lad/trl: پله‌های +1R/+2R/+3R با سیو سود؛ q05: همه در +0.5R؛ h05: نصف در +0.5R و باقی در +1.5R؛ t1h: بستن خودکار بعد از 1 ساعت)
@@ -10880,8 +10946,6 @@ function rbAdd(kind,x,quiet){
   // سقف هم‌جهت: دفتر پیشنهادها همان قانون سنجش را دارد؛ تست با پرسیدن
   if(kind==='auto'&&RB.items.filter(it=>it.k==='auto'&&it.st==='open'&&it.dir===x.dir).length>=RD_CAP)return null;
   if(kind==='auto'&&x.why==='cost')return null;
-  if(kind==='test'&&!quiet){const n=rdOpenDir(x.dir);
-    if(n>=RD_CAP&&!confirm(faN(n)+' معامله‌ی '+(x.dir==='long'?'لانگ':'شورت')+' باز داری (سقف '+faN(RD_CAP)+'). ارزها با هم حرکت می‌کنند و این‌ها عملاً یک شرط‌اند. باز هم ثبت شود؟'))return null;}
   const pl=rdPlanAt(x.pl,PRICES.get(x.tk)||x.pl.E), now=Date.now();
   const it={id:kind[0]+now.toString(36)+Math.random().toString(36).slice(2,5),k:kind,tk:x.tk,dir:x.dir,t:now,E:pl.E,SL:pl.SL,TP:pl.TP,sd:pl.sd,rr:pl.rr,
     sc:x.sc,stars:x.stars||0,p:x.p!=null?+x.p.toFixed(3):null,exp:x.exp!=null?+x.exp.toFixed(3):null,reg:RD.reg||null,be:false,st:'open',why:x.why||null,
@@ -10951,6 +11015,14 @@ function rbFromPosAll(L){
   save();rbSave();rbReplan(null,true);renderAll();
   toastUndo(faN(n)+' پوزیشن رادار به «آزمایشی» رفت',()=>{DB.positions=keepP;DB.decisions=keepD;RB.items=keepR;save();rbSave();renderAll();});
   return n;
+}
+/* «تست» از کارت رادار: اگر سقف هم‌جهت پر است، اول با پنجره‌ی خودمان می‌پرسد */
+async function rbAddAsk(x){
+  if(!x)return null;
+  const n=rdOpenDir(x.dir),dn=x.dir==='long'?'لانگ':'شورت';
+  if(n>=RD_CAP&&!(await askConfirm({title:faN(n)+' معامله‌ی '+dn+' باز داری',msg:'سقف '+faN(RD_CAP)+' معامله‌ی هم‌جهت است. ارزها با هم بالا و پایین می‌روند و این‌ها عملاً یک شرط بزرگ‌اند؛ یک ریزش همه را با هم استاپ می‌زند.',
+    ok:'باز هم ثبت کن',cancel:'نه، صبر می‌کنم'})))return null;
+  return rbAdd('test',x);
 }
 /* بعد از هر بررسی: همه‌ی پیشنهادهای امتیاز 70+ (برای هر ارز یکی در هر لحظه) */
 function rbLogAuto(){let n=0;for(const x of rdList())if(x.dir!=='wait'&&x.pl&&rbAdd('auto',x,true))n++;return n;}
@@ -11090,8 +11162,9 @@ function rbBind(g){
   g.querySelectorAll('[data-rb]').forEach(b=>b.onclick=()=>{
     const a=b.dataset.rb;
     if(a==='closeall'){const L=RB.items.filter(it=>it.k==='test'&&it.st==='open'&&PRICES.get(it.tk)>0);
-      if(!L.length)return;if(!confirm(faN(L.length)+' معامله‌ی آزمایشیِ باز با قیمت الان بسته شود؟'))return;
-      for(const it of L)rbClose(it,'man',PRICES.get(it.tk));rbSave();paintRadar(g);toast(faN(L.length)+' معامله بسته شد','ok');return;}
+      if(!L.length)return;
+      askConfirm({title:'بستن همه‌ی تست‌های باز',tone:'info',msg:faN(L.length)+' معامله‌ی آزمایشیِ باز با قیمت الان بسته می‌شود.',ok:'همه را ببند',cancel:'انصراف'}).then(y=>{if(!y)return;
+        for(const it of L)rbClose(it,'man',PRICES.get(it.tk));rbSave();paintRadar(g);toast(faN(L.length)+' معامله بسته شد','ok');});return;}
     if(a==='frompos'){sheetRadarToTest(()=>paintRadar(g));return;}
     if(a==='clear'){const keep=RB.items;RB.items=RB.items.filter(it=>it.k!=='test'||it.st==='open');rbSave();paintRadar(g);toastUndo('بسته‌های آزمایشی پاک شد',()=>{RB.items=keep;rbSave();paintRadar(g);});return;}
     const row=b.closest('[data-id]'), it=row&&RB.items.find(x=>x.id===row.dataset.id);if(!it)return;
@@ -12859,7 +12932,7 @@ function buildPosCard(p,opt){
     pm.appendChild(sh);pm.appendChild(e);
     // پوزیشن رادار که فقط امتحانی ثبت شده: به «بازار ← آزمایشی» برود (نتیجه‌اش حفظ می‌شود)
     if(posSrc(p).sub==='radar'){const t=el('button','btn',ic('undo')+'<span>انتقال به تست‌ها</span>');
-      t.onclick=()=>{if(!confirm((p.ticker||'')+' را در صرافی واقعاً نگرفته‌ای؟ از «پوزیشن‌ها» و کارنامه بیرون می‌رود و در «بازار ← آزمایشی» از لحظه‌ی ورود دنبال می‌شود.'))return;
+      t.onclick=async()=>{if(!(await askConfirm({title:(p.ticker||'')+' به تست‌ها برود؟',tone:'info',msg:'فقط اگر در صرافی واقعاً نگرفته‌ای. از «پوزیشن‌ها» و کارنامه بیرون می‌رود و در «بازار ← آزمایشی» از لحظه‌ی ورود دنبال می‌شود.',ok:'به تست‌ها ببر',cancel:'واقعی است'})))return;
         POSMENU.delete(p.id);rbFromPosAll([p]);};pm.appendChild(t);}
     pm.appendChild(d);card.appendChild(pm);
   }
@@ -12944,15 +13017,14 @@ function sheetClose(p){
 /* ---- ورق بستن بخشی ---- */
 /* نصف پوزیشن را روی قیمت تارگت می‌بندد — همان کاری که «بستن بخشی» با 50٪ می‌کرد،
    بدون پر کردن فرم. محاسبه‌اش عیناً از همان مسیر می‌رود تا دو جور حساب نشود. */
-function closeHalfAt(p,price){
+async function closeHalfAt(p,price){
   ensureBase(p);
   const m=posMetrics(p,price);
   const part=0.5, qty=m.qty*part, marginPart=p.margin*part;
   const gross=qty*(price-p.entry)*(p.dir==='long'?1:-1);
   const fees=(marginPart*p.lev)*(S.fee/100);
   const pnl=gross-fees;
-  if(!confirm('بستن 50٪ '+p.ticker+' روی '+fmtPrice(price)+'\n\n'+
-    'سود/ضرر این تکه: '+fmtUsd(pnl)+'\nمارجین آزادشده: '+fmtUsd(marginPart)+'\n\nثبت شود؟'))return;
+  if(!(await askConfirm({title:'بستن 50٪ '+p.ticker+' روی '+fmtPrice(price),tone:'info',msg:'سود/ضرر این تکه: '+fmtUsd(pnl)+'\nمارجین آزادشده: '+fmtUsd(marginPart),ok:'ثبت کن',cancel:'انصراف'})))return;
   p.partials=partialsOf(p).concat([{at:Date.now(),price,qty,margin:marginPart,pnl,fees,part}]);
   p.margin=p.margin-marginPart;
   logAdd(p,'partial','50٪ روی '+fmtPrice(price)+' بسته شد · '+fmtUsd(pnl));
@@ -13538,10 +13610,10 @@ function tagPickHtml(cur){
     '<div class="tgl">حال</div><div class="pbpick">'+MOODS.map(([k,t])=>chip('mood',k,t)).join('')+'</div></details>';
 }
 function wireTagPick(root,sel){
-  root.querySelectorAll('.tagpick .pbc').forEach(b=>b.onclick=()=>{
+  root.querySelectorAll('.tagpick .pbc').forEach(b=>b.onclick=async()=>{
     const g=b.dataset.g;
     if(b.dataset.new){
-      const v=(prompt('نام ستاپ تازه:')||'').trim().slice(0,30);if(!v)return;
+      const v=((await askText({title:'ستاپ تازه',msg:'اسم کوتاهی برای این نوع ورود (مثلاً «شکست سقف»)',placeholder:'نام ستاپ',ok:'افزودن',tone:'info',icon:'+'}))||'').trim().slice(0,30);if(!v)return;
       S.setups=[...new Set(setupList().concat([v]))];DB.settings=Object.assign({},S);save();
       const nb=el('button','pbc',esc(v));nb.type='button';nb.dataset.g='setup';nb.dataset.v=v;b.before(nb);
       wireTagPick(root,sel);nb.click();return;

@@ -27,8 +27,6 @@ function rbAdd(kind,x,quiet){
   // سقف هم‌جهت: دفتر پیشنهادها همان قانون سنجش را دارد؛ تست با پرسیدن
   if(kind==='auto'&&RB.items.filter(it=>it.k==='auto'&&it.st==='open'&&it.dir===x.dir).length>=RD_CAP)return null;
   if(kind==='auto'&&x.why==='cost')return null;
-  if(kind==='test'&&!quiet){const n=rdOpenDir(x.dir);
-    if(n>=RD_CAP&&!confirm(faN(n)+' معامله‌ی '+(x.dir==='long'?'لانگ':'شورت')+' باز داری (سقف '+faN(RD_CAP)+'). ارزها با هم حرکت می‌کنند و این‌ها عملاً یک شرط‌اند. باز هم ثبت شود؟'))return null;}
   const pl=rdPlanAt(x.pl,PRICES.get(x.tk)||x.pl.E), now=Date.now();
   const it={id:kind[0]+now.toString(36)+Math.random().toString(36).slice(2,5),k:kind,tk:x.tk,dir:x.dir,t:now,E:pl.E,SL:pl.SL,TP:pl.TP,sd:pl.sd,rr:pl.rr,
     sc:x.sc,stars:x.stars||0,p:x.p!=null?+x.p.toFixed(3):null,exp:x.exp!=null?+x.exp.toFixed(3):null,reg:RD.reg||null,be:false,st:'open',why:x.why||null,
@@ -98,6 +96,14 @@ function rbFromPosAll(L){
   save();rbSave();rbReplan(null,true);renderAll();
   toastUndo(faN(n)+' پوزیشن رادار به «آزمایشی» رفت',()=>{DB.positions=keepP;DB.decisions=keepD;RB.items=keepR;save();rbSave();renderAll();});
   return n;
+}
+/* «تست» از کارت رادار: اگر سقف هم‌جهت پر است، اول با پنجره‌ی خودمان می‌پرسد */
+async function rbAddAsk(x){
+  if(!x)return null;
+  const n=rdOpenDir(x.dir),dn=x.dir==='long'?'لانگ':'شورت';
+  if(n>=RD_CAP&&!(await askConfirm({title:faN(n)+' معامله‌ی '+dn+' باز داری',msg:'سقف '+faN(RD_CAP)+' معامله‌ی هم‌جهت است. ارزها با هم بالا و پایین می‌روند و این‌ها عملاً یک شرط بزرگ‌اند؛ یک ریزش همه را با هم استاپ می‌زند.',
+    ok:'باز هم ثبت کن',cancel:'نه، صبر می‌کنم'})))return null;
+  return rbAdd('test',x);
 }
 /* بعد از هر بررسی: همه‌ی پیشنهادهای امتیاز 70+ (برای هر ارز یکی در هر لحظه) */
 function rbLogAuto(){let n=0;for(const x of rdList())if(x.dir!=='wait'&&x.pl&&rbAdd('auto',x,true))n++;return n;}
@@ -237,8 +243,9 @@ function rbBind(g){
   g.querySelectorAll('[data-rb]').forEach(b=>b.onclick=()=>{
     const a=b.dataset.rb;
     if(a==='closeall'){const L=RB.items.filter(it=>it.k==='test'&&it.st==='open'&&PRICES.get(it.tk)>0);
-      if(!L.length)return;if(!confirm(faN(L.length)+' معامله‌ی آزمایشیِ باز با قیمت الان بسته شود؟'))return;
-      for(const it of L)rbClose(it,'man',PRICES.get(it.tk));rbSave();paintRadar(g);toast(faN(L.length)+' معامله بسته شد','ok');return;}
+      if(!L.length)return;
+      askConfirm({title:'بستن همه‌ی تست‌های باز',tone:'info',msg:faN(L.length)+' معامله‌ی آزمایشیِ باز با قیمت الان بسته می‌شود.',ok:'همه را ببند',cancel:'انصراف'}).then(y=>{if(!y)return;
+        for(const it of L)rbClose(it,'man',PRICES.get(it.tk));rbSave();paintRadar(g);toast(faN(L.length)+' معامله بسته شد','ok');});return;}
     if(a==='frompos'){sheetRadarToTest(()=>paintRadar(g));return;}
     if(a==='clear'){const keep=RB.items;RB.items=RB.items.filter(it=>it.k!=='test'||it.st==='open');rbSave();paintRadar(g);toastUndo('بسته‌های آزمایشی پاک شد',()=>{RB.items=keep;rbSave();paintRadar(g);});return;}
     const row=b.closest('[data-id]'), it=row&&RB.items.find(x=>x.id===row.dataset.id);if(!it)return;

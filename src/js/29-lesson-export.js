@@ -285,9 +285,9 @@ function sheetLessonText(L,n,title,idx,after){
   ()=>{
     const back=()=>{if(after)after();else closeSheet();};
     $('#cx').onclick=back;
-    $('#leReset').onclick=()=>{
+    $('#leReset').onclick=async()=>{
       if(!DB.ledit[key])return toast('متن همین حالا اصلی است','info');
-      if(!confirm('همه‌ی ویرایش‌های این آموزش پاک شود و متن اصلی برگردد؟'))return;
+      if(!(await askConfirm({title:'برگرداندن متن اصلی',tone:'danger',msg:'همه‌ی ویرایش‌های این آموزش پاک می‌شود و متن اصلی برمی‌گردد.',ok:'پاک کن و برگردان',cancel:'نه'})))return;
       delete DB.ledit[key];save();renderLessons();toast('متن اصلی برگشت','ok');back();
     };
     $('#leOk').onclick=()=>{

@@ -538,7 +538,7 @@ function buildPosCard(p,opt){
     pm.appendChild(sh);pm.appendChild(e);
     // پوزیشن رادار که فقط امتحانی ثبت شده: به «بازار ← آزمایشی» برود (نتیجه‌اش حفظ می‌شود)
     if(posSrc(p).sub==='radar'){const t=el('button','btn',ic('undo')+'<span>انتقال به تست‌ها</span>');
-      t.onclick=()=>{if(!confirm((p.ticker||'')+' را در صرافی واقعاً نگرفته‌ای؟ از «پوزیشن‌ها» و کارنامه بیرون می‌رود و در «بازار ← آزمایشی» از لحظه‌ی ورود دنبال می‌شود.'))return;
+      t.onclick=async()=>{if(!(await askConfirm({title:(p.ticker||'')+' به تست‌ها برود؟',tone:'info',msg:'فقط اگر در صرافی واقعاً نگرفته‌ای. از «پوزیشن‌ها» و کارنامه بیرون می‌رود و در «بازار ← آزمایشی» از لحظه‌ی ورود دنبال می‌شود.',ok:'به تست‌ها ببر',cancel:'واقعی است'})))return;
         POSMENU.delete(p.id);rbFromPosAll([p]);};pm.appendChild(t);}
     pm.appendChild(d);card.appendChild(pm);
   }
@@ -623,15 +623,14 @@ function sheetClose(p){
 /* ---- ورق بستن بخشی ---- */
 /* نصف پوزیشن را روی قیمت تارگت می‌بندد — همان کاری که «بستن بخشی» با 50٪ می‌کرد،
    بدون پر کردن فرم. محاسبه‌اش عیناً از همان مسیر می‌رود تا دو جور حساب نشود. */
-function closeHalfAt(p,price){
+async function closeHalfAt(p,price){
   ensureBase(p);
   const m=posMetrics(p,price);
   const part=0.5, qty=m.qty*part, marginPart=p.margin*part;
   const gross=qty*(price-p.entry)*(p.dir==='long'?1:-1);
   const fees=(marginPart*p.lev)*(S.fee/100);
   const pnl=gross-fees;
-  if(!confirm('بستن 50٪ '+p.ticker+' روی '+fmtPrice(price)+'\n\n'+
-    'سود/ضرر این تکه: '+fmtUsd(pnl)+'\nمارجین آزادشده: '+fmtUsd(marginPart)+'\n\nثبت شود؟'))return;
+  if(!(await askConfirm({title:'بستن 50٪ '+p.ticker+' روی '+fmtPrice(price),tone:'info',msg:'سود/ضرر این تکه: '+fmtUsd(pnl)+'\nمارجین آزادشده: '+fmtUsd(marginPart),ok:'ثبت کن',cancel:'انصراف'})))return;
   p.partials=partialsOf(p).concat([{at:Date.now(),price,qty,margin:marginPart,pnl,fees,part}]);
   p.margin=p.margin-marginPart;
   logAdd(p,'partial','50٪ روی '+fmtPrice(price)+' بسته شد · '+fmtUsd(pnl));

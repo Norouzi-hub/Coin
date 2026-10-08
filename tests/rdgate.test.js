@@ -24,7 +24,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  s=await st();ok(s.ok==='L1,S1'&&s.why.L2==='cap'&&/باز: 2 لانگ/.test(s.ht),'با دو لانگ باز (تست)، فقط یک لانگ تازه ('+s.ok+')');
  // تست بیشتر از سقف: می‌پرسد (این‌جا «نه»)
  p.once('dialog',d=>d.dismiss());
- const t3=await p.evaluate(()=>{RB.items.push({id:'o3',k:'test',tk:'X3',dir:'long',st:'open',t:Date.now(),E:1,SL:0.98,sd:0.02});const x=rdList().find(y=>y.tk==='L1');return !!rbAdd('test',x);});
+ const t3=await p.evaluate(async()=>{RB.items.push({id:'o3',k:'test',tk:'X3',dir:'long',st:'open',t:Date.now(),E:1,SL:0.98,sd:0.02});const x=rdList().find(y=>y.tk==='L1');return !!(await rbAddAsk(x));});
  ok(!t3,'چهارمین تست هم‌جهت: می‌پرسد و با «نه» ثبت نمی‌شود');
  const au=await p.evaluate(()=>{RB.items=[];return rbLogAuto();});
  ok(au===4,'دفتر پیشنهادها هم سقف دارد: 3 لانگ + 1 شورت ('+au+')');

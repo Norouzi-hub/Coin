@@ -16,10 +16,10 @@ function tagPickHtml(cur){
     '<div class="tgl">حال</div><div class="pbpick">'+MOODS.map(([k,t])=>chip('mood',k,t)).join('')+'</div></details>';
 }
 function wireTagPick(root,sel){
-  root.querySelectorAll('.tagpick .pbc').forEach(b=>b.onclick=()=>{
+  root.querySelectorAll('.tagpick .pbc').forEach(b=>b.onclick=async()=>{
     const g=b.dataset.g;
     if(b.dataset.new){
-      const v=(prompt('نام ستاپ تازه:')||'').trim().slice(0,30);if(!v)return;
+      const v=((await askText({title:'ستاپ تازه',msg:'اسم کوتاهی برای این نوع ورود (مثلاً «شکست سقف»)',placeholder:'نام ستاپ',ok:'افزودن',tone:'info',icon:'+'}))||'').trim().slice(0,30);if(!v)return;
       S.setups=[...new Set(setupList().concat([v]))];DB.settings=Object.assign({},S);save();
       const nb=el('button','pbc',esc(v));nb.type='button';nb.dataset.g='setup';nb.dataset.v=v;b.before(nb);
       wireTagPick(root,sel);nb.click();return;

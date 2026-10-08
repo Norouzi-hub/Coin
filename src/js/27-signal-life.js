@@ -884,7 +884,7 @@ function sheetEnter(p,sig,ov,px,opt){
      sh.querySelectorAll('#f_e,#f_s,#f_d,#f_auto,#f_n').forEach(i=>{i.oninput=upd;i.onchange=upd;});
      upd();
      $('#cx').onclick=closeSheet;
-     $('#ok').onclick=()=>{
+     $('#ok').onclick=async()=>{
        const v=grab(), sp=spot();
        if(!v.entry||v.entry<=0)return toast('قیمت ورود را وارد کن','err');
        if(!v.margin||v.margin<=0)return toast((sp?'مبلغ خرید':'مارجین')+' را وارد کن','err');
@@ -892,12 +892,12 @@ function sheetEnter(p,sig,ov,px,opt){
        if(v.stop&&((v.dir==='long'&&v.stop>=v.entry)||(v.dir==='short'&&v.stop<=v.entry)))
          return toast('استاپ با جهت معامله نمی‌خواند','err');
        const gate=entryGate(riskOfPlan(v),spot()?'spot':v.dir);
-       if(gate.length&&!confirm('⚠️ '+gate.join('\n\n')+'\n\nباز هم ثبت شود؟'))return;
+       if(gate.length&&!(await askConfirm({title:'⚠️ این ورود از قانون‌های ریسکت بیرون است',msg:gate.join('\n\n'),ok:'باز هم ثبت کن',cancel:'نه، ثبت نکن'})))return;
        const gateV=gate.length?[{k:'gate',at:Date.now(),t:gate.join(' ')}]:undefined;
        // تنها جایی که هنوز «مطمئنی؟» می‌پرسیم: لیکوئید پیش از استاپ یعنی حد ضرر عملاً وجود ندارد
        if(!sp&&v.stop&&v.lev>1.05){const ld=1/v.lev-MMR, sd=Math.abs(v.entry-v.stop)/v.entry;
-         if(ld>0&&sd>=ld&&!confirm('با اهرم '+(+v.lev)+'x قیمت لیکوئید ('+(ld*100).toFixed(1)+'٪) قبل از حد ضرر ('+(sd*100).toFixed(1)+
-           '٪) است؛ یعنی کل مارجین پیش از رسیدن به استاپ از بین می‌رود.\n\nبا همین اهرم ثبت شود؟'))return;}
+         if(ld>0&&sd>=ld&&!(await askConfirm({title:'لیکوئید پیش از حد ضرر',tone:'danger',msg:'با اهرم '+(+v.lev)+'x قیمت لیکوئید ('+(ld*100).toFixed(1)+'٪) قبل از حد ضرر ('+(sd*100).toFixed(1)+
+           '٪) است؛ یعنی کل مارجین پیش از رسیدن به استاپ از بین می‌رود.',ok:'با همین اهرم ثبت کن',cancel:'اهرم را کم می‌کنم'})))return;}
        const pos=ensureBase({id:uid(),sigId:p.id,ticker:sig.ticker||'—',kind:sp?'spot':'futures',
          dir:v.dir,entry:v.entry,
          stop:v.stop||null,stop0:v.stop||null,margin:v.margin,baseMargin:v.margin,lev:v.lev,
