@@ -1653,3 +1653,4 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rbh small.u{color:var(--up)}.rbh small.d{color:var(--dn)}
 .rdpk{display:flex;gap:6px;margin-top:6px}.rdpk input{flex:1;min-width:0}.rdfav{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}.rdfav .pill{cursor:pointer}
 .rdfavb{background:none;border:0;padding:0 2px;font-size:17px;line-height:1;color:var(--tx3);cursor:pointer}.rdfavb.on{color:var(--gold)}.glit .rdcap{color:var(--tx3);font-size:10.5px}
+.rblabr{line-height:1.7}.rblab td:first-child{text-align:start;font-size:12px}.rblab tr.on td{font-weight:700}
