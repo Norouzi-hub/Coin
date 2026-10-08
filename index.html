@@ -2001,10 +2001,9 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
     </div>
     <nav class="tabs" role="tablist" id="tabs">
       <span class="ind" id="tabInd"></span>
-      <button class="tab" data-v="signals" role="tab" aria-selected="true" data-ic="trend"><span>سیگنال‌ها</span><span class="cnt g z" id="cSig">0</span></button>
       <button class="tab" data-v="radar" role="tab" aria-selected="false" data-ic="bars"><span>بازار</span><span class="cnt g z" id="cRad">0</span></button>
       <button class="tab" data-v="positions" role="tab" aria-selected="false" data-ic="wallet"><span>پوزیشن‌ها</span><span class="cnt z" id="cPos">0</span></button>
-      <button class="tab" data-v="audit" role="tab" aria-selected="false" data-ic="shield"><span>کانال‌سنج</span><span class="cnt z" id="cAud">0</span></button>
+      <button class="tab" data-v="signals" role="tab" aria-selected="true" data-ic="trend"><span>سیگنال‌ها</span><span class="cnt g z" id="cSig">0</span></button>
       <button class="tab" data-v="more" role="tab" aria-selected="false" data-ic="more"><span>سایر</span><span class="cnt z" id="cMore">0</span></button>
     </nav>
   </div>
@@ -2067,9 +2066,10 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
     <div id="rdView"></div>
   </section>
 
-  <!-- سایر: کارنامه، آموزش، تنظیمات -->
+  <!-- سایر: کانال‌سنج، کارنامه، آموزش، تنظیمات -->
   <section id="vMore" class="view hide">
     <div class="morelist">
+      <button class="moreit" data-go="audit"><i data-ic="shield"></i><span><b>کانال‌سنج</b><small>کانال چقدر راست می‌گوید؛ سنجش فقط وقتی خودت بزنی</small></span><span class="cnt z" id="cAud">0</span></button>
       <button class="moreit" data-go="report"><i data-ic="bars"></i><span><b>کارنامه</b><small>نتیجه‌ی معامله‌های خودت، روزانه و ماهانه</small></span></button>
       <button class="moreit" data-go="learn"><i data-ic="book"></i><span><b>آموزش</b><small>آموزش‌ها و دستورالعمل‌های کانال</small></span><span class="cnt g z" id="cLearn">0</span></button>
       <button class="moreit" data-go="settings"><i data-ic="sliders"></i><span><b>تنظیمات</b><small>اتصال، سرمایه و ریسک، همگام‌سازی، پشتیبان</small></span></button>
@@ -2108,6 +2108,7 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
   <!-- آموزش -->
   <!-- کانال‌سنج: نتیجه‌ی واقعیِ همه‌ی سیگنال‌های کانال -->
   <section id="vAudit" class="view hide">
+    <button class="crumb" data-go="more">سایر</button>
     <div id="audBody"></div>
   </section>
 
@@ -9562,8 +9563,7 @@ function audCsv(rows){
   toast('فایل CSV ساخته شد','ok');
 }
 
-/* ---- ۲۹) سنجش خودکار هر نیم ساعت، حتی وقتی تب کانال‌سنج باز نیست ---- */
-setInterval(()=>{try{if(BOOTED&&!AUDQ.on&&Date.now()-AUDQ.at>25*60000&&audJobs().length)audRun();}catch(e){}},30*60000);
+/* سنجش خودکار هر نیم ساعت برداشته شد: کانال‌سنج فقط وقتی خودت «سنجش» را بزنی کار می‌کند */
 /* ==================== حال بازار و رویدادهای هر ارز ====================
    از صفحه‌ی «سیگنال ارز دیجیتال» تبدیل الهام گرفته، ولی همه از داده‌ی خود صرافی‌ها (همان منبع‌های قیمت):
    1) حال بازار: چند ارز در 24 ساعت مثبت و چند منفی، پخش درصد تغییرها، و تغییر بیت‌کوین
@@ -11860,7 +11860,7 @@ function paintAudProgress(){
   }else if(AUDQ.fail){
     b.classList.remove('hide');
     b.innerHTML='<span style="color:var(--warn)">'+faN(AUDQ.fail)+' سیگنال کندل نگرفت'+
-      (AUDQ.err?' — '+esc(AUDQ.err):'')+'. «سنجش دوباره» را بزن؛ اگر باز نشد، واسط قیمت یا فیلترشکن را عوض کن.</span>';
+      (AUDQ.err?' — '+esc(AUDQ.err):'')+'. «سنجش» را دوباره بزن؛ اگر باز نشد، واسط قیمت یا فیلترشکن را عوض کن.</span>';
   }else b.classList.add('hide');
 }
 
@@ -12112,8 +12112,15 @@ function renderAudit(){
   {const b=hd.querySelector('#audInfoB'), pn=hd.querySelector('#audInfo');
    b.onclick=()=>{const o=pn.classList.toggle('hide');b.setAttribute('aria-expanded',o?'false':'true');b.classList.toggle('on',!o);};}
   const bar=el('div','srow');bar.style.marginTop='10px';
-  const run=el('button','btn sm',ic('refresh')+'<span>سنجش دوباره</span>');
-  run.onclick=()=>{if(AUDQ.on)return;audRun(true);};
+  // سنجش فقط وقتی خودت بزنی: «سنجش تازه‌ها» فقط سیگنال‌های سنجیده‌نشده، «از نو» همه را
+  const nJob=AUDQ.on?0:audJobs().length;
+  if(nJob||!AUDQ.at){const nb=el('div','flag i audpend','<i>i</i><span>'+(nJob?faN(nJob)+' سیگنال منتظر سنجش است (تازه یا هنوز در جریان).':'هنوز سنجشی انجام نشده.')+' سنجش با کندل‌های واقعی چند ثانیه تا چند دقیقه طول می‌کشد و فقط وقتی خودت بزنی انجام می‌شود.</span>');hd.appendChild(nb);}
+  const go1=el('button','btn sm ok',ic('play')+'<span>'+(nJob?'سنجش '+faN(nJob)+' سیگنال':'سنجش تازه‌ها')+'</span>');go1.id='audRunB';
+  go1.onclick=()=>{if(AUDQ.on)return;audRun(false);renderAudit();};
+  const run=el('button','btn sm',ic('refresh')+'<span>سنجش دوباره‌ی همه</span>');
+  run.onclick=()=>{if(AUDQ.on)return;audRun(true);renderAudit();};
+  if(AUDQ.on){btnBusy(go1,true,'در حال سنجش…');run.disabled=true;}
+  bar.appendChild(go1);
   const rules=el('button','btn sm',ic('sliders')+'<span>قانون‌ها</span>');
   rules.onclick=sheetAudRules;
   bar.appendChild(run);bar.appendChild(rules);
@@ -12189,8 +12196,7 @@ function renderAudit(){
   safe('فهرست سیگنال‌ها',()=>buildAudList(rows));
 
   paintAudProgress();
-  // سنجش خودکار: هر بار که تب دیده شود، ولی نه بیشتر از یک بار در دقیقه
-  if(!AUDQ.on&&Date.now()-AUDQ.at>60000&&audJobs().length)audRun();
+  // سنجش فقط با زدن دکمه (دیگر با باز شدن تب خودکار شروع نمی‌شود)
 }
 
 /* پنل «وضعیت سنجش»: جواب مستقیمِ «چرا کانال‌سنج سیگنال‌ها را نمی‌خواند؟»
@@ -13978,7 +13984,6 @@ function repVsChannel(list){
   if(vr){const gap=vr.me-vr.ru;
     c.appendChild(el('div','flag '+(gap<-0.3?'d':gap>0.3?'u':'i'),'<i>'+(gap<-0.3?'!':'✓')+'</i><span>در برابر قاعده‌ی من: روی '+faN(vr.n)+' معامله‌ای که از سیگنال گرفتی، خودت '+fmtR(vr.me)+
       '، اگر دقیقاً «قاعده‌ی من» را اجرا کرده بودی '+fmtR(vr.ru)+'. '+(gap<-0.3?'اجرای دستی‌ات '+fmtR(gap)+' هزینه داشته.':gap>0.3?'اجرای تو بهتر از قاعده بوده.':'تقریباً همان.')+'</span>'));}
-  if(!AUDQ.on&&Date.now()-AUDQ.at>60000&&audJobs().length)setTimeout(()=>audRun(),50);
   return c;
 }
 
@@ -14146,8 +14151,8 @@ function wireTxtOut(){
 /* ==================== ناوبری ==================== */
 let view='signals';
 const VIEWS=[['vSignals','signals'],['vRadar','radar'],['vPositions','positions'],['vReport','report'],['vMore','more'],['vAudit','audit'],['vLearn','learn']];
-/* کارنامه و آموزش زیرِ «سایر»اند: وقتی بازند، همان تب روشن می‌ماند. */
-const TAB_OF={report:'more',learn:'more'};
+/* کانال‌سنج، کارنامه و آموزش زیرِ «سایر»اند: وقتی بازند، همان تب روشن می‌ماند. */
+const TAB_OF={report:'more',learn:'more',audit:'more'};
 function go(v,noScroll){
   if(view===v&&noScroll)return;
   view=v;
@@ -14184,7 +14189,7 @@ function moveInd(scroll){
 }
 /* نشانِ «سایر» = آموزش‌های نخوانده (بعد از رنگ شدنِ خودش) */
 function paintMoreBadge(){
-  const n=['#cLearn'].reduce((s,id)=>{const b=$(id);return s+(b&&+b.dataset.n||0);},0);
+  const n=['#cLearn','#cAud'].reduce((s,id)=>{const b=$(id);return s+(b&&+b.dataset.n||0);},0);
   const b=$('#cMore');if(b){b.textContent=faN(n);b.classList.toggle('z',!n);}
 }
 function renderAll(){

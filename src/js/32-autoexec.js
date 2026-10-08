@@ -325,7 +325,7 @@ function paintAudProgress(){
   }else if(AUDQ.fail){
     b.classList.remove('hide');
     b.innerHTML='<span style="color:var(--warn)">'+faN(AUDQ.fail)+' سیگنال کندل نگرفت'+
-      (AUDQ.err?' — '+esc(AUDQ.err):'')+'. «سنجش دوباره» را بزن؛ اگر باز نشد، واسط قیمت یا فیلترشکن را عوض کن.</span>';
+      (AUDQ.err?' — '+esc(AUDQ.err):'')+'. «سنجش» را دوباره بزن؛ اگر باز نشد، واسط قیمت یا فیلترشکن را عوض کن.</span>';
   }else b.classList.add('hide');
 }
 
@@ -577,8 +577,15 @@ function renderAudit(){
   {const b=hd.querySelector('#audInfoB'), pn=hd.querySelector('#audInfo');
    b.onclick=()=>{const o=pn.classList.toggle('hide');b.setAttribute('aria-expanded',o?'false':'true');b.classList.toggle('on',!o);};}
   const bar=el('div','srow');bar.style.marginTop='10px';
-  const run=el('button','btn sm',ic('refresh')+'<span>سنجش دوباره</span>');
-  run.onclick=()=>{if(AUDQ.on)return;audRun(true);};
+  // سنجش فقط وقتی خودت بزنی: «سنجش تازه‌ها» فقط سیگنال‌های سنجیده‌نشده، «از نو» همه را
+  const nJob=AUDQ.on?0:audJobs().length;
+  if(nJob||!AUDQ.at){const nb=el('div','flag i audpend','<i>i</i><span>'+(nJob?faN(nJob)+' سیگنال منتظر سنجش است (تازه یا هنوز در جریان).':'هنوز سنجشی انجام نشده.')+' سنجش با کندل‌های واقعی چند ثانیه تا چند دقیقه طول می‌کشد و فقط وقتی خودت بزنی انجام می‌شود.</span>');hd.appendChild(nb);}
+  const go1=el('button','btn sm ok',ic('play')+'<span>'+(nJob?'سنجش '+faN(nJob)+' سیگنال':'سنجش تازه‌ها')+'</span>');go1.id='audRunB';
+  go1.onclick=()=>{if(AUDQ.on)return;audRun(false);renderAudit();};
+  const run=el('button','btn sm',ic('refresh')+'<span>سنجش دوباره‌ی همه</span>');
+  run.onclick=()=>{if(AUDQ.on)return;audRun(true);renderAudit();};
+  if(AUDQ.on){btnBusy(go1,true,'در حال سنجش…');run.disabled=true;}
+  bar.appendChild(go1);
   const rules=el('button','btn sm',ic('sliders')+'<span>قانون‌ها</span>');
   rules.onclick=sheetAudRules;
   bar.appendChild(run);bar.appendChild(rules);
@@ -654,8 +661,7 @@ function renderAudit(){
   safe('فهرست سیگنال‌ها',()=>buildAudList(rows));
 
   paintAudProgress();
-  // سنجش خودکار: هر بار که تب دیده شود، ولی نه بیشتر از یک بار در دقیقه
-  if(!AUDQ.on&&Date.now()-AUDQ.at>60000&&audJobs().length)audRun();
+  // سنجش فقط با زدن دکمه (دیگر با باز شدن تب خودکار شروع نمی‌شود)
 }
 
 /* پنل «وضعیت سنجش»: جواب مستقیمِ «چرا کانال‌سنج سیگنال‌ها را نمی‌خواند؟»

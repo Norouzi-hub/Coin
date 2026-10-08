@@ -42,7 +42,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(Math.abs(xg.f[0]-0.24)<0.02&&xg.f[1]===24,'تارگت ۱ با سقف ۲۴ ساعت: هنوز نرسیده، روی حدود ۱۰۲.۴ بسته ← حدود +۰.۲۴R');
 
  console.log('=== کانال‌سنج: خروج کوتاه، فیلتر، اهرم ایزوله، سیگنال‌های ناقص ===');
- await p.evaluate(()=>{AUDOPEN='خروج';XSEL.v='short';go('audit',true);});
+ await p.evaluate(()=>{AUDOPEN='خروج';XSEL.v='short';go('audit',true);document.getElementById('audRunB').click();});
  await p.waitForFunction(()=>!AUDQ.on&&AUDQ.at>0,{timeout:90000});await p.waitForTimeout(500);
  await p.evaluate(()=>renderAudit());await p.waitForTimeout(300);
  const ui=await p.evaluate(()=>{const xl=document.querySelector('#audBody [data-acc="خروج"]');

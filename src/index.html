@@ -56,10 +56,9 @@
     </div>
     <nav class="tabs" role="tablist" id="tabs">
       <span class="ind" id="tabInd"></span>
-      <button class="tab" data-v="signals" role="tab" aria-selected="true" data-ic="trend"><span>سیگنال‌ها</span><span class="cnt g z" id="cSig">0</span></button>
       <button class="tab" data-v="radar" role="tab" aria-selected="false" data-ic="bars"><span>بازار</span><span class="cnt g z" id="cRad">0</span></button>
       <button class="tab" data-v="positions" role="tab" aria-selected="false" data-ic="wallet"><span>پوزیشن‌ها</span><span class="cnt z" id="cPos">0</span></button>
-      <button class="tab" data-v="audit" role="tab" aria-selected="false" data-ic="shield"><span>کانال‌سنج</span><span class="cnt z" id="cAud">0</span></button>
+      <button class="tab" data-v="signals" role="tab" aria-selected="true" data-ic="trend"><span>سیگنال‌ها</span><span class="cnt g z" id="cSig">0</span></button>
       <button class="tab" data-v="more" role="tab" aria-selected="false" data-ic="more"><span>سایر</span><span class="cnt z" id="cMore">0</span></button>
     </nav>
   </div>
@@ -122,9 +121,10 @@
     <div id="rdView"></div>
   </section>
 
-  <!-- سایر: کارنامه، آموزش، تنظیمات -->
+  <!-- سایر: کانال‌سنج، کارنامه، آموزش، تنظیمات -->
   <section id="vMore" class="view hide">
     <div class="morelist">
+      <button class="moreit" data-go="audit"><i data-ic="shield"></i><span><b>کانال‌سنج</b><small>کانال چقدر راست می‌گوید؛ سنجش فقط وقتی خودت بزنی</small></span><span class="cnt z" id="cAud">0</span></button>
       <button class="moreit" data-go="report"><i data-ic="bars"></i><span><b>کارنامه</b><small>نتیجه‌ی معامله‌های خودت، روزانه و ماهانه</small></span></button>
       <button class="moreit" data-go="learn"><i data-ic="book"></i><span><b>آموزش</b><small>آموزش‌ها و دستورالعمل‌های کانال</small></span><span class="cnt g z" id="cLearn">0</span></button>
       <button class="moreit" data-go="settings"><i data-ic="sliders"></i><span><b>تنظیمات</b><small>اتصال، سرمایه و ریسک، همگام‌سازی، پشتیبان</small></span></button>
@@ -163,6 +163,7 @@
   <!-- آموزش -->
   <!-- کانال‌سنج: نتیجه‌ی واقعیِ همه‌ی سیگنال‌های کانال -->
   <section id="vAudit" class="view hide">
+    <button class="crumb" data-go="more">سایر</button>
     <div id="audBody"></div>
   </section>
 

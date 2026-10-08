@@ -22,7 +22,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const rep=await p.evaluate(()=>{go('report',true);repPeriod='all';renderReport();const t=document.querySelector('#repBody').textContent;return {inf:t.includes('∞'),best:t.includes('بهترین'),note:!!document.querySelector('#repBody .stnote')};});
  ok(!rep.inf&&!rep.best&&rep.note,'کارنامه‌ی یک‌معامله‌ای: بدون ∞ و بهترین/بدترین، با یادداشت نمونه‌ی کم '+JSON.stringify(rep));
  // 6) برچسب فیلتر کانال‌سنج
- await p.evaluate(()=>go('audit',true));await p.waitForFunction(()=>!AUDQ.on&&AUDQ.at>0,{timeout:60000});await p.waitForTimeout(300);
+ await p.evaluate(()=>{go('audit',true);audRun();});await p.waitForFunction(()=>!AUDQ.on&&AUDQ.at>0,{timeout:60000});await p.waitForTimeout(300);
  const pill=await p.evaluate(()=>{const x=[...document.querySelectorAll('#audBody .panel')].find(q=>/کارنامه‌ی کانال/.test(q.textContent));return x?x.querySelector('.panelhead .pill')?.textContent||'(بدون برچسب)':'?';});
  ok(!/^فیلتر/.test(pill),'برچسب کانال‌سنج توضیح می‌دهد: '+pill);
  // 7) نوار فیلتر روشن

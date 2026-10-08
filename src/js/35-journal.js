@@ -159,7 +159,6 @@ function repVsChannel(list){
   if(vr){const gap=vr.me-vr.ru;
     c.appendChild(el('div','flag '+(gap<-0.3?'d':gap>0.3?'u':'i'),'<i>'+(gap<-0.3?'!':'✓')+'</i><span>در برابر قاعده‌ی من: روی '+faN(vr.n)+' معامله‌ای که از سیگنال گرفتی، خودت '+fmtR(vr.me)+
       '، اگر دقیقاً «قاعده‌ی من» را اجرا کرده بودی '+fmtR(vr.ru)+'. '+(gap<-0.3?'اجرای دستی‌ات '+fmtR(gap)+' هزینه داشته.':gap>0.3?'اجرای تو بهتر از قاعده بوده.':'تقریباً همان.')+'</span>'));}
-  if(!AUDQ.on&&Date.now()-AUDQ.at>60000&&audJobs().length)setTimeout(()=>audRun(),50);
   return c;
 }
 

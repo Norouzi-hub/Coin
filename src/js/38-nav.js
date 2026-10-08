@@ -1,8 +1,8 @@
 /* ==================== ناوبری ==================== */
 let view='signals';
 const VIEWS=[['vSignals','signals'],['vRadar','radar'],['vPositions','positions'],['vReport','report'],['vMore','more'],['vAudit','audit'],['vLearn','learn']];
-/* کارنامه و آموزش زیرِ «سایر»اند: وقتی بازند، همان تب روشن می‌ماند. */
-const TAB_OF={report:'more',learn:'more'};
+/* کانال‌سنج، کارنامه و آموزش زیرِ «سایر»اند: وقتی بازند، همان تب روشن می‌ماند. */
+const TAB_OF={report:'more',learn:'more',audit:'more'};
 function go(v,noScroll){
   if(view===v&&noScroll)return;
   view=v;
@@ -39,7 +39,7 @@ function moveInd(scroll){
 }
 /* نشانِ «سایر» = آموزش‌های نخوانده (بعد از رنگ شدنِ خودش) */
 function paintMoreBadge(){
-  const n=['#cLearn'].reduce((s,id)=>{const b=$(id);return s+(b&&+b.dataset.n||0);},0);
+  const n=['#cLearn','#cAud'].reduce((s,id)=>{const b=$(id);return s+(b&&+b.dataset.n||0);},0);
   const b=$('#cMore');if(b){b.textContent=faN(n);b.classList.toggle('z',!n);}
 }
 function renderAll(){
