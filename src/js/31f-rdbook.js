@@ -132,13 +132,18 @@ function rbStep(it,hi,lo,t,c){
   if(!it.x){it.ex=it.ex||'tp';it.x=exNew();}
   const P=rdExPlans()[it.ex]||rdExPlans().tp, s=it.dir==='long'?1:-1;
   const fav=s>0?rbRof(it,hi):rbRof(it,lo), adv=s>0?rbRof(it,lo):rbRof(it,hi);
-  let cl=null;
+  let cl=null,bar=null;
   if(P.cs){if(c!=null){if(t%36e5===0)cl=rbRof(it,c);}
     else{const h=Math.floor(t/36e5);if(it.x.lh!=null&&h>it.x.lh&&it.x.lp>0)cl=rbRof(it,it.x.lp);it.x.lh=h;it.x.lp=(hi+lo)/2;}}
+  // SAR: بیشترین/کمترین R هر ساعت جمع می‌شود و با بسته شدن ساعت یک قدم SAR برمی‌دارد (مثل سنجش روی کندل یک‌ساعته)
+  if(P.sar){const x=it.x,h=c!=null?Math.floor((t-1)/36e5):Math.floor(t/36e5);
+    if(x.bf==null||x.bh==null||h>x.bh){if(x.bf!=null&&x.bh!=null&&h>x.bh)bar={f:x.bf,a:x.ba};x.bh=h;x.bf=fav;x.ba=adv;}
+    else{x.bf=Math.max(x.bf,fav);x.ba=Math.min(x.ba,adv);}
+    if(c!=null&&t%36e5===0){bar={f:x.bf,a:x.ba};x.bf=null;x.ba=null;}}
   const k0=it.x.k;
   // خروج زمانی (مثلاً بعد از 1 ساعت): با قیمت میانه‌ی همین قدم
   if(P.tmax&&t-it.t>=P.tmax*36e5){rbClose(it,'time',(hi+lo)/2,t);return true;}
-  if(exStep(it.x,P,fav,adv,cl)){rbClose(it,it.x.how,rbPx(it,it.x.out),t);return true;}
+  if(exStep(it.x,P,fav,adv,cl,bar)){rbClose(it,it.x.how,rbPx(it,it.x.out),t);return true;}
   it.be=it.x.be;
   if(it.x.k>k0)it.x.at=t;                     // زمان آخرین سیو سود
   return false;

@@ -1,6 +1,6 @@
 /* رادار بازار v3: عامل‌ها، مدل لجستیک، کارنامه‌ی صادق، بارگذاری ده‌تایی، معامله‌ی آزمایشی و دفتر پیشنهادها */
 const {pw}=require('./lib');const {chromium}=pw;const {route,seed}=require('./fixture');
-const RD_EXN_OK=f=>['tp','lad','trl','q03','q05','q075','q1','q05c','h05','t1h'].includes(f.exP)&&f.exs&&f.extab;
+const RD_EXN_OK=f=>['tp','lad','trl','sar','q03','q05','q075','q1','q05c','h05','t1h'].includes(f.exP)&&f.exs&&f.extab;
 let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);};
 (async()=>{
  const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:900}});await route(ctx);
@@ -225,7 +225,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    const cT=exCost({tpf:1},0.02),cM=exCost({tpf:0},0.02),w=rdWalkX(C,0,{dir:'long',E:10,sd:0.02});
    return {n:RD_EXN.length,q:+(w.q05.R+cT).toFixed(6),qj:w.q05.j,h:+(w.h05.R+cT).toFixed(6),t:+(w.t1h.R+cM).toFixed(6),tj:w.t1h.j,th:w.t1h.how,rows:(()=>{RDV='model';renderRadar();const n=document.querySelectorAll('#rdView .rdex tbody tr').length;RDV='sig';renderRadar();return n;})()};});
  console.log('   ',JSON.stringify(qx));
- ok(qx.n===10&&qx.rows===10&&qx.q===0.5&&qx.qj===2&&qx.h===1&&qx.t===0.2&&qx.tj===1&&qx.th==='time','خروج سریع در سنجش: +0.5R، نصف +0.5R/باقی +1.5R، بعد از 1 ساعت (+0.2R)؛ ده ردیف در جدول نقشه‌ی خروج');
+ ok(qx.n===11&&qx.rows===11&&qx.q===0.5&&qx.qj===2&&qx.h===1&&qx.t===0.2&&qx.tj===1&&qx.th==='time','خروج سریع در سنجش: +0.5R، نصف +0.5R/باقی +1.5R، بعد از 1 ساعت (+0.2R)؛ یازده ردیف در جدول نقشه‌ی خروج');
  // هزینه: کارمزد رفت‌وبرگشت یک بار (نه دو بار)؛ Limit برای ورود و هدف، مارکت + لغزش برای استاپ؛ استاپ خیلی نزدیک کنار می‌رود
  const cm=await p.evaluate(()=>{const keep={fee:S.fee,feeMk:S.feeMk,slip:S.slip,rdOrd:S.rdOrd};Object.assign(S,{fee:0.1,feeMk:0.04,slip:0.05,rdOrd:'lmt'});
    const a={tp:exCost({tpf:1},0.02),sl:exCost({tpf:0},0.02),half:exCost({tpf:0.5},0.02),tight:exCostSl(0.006),ok2:exCostSl(0.02)};

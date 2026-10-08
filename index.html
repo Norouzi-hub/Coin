@@ -9898,7 +9898,9 @@ const RD_CF=['t4','t1','macd','rsi','brk','vol','btc','ext','rs','d50','volc','w
   // RSI 4 ساعته (نقشه‌ی حرارتی CoinMarketCap)، شکار نقدینگی (اسپرینگ/آپ‌تراست وایکوف)، CPR روزانه و پهنای آن
   'rsi4','swp','cpr','cprw',
   // تغییر ساختار 1 ساعته: شکست آخرین سقفِ پایین‌تر (یا کفِ بالاتر)
-  'mss'];
+  'mss',
+  // StochRSI 1 ساعته: تقاطع K و D در اشباع (زمان‌بندی سریع‌تر از RSI)
+  'srsi'];
 /* عامل‌های کل بازار (برای همه‌ی ارزها در یک لحظه یکی): همه طوری که «+» یعنی به نفع بالا رفتن */
 const RD_MF=['mtot','mt2','mt3','mbd','mud','mbr','mmc'], RD_FEAT=RD_CF.concat(RD_MF), RD_F0=RD_CF.length;
 const RD_FLOW=['whale','crowd','taker','oi'], RD_NOSIGN=['volc','rbull','rbear','cprw'];
@@ -9907,7 +9909,7 @@ const RD_FA={t4:'روند 4 ساعته',t1:'روند 1 ساعته',macd:'MACD',r
   whale:'نهنگ‌ها در برابر مردم',crowd:'ازدحام مردم',taker:'خرید/فروش تهاجمی',oi:'Open Interest',rbull:'بازار صعودی',rbear:'بازار نزولی',
   ma200:'میانگین 200 (4 ساعته)',ma200s:'شیب میانگین 200',adx:'قدرت روند (ADX)',bbp:'باند بولینگر',vwap:'VWAP روزانه',obv:'OBV (حجم تجمعی)',
   mom:'مومنتوم 14 روزه',r24:'بازده 24 ساعته',hl30:'جای قیمت در سقف/کف 30 روزه',fund:'فاندینگ',wick:'کندل برگشتی (سایه)',divr:'واگرایی RSI (1 ساعته)',divm:'واگرایی MACD (1 ساعته)',rsit:'برگشت RSI از اشباع',btc1:'بیت‌کوین در 1 ساعت',
-  rsi4:'RSI 4 ساعته',mss:'تغییر ساختار (1 ساعته)',swp:'شکار نقدینگی (اسپرینگ وایکوف)',cpr:'CPR روزانه',cprw:'باریکی CPR',
+  rsi4:'RSI 4 ساعته',mss:'تغییر ساختار (1 ساعته)',srsi:'StochRSI (1 ساعته)',swp:'شکار نقدینگی (اسپرینگ وایکوف)',cpr:'CPR روزانه',cprw:'باریکی CPR',
   mtot:'کل بازار (TOTAL)',mt2:'TOTAL2',mt3:'TOTAL3 (آلت‌ها)',mbd:'دامیننس بیت‌کوین',mud:'دامیننس تتر',mbr:'پهنای بازار: RSI همه‌ی ارزها',mmc:'پهنای بازار: MACD همه‌ی ارزها'};
 const RD_B=['70-85','85-95','95+'];
 const RD_SKIP=/^(USDT|USDC|FDUSD|TUSD|DAI|BUSD|USDP|USDD|USDE|SUSDE|USDS|PYUSD|USD0|USD1|RLUSD|EURC|EURT|PAXG|XAUT|WBTC|WETH|WBETH|STETH|WSTETH|WEETH|CBBTC|BTCB|RETH|METH|LEO|BSC-USD|BFUSD|USDF)$/;
@@ -9934,6 +9936,12 @@ function rdPrep(C,B,FL,FU){
   const H=36e5,c=C.map(k=>k.c),v=C.map(k=>k.v||0);
   const e20=emaArr(c,20),e50=emaArr(c,50),m12=emaArr(c,12),m26=emaArr(c,26);
   const macd=c.map((_,i)=>m12[i]-m26[i]),sig=emaArr(macd,9),hist=macd.map((x,i)=>x-sig[i]),rsi=rsiArr(c,14);
+  // StochRSI (14، K=3، D=3): جای RSI میان کف و سقف 14 کندل خودش
+  const sk=new Array(c.length).fill(0.5),sdd=new Array(c.length).fill(0.5);
+  {const st=new Array(c.length).fill(0.5);
+    for(let i=27;i<c.length;i++){let lo=Infinity,hi=-Infinity;for(let q=i-13;q<=i;q++){if(rsi[q]<lo)lo=rsi[q];if(rsi[q]>hi)hi=rsi[q];}st[i]=hi>lo?(rsi[i]-lo)/(hi-lo):0.5;}
+    for(let i=29;i<c.length;i++)sk[i]=(st[i]+st[i-1]+st[i-2])/3;
+    for(let i=31;i<c.length;i++)sdd[i]=(sk[i]+sk[i-1]+sk[i-2])/3;}
   const F=swAggr(C,4*H),f=F.map(k=>k.c),f20=emaArr(f,20),f50=emaArr(f,50),fIdx=new Map(F.map((k,j)=>[k.t,j])),rsi4=rsiArr(f,14);
   const D=swAggr(C,24*H),d50=emaArr(D.map(k=>k.c),50),dIdx=new Map(D.map((k,j)=>[k.t,j]));
   // ATR (میانگین ساده‌ی 14 TR) و جمع تجمعی TR برای «فشردگی نوسان»
@@ -9952,7 +9960,7 @@ function rdPrep(C,B,FL,FU){
   let bt=null,bc=null;
   if(B&&B.length>250&&B!==C){const BF=swAggr(B,4*H),bf=BF.map(k=>k.c),b20=emaArr(bf,20),b50=emaArr(bf,50);
     bt=new Map(BF.map((k,j)=>[k.t,j>=50?clamp1((b20[j]-b50[j])/b50[j]/0.01):null]));bc=new Map(B.map(k=>[k.t,k.c]));}
-  return {C,c,v,e20,e50,hist,rsi,rsi4,F,f20,f50,fIdx,D,d50,dIdx,pre,bt,bc,f200,adx,adir,obv,FU:FU&&FU.length?FU:null,FL:FL||null,reg:rdRegMap(B||C)};
+  return {C,c,v,e20,e50,hist,rsi,rsi4,sk,sd:sdd,F,f20,f50,fIdx,D,d50,dIdx,pre,bt,bc,f200,adx,adir,obv,FU:FU&&FU.length?FU:null,FL:FL||null,reg:rdRegMap(B||C)};
 }
 /* عامل‌ها در کندل i (بسته‌شده): هر کدام حدود −1..+1، یا null اگر داده نیست */
 /* واگرایی کلاسیک روی 1 ساعته: کف (یا سقف) تازه‌ی قیمت در برابر کف (سقف) قبلی، در حالی که نوسانگر o خلافش را نشان می‌دهد.
@@ -10066,6 +10074,11 @@ function rdParts(P,i){
     p.cpr=c[i]>top?clamp1((c[i]-top)/atr/2):c[i]<bot?-clamp1((bot-c[i])/atr/2):0;
     let wa=0;for(let q=jd-20;q<jd;q++)wa+=w(D[q]);wa/=20;m.cprw=w(d)*100;p.cprw=wa>0?clamp1(1-w(d)/wa):0;}
   p.mss=rdMss(C,i);
+  // StochRSI: K از زیر 20 بالای D رفت (در 2 کندل اخیر) = +1؛ از بالای 80 زیر D = −1
+  {const {sk,sd}=P;let v=0;for(let q=i;q>=i-1&&!v;q--){
+      if(sk[q]>sd[q]&&sk[q-1]<=sd[q-1]&&Math.min(sk[q-1],sd[q-1])<0.2)v=1;
+      else if(sk[q]<sd[q]&&sk[q-1]>=sd[q-1]&&Math.max(sk[q-1],sd[q-1])>0.8)v=-1;}
+    p.srsi=v;m.srsi=sk[i]*100;}
   p.btc1=null;if(bc){const b0=bc.get(C[i].t-H),b1=bc.get(C[i].t);if(b0&&b1){p.btc1=clamp1((b1/b0-1)*100/1.5);m.b1=(b1/b0-1)*100;}}
   // جریان پول: مقدارِ ساعتِ همان کندل (منتشرشده تا بسته شدنش)
   const t=C[i].t;
@@ -10090,12 +10103,14 @@ const rdBucket=s=>s>=95?'95+':s>=85?'85-95':'70-85';
    بیرون از یادگیری) خودکار انتخاب می‌شود؛ معامله‌ی آزمایشی و پوزیشن رادار با همان خارج می‌شوند.
    t: پله‌های هدف، f: سهمی که در هر پله بسته می‌شود، st: استاپ بعد از هر پله، be: ریسک‌فری بی بستن،
    trail: استاپ متحرک به فاصله‌ی چند R پشت بیشترین سود (بعد از پله‌ی اول). */
-const RD_EXN=['tp','lad','trl','q03','q05','q075','q1','q05c','h05','t1h'];
+const RD_EXN=['tp','lad','trl','sar','q03','q05','q075','q1','q05c','h05','t1h'];
 const rdExPlans=()=>{const rr=+(S.rMul&&S.rMul[0])||1.5;return {
   tp:{n:'هدف ثابت',d:'همه در +'+rr+'R؛ در +1R استاپ به ورود',t:[rr],f:[1],st:[0],be:1},
   lad:{n:'سیو سود پله‌ای',d:'نصف در +1R و استاپ به ورود؛ یک‌چهارم در +2R و استاپ به +1R؛ باقی در +3R',t:[1,2,3],f:[.5,.25,.25],st:[0,1,2]},
   trl:{n:'سیو سود + استاپ متحرک',d:'نصف در +1R و استاپ به ورود؛ باقی با استاپ متحرک 1R پشت بیشترین سود',t:[1],f:[.5],st:[0],trail:1},
   // خروج سریع (از تحلیل مسیر واقعی تست‌ها: بیشتر سیگنال‌ها زود +0.5R می‌دهند و بعد برمی‌گردند)
+  // Parabolic SAR (0.02، گام 0.02، سقف 0.2) روی کندل یک‌ساعته، از لحظه‌ی ورود: استاپ هر ساعت بالاتر می‌آید
+  sar:{n:'سیو سود + استاپ SAR',d:'نصف در +0.5R و استاپ به ورود؛ استاپ از اول با Parabolic SAR یک‌ساعته بالا می‌آید',t:[0.5],f:[.5],st:[0],sar:[0.02,0.2]},
   q03:{n:'خروج سریع +0.3R',d:'همه در +0.3R',t:[0.3],f:[1],st:[0]},
   q05:{n:'خروج سریع +0.5R',d:'همه در +0.5R',t:[0.5],f:[1],st:[0]},
   q075:{n:'همه در +0.75R',d:'همه در +0.75R',t:[0.75],f:[1],st:[0]},
@@ -10121,17 +10136,23 @@ const exCostSl=(sd,F)=>{F=F||rdFees();return (F.inF+F.tk+F.slip)/100/sd;};
    تغییر استاپ از قدم بعد اثر می‌کند. true یعنی معامله تمام شد. */
 /* cl: R بسته شدن کندل یک‌ساعته (فقط برای نقشه‌ی «استاپ با بسته شدن»، P.cs = استاپ اضطراری به R).
    تا وقتی استاپ همان استاپ اول است، لمس آن را نمی‌زند: اول اضطراری، بعد بسته شدن کندل، بعد هدف‌ها (محافظه‌کار). */
-function exStep(x,P,fav,adv,cl){
+/* bar: کندل یک‌ساعته‌ی کامل {f: بیشترین R، a: کمترین R} برای به‌روز کردن SAR (فقط P.sar) */
+function exStep(x,P,fav,adv,cl,bar){
   if(P.cs&&x.stop<0){
     if(adv<=-P.cs){x.acc+=x.rem*-P.cs;x.rem=0;x.how='sl';x.out=-P.cs;return true;}
     if(cl!=null&&cl<=x.stop){const o=Math.max(cl,-P.cs);x.acc+=x.rem*o;x.rem=0;x.how='sl';x.out=o;return true;}
-  }else if(adv<=x.stop){x.acc+=x.rem*x.stop;x.rem=0;x.how=x.stop>0?'trail':x.stop===0?'be':'sl';x.out=x.stop;return true;}
+  }else if(adv<=x.stop){x.acc+=x.rem*x.stop;x.rem=0;x.how=x.stop>0||(x.stop>-1&&x.stop!==0)?'trail':x.stop===0?'be':'sl';x.out=x.stop;return true;}
   let ns=x.stop;
   while(x.k<P.t.length&&fav>=P.t[x.k]){const f=Math.min(x.rem,P.f[x.k]);x.acc+=f*P.t[x.k];x.rem-=f;x.tpf=(x.tpf||0)+f;ns=Math.max(ns,P.st[x.k]);x.k++;
     if(x.rem<=1e-9){x.rem=0;x.how='tp';x.out=P.t[x.k-1];return true;}}
   if(P.be&&fav>=P.be)ns=Math.max(ns,0);
   x.peak=Math.max(x.peak,fav);
   if(P.trail&&x.k>=1)ns=Math.max(ns,x.peak-P.trail);
+  if(P.sar&&bar){                                  // SAR کلاسیک به واحد R؛ از قدم بعد اثر می‌کند
+    if(x.sar==null){x.sar=-1;x.ep=0;x.af=P.sar[0];x.a1=null;}
+    if(bar.f>x.ep){x.ep=bar.f;x.af=Math.min(P.sar[1],x.af+P.sar[0]);}
+    let s2=x.sar+x.af*(x.ep-x.sar);const lim=Math.min(bar.a,x.a1==null?bar.a:x.a1);if(s2>lim)s2=lim;
+    x.a1=bar.a;x.sar=s2;ns=Math.max(ns,s2);}
   x.stop=ns;x.be=ns>=0;return false;
 }
 const exR=(x,nowR)=>x.acc+x.rem*nowR;
@@ -10145,9 +10166,9 @@ function rdWalkX(C,i,pl,F){
   if(F.lm){while(j0<=i+2&&j0<C.length&&!(sign>0?C[j0].l<=pl.E:C[j0].h>=pl.E))j0++;
     if(j0>i+2){if(i+AS_HOLD>C.length-1)return null;const o={R:0,j:Math.min(C.length-1,i+2),how:'nofill',c:0};for(const n of RD_EXN)out[n]=o;return out;}}
   for(let j=j0;j<C.length&&j<=i+AS_HOLD&&left;j++){
-    const k=C[j], fav=sign>0?(k.h-pl.E)/u:(pl.E-k.l)/u, adv=sign>0?(k.l-pl.E)/u:(pl.E-k.h)/u, cl=(k.c-pl.E)*sign/u;
+    const k=C[j], fav=sign>0?(k.h-pl.E)/u:(pl.E-k.l)/u, adv=sign>0?(k.l-pl.E)/u:(pl.E-k.h)/u, cl=(k.c-pl.E)*sign/u, bar={f:fav,a:adv};
     for(const n of RD_EXN){if(out[n])continue;
-      if(exStep(st[n],PL[n],fav,adv,cl)){const c=cs(st[n]);out[n]={R:st[n].acc-c,j,how:st[n].how,c};left--;}
+      if(exStep(st[n],PL[n],fav,adv,cl,bar)){const c=cs(st[n]);out[n]={R:st[n].acc-c,j,how:st[n].how,c};left--;}
       else if(PL[n].tmax&&j-i>=PL[n].tmax){const c=cs(st[n]);out[n]={R:exR(st[n],(k.c-pl.E)*sign/u)-c,j,how:'time',c};left--;}}
   }
   if(left){const end=i+AS_HOLD;if(end>C.length-1)return null;
@@ -10664,6 +10685,7 @@ function rdReasons(x){
     else if(k==='rsit')t=v>0?'RSI از اشباع فروش برگشت':'RSI از اشباع خرید افتاد';
     else if(k==='divr'||k==='divm')t=(v>0?'واگرایی مثبت ':'واگرایی منفی ')+(k==='divr'?'RSI':'MACD')+' (1 ساعته؛ '+(v>0?'کف پایین‌تر، نوسانگر بالاتر':'سقف بالاتر، نوسانگر پایین‌تر')+')';
     else if(k==='btc1')t='بیت‌کوین '+fmtPct(x.b1)+' در 1 ساعت';
+    else if(k==='srsi')t=v>0?'StochRSI از اشباع فروش رو به بالا قطع کرد':'StochRSI از اشباع خرید رو به پایین قطع کرد';
     else if(k==='mss')t=v>0?'شکست آخرین سقفِ پایین‌تر (ساختار 1 ساعته صعودی شد)':'شکست آخرین کفِ بالاتر (ساختار 1 ساعته نزولی شد)';
     else if(k==='rsi4')t='RSI 4 ساعته '+fmtNum(x.rsi4||0)+(x.rsi4<30?' (اشباع فروش)':x.rsi4>70?' (اشباع خرید)':'');
     else if(k==='swp')t=v>0?'کف 48 ساعته شکسته و برگشت (شکار نقدینگی پایین، اسپرینگ)':'سقف 48 ساعته شکسته و برگشت (شکار نقدینگی بالا، آپ‌تراست)';
@@ -11053,7 +11075,7 @@ function paintRadar(g){
       if(b.dataset.a==='iso'){const z=isoSize(x.pl.E,x.pl.SL),ex=rbExEff(x.dir),sg=asSig(k);
         // نقشه‌ی خروج رادار روی پوزیشن واقعی: تارگت‌ها به واحد R و سبک خروج هم‌ارز
         // (lad/trl: پله‌های +1R/+2R/+3R با سیو سود؛ q05: همه در +0.5R؛ h05: نصف در +0.5R و باقی در +1.5R؛ t1h: بستن خودکار بعد از 1 ساعت)
-        const sn=x.dir==='long'?1:-1,tR=r=>+(x.pl.E*(1+sn*x.pl.sd*r)).toPrecision(8),M={lad:[[1,2,3],'rd'],trl:[[1,2,3],'rd'],q03:[[0.3],'s1'],q05:[[0.5],'s1'],q075:[[0.75],'s1'],q1:[[1],'s1'],q05c:[[0.5],'s1'],h05:[[0.5,1.5],'bal']}[ex];
+        const sn=x.dir==='long'?1:-1,tR=r=>+(x.pl.E*(1+sn*x.pl.sd*r)).toPrecision(8),M={lad:[[1,2,3],'rd'],trl:[[1,2,3],'rd'],q03:[[0.3],'s1'],q05:[[0.5],'s1'],q075:[[0.75],'s1'],q1:[[1],'s1'],q05c:[[0.5],'s1'],sar:[[0.5,1.5],'bal'],h05:[[0.5,1.5],'bal']}[ex];
         if(M)sg.targets=M[0].map(tR);
         sheetEnter(p,sg,{stop:x.pl.SL,lev:z?z.lev:null,amt:z?z.margin:null,market:'futures'},PRICES.get(x.tk)||x.pl.E,
           {iso:true,untilAuto:true,pb:M?M[1]:'s1',note:(rdFees().lm?'ورود Limit · ':'')+'رادار بازار · امتیاز '+x.sc+(x.stars?' · '+x.stars+'★':'')+(ex!=='tp'?' · خروج: '+rdExPlans()[ex].n:''),until:Date.now()+(ex==='t1h'?1:AS_HOLD)*36e5});}
@@ -11193,13 +11215,18 @@ function rbStep(it,hi,lo,t,c){
   if(!it.x){it.ex=it.ex||'tp';it.x=exNew();}
   const P=rdExPlans()[it.ex]||rdExPlans().tp, s=it.dir==='long'?1:-1;
   const fav=s>0?rbRof(it,hi):rbRof(it,lo), adv=s>0?rbRof(it,lo):rbRof(it,hi);
-  let cl=null;
+  let cl=null,bar=null;
   if(P.cs){if(c!=null){if(t%36e5===0)cl=rbRof(it,c);}
     else{const h=Math.floor(t/36e5);if(it.x.lh!=null&&h>it.x.lh&&it.x.lp>0)cl=rbRof(it,it.x.lp);it.x.lh=h;it.x.lp=(hi+lo)/2;}}
+  // SAR: بیشترین/کمترین R هر ساعت جمع می‌شود و با بسته شدن ساعت یک قدم SAR برمی‌دارد (مثل سنجش روی کندل یک‌ساعته)
+  if(P.sar){const x=it.x,h=c!=null?Math.floor((t-1)/36e5):Math.floor(t/36e5);
+    if(x.bf==null||x.bh==null||h>x.bh){if(x.bf!=null&&x.bh!=null&&h>x.bh)bar={f:x.bf,a:x.ba};x.bh=h;x.bf=fav;x.ba=adv;}
+    else{x.bf=Math.max(x.bf,fav);x.ba=Math.min(x.ba,adv);}
+    if(c!=null&&t%36e5===0){bar={f:x.bf,a:x.ba};x.bf=null;x.ba=null;}}
   const k0=it.x.k;
   // خروج زمانی (مثلاً بعد از 1 ساعت): با قیمت میانه‌ی همین قدم
   if(P.tmax&&t-it.t>=P.tmax*36e5){rbClose(it,'time',(hi+lo)/2,t);return true;}
-  if(exStep(it.x,P,fav,adv,cl)){rbClose(it,it.x.how,rbPx(it,it.x.out),t);return true;}
+  if(exStep(it.x,P,fav,adv,cl,bar)){rbClose(it,it.x.how,rbPx(it,it.x.out),t);return true;}
   it.be=it.x.be;
   if(it.x.k>k0)it.x.at=t;                     // زمان آخرین سیو سود
   return false;

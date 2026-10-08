@@ -24,14 +24,19 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
        const U=mk(true),D=mk(false),U2=mk(true);U2[30].h=12.5;        // سقف بالاتر: تغییر ساختار نیست
        const U3=mk(true);U3[40].c=10.9;                                // برگشت زیر سطح
        return [rdMss(U,40),rdMss(D,40),rdMss(U2,40),rdMss(U3,40)];})(),
-     feat:['rsi4','swp','cpr','cprw','mss'].every(x=>RD_FEAT.includes(x))&&['mbr','mmc'].every(x=>RD_MF.includes(x)),nos:RD_NOSIGN.includes('cprw'),
-     fa:['rsi4','swp','cpr','cprw','mss','mbr','mmc'].every(x=>RD_FA[x])};});
+     srsi:(()=>{const C=Array.from({length:400},(_,q)=>{const m=10+0.3*Math.sin(q/6);return {t:q*36e5,o:m,h:m+0.02,l:m-0.02,c:m,v:100};});
+       const P=rdPrep(C,C,null,null),v=[];for(let i=250;i<399;i++){const r=rdParts(P,i);if(r)v.push(r.p.srsi);}
+       // تقاطع از کف: بعد از کف موج (sin=-1) مثبت، بعد از سقف منفی
+       return {pos:v.filter(x=>x===1).length,neg:v.filter(x=>x===-1).length,other:v.filter(x=>x!==0&&x!==1&&x!==-1).length};})(),
+     feat:['rsi4','swp','cpr','cprw','mss','srsi'].every(x=>RD_FEAT.includes(x))&&['mbr','mmc'].every(x=>RD_MF.includes(x)),nos:RD_NOSIGN.includes('cprw'),
+     fa:['rsi4','swp','cpr','cprw','mss','srsi','mbr','mmc'].every(x=>RD_FA[x])};});
  console.log('   ',JSON.stringify(r));
  ok(r.sp===1&&r.ut===-1,'اسپرینگ (کف 48 ساعته شکست، با حجم برگشت) = +1؛ آپ‌تراست = −1');
  ok(Math.abs(r.lo-0.6)<1e-9,'شکار کف بی حجم بالا = +0.6');
  ok(r.br===0&&r.no===0,'شکست واقعی (برنگشت) یا هیچ = 0');
  ok(r.cpr!=null&&Math.abs(r.cpr-r.want)<1e-9&&r.cprw!=null&&r.cprw>=-1&&r.cprw<=1,'CPR از روز کامل قبل: P=(H+L+C)/3، BC=(H+L)/2، TC=2P−BC ('+r.cpr.toFixed(3)+')');
  ok(r.m4>0&&r.m4<100&&Math.abs(r.rsi4-Math.max(-1,Math.min(1,(r.m4-50)/20)))<1e-9,'RSI 4 ساعته ('+r.m4.toFixed(1)+')');
+ ok(r.srsi.pos>0&&r.srsi.neg>0&&r.srsi.other===0,'StochRSI: تقاطع رو به بالا در کف موج (+1، '+r.srsi.pos+' بار) و رو به پایین در سقف (−1، '+r.srsi.neg+' بار)');
  ok(r.mss[0]===0.75&&r.mss[1]===-0.75&&r.mss[2]===0&&r.mss[3]===0,'تغییر ساختار: شکست سقفِ پایین‌تر +0.75 (یک کندل پیش)، کفِ بالاتر −0.75؛ سقفِ بالاتر یا برگشت زیر سطح = 0 ('+r.mss.join(',')+')');
  ok(r.feat&&r.nos&&r.fa,'عامل‌ها در مدل و با نام فارسی؛ باریکی CPR بی‌جهت');
  // پهنای بازار: نمایش در جعبه‌ی کل بازار
