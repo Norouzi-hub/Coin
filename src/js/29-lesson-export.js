@@ -63,7 +63,7 @@ async function lxLoadImg(url){
   else for(const r of allRoutes().filter(r=>!r.unwrap)){
     try{
       const ctrl=new AbortController(), t=setTimeout(()=>ctrl.abort(),15000);
-      const res=await fetch(r.build(url),{signal:ctrl.signal});clearTimeout(t);
+      const res=await netFetch(r.build(url),{signal:ctrl.signal});clearTimeout(t);
       if(!res.ok)continue;
       const b=await res.blob();
       if(b.size<200||(b.type&&!/^image\/|octet-stream/.test(b.type)))continue;   // صفحه‌ی خطای واسط، نه عکس

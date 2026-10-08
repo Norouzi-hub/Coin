@@ -569,9 +569,11 @@ async function rdFundH(tk,fresh){
 /* بررسی پله‌پله: «more» = ده ارز بعدی، «refresh» = تازه کردن همه‌ی ارزهای بررسی‌شده (ده‌تا‌ده‌تا) */
 async function rdScan(mode,add){
   if(RDQ.on)return;
-  mode=mode||'refresh';
+  mode=mode||'refresh';if(RDQ.next===mode)RDQ.next=null;workStart();
   Object.assign(RDQ,{on:true,done:0,n:0,msg:'گرفتن فهرست ارزها (ارزش بازار از CoinGecko)…',t0:Date.now(),tc:0,pm:0,fin:false,mode});RDQ.cur.clear();
   clearInterval(RDQ.iv);RDQ.iv=setInterval(rdPaintProg,1000);rdPaintProg();
+  // دکمه‌ها همان لحظه حالت «در حال کار» بگیرند (بررسی خودکار هم از همین‌جا می‌گذرد)
+  setTimeout(rdRepaintNow,0);
   try{
     await Promise.all([rdCapLoad(),mdLoad()]);
     // فهرست: refresh همان فهرست؛ more ده ارز بعدیِ رتبه‌ای که در فهرست نیست؛ add نمادها/بازه/واچ‌لیست
@@ -624,7 +626,8 @@ async function rdScan(mode,add){
     if(RDQ.over)toast('سقف فهرست '+faN(RD_MAX)+' ارز است؛ '+faN(RDQ.over)+' ارز اضافه نشد','err');
     rdLive(RD.list);RD.at=Date.now();rdSave();
     try{rbLogAuto();}catch(e){}
-  }finally{RDQ.on=false;RDQ.msg='';RDQ.cur.clear();clearInterval(RDQ.iv);}
+  }finally{RDQ.on=false;RDQ.msg='';RDQ.cur.clear();clearInterval(RDQ.iv);workEnd();}
+  if(RDQ.next){const m=RDQ.next;RDQ.next=null;setTimeout(()=>rdScan(m),50);}
   rdRepaintNow();
 }
 function rdRemove(tk){RD.list=rdListOf().filter(t=>t!==tk);RD.rank=RD.rank.filter(t=>t!==tk);delete RD.coins[tk];RDS.delete(tk);rdSave();}
@@ -644,9 +647,17 @@ function rdLive(U){
 }
 /* نوار پیشرفت: درصد، کار الان، زمان گذشته و تخمین مانده (85٪ گرفتن ارزها، 15٪ سنجش و یادگیری) */
 const rdMmss=ms=>{const s=Math.max(0,Math.round(ms/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
+const rdPctNow=()=>{const n=RDQ.n,d=RDQ.done;let pct=n?85*d/n:2;if(RDQ.fin)pct=85+15*RDQ.pm;return Math.max(1,Math.min(99,Math.round(pct)));};
+/* دکمه‌های بررسی رادار: همانی که زده شد چرخنده و درصد می‌گیرد؛ بقیه تا پایان خاموش‌اند.
+   «یادگیری دوباره» وسط یک بررسی دیگر خاموش نمی‌شود: در صف می‌رود و بعدش خودش اجرا می‌شود. */
+function rdBtn(attr,icon,label,mode,busy,cls){
+  const me=RDQ.on&&RDQ.mode===mode,q=mode==='learn'&&RDQ.next==='learn';
+  if(me||q)return '<button class="btn sm is-busy'+(cls?' '+cls:'')+'" '+attr+' disabled aria-busy="true"><span class="bspin"></span><span>'+(me?busy+' <b data-rdpct dir="ltr">'+rdPctNow()+'%</b>':'در صف: بعد از بررسی فعلی')+'</span></button>';
+  return '<button class="btn sm'+(cls?' '+cls:'')+'" '+attr+(RDQ.on&&mode!=='learn'?' disabled':'')+'>'+ic(icon)+'<span>'+label+'</span></button>';
+}
 function rdProgInner(){
   const now=Date.now(),n=RDQ.n,d=RDQ.done;
-  let pct=n?85*d/n:2;if(RDQ.fin)pct=85+15*RDQ.pm;pct=Math.max(1,Math.min(99,Math.round(pct)));
+  const pct=rdPctNow();
   const STG={1:'دریافت',2:'محاسبه'};
   const stage=RDQ.msg||(n?(RDQ.mode==='more'?'ارزهای تازه: ':'')+'ارز '+faN(Math.min(n,d+1))+' از '+faN(n)+
     (RDQ.cur.size?' · '+[...RDQ.cur].map(([tk,st])=>'<b dir="ltr">'+esc(tk)+'</b> '+STG[st]).join('، '):''):'آماده‌سازی…');
@@ -659,6 +670,7 @@ function rdProgInner(){
 const rdProgHtml=()=>'<div class="rdprog" id="rdProgBox">'+rdProgInner()+'</div>';
 function rdPaintProg(){
   const box=$('#rdProgBox');if(box&&RDQ.on)box.innerHTML=rdProgInner();
+  if(RDQ.on)for(const x of document.querySelectorAll('[data-rdpct]'))x.textContent=rdPctNow()+'%';
   const b=$('#rdProg');if(b)b.textContent=RDQ.on?'':(RD.at?ageTxt(RD.at):'');
   if(!RDQ.on&&box)box.remove();
 }
@@ -827,8 +839,8 @@ function rdModelHtml(){
   if(H.few)h+='<div class="flag w"><i>!</i><span>ستاره‌ها روی '+faN(H.nc)+' ارز ساخته شده‌اند؛ برای اعتماد دست‌کم '+faN(RD_NC_OK)+' ارز لازم است'+(H.cap<5?' (زیر '+faN(RD_NC_MIN)+' ارز، ستاره‌ی هر سیگنال حداکثر 3 است)':'')+'.</span></div>';
   const tt=Object.values(RD.coins).map(x=>x.t||0),t=tt.length?Math.max(...tt):0;
   if(RD.mt0)h+='<div class="hint rdtime">'+(t?'امتیازها برای کندلِ بسته‌شده‌ی ساعت <b dir="ltr">'+rdHH(t+36e5)+'</b> است و تا بسته شدن کندل بعدی (<b dir="ltr">'+rdHH(t+2*36e5)+'</b>) عوض نمی‌شود. ':'')+
-    'مدل و ستاره‌ها '+ageTxt(RD.mt0)+' یاد گرفته شده‌اند و روزی یک بار (یا با ارزهای تازه) از نو یاد گرفته می‌شوند. '+
-    '<button class="lnk" data-rdlearn="1"'+(RDQ.on?' disabled':'')+'>یادگیری دوباره</button></div>';
+    'مدل و ستاره‌ها '+ageTxt(RD.mt0)+' یاد گرفته شده‌اند و روزی یک بار (یا با ارزهای تازه) از نو یاد گرفته می‌شوند.</div>'+
+    '<div class="glact rdlearnw">'+rdBtn('data-rdlearn="1"','undo','یادگیری دوباره','learn','در حال یادگیری','ok')+'</div>';
   h+=rdPanelHtml();
   h+='<div class="hint">مدل: رگرسیون لجستیک، جدا برای لانگ و شورت، روی نتیجه‌ی همین معامله (بعد از کارمزد). '+faN(RD_FEAT.length)+' عامل: قیمت، RSI 1 و 4 ساعته، میانگین 200، ADX، بولینگر، VWAP، OBV، مومنتوم، بیت‌کوین، قدرت نسبی، روند روزانه، نوسان، فاندینگ، واگرایی 1 ساعته، شکار نقدینگی (اسپرینگ وایکوف)، CPR روزانه، جریان پول فیوچرز بایننس'+
     (RD.nflow!=null?' ('+faN(RD.nflow)+' ارز داده‌اش را داشتند)':'')+'، کل بازار (TOTAL، TOTAL2، TOTAL3، دامیننس بیت‌کوین و تتر) و پهنای بازار (RSI و MACD 4 ساعته‌ی همه‌ی ارزها)'+(RD.mkl&&RD.mkl.cov?'؛ تاریخچه‌اش از ارزهای بررسی‌شده بازسازی شده که '+faN(Math.round(RD.mkl.cov*100))+'٪ کل بازارند':'')+'. کارنامه با آزمون پیش‌رونده: مدل هر دوره را ندیده سنجیده شده. سود گذشته تضمین آینده نیست؛ «تست» بزن و در «دفتر» ببین در عمل چه شد.</div>';
@@ -1017,11 +1029,11 @@ function rdHeroHtml(L){
       (H.d[o].n?' (میانگین <bdi dir="ltr">'+fmtR(H.d[o].avg)+'</bdi>)':'')+' می‌تواند «قابل گرفتن» باشد.</span></div>';}
   if(H.few&&RD.M){const need=Math.max(0,Math.min(RD_NC_OK,RD_MAX)-n);
     h+='<div class="rdwarn"><span>ستاره‌ها روی '+faN(H.nc)+' ارز ساخته شده‌اند؛ برای اعتماد دست‌کم '+faN(RD_NC_OK)+' ارز لازم است'+(H.cap<5?' (فعلاً ستاره حداکثر 3)':'')+'.</span>'+
-      (need?'<button class="btn sm" data-rd50="1"'+(RDQ.on?' disabled':'')+'>'+ic('plus')+'<span>رساندن به '+faN(RD_NC_OK)+' ارز</span></button>':'')+'</div>';}
+      (need?rdBtn('data-rd50="1"','plus','رساندن به '+faN(RD_NC_OK)+' ارز','add','در حال بررسی ارزها'):'')+'</div>';}
   h+='<div class="rdbar"><span class="rdcnt">'+(n?faN(n)+' ارز':'')+'</span><small id="rdProg">'+(RDQ.on?'':RD.at?ageTxt(RD.at):'')+'</small>'+
-    '<button class="btn sm" data-rdrun="1"'+(RDQ.on?' disabled':'')+'>'+ic('refresh')+'<span>تازه کن</span></button>'+
+    rdBtn('data-rdrun="1"','refresh','تازه کن','refresh','در حال تازه کردن')+
     '<button class="btn sm side" data-rdhelp="1" title="امتیاز، ستاره، کِی وارد شوم" aria-label="راهنما">'+ic('info')+'<span>راهنما</span></button>'+
-    (n<RD_MAX?'<button class="btn sm" data-rdmore="1"'+(RDQ.on?' disabled':'')+'>'+ic('plus')+'<span>'+faN(RD_STEP)+' ارز بعدی</span></button>':'')+'</div>'+
+    (n<RD_MAX?rdBtn('data-rdmore="1"','plus',faN(RD_STEP)+' ارز بعدی','more','در حال بررسی'):'')+'</div>'+
     (RDQ.on?rdProgHtml():'')+'</div>';
   return h;
 }
@@ -1047,7 +1059,7 @@ function mkStripBind(g){const mk=g.querySelector('.rdmk');if(mk)mk.ontoggle=()=>
 function rdHtml(){
   const L=rdList(), ob=rbOpen();
   if(RDV==='test'||RDV==='log')return '<div class="glb">'+rbHtml(RDV)+'</div>';
-  if(RDV==='model')return '<div class="glb">'+rdModelHtml()+'</div>';
+  if(RDV==='model')return '<div class="glb">'+(RDQ.on?rdProgHtml():'')+rdModelHtml()+'</div>';
   const fv=x=>!VIEW.mktFav||rdIsFav(x.tk);
   const fd=VIEW.mktDir||'all', sig=L.filter(x=>x.dir!=='wait'), act=sig.filter(x=>(fd==='all'||x.dir===fd)&&(!VIEW.mktOk||x.ok)&&(!VIEW.mktDiv||rdDivOf(x)>0)&&fv(x)),
     hid=sig.length-act.length, wait=L.filter(x=>x.dir==='wait').filter(fv);
@@ -1098,7 +1110,8 @@ function paintRadar(g){
   try{rbCatchUp();}catch(e){}
   const mo=g.querySelector('[data-rdmore]');if(mo)mo.onclick=()=>{rdScan('more');paintRadar(g);};
   const r=g.querySelector('[data-rdrun]');if(r)r.onclick=()=>{rdScan('refresh');paintRadar(g);};
-  const ln=g.querySelector('[data-rdlearn]');if(ln)ln.onclick=()=>{rdScan('learn');paintRadar(g);};
+  const ln=g.querySelector('[data-rdlearn]');if(ln)ln.onclick=()=>{
+    if(RDQ.on){RDQ.next='learn';toast('بعد از تمام شدن بررسی فعلی، مدل از نو یاد می‌گیرد','info');}else rdScan('learn');paintRadar(g);};
   const pk=g.querySelector('.rdpick');if(pk)pk.ontoggle=()=>{RDPICKOPEN=pk.open;};
   const ad=g.querySelector('[data-rdadd]'),inp=g.querySelector('#rdPickIn');
   const doAdd=()=>{const L=rdParsePick(inp.value);if(!L.length){toast('بازه (مثلاً 20-40) یا نماد (مثلاً ETH SOL) بنویس','err');return;}

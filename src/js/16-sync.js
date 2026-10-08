@@ -27,7 +27,7 @@ function syncNote(msg,kind){
 }
 async function syncReq(method,body){
   const base=String(syncCfg.url||'').replace(/\/+$/,'');
-  const r=await fetch(base+'/db',{method,cache:'no-store',
+  const r=await netFetch(base+'/db',{method,cache:'no-store',
     headers:Object.assign({'Authorization':'Bearer '+syncCfg.token},
       body?{'Content-Type':'application/json'}:{}),
     body:body?JSON.stringify(body):undefined});
@@ -146,7 +146,7 @@ function wireSync(){
     readFields();if(!syncOn()){toast('اول همگام‌سازی را روشن کن','err');return null;}
     if(btn)btnBusy(btn,true);
     try{
-      const r=await fetch(String(syncCfg.url).replace(/\/+$/,'')+'/tg/'+action,
+      const r=await netFetch(String(syncCfg.url).replace(/\/+$/,'')+'/tg/'+action,
         {method:'POST',cache:'no-store',headers:{'Authorization':'Bearer '+syncCfg.token}});
       let j=null;try{j=await r.json();}catch(e){}
       if(r.status===404&&(!j||j.error!=='no-chat'))throw new Error('ورکر قدیمی است؛ کد تازه‌ی proxy/worker.js را Deploy کن');

@@ -376,7 +376,7 @@ function sheetShareSummary(a,label){
      paint();
      if(document.fonts&&document.fonts.load)document.fonts.load("900 40px 'Vazirmatn'").then(()=>{if($('#shImg'))paint();}).catch(()=>{});
      $('#ok').onclick=async()=>{
-       const r=await shareOrSave(cv,'report-'+new Date().toISOString().slice(0,10));
+       const r=await busyRun(()=>shareOrSave(cv,'report-'+new Date().toISOString().slice(0,10)));
        if(r==='save')toast('تصویر ذخیره شد — از گالری بفرستش','ok');
        else if(r==='share')closeSheet();
      };
@@ -497,12 +497,12 @@ function sheetShare(p){
      if(document.fonts&&document.fonts.load)document.fonts.load("900 40px 'Vazirmatn'").then(()=>{if($('#shImg'))paint();}).catch(()=>{});
      const name=()=>'signal-'+(d.ticker||'x')+'-'+new Date().toISOString().slice(0,10);
      $('#ok').onclick=async()=>{
-       const r=await shareOrSave(cv,name());
+       const r=await busyRun(()=>shareOrSave(cv,name()));
        if(r==='save')toast('تصویر ذخیره شد — از گالری بفرستش','ok');
        else if(r==='share')closeSheet();
      };
      $('#dlb').onclick=async()=>{
-       const blob=await canvasBlob(cv);if(!blob)return;
+       const blob=await busyRun(()=>canvasBlob(cv));if(!blob)return;
        const url=URL.createObjectURL(blob);
        const a=document.createElement('a');a.href=url;a.download=name()+'.png';
        document.body.appendChild(a);a.click();a.remove();

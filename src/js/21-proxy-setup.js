@@ -5,7 +5,7 @@ const WORKER_SRC='proxy/worker.js';
 async function copyWorker(btn){
   btnBusy(btn,true);
   try{
-    const r=await fetch(WORKER_SRC,{cache:'no-store'});
+    const r=await netFetch(WORKER_SRC,{cache:'no-store'});
     if(!r.ok)throw new Error('HTTP '+r.status);
     const code=await r.text();
     if(code.length<200)throw new Error('کد ناقص آمد');

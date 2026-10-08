@@ -256,12 +256,23 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const stb=await p.evaluate(async()=>{RB.items=[];const st=await idbGet('rdc:ETH');st.at-=10*60000;await idbSet('rdc:ETH',st);
    const snap=()=>({mt0:RD.mt0,cal:JSON.stringify(RD.calib),sc:RD.rank.map(t=>t+':'+RD.coins[t].sc+':'+RD.coins[t].dir+':'+RD.coins[t].since).join(',')});
    const a=snap();await rdScan('refresh');const b=snap();
-   RDV='model';renderRadar();const hint=(document.querySelector('#rdView .rdtime')||{}).textContent||'';RDV='sig';renderRadar();
-   await rdScan('learn');const c=snap();return {same:a.mt0===b.mt0&&a.cal===b.cal&&a.sc===b.sc,learn:c.mt0>a.mt0,hint};});
+   RDV='model';renderRadar();const hint=(document.querySelector('#rdView .rdtime')||{}).textContent||'',lb=document.querySelector('#rdView .rdlearnw [data-rdlearn]');
+   const btn=!!lb&&lb.classList.contains('btn')&&!lb.disabled&&/یادگیری دوباره/.test(lb.textContent);RDV='sig';renderRadar();
+   await rdScan('learn');const c=snap();
+   // وسط یک بررسی: «تازه کن» چرخنده و درصد دارد؛ «کارنامه» نوار پیشرفت دارد؛ «یادگیری دوباره» خاموش نیست و در صف می‌رود
+   st.at-=10*60000;await idbSet('rdc:ETH',st);
+   const run=rdScan('refresh');await new Promise(r=>setTimeout(r,20));const rb=document.querySelector('#rdView [data-rdrun]'),busy=!!rb&&rb.classList.contains('is-busy')&&!!rb.querySelector('.bspin')&&!!rb.querySelector('[data-rdpct]');
+   RDV='model';renderRadar();const prog=!!document.querySelector('#rdView #rdProgBox'),l2=document.querySelector('#rdView [data-rdlearn]'),en=!!l2&&!l2.disabled;
+   l2.click();const l3=document.querySelector('#rdView [data-rdlearn]'),q=RDQ.next==='learn'&&/در صف/.test(l3.textContent)&&l3.classList.contains('is-busy');
+   await run;await new Promise(r=>{const t0=Date.now(),iv=setInterval(()=>{if((!RDQ.on&&RD.mt0>c.mt0)||Date.now()-t0>60000){clearInterval(iv);r();}},100);});
+   const d=snap();RDV='sig';renderRadar();
+   return {same:a.mt0===b.mt0&&a.cal===b.cal&&a.sc===b.sc,learn:c.mt0>a.mt0,hint,btn,busy,prog,en,q,queued:d.mt0>c.mt0};});
  ok(stb.same,'«تازه کن» در همان ساعت: مدل، ستاره‌ها و امتیازها همان می‌مانند');
- ok(stb.learn&&/امتیازها برای کندلِ بسته‌شده‌ی ساعت/.test(stb.hint)&&/یادگیری دوباره/.test(stb.hint),'«یادگیری دوباره» مدل را از نو می‌سازد؛ توضیح زمان امتیاز');
+ ok(stb.learn&&stb.btn&&/امتیازها برای کندلِ بسته‌شده‌ی ساعت/.test(stb.hint),'«یادگیری دوباره» دکمه است و مدل را از نو می‌سازد؛ توضیح زمان امتیاز');
+ ok(stb.busy&&stb.prog,'وسط بررسی: «تازه کن» چرخنده و درصد دارد؛ «کارنامه» هم نوار پیشرفت');
+ ok(stb.en&&stb.q&&stb.queued,'«یادگیری دوباره» وسط بررسی خاموش نیست: در صف می‌رود و بعدش خودش اجرا می‌شود');
  const d1=k=>(REQ[k]||0)-(R1[k]||0);
- ok(d1('ETH:1h')===1,'تازه کردن: فقط کندل‌های تازه (ETH: '+d1('ETH:1h')+' درخواست)');
+ ok(d1('ETH:1h')===2,'تازه کردن: فقط کندل‌های تازه (ETH: '+d1('ETH:1h')+' درخواست در دو بار تازه کردن)');
  const lg=await p.evaluate(()=>{RDV='log';renderRadar();const G=document.getElementById('rdView');return G.textContent;});
  ok(/آزمون واقعیِ آینده/.test(lg)&&/باز \(/.test(lg),'زیرتب «دفتر پیشنهادها»');
  const mk=await p.evaluate(()=>{RDV='sig';MKT={at:Date.now(),n:650,up:93,down:545,flat:12,med:-5.8,btc:-3.2,bins:[50,80,90,60,50,20,10,5,3,2,1],reg:'bear2',src:'Binance',top:[]};renderRadar();

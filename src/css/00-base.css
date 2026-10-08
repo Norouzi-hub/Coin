@@ -1814,3 +1814,7 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .mdbrr{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px}
 .mdbrl{display:flex;justify-content:space-between;gap:8px;color:var(--tx3)}
 .mdbr .hint{margin:0}
+/* دکمه‌ای که کارش شروع شده: چرخنده روی خودش تا پایان کار */
+.abusy{position:relative;pointer-events:none;cursor:progress;color:transparent!important}
+.abusy::after{content:"";position:absolute;inset:0;margin:auto;width:15px;height:15px;border-radius:50%;border:2px solid var(--gold);border-top-color:transparent;animation:spin .75s linear infinite}
+.rdlearnw{margin-top:6px}
