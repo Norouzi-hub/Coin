@@ -19,7 +19,7 @@ async function rbPath(it){
 }
 /* آمار مسیر: کندلِ خودِ ورود حساب نمی‌شود (مثل دنبال کردن معامله) */
 function rbPathStats(it,C){
-  const s=it.dir==='long'?1:-1, u=it.E*it.sd, M5=3e5, t1=Math.floor(it.t/M5)*M5+M5, z=isoSize(it.E,it.SL), lev=z?z.lev:1;
+  const s=it.dir==='long'?1:-1, u=it.E*it.sd, M5=3e5, t1=Math.floor(it.t/M5)*M5+M5, lev=rbLev(it);
   let mfe=0,tMfe=null,mfe24=0,mae=0,stopAt=null,lastR=null,lastT=null;const touch={};
   for(const k of C){if(k.t<t1)continue;
     const fav=s>0?(k.h-it.E)/u:(it.E-k.l)/u, adv=s>0?(k.l-it.E)/u:(it.E-k.h)/u;
@@ -60,12 +60,12 @@ async function rbLabRun(){
 }
 /* جدول آستانه‌ها: سود روی مارجین (با اهرم ایزوله‌ی هر معامله) و R */
 function rbLabTable(res){
-  const row=(lab,thOf)=>{let n=0,w=0,r=0,op=0;
-    for(const x of res){const th=thOf(x);if(!(th>0))continue;const o=rbThSim(x.it,x.C,th);if(!o)continue;if(o.how==='open'){op++;continue;}n++;r+=o.R;if(o.R>0)w++;}
+  const row=(lab,thOf)=>{let n=0,w=0,r=0,op=0,u=0;
+    for(const x of res){const th=thOf(x);if(!(th>0))continue;const o=rbThSim(x.it,x.C,th);if(!o)continue;if(o.how==='open'){op++;continue;}n++;r+=o.R;u+=o.R*rbUsdR(x.it);if(o.R>0)w++;}
     return n?'<tr><td>'+lab+'</td><td class="num">'+faN(n)+(op?' <small>(+'+faN(op)+' باز)</small>':'')+'</td><td class="num">'+faN(Math.round(w/n*100))+'٪</td>'+
-      '<td class="num '+cls(r)+'"><bdi>'+fmtR(r)+'</bdi></td><td class="num '+cls(r)+'"><bdi>'+fmtUsd(r*riskUsd())+'</bdi></td></tr>':'';};
+      '<td class="num '+cls(r)+'"><bdi>'+fmtR(r)+'</bdi></td><td class="num '+cls(r)+'"><bdi>'+fmtUsd(u)+'</bdi></td></tr>':'';};
   const plan=(()=>{const D=res.filter(x=>x.it.st!=='open');if(!D.length)return '';const r=D.reduce((a,x)=>a+(x.it.R||0),0),w=D.filter(x=>x.it.R>0).length;
-    return '<tr class="on"><td>نقشه‌ی فعلی (همان که اجرا شد)</td><td class="num">'+faN(D.length)+'</td><td class="num">'+faN(Math.round(w/D.length*100))+'٪</td><td class="num '+cls(r)+'"><bdi>'+fmtR(r)+'</bdi></td><td class="num '+cls(r)+'"><bdi>'+fmtUsd(r*riskUsd())+'</bdi></td></tr>';})();
+    return '<tr class="on"><td>نقشه‌ی فعلی (همان که اجرا شد)</td><td class="num">'+faN(D.length)+'</td><td class="num">'+faN(Math.round(w/D.length*100))+'٪</td><td class="num '+cls(r)+'"><bdi>'+fmtR(r)+'</bdi></td><td class="num '+cls(r)+'"><bdi>'+fmtUsd(rbUsd(D.map(x=>x.it)))+'</bdi></td></tr>';})();
   return '<div class="tscroll"><table class="tp xtab rblab"><thead><tr><th>اگر خارج می‌شدیم در</th><th>تعداد</th><th>برد</th><th>جمع R</th><th>دلار</th></tr></thead><tbody>'+plan+
     RBL_ROE.map(p=>row(faN(p)+'٪ سود روی مارجین',x=>p/100/(x.it.sd*x.st.lev))).join('')+
     RBL_R.map(t=>row('<bdi dir="ltr">+'+t+'R</bdi>',()=>t)).join('')+'</tbody></table></div>';
@@ -99,7 +99,7 @@ function rbLabExport(){
   const res=RBL.res||[];
   const H=rdHealth(),M=RD.M||{},W=d=>M[d]&&M[d].w?Object.fromEntries(RD_FEAT.map((k,i)=>[k,M[d].w[i]]).filter(([,v])=>v)):null;
   return JSON.stringify({v:2,app:'signaldesk',kind:'radar-test-paths',at:new Date().toISOString(),
-    settings:{fee:+S.fee||0,slip:+S.slip||0,riskUsd:riskUsd(),rMul:S.rMul,maxLev:+S.maxLev||null,isoMaxSd:isoMaxSd(),exit:rbExEff(),hold:AS_HOLD},
+    settings:{fee:+S.fee||0,slip:+S.slip||0,riskUsd:riskUsd(),testMargin:rbFix()?+S.tMg:null,testLev:+S.tLev>0?+S.tLev:null,rMul:S.rMul,maxLev:+S.maxLev||null,isoMaxSd:isoMaxSd(),exit:rbExEff(),hold:AS_HOLD},
     model:{ex:RD.ex||null,exs:RD.exs||null,reg:RD.reg||null,mt0:RD.mt0||null,ncoin:RD.ncoin||null,ns:RD.ns||null,
       span:RD.span?RD.span.map(t=>new Date(t).toISOString()):null,health:H,cap:RD_CAP,capN:RD.capN??null,divs:RD.divs||null,
       calib:Object.fromEntries(Object.entries(RD.calib||{}).filter(([k])=>!/\|/.test(k)||/^base\|/.test(k)||/^(long|short)\|[0-9]/.test(k))),
@@ -107,7 +107,7 @@ function rbLabExport(){
     trades:res.map(({it,C,st})=>{const t0=C.length?C[0].t:it.t;
       return {id:it.id,kind:it.k,tk:it.tk,dir:it.dir,t:new Date(it.t).toISOString(),E:it.E,SL:it.SL,sd:+it.sd.toFixed(5),rr:it.rr,ex:it.ex||null,sc:it.sc,stars:it.stars,p:it.p,exp:it.exp,reg:it.reg,
         why:it.why||null,pv:it.pv||null,st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
-        lev:st.lev,stats:{mfe:+st.mfe.toFixed(3),tMfeMin:st.tMfe?Math.round((st.tMfe-it.t)/6e4):null,mfe24:+st.mfe24.toFixed(3),mae:+st.mae.toFixed(3),
+        lev:st.lev,usdPerR:+rbUsdR(it).toFixed(3),usd:it.R!=null?+(it.R*rbUsdR(it)).toFixed(2):null,stats:{mfe:+st.mfe.toFixed(3),tMfeMin:st.tMfe?Math.round((st.tMfe-it.t)/6e4):null,mfe24:+st.mfe24.toFixed(3),mae:+st.mae.toFixed(3),
           stopMin:st.stopAt?Math.round((st.stopAt-it.t)/6e4):null,touchMin:Object.fromEntries(Object.entries(st.touch).map(([k,v])=>[k,Math.round((v-it.t)/6e4)])),full:st.full},
         path:{t0:new Date(t0).toISOString(),stepMin:5,unit:'1e-4 of entry',hlc:C.map(k=>[Math.round((k.h/it.E-1)*1e4),Math.round((k.l/it.E-1)*1e4),Math.round((k.c/it.E-1)*1e4)])}};})});
 }

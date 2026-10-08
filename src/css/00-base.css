@@ -1804,3 +1804,8 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .exacts .btn{min-height:48px;justify-content:center}
 textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-align:left}
 .btn.busy{opacity:.85}
+/* مبلغ هر تست */
+.rbsz{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px;margin:6px 0}
+.rbsz label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--tx2);flex:1 1 110px;min-width:0}
+.rbsz input{width:100%;box-sizing:border-box}
+.rbworst{flex-basis:100%;color:var(--tx2)}
