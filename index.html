@@ -1679,6 +1679,7 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rdview .rdpan{gap:8px;padding:0;background:none;border:0}
 .rdsec .rdtab{margin-top:6px}
 .rbtop .btn.ok{flex:1}
+.rdwarn.bad{background:color-mix(in srgb,var(--dn) 7%,var(--inset));border-color:color-mix(in srgb,var(--dn) 45%,var(--line))}.rdwarn.bad b{color:var(--dn)}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -10269,11 +10270,15 @@ function rdPaintProg(){
   const b=$('#rdProg');if(b)b.textContent=RDQ.on?'':(RD.at?ageTxt(RD.at):'');
   if(!RDQ.on&&box)box.remove();
 }
-/* سلامت کل مدل: میانگین همه‌ی سیگنال‌های 70+ بیرون از یادگیری (با سقف هم‌جهت و نقشه‌ی خروج انتخاب‌شده) */
+/* سلامت مدل: میانگین همه‌ی سیگنال‌های 70+ بیرون از یادگیری (با سقف هم‌جهت و نقشه‌ی خروج انتخاب‌شده)،
+   برای هر جهت جدا: زیانِ لانگ‌ها شورت‌های خوب را نمی‌بندد (و برعکس). d[جهت].neg: آن جهت با دست‌کم 30 معامله زیان‌ده؛
+   neg: هر دو جهت زیان‌ده (یا یکی زیان‌ده و دیگری بی سابقه) ← «امروز معامله نکن» */
 function rdHealth(){
-  const c=RD.calib||{},L=c.long,Sh=c.short,n=(L?L.n:0)+(Sh?Sh.n:0),r=(L?L.r:0)+(Sh?Sh.r:0),w=(L?L.w:0)+(Sh?Sh.w:0);
+  const c=RD.calib||{},one=o=>{const n=o?o.n:0;return {n,avg:n?o.r/n:null,win:n?o.w/n:null,neg:n>=30&&o.r/n<=0};};
+  const d={long:one(c.long),short:one(c.short)},L=c.long,Sh=c.short,n=d.long.n+d.short.n,r=(L?L.r:0)+(Sh?Sh.r:0),w=(L?L.w:0)+(Sh?Sh.w:0);
+  const bad=k=>d[k].neg||d[k].n<30, neg=(d.long.neg||d.short.neg)&&bad('long')&&bad('short');
   const nc=RD.ncoin!=null?RD.ncoin:null;
-  return {n,avg:n?r/n:null,win:n?w/n:null,neg:n>=30&&r/n<=0,nc,few:nc!=null&&nc<RD_NC_OK,cap:nc!=null&&nc<RD_NC_MIN?3:5};
+  return {n,avg:n?r/n:null,win:n?w/n:null,neg,d,nc,few:nc!=null&&nc<RD_NC_OK,cap:nc!=null&&nc<RD_NC_MIN?3:5};
 }
 /* خلاف حال بازار: لانگ در بازار نزولی یا شورت در بازار صعودی */
 const rdAgainst=d=>(RD.reg==='bear'&&d==='long')||(RD.reg==='bull'&&d==='short');
@@ -10292,7 +10297,7 @@ function rdRate(x){
   return {o,stars,s0,exp:o.n?o.r/o.n:null,lb:o.lb,reg:o===c1};
 }
 /* RD_WHY: چرا سیگنالی «قابل گرفتن» نیست */
-const RD_WHY={stars:'سابقه‌ی مطمئن (3 ستاره) ندارد',neg:'مدل در کل زیان‌ده است',reg:'خلاف روند بیت‌کوین',cap:'سقف '+RD_CAP+' معامله‌ی هم‌جهت پر است'};
+const RD_WHY={stars:'سابقه‌ی مطمئن (3 ستاره) ندارد',neg:'این جهت در کل زیان‌ده است',reg:'خلاف روند بیت‌کوین',cap:'سقف '+RD_CAP+' معامله‌ی هم‌جهت پر است'};
 function rdList(){
   const H=rdHealth(),out=[];
   for(const tk of RD.rank){const x=RD.coins[tk];if(!x)continue;
@@ -10300,7 +10305,7 @@ function rdList(){
     let why=null;
     if(x.dir!=='wait'){
       if(stars<3)why='stars';
-      else if(H.neg)why='neg';
+      else if(H.d[x.dir].neg)why='neg';
       else if(rdAgainst(x.dir)&&!rt.reg)why='reg';}
     out.push(Object.assign({tk,rt,cb:rt&&rt.o,exp,stars,ok:x.dir!=='wait'&&!why,why},x));}
   const rank=(a,b)=>(b.ok-a.ok)||(b.stars-a.stars)||(((b.rt&&b.rt.lb)??-9)-((a.rt&&a.rt.lb)??-9))||(b.sc-a.sc);
@@ -10402,11 +10407,12 @@ function rdModelHtml(){
   if(!RD.M)return '<div class="empty">هنوز مدلی یاد گرفته نشده؛ در «سیگنال‌ها» «تازه کن» را بزن.</div>';
   const sp=RD.span?Math.round((RD.span[1]-RD.span[0])/864e5/2):0;
   const kpi=(v,l,c)=>'<div class="rdk"><b class="'+(c||'')+'" dir="ltr">'+v+'</b><small>'+l+'</small></div>';
-  h+='<div class="rdkpis">'+kpi(H.avg!=null?fmtR(H.avg):'—','میانگین هر معامله',H.avg!=null?cls(H.avg):'')+kpi(H.win!=null?faN(Math.round(H.win*100))+'٪':'—','برد')+
-    kpi(faN(H.n),'معامله در '+(sp?faN(sp)+' روز':'گذشته'))+kpi(faN(RD.ncoin||0),'ارز',H.few?'w':'')+'</div>';
+  const kd=d=>{const o=H.d[d];return kpi(o.n?fmtR(o.avg):'—',(d==='long'?'لانگ':'شورت')+(o.n?' · '+faN(Math.round(o.win*100))+'٪ برد · '+faN(o.n):''),o.n?cls(o.avg):'');};
+  h+='<div class="rdkpis">'+kpi(H.avg!=null?fmtR(H.avg):'—','میانگین هر معامله · '+faN(H.n)+(sp?' در '+faN(sp)+' روز':''),H.avg!=null?cls(H.avg):'')+kd('long')+kd('short')+kpi(faN(RD.ncoin||0),'ارز',H.few?'w':'')+'</div>';
   h+='<div class="hint">همه‌ی سیگنال‌های امتیاز '+faN(RD_MIN)+'+، روی دوره‌ای که مدل ندیده، با نقشه‌ی خروج انتخاب‌شده، بعد از کارمزد، هر ارز یک معامله و در هر جهت حداکثر '+faN(RD_CAP)+' معامله‌ی هم‌زمان'+
     (RD.capN?' (سقف هم‌جهت '+faN(RD.capN)+' معامله‌ی هم‌زمانِ اضافه را کنار گذاشت)':'')+'.</div>';
-  if(H.neg)h+='<div class="flag d"><i>!</i><span><b>مدل در کل زیان‌ده است.</b> تا وقتی این عدد مثبت نشده، هیچ سیگنالی «قابل گرفتن» نیست؛ ارزهای بیشتر یا چند روز داده‌ی تازه کمک می‌کند.</span></div>';
+  if(H.neg)h+='<div class="flag d"><i>!</i><span><b>مدل در هر دو جهت زیان‌ده است.</b> تا وقتی یکی مثبت نشده، هیچ سیگنالی «قابل گرفتن» نیست؛ ارزهای بیشتر یا چند روز داده‌ی تازه کمک می‌کند.</span></div>';
+  else for(const d of ['long','short'])if(H.d[d].neg)h+='<div class="flag d"><i>!</i><span><b>'+(d==='long'?'لانگ‌ها':'شورت‌ها')+'ی مدل در کل زیان‌ده‌اند.</b> فقط '+(d==='long'?'شورت':'لانگ')+'‌ها می‌توانند «قابل گرفتن» باشند؛ هر جهت جدا سنجیده می‌شود.</span></div>';
   if(H.few)h+='<div class="flag w"><i>!</i><span>ستاره‌ها روی '+faN(H.nc)+' ارز ساخته شده‌اند؛ برای اعتماد دست‌کم '+faN(RD_NC_OK)+' ارز لازم است'+(H.cap<5?' (زیر '+faN(RD_NC_MIN)+' ارز، ستاره‌ی هر سیگنال حداکثر 3 است)':'')+'.</span></div>';
   const tt=Object.values(RD.coins).map(x=>x.t||0),t=tt.length?Math.max(...tt):0;
   if(RD.mt0)h+='<div class="hint rdtime">'+(t?'امتیازها برای کندلِ بسته‌شده‌ی ساعت <b dir="ltr">'+rdHH(t+36e5)+'</b> است و تا بسته شدن کندل بعدی (<b dir="ltr">'+rdHH(t+2*36e5)+'</b>) عوض نمی‌شود. ':'')+
@@ -10422,7 +10428,7 @@ function rdRowHtml(x,i){
   const z=x.pl?isoSize(x.pl.E,x.pl.SL):null, f=RD.fund&&RD.fund[x.tk], R=rdReasons(x), dn=x.dir==='long'?'لانگ':'شورت';
   const rk=rdRankOf(x.tk), ex=rbExEff(), PL=rdExPlans()[ex], dv=rdDivOf(x);
   const tags=[];
-  if(!x.ok&&x.why)tags.push('<span class="pill lose rdwhy0">'+esc(RD_WHY[x.why]+(x.why==='reg'?' ('+RDREG_FA[RD.reg]+')':''))+'</span>');
+  if(!x.ok&&x.why)tags.push('<span class="pill lose rdwhy0">'+esc(x.why==='neg'?(x.dir==='long'?'لانگ‌ها':'شورت‌ها')+'ی مدل در کل زیان‌ده‌اند':RD_WHY[x.why]+(x.why==='reg'?' ('+RDREG_FA[RD.reg]+')':''))+'</span>');
   if(dv)tags.push('<span class="pill '+(dv>0?'win':'lose')+' rddv">'+(dv>0?'✓ واگرایی هم‌جهت':'✗ واگرایی خلاف')+'</span>');
   R.slice(0,dv?2:3).forEach(r=>tags.push('<span class="pill '+(r.good==null?'mut':r.good?'win':'lose')+'">'+(r.good?'✓ ':r.good===false?'✗ ':'')+esc(r.t)+'</span>'));
   const kv=x.pl?'<div class="rdkv"><div><small>ورود</small><b dir="ltr">'+fmtPrice(x.pl.E)+'</b></div><div><small>استاپ</small><b dir="ltr">'+fmtPrice(x.pl.SL)+'</b><small dir="ltr">'+fmtNum(x.pl.sd*100)+'%</small></div>'+
@@ -10490,12 +10496,12 @@ function rdHeroHtml(L){
   const opn={long:rdOpenDir('long'),short:rdOpenDir('short')};
   let st,title,sub;
   if(!RD.at&&!RDQ.on){st='wait';title='هنوز بررسی نشده';sub='همین الان '+faN(RD_STEP)+' ارز اول بررسی می‌شود (بار اول هر ارز ~125 روز تاریخچه می‌گیرد؛ چند ثانیه برای هر ارز).';}
-  else if(H.neg){st='stop';title='امروز معامله نکن';sub='مدل در کل زیان‌ده است: میانگین <b dir="ltr">'+fmtR(H.avg)+'</b> در '+faN(H.n)+' معامله‌ی گذشته (بیرون از یادگیری). فقط «تست» بزن.';}
+  else if(H.neg){st='stop';title='امروز معامله نکن';sub='مدل در هر دو جهت زیان‌ده است: لانگ <b dir="ltr">'+(H.d.long.n?fmtR(H.d.long.avg):'—')+'</b>، شورت <b dir="ltr">'+(H.d.short.n?fmtR(H.d.short.avg):'—')+'</b> میانگین هر معامله‌ی گذشته (بیرون از یادگیری). فقط «تست» بزن.';}
   else if(ok.length){st='go';title=faN(ok.length)+' فرصت قابل گرفتن';
     sub=ok.slice(0,4).map(x=>'<b dir="ltr">'+esc(x.tk)+'</b> '+(x.dir==='long'?'لانگ':'شورت')).join('، ')+(ok.length>4?' و '+faN(ok.length-4)+' تای دیگر':'')+'. پایین‌تر ببین و «ایزوله» یا «تست» بزن.';}
   else if(RD.M){st='wait';title='فرصت مطمئنی نیست';
     const L2=L.filter(x=>x.dir!=='wait'),w=k=>L2.filter(x=>x.why===k).length;
-    sub=(L2.length?faN(L2.length)+' سیگنال هست ولی '+[w('stars')?faN(w('stars'))+' تا سابقه‌ی مطمئن ندارند':'',w('reg')?faN(w('reg'))+' تا خلاف روند بیت‌کوین‌اند':'',w('cap')?faN(w('cap'))+' تا پشت سقف هم‌جهت‌اند':''].filter(Boolean).join('، ')+'. ':'')+
+    sub=(L2.length?faN(L2.length)+' سیگنال هست ولی '+[w('stars')?faN(w('stars'))+' تا سابقه‌ی مطمئن ندارند':'',w('reg')?faN(w('reg'))+' تا خلاف روند بیت‌کوین‌اند':'',w('neg')?faN(w('neg'))+' تا در جهتی‌اند که مدل در کل زیان‌ده است':'',w('cap')?faN(w('cap'))+' تا پشت سقف هم‌جهت‌اند':''].filter(Boolean).join('، ')+'. ':'')+
       'صبر کن، «تست» بزن یا ارزهای بیشتری بررسی کن.';}
   else{st='wait';title='در حال یادگیری…';sub='بعد از گرفتن داده‌ی ارزها، مدل یاد می‌گیرد و سیگنال‌ها این‌جا می‌آیند.';}
   const chips=[];
@@ -10505,6 +10511,10 @@ function rdHeroHtml(L){
   if(opn.long||opn.short)chips.push('<span class="rdchip'+(opn.long>=RD_CAP||opn.short>=RD_CAP?' w':'')+'" title="تست‌ها و پوزیشن‌های رادار">باز: '+faN(opn.long)+' لانگ · '+faN(opn.short)+' شورت (سقف '+faN(RD_CAP)+')</span>');
   let h='<div class="rdhero '+st+'"><div class="rdht"><i>'+(st==='go'?'✓':st==='stop'?'✕':'…')+'</i><div><b>'+title+'</b><span>'+sub+'</span></div></div>'+
     (chips.length?'<div class="rdchips">'+chips.join('')+'</div>':'');
+  // یک جهت زیان‌ده: فقط همان جهت بسته است
+  if(!H.neg)for(const d of ['long','short'])if(H.d[d].neg){const o=d==='long'?'short':'long';
+    h+='<div class="rdwarn bad"><span><b>'+(d==='long'?'لانگ‌ها':'شورت‌ها')+'ی مدل در کل زیان‌ده‌اند</b> (میانگین <bdi dir="ltr">'+fmtR(H.d[d].avg)+'</bdi> در '+faN(H.d[d].n)+' معامله)؛ فعلاً فقط '+(o==='long'?'لانگ':'شورت')+
+      (H.d[o].n?' (میانگین <bdi dir="ltr">'+fmtR(H.d[o].avg)+'</bdi>)':'')+' می‌تواند «قابل گرفتن» باشد.</span></div>';}
   if(H.few&&RD.M){const need=Math.max(0,Math.min(RD_NC_OK,RD_MAX)-n);
     h+='<div class="rdwarn"><span>ستاره‌ها روی '+faN(H.nc)+' ارز ساخته شده‌اند؛ برای اعتماد دست‌کم '+faN(RD_NC_OK)+' ارز لازم است'+(H.cap<5?' (فعلاً ستاره حداکثر 3)':'')+'.</span>'+
       (need?'<button class="btn sm" data-rd50="1"'+(RDQ.on?' disabled':'')+'>'+ic('plus')+'<span>رساندن به '+faN(RD_NC_OK)+' ارز</span></button>':'')+'</div>';}

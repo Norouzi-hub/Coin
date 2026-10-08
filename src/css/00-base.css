@@ -1662,3 +1662,4 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rdview .rdpan{gap:8px;padding:0;background:none;border:0}
 .rdsec .rdtab{margin-top:6px}
 .rbtop .btn.ok{flex:1}
+.rdwarn.bad{background:color-mix(in srgb,var(--dn) 7%,var(--inset));border-color:color-mix(in srgb,var(--dn) 45%,var(--line))}.rdwarn.bad b{color:var(--dn)}

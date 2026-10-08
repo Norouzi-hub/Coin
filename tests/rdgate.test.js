@@ -45,7 +45,17 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  await p.evaluate(()=>__mk({calib:{long:{n:400,w:150,r:-40,g:60,lb:-0.2},short:{n:200,w:80,r:-10,g:40,lb:-0.2},'long|85-95':{n:200,w:120,r:40,g:50,lb:0.15},'short|85-95':{n:100,w:60,r:20,g:40,lb:0.15}}}));
  s=await st();ok(!s.ok&&s.why.L1==='neg'&&/stop/.test(s.hero)&&/امروز معامله نکن/.test(s.ht),'میانگین کل منفی: «امروز معامله نکن» و هیچ سیگنالی قابل گرفتن نیست');
  const mv=await p.evaluate(()=>{RDV='model';renderRadar();const t=document.getElementById('rdView').textContent;RDV='sig';return t;});
- ok(/مدل در کل زیان‌ده است/.test(mv)&&/میانگین هر معامله/.test(mv),'زیرتب «کارنامه»: عددهای کل و هشدار');
+ ok(/مدل در هر دو جهت زیان‌ده است/.test(mv)&&/میانگین هر معامله/.test(mv)&&/لانگ/.test(mv),'زیرتب «کارنامه»: عددهای کل و هر جهت، و هشدار');
+ // فقط لانگ‌ها زیان‌ده: شورت‌ها بسته نمی‌شوند
+ await p.evaluate(()=>__mk({calib:{long:{n:400,w:150,r:-40,g:60,lb:-0.2},short:{n:200,w:120,r:30,g:40,lb:0.05},'long|85-95':{n:200,w:120,r:40,g:50,lb:0.15},'short|85-95':{n:100,w:60,r:20,g:40,lb:0.15}}}));
+ s=await st();const mv2=await p.evaluate(()=>{RDV='model';renderRadar();const t=document.getElementById('rdView').textContent;RDV='sig';renderRadar();return t;});
+ console.log('   ',JSON.stringify(s).slice(0,300));
+ ok(s.ok==='S1'&&['L1','L2','L3','L4','L5'].every(t=>s.why[t]==='neg')&&!/stop/.test(s.hero)&&/لانگ‌های مدل در کل زیان‌ده‌اند/.test(s.ht)&&/فقط شورت/.test(s.ht),
+   'فقط لانگ‌ها زیان‌ده: لانگ‌ها بسته، شورت «قابل گرفتن»؛ کارت قرمز نمی‌آید و هشدار می‌گوید فقط شورت');
+ ok(/لانگ‌های مدل در کل زیان‌ده‌اند/.test(mv2)&&!/هر دو جهت/.test(mv2),'«کارنامه»: هشدار فقط برای لانگ');
+ // و برعکس: شورت‌ها زیان‌ده، لانگ‌ها آزاد
+ await p.evaluate(()=>__mk({calib:{long:{n:400,w:240,r:60,g:60,lb:0.05},short:{n:200,w:70,r:-30,g:40,lb:-0.3},'long|85-95':{n:200,w:120,r:40,g:50,lb:0.15},'short|85-95':{n:100,w:60,r:20,g:40,lb:0.15}}}));
+ s=await st();ok(s.ok==='L1,L2,L3'&&s.why.S1==='neg','فقط شورت‌ها زیان‌ده: سه لانگ قابل گرفتن، شورت بسته');
 
  console.log('=== خلاف حال بازار ===');
  await p.evaluate(()=>__mk({reg:'bear'}));s=await st();
