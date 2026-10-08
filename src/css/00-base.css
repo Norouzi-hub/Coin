@@ -1809,3 +1809,8 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .rbsz label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--tx2);flex:1 1 110px;min-width:0}
 .rbsz input{width:100%;box-sizing:border-box}
 .rbworst{flex-basis:100%;color:var(--tx2)}
+/* پهنای بازار */
+.mdbr{margin-top:10px;padding:10px;border-radius:12px;background:var(--inset);border:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.mdbrr{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px}
+.mdbrl{display:flex;justify-content:space-between;gap:8px;color:var(--tx3)}
+.mdbr .hint{margin:0}

@@ -199,7 +199,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(mk2.r&&Math.abs(mk2.r.t3[0]-3.2e12*(1-0.575-0.121))<1e6&&mk2.r.bd[1]>0.3&&mk2.r.ud[1]>0.1&&mk2.r.t3[1]<mk2.r.tot[1],'TOTAL3 = بی BTC و ETH؛ دامیننس بیت‌کوین و تتر بالا رفت، آلت‌ها ضعیف‌تر');
  ok(mk2.tiles.length===6&&/TOTAL3/.test(mk2.tiles.join())&&/USDT\.D/.test(mk2.tiles.join())&&/\$3\.20T/.test(mk2.tiles[0])&&/57\.50%/.test(mk2.tiles[3])&&mk2.now,'شش کارت جدا: TOTAL، TOTAL2، TOTAL3، BTC.D، USDT.D، ETH.D (در «بازار» و «الان چه کنم؟»)');
  ok(mk2.flags.some(x=>/پول به تتر فرار/.test(x))&&mk2.flags.some(x=>/روز آلت‌کوین نیست/.test(x)),'خوانش: فرار به تتر و ضعف آلت‌ها');
- ok(mk2.mf>2000&&mk2.w===mk2.nF+1&&mk2.last&&Math.abs(mk2.last.tot/3.2e12-1)<0.001&&Math.abs(mk2.last.bd-57.5)<0.01&&mk2.last.n>40&&mk2.mrow.length===5,'تاریخچه‌ی ساعتی کل بازار بازسازی شد ('+mk2.mf+' ساعت)، ساعت آخر = CoinGecko؛ 5 عامل بازار در مدل');
+ ok(mk2.mf>2000&&mk2.w===mk2.nF+1&&mk2.last&&Math.abs(mk2.last.tot/3.2e12-1)<0.001&&Math.abs(mk2.last.bd-57.5)<0.01&&mk2.last.n>40&&mk2.mrow.length===7,'تاریخچه‌ی ساعتی کل بازار بازسازی شد ('+mk2.mf+' ساعت)، ساعت آخر = CoinGecko؛ 7 عامل بازار (با پهنای RSI و MACD) در مدل');
  // واگرایی 1 ساعته: کف پایین‌تر با RSI بالاتر = مثبت؛ شکسته شدن کف یا RSI پایین‌تر = هیچ
  const dv=await p.evaluate(()=>{const mk=(brk)=>Array.from({length:60},(_,q)=>{const l=Math.min(10+0.1*Math.abs(q-30),9.5+0.1*Math.abs(q-50))-(brk&&q===54?1:0);return {t:q*36e5,o:l+0.5,h:l+1,l,c:l+0.5};});
    const o=Array.from({length:60},()=>50);o[30]=25;o[50]=35;const o2=o.slice();o2[50]=20;

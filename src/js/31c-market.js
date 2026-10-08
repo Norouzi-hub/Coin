@@ -295,6 +295,19 @@ function mdRead(r){
 const mdSpark=(a,cl)=>{if(!a||a.length<3)return '';const lo=Math.min(...a),hi=Math.max(...a),d=hi-lo||1;
   return '<svg class="mdsp '+cl+'" viewBox="0 0 60 18" preserveAspectRatio="none"><polyline fill="none" stroke="currentColor" stroke-width="1.5" points="'+
     a.map((v,i)=>(i/(a.length-1)*60).toFixed(1)+','+(16-(v-lo)/d*14).toFixed(1)).join(' ')+'"/></svg>';};
+/* پهنای بازار: میانگین RSI 4 ساعته، سهم اشباع فروش/خرید و MACD مثبتِ ارزهای رادار (از rdMktBuild) */
+function mdBreadthHtml(b){
+  if(!b||!b.n)return '';
+  const os=Math.round(b.os),ob=Math.round(b.ob),mid=Math.max(0,100-os-ob),rc=b.rsi<40?'d':b.rsi>60?'u':'',d=b.rsi24!=null?b.rsi-b.rsi24:null;
+  const rd=b.os>=30?'بیشتر ارزها اشباع فروش‌اند: ریزش معمولاً خسته است؛ شورت تازه پرخطرتر، برگشت محتمل‌تر.':b.ob>=30?'بیشتر ارزها اشباع خرید‌اند: صعود داغ است؛ لانگ تازه پرخطرتر.':
+    b.mc>=65?'بیشتر ارزها مومنتوم مثبت دارند (MACD).':b.mc<=35?'بیشتر ارزها مومنتوم منفی دارند (MACD).':'بازار یکدست نیست؛ هر ارز حال خودش را دارد.';
+  return '<div class="mdbr"><div class="mkh"><b>پهنای بازار</b><small>RSI و MACD 4 ساعته‌ی '+faN(b.n)+' ارز</small></div>'+
+    '<div class="mdbrr"><span>میانگین RSI <b class="'+rc+'" dir="ltr">'+fmtNum(b.rsi)+'</b>'+(d!=null?' <small dir="ltr" class="'+cls(d)+'">'+(d>0?'+':'')+fmtNum(d)+'</small>':'')+'</span>'+
+    '<span>MACD مثبت <b dir="ltr">'+faN(Math.round(b.mc))+'%</b></span></div>'+
+    '<div class="mkline"><i class="u" style="width:'+os+'%"></i><i class="m" style="width:'+mid+'%"></i><i class="d" style="width:'+ob+'%"></i></div>'+
+    '<div class="mdbrl"><small>اشباع فروش (زیر 30): '+faN(os)+'٪</small><small>اشباع خرید (بالای 70): '+faN(ob)+'٪</small></div>'+
+    '<div class="hint">'+rd+'</div></div>';
+}
 function mdHtml(){
   if((!MD||Date.now()-MD.at>MD_TTL)&&Date.now()-MDTRY>120000){MDTRY=Date.now();const was=MD&&MD.at;
     mdLoad().then(m=>{if(m&&m.at!==was){if(view==='signals')paintGlance();else if(view==='radar')renderRadar();}}).catch(()=>{});}
@@ -312,10 +325,13 @@ function mdHtml(){
       '<div class="mdc"><b class="'+col+'" dir="ltr">'+(c==null?'—':(c>0?'+':c<0?'−':'')+Math.abs(c).toFixed(2)+(dom?'':'%'))+'</b><small>'+(dom?'واحد در 24h':'در 24h')+'</small>'+mdSpark(S[k],col)+'</div></div>';};
   let h='<div class="mdbox"><div class="mkh"><b>'+ic('coin')+'کل بازار و دامیننس‌ها</b><small>'+ageTxt(MD.at)+'</small></div><div class="mdgrid">'+T.map(tile).join('')+'</div>';
   for(const [c,t] of mdRead(r))h+='<div class="flag '+c+'"><i>'+(c==='u'?'✓':'!')+'</i><span>'+t+'</span></div>';
+  h+=mdBreadthHtml(ML&&ML.br);
   h+='<details class="mkwhy"><summary>این‌ها چیست؟</summary><div class="hint"><b>TOTAL</b> ارزش کل بازار رمزارز است؛ <b>TOTAL2</b> همان بدون بیت‌کوین؛ <b>TOTAL3</b> بدون بیت‌کوین و اتریوم، یعنی آلت‌کوین‌ها. '+
     '<b>BTC.D</b> سهم بیت‌کوین از TOTAL است: بالا رفتنش یعنی پول به سمت بیت‌کوین می‌رود و آلت‌ها معمولاً ضعیف‌ترند. '+
     '<b>USDT.D</b> سهم تتر است: بالا رفتنش یعنی مردم می‌فروشند و تتر نگه می‌دارند (نزولی)، پایین آمدنش یعنی تتر خرج خرید می‌شود (صعودی). '+
     'تغییر دامیننس به «واحد درصد» است (مثلاً 58.10٪ ← 58.40٪ = +0.30). نمودار کوچک: 7 روز اخیر (بعد از بررسی رادار). منبع CoinGecko؛ با TradingView کمی فرق دارد چون فهرست ارزهایشان یکی نیست. '+
+    '<b>پهنای بازار</b> همان نقشه‌ی حرارتی RSI و MACD است ولی برای ارزهای فهرست رادار: میانگین RSI 4 ساعته‌شان و سهم آن‌هایی که MACD 4 ساعته‌شان بالای خط سیگنال است. '+
+    'TOTAL با ارزش بازار وزن می‌گیرد (بیت‌کوین غالب است)، پهنا به هر ارز یک رأی می‌دهد؛ پس می‌گوید «بیشتر ارزها» چه حالی دارند. وقتی بیشتر ارزها اشباع فروش‌اند، ریزش معمولاً خسته است و شورت تازه پرخطرتر؛ برعکس برای لانگ. '+
     'رادار این‌ها را به‌عنوان عامل هم می‌سنجد.</div></details></div>';
   return h;
 }
