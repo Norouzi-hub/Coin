@@ -178,7 +178,8 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    return {ms,n:RD.n,rank:RD.rank.length,nflow:RD.nflow,M:!!(RD.M&&RD.M.long&&RD.M.short),cal:Object.keys(RD.calib).length,rel:!!RD.rel,
      eth:RD.coins.ETH&&{wl:RD.coins.ETH.wl,flow:RD.coins.ETH.flow,sc:RD.coins.ETH.sc,fund:RD.coins.ETH.parts.fund},solfund:RD.coins.SOL&&RD.coins.SOL.parts.fund,sol:RD.coins.SOL&&RD.coins.SOL.flow,
      rows:st&&st.rows.length,flow:fl&&fl.top&&fl.top.length,pan,capd,aopen,
-     exP:RD.ex,exs:!!(RD.exs&&RD.exs.lad&&RD.exs.lad.all),extab,auto:RB.items.filter(i=>i.k==='auto').length,sig:rdList().filter(x=>x.dir!=='wait').length,seen:seen.filter((x,i)=>i%5===0),gone:!document.getElementById('rdProgBox')};});
+     exP:RD.ex,exs:!!(RD.exs&&RD.exs.lad&&RD.exs.lad.all),extab,exD:RD.exD,exDok:['long','short'].every(d=>{const av=n=>{const o=RD.exs[n][d];return o&&o.n>=30?o.r/o.n:null;},b=RD.exD[d],ab=av(b);
+       return RD_EXN.includes(b)&&(ab==null?b===RD.ex:RD_EXN.every(n=>av(n)==null||av(n)<=ab+0.005));}),auto:RB.items.filter(i=>i.k==='auto').length,sig:rdList().filter(x=>x.dir!=='wait').length,seen:seen.filter((x,i)=>i%5===0),gone:!document.getElementById('rdProgBox')};});
  console.log('   ',JSON.stringify(full),JSON.stringify(REQ));
  ok(full.seen.length>2&&full.seen.every(x=>/\d+٪/.test(x)&&/\d:\d\d/.test(x))&&full.seen.some(x=>/ارز \d+ از 10/.test(x))&&full.gone,'نوار پیشرفت: درصد، کار الان و تایمر؛ آخر کار برداشته شد');
  ok(full.n===10&&full.rank===10,'بار اول فقط 10 ارز اول ('+full.rank+')، در '+full.ms+'ms');
@@ -187,6 +188,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  console.log('   ',JSON.stringify(cst).slice(0,300));
  ok(cst.c&&cst.c.n>0&&cst.c.avg>0&&cst.c.avg<cst.c.mkt&&cst.c.mkt<cst.c.old&&cst.cs&&/هزینه‌ی هر معامله/.test(cst.t)&&/Limit/.test(cst.t),'«کارنامه»: هزینه‌ی میانگین هر معامله با Limit کمتر از Market و هر دو کمتر از روش قبلی');
  ok(RD_EXN_OK(full),'سه نقشه‌ی خروج بیرون از یادگیری سنجیده شد؛ بهترین: '+full.exP);
+ ok(full.exD&&full.exDok,'نقشه‌ی خروج برای هر جهت جدا: بهترینِ همان جهت (لانگ '+(full.exD&&full.exD.long)+'، شورت '+(full.exD&&full.exD.short)+')');
  ok(full.M&&full.cal>0&&full.rel&&full.pan,'مدل لانگ و شورت، کارنامه، صداقت مدل و پنل ساخته شد');
  ok(full.eth&&full.eth.fund!=null&&full.solfund==null,'تاریخچه‌ی فاندینگ: ETH دارد، SOL (بی فیوچرز) ندارد');
  ok(full.eth&&full.eth.flow&&full.eth.wl>50&&full.sol===false&&full.nflow===2,'ETH با داده‌ی نهنگ/مردم؛ SOL بی فیوچرز');

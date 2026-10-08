@@ -12,18 +12,26 @@ const rbSave=()=>lsSet(RB_KEY,RB);
 const rbCost=(it,st)=>exCost(it.x||{tpf:st==='tp'?1:0},it.sd);
 /* نقشه‌ی خروج: «خودکار» = همان که رادار در آزمون بیرون از یادگیری بهتر دیده؛ یا انتخاب خودت */
 let RBEX=(()=>{try{return localStorage.getItem('signaldesk.rdex')||'auto';}catch(e){return 'auto';}})();
-const rbExEff=()=>RBEX!=='auto'&&RD_EXN.includes(RBEX)?RBEX:(RD.ex||'lad');
+/* «خودکار» برای هر جهت جدا (RD.exD)؛ مدلِ قدیمی بی exD همان یکی را برای هر دو دارد */
+const rdExAuto=d=>(d&&RD.exD&&RD.exD[d])||RD.ex||'lad';
+const rbExEff=d=>RBEX!=='auto'&&RD_EXN.includes(RBEX)?RBEX:rdExAuto(d);
+/* متن کوتاه نقشه‌ی خروج: یکی، یا «لانگ X · شورت Y» وقتی دو جهت فرق دارند */
+function rbExTxt0(){const P=rdExPlans(),l=rdExAuto('long'),s=rdExAuto('short');return l===s?esc(P[l].n):'لانگ '+esc(P[l].n)+' · شورت '+esc(P[s].n);}
+function rbExTxt(){const P=rdExPlans(),l=rbExEff('long'),s=rbExEff('short');
+  return l===s?esc(P[l].n):'لانگ '+esc(P[l].n)+' · شورت '+esc(P[s].n);}
 /* معامله‌های بازِ قدیمی (بی نقشه) یا وقتی نقشه عوض شد: از لحظه‌ی ورود با کندل 5 دقیقه‌ای دوباره پخش می‌شوند */
 function rbReplan(ex,onlyMissing){let n=0;
   for(const it of RB.items){if(it.st!=='open'||(!onlyMissing&&it.k!=='test'))continue;if(onlyMissing&&it.x)continue;
-    it.ex=it.k==='test'?(ex||rbExEff()):(RD.ex||'tp');it.x=exNew();delete it.chk;it.be=false;RBLC.delete(it.id);n++;}
+    it.ex=it.k==='test'?(ex||rbExEff(it.dir)):(RD.exD&&RD.exD[it.dir]||RD.ex||'tp');it.x=exNew();delete it.chk;it.be=false;RBLC.delete(it.id);n++;}
   if(n){rbSave();setTimeout(()=>rbCatchUp(true),50);}
   return n;}
 const rbOpen=()=>{const o={test:0,auto:0};for(const it of RB.items)if(it.st==='open')o[it.k]++;return o;};
 function rbRepaint(){clearTimeout(RBT);RBT=setTimeout(()=>{try{if(view==='radar')renderRadar();}catch(e){}},400);}
 function rbAdd(kind,x,quiet){
   if(!x||!x.pl)return null;
-  if(RB.items.some(it=>it.k===kind&&it.st==='open'&&it.tk===x.tk&&(kind==='auto'||it.dir===x.dir))){if(!quiet)toast('همین معامله‌ی آزمایشی باز است','err');return null;}
+  // برای هر ارز فقط یک معامله‌ی باز (مثل سنجش رادار)؛ لانگ و شورتِ هم‌زمانِ یک ارز همدیگر را خنثی می‌کنند
+  {const o=RB.items.find(it=>it.k===kind&&it.st==='open'&&it.tk===x.tk);
+    if(o){if(!quiet)toast(o.dir===x.dir?'همین معامله‌ی آزمایشی باز است':'تست '+(o.dir==='long'?'لانگ':'شورت')+'ِ '+x.tk+' باز است؛ برای هر ارز یک تست باز. اول آن را ببند','err');return null;}}
   // سقف هم‌جهت: دفتر پیشنهادها همان قانون سنجش را دارد؛ تست با پرسیدن
   if(kind==='auto'&&RB.items.filter(it=>it.k==='auto'&&it.st==='open'&&it.dir===x.dir).length>=RD_CAP)return null;
   if(kind==='auto'&&x.why==='cost')return null;
@@ -32,7 +40,7 @@ function rbAdd(kind,x,quiet){
     sc:x.sc,stars:x.stars||0,p:x.p!=null?+x.p.toFixed(3):null,exp:x.exp!=null?+x.exp.toFixed(3):null,reg:RD.reg||null,be:false,st:'open',why:x.why||null,
     // عکس عامل‌ها در لحظه‌ی ورود (برای بررسی بعدی در خروجی)
     pv:x.parts?Object.fromEntries(RD_FEAT.filter(k=>x.parts[k]!=null&&x.parts[k]!==0).map(k=>[k,+(+x.parts[k]).toFixed(2)])):null,
-    ex:kind==='test'?rbExEff():(RD.ex||'tp'),x:exNew()};
+    ex:kind==='test'?rbExEff(x.dir):(RD.exD&&RD.exD[x.dir]||RD.ex||'tp'),x:exNew()};
   RB.items.push(it);RBLC.set(it.id,now);
   // اندازه‌ی حافظه: قدیمی‌ترین بسته‌های خودکار اول می‌روند
   const auto=RB.items.filter(i=>i.k==='auto'&&i.st!=='open');
@@ -81,7 +89,7 @@ function rbFromPos(p){
   const sd=Math.abs(E-SL)/E;if(!(sd>0))return null;
   const rr=+(S.rMul&&S.rMul[0])||1.5,sg=dir==='long'?1:-1,nt=String(p.note||''),m=nt.match(/امتیاز (\d+)/),st=nt.match(/(\d)★/);
   const it={id:'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),k:'test',tk:p.ticker,dir,t:p.openedAt||Date.now(),E,SL,
-    TP:+(E*(1+sg*sd*rr)).toPrecision(8),sd,rr,sc:m?+m[1]:null,stars:st?+st[1]:0,p:null,exp:null,reg:RD.reg||null,be:false,st:'open',ex:rbExEff(),from:'pos'};
+    TP:+(E*(1+sg*sd*rr)).toPrecision(8),sd,rr,sc:m?+m[1]:null,stars:st?+st[1]:0,p:null,exp:null,reg:RD.reg||null,be:false,st:'open',ex:rbExEff(dir),from:'pos'};
   if(p.status!=='open'&&+p.exitPrice>0)rbClose(it,'man',+p.exitPrice,p.closedAt||Date.now());
   RB.items.push(it);
   DB.positions=DB.positions.filter(x=>x.id!==p.id);
@@ -232,7 +240,7 @@ function rbHtml(kind){
     if(L.length)h+='<div class="srow rbtop"><button class="btn sm ok'+(RBL.on?' busy':'')+'" data-rbl="dl" title="همه‌ی تست‌ها با مسیر واقعی قیمت، عامل‌های لحظه‌ی ورود و خلاصه‌ی مدل">'+ic('down')+
       '<span>'+(RBL.on?'آماده‌سازی خروجی '+faN(RBL.done)+' از '+faN(RBL.n)+'…':'خروجی برای بررسی')+'</span></button></div>';
     h+=rbSizeHtml();
-    h+='<details class="sec sub2 rbexw"><summary>نقشه‌ی خروج: '+esc(rdExPlans()[rbExEff()].n)+(RBEX==='auto'?' (خودکار)':'')+'</summary>'+rbExPicker()+'</details>';
+    h+='<details class="sec sub2 rbexw"><summary>نقشه‌ی خروج: '+rbExTxt()+(RBEX==='auto'?' (خودکار)':'')+'</summary>'+rbExPicker()+'</details>';
     h+=rbLabHtml();
     if(open.length)h+='<div class="sechd">باز ('+faN(open.length)+')</div>'+open.map(it=>rbRowHtml(it,true)).join('');
     if(done.length)h+='<div class="sechd">بسته</div>'+done.slice(0,40).map(it=>rbRowHtml(it,true)).join('');
@@ -260,7 +268,7 @@ function rbHtml(kind){
 function rbBind(g){
   rbLabBind(g);
   g.querySelectorAll('[data-rbex]').forEach(b=>b.onclick=()=>{RBEX=b.dataset.rbex;try{localStorage.setItem('signaldesk.rdex',RBEX);}catch(e){}
-    const n=rbReplan(rbExEff());paintRadar(g);toast('نقشه‌ی خروج: '+rdExPlans()[rbExEff()].n+(n?' · '+faN(n)+' معامله‌ی باز دوباره حساب می‌شود':''),'ok');});
+    const n=rbReplan(RBEX==='auto'?null:RBEX);paintRadar(g);toast('نقشه‌ی خروج: '+rbExTxt()+(n?' · '+faN(n)+' معامله‌ی باز دوباره حساب می‌شود':''),'ok');});
   {const d=g.querySelector('.rbszw');if(d)d.ontoggle=()=>{RBSZOPEN=d.open;};}
   g.querySelectorAll('[data-rbsz]').forEach(b=>b.onclick=()=>{
     const m=parseFloat(normDig(($('#rbMg')||{}).value||'')),l=parseFloat(normDig(($('#rbLv')||{}).value||''));
@@ -281,12 +289,14 @@ function rbBind(g){
 }
 /* انتخاب نقشه‌ی خروج با نتیجه‌ی سنجش هر کدام (بیرون از یادگیری) */
 function rbExPicker(){
-  const PL=rdExPlans(), eff=rbExEff(), S0=RD.exs||{};
-  const m=n=>{const o=S0[n]&&S0[n].all;return o&&o.n?' <small dir="ltr" class="'+cls(o.r/o.n)+'">'+fmtR(o.r/o.n)+'</small>':'';};
+  const PL=rdExPlans(), S0=RD.exs||{}, el=rbExEff('long'), es=rbExEff('short');
+  const v=(n,d,t)=>{const o=S0[n]&&S0[n][d];return o&&o.n?'<small dir="ltr" class="'+cls(o.r/o.n)+'">'+t+' '+fmtR(o.r/o.n)+'</small>':'';};
+  const m=n=>{const a=v(n,'long','L'),b=v(n,'short','S');return a||b?' '+a+(a&&b?' ':'')+b:'';};
   return '<div class="rbex"><div class="pbpick">'+
-    '<button class="pbc'+(RBEX==='auto'?' on':'')+'" data-rbex="auto">خودکار'+(RD.ex?' ('+esc(PL[RD.ex].n)+')':'')+'</button>'+
+    '<button class="pbc'+(RBEX==='auto'?' on':'')+'" data-rbex="auto">خودکار'+(RD.ex?' ('+rbExTxt0()+')':'')+'</button>'+
     RD_EXN.map(n=>'<button class="pbc'+(RBEX===n?' on':'')+'" data-rbex="'+n+'" title="'+esc(PL[n].d)+'">'+esc(PL[n].n)+m(n)+'</button>').join('')+'</div>'+
-    '<div class="hint">'+esc(PL[eff].d)+'. عدد کنار هر نقشه: میانگین R همان سیگنال‌های رادار با آن نقشه، روی دوره‌ای که مدل ندیده. «خودکار» بهترینش را برمی‌دارد. با عوض کردن نقشه، معامله‌های باز هم از لحظه‌ی ورود با نقشه‌ی تازه دوباره حساب می‌شوند.</div></div>';
+    '<div class="hint">'+(el===es?esc(PL[el].d):'لانگ: '+esc(PL[el].d)+'؛ شورت: '+esc(PL[es].d))+'. عدد کنار هر نقشه: میانگین R همان سیگنال‌های رادار با آن نقشه برای لانگ (L) و شورت (S)، روی دوره‌ای که مدل ندیده. «خودکار» برای هر جهت بهترینِ همان جهت را برمی‌دارد.'+
+    ' با عوض کردن نقشه، معامله‌های باز هم از لحظه‌ی ورود با نقشه‌ی تازه دوباره حساب می‌شوند.</div></div>';
 }
 // معامله‌های بازی که پیش از نقشه‌ی خروج ثبت شده‌اند: یک بار با نقشه‌ی فعلی از لحظه‌ی ورود دوباره حساب می‌شوند
 setTimeout(()=>{try{rbReplan(null,true);}catch(e){}},1500);

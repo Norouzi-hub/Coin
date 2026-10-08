@@ -1818,3 +1818,8 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .abusy{position:relative;pointer-events:none;cursor:progress;color:transparent!important}
 .abusy::after{content:"";position:absolute;inset:0;margin:auto;width:15px;height:15px;border-radius:50%;border:2px solid var(--gold);border-top-color:transparent;animation:spin .75s linear infinite}
 .rdlearnw{margin-top:6px}
+/* دکمه‌ی راهنما: طلایی و پیدا */
+.btn.rdhelpb{border-color:var(--gold);color:var(--gold);background:color-mix(in srgb,var(--gold) 10%,transparent)}
+.btn.rdhelpb .ic{color:var(--gold)}
+.rdhelpl.btn{align-self:stretch;justify-content:center;padding:10px 12px;font-size:13px;font-weight:800;text-decoration:none}
+.rdexck{color:var(--gold);margin-inline-end:4px}
