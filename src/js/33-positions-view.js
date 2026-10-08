@@ -515,7 +515,12 @@ function buildPosCard(p,opt){
         DB.positions=DB.positions.filter(x=>x.id!==p.id);
         for(const k in DB.decisions)if(DB.decisions[k].posId===p.id)delete DB.decisions[k];});
     };
-    pm.appendChild(sh);pm.appendChild(e);pm.appendChild(d);card.appendChild(pm);
+    pm.appendChild(sh);pm.appendChild(e);
+    // پوزیشن رادار که فقط امتحانی ثبت شده: به «بازار ← آزمایشی» برود (نتیجه‌اش حفظ می‌شود)
+    if(posSrc(p).sub==='radar'){const t=el('button','btn',ic('undo')+'<span>انتقال به تست‌ها</span>');
+      t.onclick=()=>{if(!confirm((p.ticker||'')+' را در صرافی واقعاً نگرفته‌ای؟ از «پوزیشن‌ها» و کارنامه بیرون می‌رود و در «بازار ← آزمایشی» از لحظه‌ی ورود دنبال می‌شود.'))return;
+        POSMENU.delete(p.id);rbFromPosAll([p]);};pm.appendChild(t);}
+    pm.appendChild(d);card.appendChild(pm);
   }
 
   if(PENDING.has(p.id))setTimeout(()=>paintStopBar(p),0);

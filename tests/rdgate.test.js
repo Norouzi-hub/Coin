@@ -84,7 +84,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const sc=await p.evaluate(()=>{const now=Date.now(),c=(n,w,r,g,lb)=>({n,w,r,g,lb});
    __mk({ncoin:60,calib:{long:c(400,240,80,60,0.1),short:c(200,110,20,40,0.05),'long|95+':c(200,140,80,50,0.3),'long|85-95':c(200,100,10,50,-0.05),'short|85-95':c(100,60,20,40,0.15)}});
    RDSTH={};RD.coins.L1.sc=96;renderRadar();const s1=rdList().find(x=>x.tk==='L1').stars;
-   RD.coins.L1.sc=88;RD.reg='bear';RD.mt0=now+1;renderRadar();const x=rdList().find(y=>y.tk==='L1');
+   RD.coins.L1.sc=88;RD.reg='bear';RD.mt0=RD.mt0+5000;renderRadar();const x=rdList().find(y=>y.tk==='L1');
    const card=document.querySelector('#rdView .rdit[data-rd="L1"]');
    return {s1,s2:x.stars,pill:(card.querySelector('.rdchg')||{}).textContent||'',det:(card.querySelector('.rdchgd')||{}).textContent||'',saved:!!(lsGet('signaldesk.rdsth')||{}).L1};});
  console.log('   ',JSON.stringify(sc).slice(0,400));
@@ -94,6 +94,23 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    const t=document.getElementById('sheet').textContent;closeSheet();return t;});
  ok(/امتیاز چیست/.test(gd)&&/چرا عوض می‌شود/.test(gd)&&/جایش در این صف/.test(gd)&&/احتمال برد نیست/.test(gd)&&/فرق 2 و 3 ستاره/.test(gd)&&/چرا ستاره‌ی یک ارز عوض می‌شود/.test(gd)&&/کِی مجاز به ورودیم/.test(gd)&&/تا کی صبر/.test(gd),'دکمه‌ی «راهنما»: امتیاز، ستاره، تغییر ستاره، کِی ورود و تا کی صبر');
  await p.waitForTimeout(400);
+
+ console.log('=== پوزیشن رادار امتحانی ← آزمایشی ===');
+ const fp=await p.evaluate(async()=>{__mk({ncoin:60});const n=Date.now(),H=36e5;
+   DB.positions.push({id:'rp1',sigId:'radar/L1/1',ticker:'L1',dir:'long',kind:'futures',entry:10,stop:9.8,stop0:9.8,margin:2,baseMargin:2,lev:10,openedAt:n-3*H,status:'open',note:'رادار بازار · امتیاز 90 · 4★',partials:[],log:[],until:n+21*H,untilAuto:true},
+     {id:'rp2',sigId:'radar/L2/1',ticker:'L2',dir:'long',kind:'futures',entry:11,stop:10.78,stop0:10.78,margin:2,baseMargin:2,lev:10,openedAt:n-10*H,closedAt:n-5*H,exitPrice:11.11,fees:0,status:'closed',note:'رادار بازار · امتیاز 89',partials:[],log:[]},
+     {id:'cp1',sigId:'x/ch/1',ticker:'BTC',dir:'long',kind:'futures',entry:60000,stop:59000,stop0:59000,margin:5,baseMargin:5,lev:5,openedAt:n-2*H,status:'open',partials:[],log:[]});
+   save();const before=rdOpenDir('long');RDV='test';renderRadar();const box=(document.querySelector('#rdView .rbfp')||{}).textContent||'';
+   go('positions',true);renderAll();POSMENU.add('rp1');renderPositions();const mbtn=[...document.querySelectorAll('.pmore .btn')].some(b=>/انتقال به تست‌ها/.test(b.textContent));POSMENU.clear();
+   const k=rbFromPosAll();const T=RB.items.filter(i=>i.from==='pos'),o=T.find(i=>i.tk==='L1'),c=T.find(i=>i.tk==='L2');
+   const left=DB.positions.map(x=>x.id).join(',');
+   return {before,box,mbtn,k,left,o:o&&{st:o.st,t:o.t<n-2*H,sc:o.sc,stars:o.stars,ex:!!o.ex},c:c&&{st:c.st,R:c.R},after:rdOpenDir('long')};});
+ console.log('   ',JSON.stringify(fp));
+ ok(/2 پوزیشن رادار/.test(fp.box)&&/1 باز/.test(fp.box)&&fp.mbtn,'«آزمایشی» می‌گوید 2 پوزیشن رادار ثبت شده؛ در «پوزیشن‌ها» ⋯ ← «انتقال به تست‌ها»');
+ ok(fp.k===2&&!/rp/.test(fp.left)&&/cp1/.test(fp.left)&&fp.o&&fp.o.st==='open'&&fp.o.t&&fp.o.sc===90&&fp.o.stars===4&&fp.o.ex&&fp.c&&fp.c.st==='man'&&fp.c.R>0.3&&fp.c.R<0.45,
+   'انتقال: باز با همان زمان ورود و امتیاز، بسته با همان قیمت خروج (+'+(fp.c&&fp.c.R)+'R)؛ پوزیشن کانال دست نخورد');
+ ok(fp.before===1&&fp.after===1,'سقف هم‌جهت همان می‌ماند (باز واقعی ← باز آزمایشی)');
+ await p.evaluate(()=>{go('radar',true);RDV='sig';renderRadar();});
 
  console.log('=== چیدمان ===');
  const ui=await p.evaluate(()=>{__mk({ncoin:60});const g=document.getElementById('rdView');

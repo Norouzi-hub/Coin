@@ -10768,6 +10768,31 @@ function rbAdd(kind,x,quiet){
   if(!quiet)toast('ثبت شد در «آزمایشی»: '+x.tk+' '+(x.dir==='long'?'لانگ':'شورت')+' از '+fmtPrice(pl.E),'ok');
   return it;
 }
+/* پوزیشن رادار که فقط برای امتحان ثبت شده (در صرافی گرفته نشده) ← معامله‌ی آزمایشی با همان ورود، استاپ و زمان.
+   بازها از لحظه‌ی ورود با کندل 5 دقیقه‌ای و نقشه‌ی خروج فعلی دوباره دنبال می‌شوند؛ بسته‌ها با همان قیمت خروج.
+   پوزیشن از «پوزیشن‌ها» و کارنامه‌ی اصلی بیرون می‌رود. */
+const rbRadarPos=()=>(DB.positions||[]).filter(p=>posSrc(p).sub==='radar');
+function rbFromPos(p){
+  const E=+p.entry,SL=+(p.stop0||p.stop),dir=p.dir;if(!(E>0&&SL>0)||!p.ticker)return null;
+  const sd=Math.abs(E-SL)/E;if(!(sd>0))return null;
+  const rr=+(S.rMul&&S.rMul[0])||1.5,sg=dir==='long'?1:-1,nt=String(p.note||''),m=nt.match(/امتیاز (\d+)/),st=nt.match(/(\d)★/);
+  const it={id:'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),k:'test',tk:p.ticker,dir,t:p.openedAt||Date.now(),E,SL,
+    TP:+(E*(1+sg*sd*rr)).toPrecision(8),sd,rr,sc:m?+m[1]:null,stars:st?+st[1]:0,p:null,exp:null,reg:RD.reg||null,be:false,st:'open',ex:rbExEff(),from:'pos'};
+  if(p.status!=='open'&&+p.exitPrice>0)rbClose(it,'man',+p.exitPrice,p.closedAt||Date.now());
+  RB.items.push(it);
+  DB.positions=DB.positions.filter(x=>x.id!==p.id);
+  for(const k in DB.decisions)if(DB.decisions[k]&&DB.decisions[k].posId===p.id)delete DB.decisions[k];
+  return it;
+}
+function rbFromPosAll(L){
+  L=(L||rbRadarPos()).slice();if(!L.length)return 0;
+  const keepP=DB.positions.slice(),keepD=JSON.parse(JSON.stringify(DB.decisions)),keepR=RB.items.slice();let n=0;
+  for(const p of L)if(rbFromPos(p))n++;
+  if(!n)return 0;
+  save();rbSave();rbReplan(null,true);renderAll();
+  toastUndo(faN(n)+' پوزیشن رادار به «آزمایشی» رفت',()=>{DB.positions=keepP;DB.decisions=keepD;RB.items=keepR;save();rbSave();renderAll();});
+  return n;
+}
 /* بعد از هر بررسی: همه‌ی پیشنهادهای امتیاز 70+ (برای هر ارز یکی در هر لحظه) */
 function rbLogAuto(){let n=0;for(const x of rdList())if(x.dir!=='wait'&&x.pl&&rbAdd('auto',x,true))n++;return n;}
 const rbRof=(it,px)=>(px-it.E)*(it.dir==='long'?1:-1)/(it.E*it.sd);      // قیمت ← R
@@ -10869,6 +10894,9 @@ function rbHtml(kind){
     if(open.length){const px=it=>PRICES.get(it.tk),liv=open.filter(it=>px(it)>0),sum=liv.reduce((a,it)=>a+rbLiveR(it,px(it)),0);
       h+='<div class="rbsum"><b>بازها الان</b><span>'+faN(open.length)+' معامله · جمع <b class="'+cls(sum)+'" dir="ltr">'+fmtR(sum)+'</b> · به دلار <b class="'+cls(sum)+'" dir="ltr">'+fmtUsd(sum*riskUsd())+'</b></span>'+
         '<button class="btn sm" data-rb="closeall">'+ic('x')+'<span>بستن همه با قیمت الان</span></button></div>';}
+    {const P=rbRadarPos(),po=P.filter(p=>p.status==='open').length;
+      if(P.length)h+='<div class="rdwarn rbfp"><span><b>'+faN(P.length)+' پوزیشن رادار</b> در «پوزیشن‌ها» ثبت شده'+(po?' ('+faN(po)+' باز)':'')+'. اگر این‌ها را در صرافی <b>نگرفته‌ای</b> و فقط برای امتحان بودند، بیاورشان این‌جا تا کارنامه‌ی واقعی‌ات قاطی نشود؛ دنبال کردنشان از لحظه‌ی ورود ادامه پیدا می‌کند.</span>'+
+        '<button class="btn sm" data-rb="frompos">'+ic('undo')+'<span>انتقال به آزمایشی</span></button></div>';}
     if(L.length)h+='<div class="srow rbtop"><button class="btn sm ok" data-rbl="dl" title="همه‌ی تست‌ها با مسیر واقعی قیمت، عامل‌های لحظه‌ی ورود و خلاصه‌ی مدل">'+ic('down')+'<span>خروجی برای بررسی</span></button>'+
       '<button class="btn sm side" data-rbl="copy">'+ic('share')+'<span>کپی</span></button></div>';
     h+='<details class="sec sub2 rbexw"><summary>نقشه‌ی خروج: '+esc(rdExPlans()[rbExEff()].n)+(RBEX==='auto'?' (خودکار)':'')+'</summary>'+rbExPicker()+'</details>';
@@ -10905,6 +10933,9 @@ function rbBind(g){
     if(a==='closeall'){const L=RB.items.filter(it=>it.k==='test'&&it.st==='open'&&PRICES.get(it.tk)>0);
       if(!L.length)return;if(!confirm(faN(L.length)+' معامله‌ی آزمایشیِ باز با قیمت الان بسته شود؟'))return;
       for(const it of L)rbClose(it,'man',PRICES.get(it.tk));rbSave();paintRadar(g);toast(faN(L.length)+' معامله بسته شد','ok');return;}
+    if(a==='frompos'){const P=rbRadarPos();if(!P.length)return;
+      if(!confirm(faN(P.length)+' پوزیشن رادار ('+P.map(p=>p.ticker+' '+(p.dir==='long'?'لانگ':'شورت')).join('، ')+') از «پوزیشن‌ها» و کارنامه بیرون برود و در «آزمایشی» دنبال شود؟\n\nفقط وقتی که در صرافی واقعاً نگرفته‌ای.'))return;
+      rbFromPosAll(P);paintRadar(g);return;}
     if(a==='clear'){const keep=RB.items;RB.items=RB.items.filter(it=>it.k!=='test'||it.st==='open');rbSave();paintRadar(g);toastUndo('بسته‌های آزمایشی پاک شد',()=>{RB.items=keep;rbSave();paintRadar(g);});return;}
     const row=b.closest('[data-id]'), it=row&&RB.items.find(x=>x.id===row.dataset.id);if(!it)return;
     if(a==='close'){const px=PRICES.get(it.tk);if(!(px>0)){toast('قیمت الان معلوم نیست','err');return;}rbClose(it,'man',px);}
@@ -12648,7 +12679,12 @@ function buildPosCard(p,opt){
         DB.positions=DB.positions.filter(x=>x.id!==p.id);
         for(const k in DB.decisions)if(DB.decisions[k].posId===p.id)delete DB.decisions[k];});
     };
-    pm.appendChild(sh);pm.appendChild(e);pm.appendChild(d);card.appendChild(pm);
+    pm.appendChild(sh);pm.appendChild(e);
+    // پوزیشن رادار که فقط امتحانی ثبت شده: به «بازار ← آزمایشی» برود (نتیجه‌اش حفظ می‌شود)
+    if(posSrc(p).sub==='radar'){const t=el('button','btn',ic('undo')+'<span>انتقال به تست‌ها</span>');
+      t.onclick=()=>{if(!confirm((p.ticker||'')+' را در صرافی واقعاً نگرفته‌ای؟ از «پوزیشن‌ها» و کارنامه بیرون می‌رود و در «بازار ← آزمایشی» از لحظه‌ی ورود دنبال می‌شود.'))return;
+        POSMENU.delete(p.id);rbFromPosAll([p]);};pm.appendChild(t);}
+    pm.appendChild(d);card.appendChild(pm);
   }
 
   if(PENDING.has(p.id))setTimeout(()=>paintStopBar(p),0);
