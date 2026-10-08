@@ -621,25 +621,6 @@ function sheetClose(p){
 }
 
 /* ---- ورق بستن بخشی ---- */
-/* نصف پوزیشن را روی قیمت تارگت می‌بندد — همان کاری که «بستن بخشی» با 50٪ می‌کرد،
-   بدون پر کردن فرم. محاسبه‌اش عیناً از همان مسیر می‌رود تا دو جور حساب نشود. */
-async function closeHalfAt(p,price){
-  ensureBase(p);
-  const m=posMetrics(p,price);
-  const part=0.5, qty=m.qty*part, marginPart=p.margin*part;
-  const gross=qty*(price-p.entry)*(p.dir==='long'?1:-1);
-  const fees=(marginPart*p.lev)*(S.fee/100);
-  const pnl=gross-fees;
-  if(!(await askConfirm({title:'بستن 50٪ '+p.ticker+' روی '+fmtPrice(price),tone:'info',msg:'سود/ضرر این تکه: '+fmtUsd(pnl)+'\nمارجین آزادشده: '+fmtUsd(marginPart),ok:'ثبت کن',cancel:'انصراف'})))return;
-  p.partials=partialsOf(p).concat([{at:Date.now(),price,qty,margin:marginPart,pnl,fees,part}]);
-  p.margin=p.margin-marginPart;
-  logAdd(p,'partial','50٪ روی '+fmtPrice(price)+' بسته شد · '+fmtUsd(pnl));
-  if(p.margin<=0.0001){
-    p.status='closed';p.closedAt=Date.now();p.exitPrice=price;
-    logAdd(p,'close','پوزیشن کامل بسته شد');
-  }
-  save();renderAll();toast('50٪ بسته شد · '+fmtUsd(pnl),pnl>=0?'ok':'err');
-}
 function sheetPartial(p){
   const live=pxOf(p);
   let pct=50;

@@ -67,7 +67,6 @@ const medOf=v=>{if(!v.length)return null;const b=v.slice().sort((x,y)=>x-y),m=b.
 
 /* همه‌ی اندیکاتورها یک بار روی کل سری؛ at(T): وضعیتِ بازار در لحظه‌ی T فقط از کندل‌های بسته تا T.
    X: کندل‌های اجرا (۱ یا ۵ دقیقه‌ای)، tf: تایم‌فریم تصمیم، BX: کندل‌های بیت‌کوین (اختیاری) */
-const SC_HIST=26*36e5;                  // تاریخچه‌ی لازم پیش از هر تصمیم: ۲۴ ساعت نوسان + EMA۵۰ِ ۱۵ دقیقه‌ای
 function scSeries(X,xms,tf,BX){
   const tfms=Math.max(IVMS[tf]||3e5,xms), TF=tfms===xms?X:swAggr(X,tfms);
   const c=TF.map(k=>k.c);
@@ -95,8 +94,6 @@ function scSeries(X,xms,tf,BX){
 }
 
 const SC_FLT={trend:'روند ۱۵ دقیقه (EMA ۲۰/۵۰)',vwap:'سمتِ درستِ VWAP',rsi:'RSI از اشباع برگشته',rej:'کندل برگشتی',vol:'بدون شکستِ پرحجم',btc:'بیت‌کوین خلاف جهت نریخته'};
-const SC_WHY={mid:'قیمت وسطِ باندهاست؛ نه سودِ کافی دارد نه استاپِ نزدیک.',score:'قیمت کنار باند است ولی تأیید کافی نیست.',
-  cost:'تارگت در برابر کارمزد و لغزش کوچک است؛ این معامله ارزش ندارد.',in:'وارد شد',wild:'بیش از حد پرنوسان است؛ استاپ با این اهرم به لیکوئید نزدیک می‌شد.',nodata:'هنوز کندل کافی نیست.'};
 /* o: {lev, fee, slip, miss: حداکثر شرطِ ردشده, flt:{trend,vwap,...}} — شرطِ خاموش هرگز رد نمی‌شود */
 function scDecide(x,o){
   if(!x)return {act:'wait',why:'nodata',checks:[],score:0,need:0};

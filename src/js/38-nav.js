@@ -1,5 +1,7 @@
 /* ==================== ناوبری ==================== */
-let view='signals';
+let view='radar';     // برنامه روی «بازار» (تب اول) باز می‌شود
+/* تست‌ها می‌توانند از تب دیگری شروع کنند (window.__startView) */
+const START_V=window.__startView||'radar';
 const VIEWS=[['vSignals','signals'],['vRadar','radar'],['vPositions','positions'],['vReport','report'],['vMore','more'],['vAudit','audit'],['vLearn','learn']];
 /* کانال‌سنج، کارنامه و آموزش زیرِ «سایر»اند: وقتی بازند، همان تب روشن می‌ماند. */
 const TAB_OF={report:'more',learn:'more',audit:'more'};

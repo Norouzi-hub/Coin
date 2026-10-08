@@ -34,7 +34,6 @@ const ICO={
   undo:'<path d="M4 9h11a5 5 0 0 1 0 10h-6"/><path d="M8 5 4 9l4 4"/>',
   back:'<path d="M5 12h14M13 6l6 6-6 6"/>',
   play:'<path d="M8 5v14l11-7z"/>',
-  pause:'<path d="M8 5v14M16 5v14"/>',
   more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
 };
 const ic=(n,c)=>'<svg class="ic'+(c?' '+c:'')+'" viewBox="0 0 24 24" aria-hidden="true">'+(ICO[n]||'')+'</svg>';

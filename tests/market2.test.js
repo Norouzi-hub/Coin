@@ -32,36 +32,6 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
  ok(by(718).m==='futures'&&by(718).g,'لانگ ساده → فیوچرز ولی حدس');
  ok(by(717).m==='spot'&&!by(717).g,'«هولد بلندمدت» → اسپات');
 
- console.log('\n=== ریاضی اسپات در computePlan ===');
- const r=await p.evaluate(()=>{
-  // استاپ تنگ (۱٫۳۳٪) تا اهرمِ لازم واقعاً بالای ۱ بیفتد و لیکوئید معنی پیدا کند
-  const f=computePlan({direction:'long',entry:150,stop:148,capital:100,riskPct:5,
-    maxLeverage:10,mode:'margin',rMultiples:[1.5,3],market:'futures'});
-  const s=computePlan({direction:'long',entry:150,stop:140,capital:100,riskPct:5,
-    maxLeverage:10,mode:'margin',rMultiples:[1.5,3],market:'spot'});
-  const sh=computePlan({direction:'short',entry:150,stop:140,capital:100,riskPct:5,
-    maxLeverage:10,mode:'margin',market:'spot'});
-  return {f:{lev:f.leverage,liq:f.liqPrice,not:f.notional,risk:f.actualRisk,w:f.warnings},
-          s:{lev:s.leverage,liq:s.liqPrice,not:s.notional,qty:s.qty,risk:s.actualRisk,
-             riskPct:s.actualRiskPct,sug:s.suggestedMargin,w:s.warnings,tg:s.targets.map(t=>t.price)},
-          shDir:sh.direction,shOk:sh.ok};
- });
- console.log('  فیوچرز: اهرم='+r.f.lev.toFixed(2),'لیکوئید='+(r.f.liq?r.f.liq.toFixed(2):'ندارد'),'حجم='+r.f.not.toFixed(0));
- console.log('  اسپات : اهرم='+r.s.lev,'لیکوئید='+(r.s.liq===null?'ندارد':r.s.liq),'ارزش='+r.s.not,'مقدار='+r.s.qty.toFixed(4));
- ok(r.s.lev===1,'اسپات اهرم ۱ است');
- ok(r.s.liq===null,'اسپات لیکوئید ندارد');
- ok(Math.abs(r.s.not-100)<1e-9,'ارزش خرید = مبلغ ($۱۰۰)');
- ok(Math.abs(r.s.qty-100/150)<1e-9,'مقدار = مبلغ÷قیمت = '+(100/150).toFixed(4));
- // استاپ ۱۴۰ روی ورود ۱۵۰ → افت ۶٫۶۷٪؛ روی ۱۰۰ دلار یعنی ۶٫۶۷ دلار
- ok(Math.abs(r.s.risk-100*(10/150))<1e-9,'ضرر در استاپ = $'+(100*10/150).toFixed(2));
- ok(!r.s.w.includes('lev-capped'),'هشدار بی‌معنیِ «سقف اهرم» در اسپات نمی‌آید');
- ok(r.f.liq!==null&&r.f.lev>1,'فیوچرز همچنان اهرم و لیکوئید دارد');
- ok(r.shDir==='long','اسپاتِ شورت وجود ندارد؛ به لانگ برمی‌گردد');
- // تارگت‌ها: 1.5R روی فاصله ۶٫۶۷٪ → ۱۵۰*(۱+۱٫۵*۰٫۰۶۶۷)=۱۶۵
- ok(Math.abs(r.s.tg[0]-165)<1e-9,'تارگت ۱٫۵R اسپات = ۱۶۵');
- // ریسک هدف ۵٪ روی $۱۰۰ = $۵؛ با افت ۶٫۶۷٪ تا استاپ، خریدِ $۷۵ همان $۵ ضرر می‌دهد
- ok(Math.abs(r.s.sug-75)<1e-9,'مبلغ پیشنهادی اسپات = $۷۵ (شد '+r.s.sug.toFixed(2)+')');
-
  console.log('\n=== کلید بازار در کارت ===');
  const tg=await p.evaluate(()=>{
    const c=[...document.querySelectorAll('#list .card')][2];   // اتریوم، حدس

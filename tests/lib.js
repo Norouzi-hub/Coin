@@ -3,6 +3,13 @@ const path = require('path'), os = require('os'), fs = require('fs');
 let pw;
 try { pw = require('playwright'); }
 catch (e) { pw = require('/opt/node22/lib/node_modules/playwright'); }   // محیطی که playwright سراسری دارد
+/* برنامه روی «بازار» باز می‌شود؛ تست‌ها (نوشته‌شده برای شروع از «سیگنال‌ها») همان‌جا شروع می‌کنند،
+   مگر تستی خودش window.__startView را بگذارد (اسکریپتِ بعدی برنده است) */
+{const START="window.__startView=window.__startView||'signals'", _launch=pw.chromium.launch.bind(pw.chromium);
+ pw.chromium.launch=async(...a)=>{const b=await _launch(...a),nc=b.newContext.bind(b),np=b.newPage.bind(b);
+   b.newContext=async(...o)=>{const c=await nc(...o);await c.addInitScript(START);return c;};
+   b.newPage=async(...o)=>{const p=await np(...o);await p.addInitScript(START);return p;};
+   return b;};}
 const ROOT = path.resolve(__dirname, '..');
 const OUT = process.env.TEST_OUT || path.join(os.tmpdir(), 'signaldesk-tests');
 fs.mkdirSync(OUT, { recursive: true });

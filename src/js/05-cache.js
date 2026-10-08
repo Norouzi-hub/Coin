@@ -2,7 +2,7 @@
 /* پست‌های خوانده‌شده و آخرین قیمت‌ها در همین مرورگر می‌مانند تا باز کردن صفحه فوری باشد
    و هر بروزرسانی فقط چیزهای تازه‌تر از آخرین پست ذخیره‌شده را از تلگرام بگیرد */
 const CKEY=ch=>'signaldesk.cache.v2:'+String(ch||'').toLowerCase();
-const PXKEY='signaldesk.px.v1', PRKEY='signaldesk.proxy', CACHE_MAX=800;
+const PXKEY='signaldesk.px.v1', CACHE_MAX=800;
 function lsGet(k){try{const r=localStorage.getItem(k);return r?JSON.parse(r):null;}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}}
 

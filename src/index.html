@@ -56,9 +56,9 @@
     </div>
     <nav class="tabs" role="tablist" id="tabs">
       <span class="ind" id="tabInd"></span>
-      <button class="tab" data-v="radar" role="tab" aria-selected="false" data-ic="bars"><span>بازار</span><span class="cnt g z" id="cRad">0</span></button>
+      <button class="tab" data-v="radar" role="tab" aria-selected="true" data-ic="bars"><span>بازار</span><span class="cnt g z" id="cRad">0</span></button>
       <button class="tab" data-v="positions" role="tab" aria-selected="false" data-ic="wallet"><span>پوزیشن‌ها</span><span class="cnt z" id="cPos">0</span></button>
-      <button class="tab" data-v="signals" role="tab" aria-selected="true" data-ic="trend"><span>سیگنال‌ها</span><span class="cnt g z" id="cSig">0</span></button>
+      <button class="tab" data-v="signals" role="tab" aria-selected="false" data-ic="trend"><span>سیگنال‌ها</span><span class="cnt g z" id="cSig">0</span></button>
       <button class="tab" data-v="more" role="tab" aria-selected="false" data-ic="more"><span>سایر</span><span class="cnt z" id="cMore">0</span></button>
     </nav>
   </div>
@@ -72,7 +72,7 @@
   <div id="updBar" class="status upd hide"></div>
 
   <!-- سیگنال‌ها -->
-  <section id="vSignals" class="view">
+  <section id="vSignals" class="view hide">
     <div class="tools">
       <label class="search"><span id="qIc"></span><input id="q" placeholder="جستجو در نماد یا متن…" autocomplete="off"></label>
       <div class="fbar" id="fbar" role="tablist" aria-label="نمایش پست‌ها"></div>
@@ -116,7 +116,7 @@
   </section>
 
   <!-- بازار: رادار ارزها، معامله‌ی آزمایشی و دفتر پیشنهادها -->
-  <section id="vRadar" class="view hide">
+  <section id="vRadar" class="view">
     <div class="tools"><div class="fbar" id="rdFbar"></div></div>
     <div id="rdView"></div>
   </section>
@@ -168,7 +168,7 @@
   </section>
 
 
-  <div class="disc" id="disc">
+  <div class="disc hide" id="disc">
     <b>حواست باشه:</b> اعداد سیگنال‌ها از روی متن فارسی کانال خودکار استخراج می‌شود و ممکن است اشتباه باشد؛
     قبل از هر معامله با متن اصلی تطبیق بده. قیمت لیکوئید تقریبی است و فاندینگ در آن نیست.
     داده‌های ژورنال فقط داخل همین مرورگر و همین دستگاه ذخیره می‌شود؛ اگر حافظه مرورگر را پاک کنی از بین می‌رود،

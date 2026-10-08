@@ -254,8 +254,6 @@ function rdWalkX(C,i,pl,F){
     const cR=(C[end].c-pl.E)*sign/u;for(const n of RD_EXN)if(!out[n]){const c=cs(st[n]);out[n]={R:exR(st[n],cR)-c,j:end,how:'time',c};}}
   return out;
 }
-/* سازگاری: نقشه‌ی «هدف ثابت» (ریسک‌فری در +1R) */
-function rdWalk(C,i,pl){const w=rdWalkX(C,i,pl);return w&&w.tp;}
 /* نمونه‌های یک ارز: هر 2 ساعت، عامل‌ها و نتیجه‌ی معامله‌ی لانگ و شورت از همان لحظه */
 function rdSamples(P,tk){
   const C=P.C,H=36e5,F=RD_F0,last=C[C.length-1].t+H>Date.now()?C.length-2:C.length-1;
