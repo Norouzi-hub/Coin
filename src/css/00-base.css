@@ -1764,3 +1764,39 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .dlg.warn .dlgok{border-color:color-mix(in srgb,var(--warn) 55%,var(--line));color:var(--warn)}
 .dlg.danger .dlgok{border-color:color-mix(in srgb,var(--dn) 55%,var(--line));color:var(--dn)}
 .dlg.warn .dlgno,.dlg.danger .dlgno{background:linear-gradient(180deg,var(--gold),var(--gold2));border-color:transparent;color:var(--onGold)}
+/* ==== زبان یکدست پیام‌ها (هم‌خانواده‌ی پنجره‌ی پرسش): کارت تیره، نوار رنگی کنار، دایره‌ی آیکون رنگی، متن خوانا ====
+   --ac رنگ معنا: طلایی = خبر، سبز = انجام شد، زرد = هشدار، قرمز = خطر */
+.toast{--ac:var(--gold);background:var(--bg2);color:var(--tx);border:1px solid var(--line2);border-inline-start:4px solid var(--ac);
+  border-radius:16px;padding:10px 14px 10px 12px;gap:10px;line-height:1.7;max-width:min(420px,calc(100vw - 32px));
+  box-shadow:0 18px 44px -12px rgba(0,0,0,.7)}
+.toast.ok{--ac:var(--up)}.toast.err{--ac:var(--dn)}.toast.warn{--ac:var(--warn)}
+.toast .ti,.toast.ok .ti,.toast.err .ti{width:28px;height:28px;background:color-mix(in srgb,var(--ac) 18%,var(--inset));color:var(--ac);
+  border:1px solid color-mix(in srgb,var(--ac) 42%,var(--line))}
+.toast .ti .ic{width:15px;height:15px}
+.toast.undo.on{padding-inline-end:8px}
+.tundo{background:none;border:1px solid color-mix(in srgb,var(--gold) 55%,var(--line));color:var(--gold);min-height:34px;border-radius:12px}
+/* کادرهای هشدار درون صفحه */
+.flag{--ac:var(--gold);background:color-mix(in srgb,var(--ac) 7%,var(--card));color:var(--tx2);
+  border:1px solid color-mix(in srgb,var(--ac) 26%,var(--line));border-inline-start:3px solid var(--ac);border-radius:12px;padding:9px 11px;gap:10px}
+.flag.w{--ac:var(--warn);background:color-mix(in srgb,var(--warn) 7%,var(--card));color:var(--tx2)}
+.flag.d{--ac:var(--dn);background:color-mix(in srgb,var(--dn) 7%,var(--card));color:var(--tx2)}
+.flag.u{--ac:var(--up);background:color-mix(in srgb,var(--up) 7%,var(--card));color:var(--tx2)}
+.flag.i{--ac:var(--gold);background:var(--card);color:var(--tx2);border-color:var(--line);border-inline-start:3px solid color-mix(in srgb,var(--gold) 70%,var(--line))}
+.flag>i{width:24px;height:24px;font-size:12.5px;background:color-mix(in srgb,var(--ac) 18%,var(--inset));color:var(--ac);
+  border:1px solid color-mix(in srgb,var(--ac) 42%,var(--line))}
+.flag b{color:var(--tx)}
+.flag.vline{border-top:1px solid color-mix(in srgb,var(--ac) 26%,var(--line))}
+.status.bad,.status.warn{--ac:var(--dn);color:var(--tx2);background:color-mix(in srgb,var(--ac) 7%,var(--card));
+  border:1px solid color-mix(in srgb,var(--ac) 30%,var(--line));border-inline-start:4px solid var(--ac)}
+.status.warn{--ac:var(--warn)}
+.status.bad b,.status.warn b{color:var(--ac)}
+.status.upd{border-inline-start:4px solid var(--gold)}
+.gatebox{--ac:var(--dn);color:var(--tx2);background:color-mix(in srgb,var(--ac) 7%,var(--card));
+  border:1px solid color-mix(in srgb,var(--ac) 30%,var(--line));border-inline-start:3px solid var(--ac)}
+.gatebox .ic{color:var(--ac);width:18px;height:18px;margin-top:2px}
+.gatebox b{color:var(--tx)}
+.rdwarn{--ac:var(--warn);border:1px solid color-mix(in srgb,var(--ac) 30%,var(--line));border-inline-start:3px solid var(--ac);
+  background:color-mix(in srgb,var(--ac) 7%,var(--inset))}
+.rdwarn.bad{--ac:var(--dn);background:color-mix(in srgb,var(--dn) 7%,var(--inset));border-color:color-mix(in srgb,var(--dn) 30%,var(--line));border-inline-start-color:var(--dn)}
+.rdwarn.bad b{color:var(--dn)}
+.rdcost{border-inline-start:3px solid color-mix(in srgb,var(--gold) 70%,var(--line))}
