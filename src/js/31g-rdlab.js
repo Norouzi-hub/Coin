@@ -97,12 +97,16 @@ let RBLOPEN=false;
 /* خروجی: تنظیمات، هر معامله، آمار مسیر و خودِ مسیر (h/l/c نسبت به ورود، ده‌هزارم؛ هر 5 دقیقه) */
 function rbLabExport(){
   const res=RBL.res||[];
-  return JSON.stringify({v:1,app:'signaldesk',kind:'radar-test-paths',at:new Date().toISOString(),
+  const H=rdHealth(),M=RD.M||{},W=d=>M[d]&&M[d].w?Object.fromEntries(RD_FEAT.map((k,i)=>[k,M[d].w[i]]).filter(([,v])=>v)):null;
+  return JSON.stringify({v:2,app:'signaldesk',kind:'radar-test-paths',at:new Date().toISOString(),
     settings:{fee:+S.fee||0,slip:+S.slip||0,riskUsd:riskUsd(),rMul:S.rMul,maxLev:+S.maxLev||null,isoMaxSd:isoMaxSd(),exit:rbExEff(),hold:AS_HOLD},
-    model:{ex:RD.ex||null,exs:RD.exs||null,reg:RD.reg||null,mt0:RD.mt0||null},
+    model:{ex:RD.ex||null,exs:RD.exs||null,reg:RD.reg||null,mt0:RD.mt0||null,ncoin:RD.ncoin||null,ns:RD.ns||null,
+      span:RD.span?RD.span.map(t=>new Date(t).toISOString()):null,health:H,cap:RD_CAP,capN:RD.capN??null,divs:RD.divs||null,
+      calib:Object.fromEntries(Object.entries(RD.calib||{}).filter(([k])=>!/\|/.test(k)||/^base\|/.test(k)||/^(long|short)\|[0-9]/.test(k))),
+      weights:{long:W('long'),short:W('short')},drop:{long:M.long&&M.long.drop||null,short:M.short&&M.short.drop||null}},
     trades:res.map(({it,C,st})=>{const t0=C.length?C[0].t:it.t;
       return {id:it.id,kind:it.k,tk:it.tk,dir:it.dir,t:new Date(it.t).toISOString(),E:it.E,SL:it.SL,sd:+it.sd.toFixed(5),rr:it.rr,ex:it.ex||null,sc:it.sc,stars:it.stars,p:it.p,exp:it.exp,reg:it.reg,
-        st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
+        why:it.why||null,pv:it.pv||null,st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
         lev:st.lev,stats:{mfe:+st.mfe.toFixed(3),tMfeMin:st.tMfe?Math.round((st.tMfe-it.t)/6e4):null,mfe24:+st.mfe24.toFixed(3),mae:+st.mae.toFixed(3),
           stopMin:st.stopAt?Math.round((st.stopAt-it.t)/6e4):null,touchMin:Object.fromEntries(Object.entries(st.touch).map(([k,v])=>[k,Math.round((v-it.t)/6e4)])),full:st.full},
         path:{t0:new Date(t0).toISOString(),stepMin:5,unit:'1e-4 of entry',hlc:C.map(k=>[Math.round((k.h/it.E-1)*1e4),Math.round((k.l/it.E-1)*1e4),Math.round((k.c/it.E-1)*1e4)])}};})});
@@ -113,6 +117,7 @@ function rbLabBind(g){
     if(a==='auto'){b.onchange=()=>{RBL.auto=b.checked;};return;}
     b.onclick=async()=>{
       if(a==='run'){RBLOPEN=true;rbLabRun();return;}
+      if(!RBL.res){await rbLabRun();if(!RBL.res)return;}
       const txt=rbLabExport();
       if(a==='dl'){dl('signaldesk-tests-'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')+'.json',txt);toast('فایل ساخته شد','ok');}
       else{try{await navigator.clipboard.writeText(txt);toast('کپی شد ('+faN(Math.round(txt.length/1024))+' کیلوبایت)','ok');}catch(e){toast('کپی نشد؛ «دانلود فایل» را بزن','err');}}

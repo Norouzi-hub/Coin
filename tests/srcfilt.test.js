@@ -47,7 +47,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    return out;});
  console.log('   ',JSON.stringify(t));
  ok(t.now.tab.includes('جهت')&&!t.now.tab.includes('منبع')&&!t.now.side,'«الان چه کنم؟»: جهت (منبعِ «برنامه» برداشته شد)');
- ok(t.mkt.tab.includes('جهت')&&t.mkt.tab.includes('۳ ستاره')&&t.mkt.tab.includes('واگرایی')&&!/بازار/.test(t.segs),'تب «بازار» (مستقل): جهت، «فقط ۳ ستاره» و واگرایی؛ در سیگنال‌ها دیگر نیست');
+ ok(t.mkt.tab.includes('جهت')&&t.mkt.tab.includes('قابل گرفتن')&&t.mkt.tab.includes('واگرایی')&&!/بازار/.test(t.segs),'تب «بازار» (مستقل): جهت، «فقط قابل گرفتن» و واگرایی؛ در سیگنال‌ها دیگر نیست');
  ok(t.new.tab.includes('بازار')&&t.new.tab.includes('اسپات')&&!t.new.side,'«در انتظار»: جهت و بازار');
  ok(t.all.side&&!t.all.tab,'«همه»: نتایج، منقضی، آرشیو و تاریخ — فقط همین‌جا');
  const nw=await p.evaluate(()=>{bucket='live';sigFilter='new';setView({newDir:'all'});const n0=document.querySelectorAll('#list .card').length;
@@ -62,7 +62,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    sv({mktDir:'short'});const sh=[...document.querySelectorAll('#rdView .rdit')].map(x=>x.dataset.rd).join(',');
    sv({mktDir:'all',mktOk:true});const good=[...document.querySelectorAll('#rdView .rdit')].map(x=>x.dataset.rd).join(',');
    const hid=(document.querySelector('#rdView').textContent.match(/(\d+) سیگنال دیگر با فیلتر/)||[])[1];sv({mktOk:false});go('signals',true);return {all,sh,good,hid};});
- ok(mk.all==='AA,BB'&&mk.sh==='BB'&&mk.good==='AA'&&mk.hid==='1','«بازار»: جهت و فقط ۳ ستاره (همه '+mk.all+'، شورت '+mk.sh+'، ۳★ '+mk.good+')');
+ ok(mk.all==='AA,BB'&&mk.sh==='BB'&&mk.good==='AA'&&mk.hid==='1','«بازار»: جهت و فقط قابل گرفتن (همه '+mk.all+'، شورت '+mk.sh+'، ۳★ '+mk.good+')');
  const nowF=await p.evaluate(()=>{bucket='live';sigFilter='now';renderSignals();const g=document.getElementById('glance');
    return {as:!!g.querySelector('.assec'),fn:typeof asScan,set:!!(S.feat&&'autosig' in featDefaults())};});
  ok(!nowF.as&&nowF.fn==='undefined'&&!nowF.set,'«پیشنهاد برنامه» برداشته شد (نه در «الان چه کنم؟»، نه در تنظیمات)');

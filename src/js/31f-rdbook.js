@@ -23,9 +23,15 @@ function rbRepaint(){clearTimeout(RBT);RBT=setTimeout(()=>{try{if(view==='radar'
 function rbAdd(kind,x,quiet){
   if(!x||!x.pl)return null;
   if(RB.items.some(it=>it.k===kind&&it.st==='open'&&it.tk===x.tk&&(kind==='auto'||it.dir===x.dir))){if(!quiet)toast('همین معامله‌ی آزمایشی باز است','err');return null;}
+  // سقف هم‌جهت: دفتر پیشنهادها همان قانون سنجش را دارد؛ تست با پرسیدن
+  if(kind==='auto'&&RB.items.filter(it=>it.k==='auto'&&it.st==='open'&&it.dir===x.dir).length>=RD_CAP)return null;
+  if(kind==='test'&&!quiet){const n=rdOpenDir(x.dir);
+    if(n>=RD_CAP&&!confirm(faN(n)+' معامله‌ی '+(x.dir==='long'?'لانگ':'شورت')+' باز داری (سقف '+faN(RD_CAP)+'). ارزها با هم حرکت می‌کنند و این‌ها عملاً یک شرط‌اند. باز هم ثبت شود؟'))return null;}
   const pl=rdPlanAt(x.pl,PRICES.get(x.tk)||x.pl.E), now=Date.now();
   const it={id:kind[0]+now.toString(36)+Math.random().toString(36).slice(2,5),k:kind,tk:x.tk,dir:x.dir,t:now,E:pl.E,SL:pl.SL,TP:pl.TP,sd:pl.sd,rr:pl.rr,
-    sc:x.sc,stars:x.stars||0,p:x.p!=null?+x.p.toFixed(3):null,exp:x.exp!=null?+x.exp.toFixed(3):null,reg:RD.reg||null,be:false,st:'open',
+    sc:x.sc,stars:x.stars||0,p:x.p!=null?+x.p.toFixed(3):null,exp:x.exp!=null?+x.exp.toFixed(3):null,reg:RD.reg||null,be:false,st:'open',why:x.why||null,
+    // عکس عامل‌ها در لحظه‌ی ورود (برای بررسی بعدی در خروجی)
+    pv:x.parts?Object.fromEntries(RD_FEAT.filter(k=>x.parts[k]!=null&&x.parts[k]!==0).map(k=>[k,+(+x.parts[k]).toFixed(2)])):null,
     ex:kind==='test'?rbExEff():(RD.ex||'tp'),x:exNew()};
   RB.items.push(it);RBLC.set(it.id,now);
   // اندازه‌ی حافظه: قدیمی‌ترین بسته‌های خودکار اول می‌روند
@@ -132,18 +138,20 @@ function rbHtml(kind){
   const k=kind==='test'?'test':'auto', L=RB.items.filter(it=>it.k===k), open=L.filter(it=>it.st==='open'), done=L.filter(it=>it.st!=='open').sort((a,b)=>b.xt-a.xt);
   let h='';
   if(k==='test'){
-    h+='<div class="hint">معامله‌ی آزمایشی مثل واقعی دنبال می‌شود (پله‌های سیو سود، استاپ، حداکثر 24 ساعت، بعد از کارمزد) ولی پولی در کار نیست و در پوزیشن‌ها و کارنامه‌ی اصلی نمی‌آید. '+
-      'از زیرتب «سیگنال‌ها»ی همین تب روی <b>تست</b> بزن. دلار با ریسک هر معامله‌ی تنظیمات ('+fmtUsd(riskUsd())+') حساب می‌شود.</div>';
-    h+=rbExPicker();
-    h+=rbLabHtml();
     h+=rbSumHtml(done,'نتیجه');
     if(open.length){const px=it=>PRICES.get(it.tk),liv=open.filter(it=>px(it)>0),sum=liv.reduce((a,it)=>a+rbLiveR(it,px(it)),0);
       h+='<div class="rbsum"><b>بازها الان</b><span>'+faN(open.length)+' معامله · جمع <b class="'+cls(sum)+'" dir="ltr">'+fmtR(sum)+'</b> · به دلار <b class="'+cls(sum)+'" dir="ltr">'+fmtUsd(sum*riskUsd())+'</b></span>'+
         '<button class="btn sm" data-rb="closeall">'+ic('x')+'<span>بستن همه با قیمت الان</span></button></div>';}
+    if(L.length)h+='<div class="srow rbtop"><button class="btn sm ok" data-rbl="dl" title="همه‌ی تست‌ها با مسیر واقعی قیمت، عامل‌های لحظه‌ی ورود و خلاصه‌ی مدل">'+ic('down')+'<span>خروجی برای بررسی</span></button>'+
+      '<button class="btn sm side" data-rbl="copy">'+ic('share')+'<span>کپی</span></button></div>';
+    h+='<details class="sec sub2 rbexw"><summary>نقشه‌ی خروج: '+esc(rdExPlans()[rbExEff()].n)+(RBEX==='auto'?' (خودکار)':'')+'</summary>'+rbExPicker()+'</details>';
+    h+=rbLabHtml();
     if(open.length)h+='<div class="sechd">باز ('+faN(open.length)+')</div>'+open.map(it=>rbRowHtml(it,true)).join('');
     if(done.length)h+='<div class="sechd">بسته</div>'+done.slice(0,40).map(it=>rbRowHtml(it,true)).join('');
-    if(!L.length)h+='<div class="empty">هنوز معامله‌ی آزمایشی نداری.</div>';
-    else h+='<div class="glact"><button class="btn sm side" data-rb="clear">'+ic('trash')+'<span>پاک کردن همه‌ی بسته‌ها</span></button></div>';
+    if(!L.length)h+='<div class="empty">هنوز معامله‌ی آزمایشی نداری. در «سیگنال‌ها» روی <b>تست</b> هر سیگنال بزن.</div>';
+    h+='<div class="hint">معامله‌ی آزمایشی مثل واقعی دنبال می‌شود (پله‌های سیو سود، استاپ، حداکثر 24 ساعت، بعد از کارمزد) ولی پولی در کار نیست و در پوزیشن‌ها و کارنامه‌ی اصلی نمی‌آید؛ حتی وقتی برنامه بسته است با کندل 5 دقیقه‌ای دنبال می‌شود. '+
+      'دلار با ریسک هر معامله‌ی تنظیمات ('+fmtUsd(riskUsd())+') حساب می‌شود. حداکثر '+faN(RD_CAP)+' تست هم‌جهت باز (بیشترش را می‌پرسد).</div>';
+    if(done.length)h+='<div class="glact"><button class="btn sm side" data-rb="clear">'+ic('trash')+'<span>پاک کردن همه‌ی بسته‌ها</span></button></div>';
     return h;
   }
   h+='<div class="hint">هر پیشنهاد رادار (امتیاز '+faN(RD_MIN)+'+) از لحظه‌ای که نشان داده شد خودش ثبت و دنبال می‌شود؛ برای هر ارز یکی در هر لحظه. این آزمون واقعیِ <b>آینده</b> است: '+
@@ -180,7 +188,7 @@ function rbBind(g){
 function rbExPicker(){
   const PL=rdExPlans(), eff=rbExEff(), S0=RD.exs||{};
   const m=n=>{const o=S0[n]&&S0[n].all;return o&&o.n?' <small dir="ltr" class="'+cls(o.r/o.n)+'">'+fmtR(o.r/o.n)+'</small>':'';};
-  return '<div class="rbex"><div class="sechd">نقشه‌ی خروج (سیو سود)</div><div class="pbpick">'+
+  return '<div class="rbex"><div class="pbpick">'+
     '<button class="pbc'+(RBEX==='auto'?' on':'')+'" data-rbex="auto">خودکار'+(RD.ex?' ('+esc(PL[RD.ex].n)+')':'')+'</button>'+
     RD_EXN.map(n=>'<button class="pbc'+(RBEX===n?' on':'')+'" data-rbex="'+n+'" title="'+esc(PL[n].d)+'">'+esc(PL[n].n)+m(n)+'</button>').join('')+'</div>'+
     '<div class="hint">'+esc(PL[eff].d)+'. عدد کنار هر نقشه: میانگین R همان سیگنال‌های رادار با آن نقشه، روی دوره‌ای که مدل ندیده. «خودکار» بهترینش را برمی‌دارد. با عوض کردن نقشه، معامله‌های باز هم از لحظه‌ی ورود با نقشه‌ی تازه دوباره حساب می‌شوند.</div></div>';

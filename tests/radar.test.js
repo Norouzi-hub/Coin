@@ -1,6 +1,6 @@
 /* رادار بازار v3: عامل‌ها، مدل لجستیک، کارنامه‌ی صادق، بارگذاری ده‌تایی، معامله‌ی آزمایشی و دفتر پیشنهادها */
 const {pw}=require('./lib');const {chromium}=pw;const {route,seed}=require('./fixture');
-const RD_EXN_OK=f=>['tp','lad','trl'].includes(f.exP)&&f.exs&&f.extab;
+const RD_EXN_OK=f=>['tp','lad','trl','q05','h05','t1h'].includes(f.exP)&&f.exs&&f.extab;
 let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);};
 (async()=>{
  const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:900}});await route(ctx);
@@ -106,7 +106,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(t.n==='2'&&t.weak===1,'عدد تب پایین = فرصت‌های با رتبه‌ی خوب (۲)؛ شورت RDC کم‌رنگ');
  ok(/^1☆RDBلانگامتیاز 97/.test(t.items[0])&&/120 بار در 40 روز/.test(t.first)&&/★★★★☆/.test(t.first)&&/✓ روند 4 ساعته صعودی/.test(t.first)&&/احتمال سود به گفته‌ی مدل: 52٪/.test(t.first)&&/بدترین حالت محتمل/.test(t.first),'ردیف اول: رتبه، امتیاز، ستاره، سابقه با روزها، احتمال، دلیل‌ها');
  ok(/صبر/.test(t.wait)&&/RDD/.test(t.wait)&&t.cards===0,'«صبر» جدا؛ کارت پستی در این تب نیست');
- ok(t.more&&/^4 ارز/.test(t.cnt)&&t.tabs==='سیگنال‌ها,آزمایشی,دفتر پیشنهادها','دکمه‌ی «10 ارز بعدی» و سه زیرتب');
+ ok(t.more&&/^4 ارز/.test(t.cnt)&&t.tabs==='سیگنال‌ها,آزمایشی,کارنامه,دفتر','دکمه‌ی «10 ارز بعدی» و چهار زیرتب (سیگنال‌ها، آزمایشی، کارنامه، دفتر)');
  await p.evaluate(()=>document.querySelector('#rdView .rdit[data-rd="RDB"] [data-a="iso"]').click());await p.waitForTimeout(600);
  ok(await p.evaluate(()=>/RDB/.test(document.querySelector('#sheet').textContent)&&+document.querySelector('#f_e').value===11),'«ایزوله» فرم ورود RDB را باز کرد');
  await p.evaluate(()=>closeSheet());await p.waitForTimeout(400);
@@ -155,7 +155,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    const n=rbReplan(null,true);await rbCatchUp(true);
    renderRadar();const G=document.getElementById('rdView');
    return {a1,a2,e1,ladR:L.acc,ts,e2,trR:T.acc,s1,mid,it:{st:it.st,R:it.R},n,old:{ex:old.ex,st:old.st,R:old.R,k:old.x&&old.x.k},
-     pick:(G.querySelector('.rbex')||{}).textContent||''};},T3);
+     pick:(G.querySelector('.rbexw')||{}).textContent||''};},T3);
  console.log('   ',JSON.stringify(Object.assign({},ex,{mid:ex.mid.slice(0,200),pick:ex.pick.slice(0,160)})));
  ok(ex.a1.k===1&&ex.a1.rem===0.5&&ex.a1.stop===0&&ex.a2.k===2&&ex.a2.stop===1&&ex.e1&&Math.abs(ex.ladR-1.25)<1e-9,'پله‌ای: نصف در +1R (استاپ ورود)، یک‌چهارم در +2R (استاپ +1R)، باقی در +1R ← +1.25R');
  ok(ex.ts===2&&ex.e2&&Math.abs(ex.trR-1.5)<1e-9,'متحرک: نصف در +1R، استاپ 1R پشت بیشترین سود (+3R ← +2R)، باقی در +2R ← +1.5R');
@@ -172,10 +172,13 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    for(let i=0;i<40&&RDQ.on;i++){await new Promise(r=>setTimeout(r,100));const b=document.getElementById('rdProgBox');if(b)seen.push(b.textContent);}
    await pr;const ms=Math.round(performance.now()-t0);renderAll();
    const st=await idbGet('rdc:ETH'),fl=await idbGet('rdf:ETH');
+   const L=rdList().filter(x=>x.dir!=='wait'),capd=['long','short'].reduce((a,d)=>a+Math.min(RD_CAP,L.filter(x=>x.dir===d).length),0),
+     aopen=['long','short'].map(d=>RB.items.filter(i=>i.k==='auto'&&i.dir===d).length);
+   RDV='model';renderRadar();const pan=!!document.querySelector('#rdView .rdpan'),extab=!!document.querySelector('#rdView .rdex');RDV='sig';renderRadar();
    return {ms,n:RD.n,rank:RD.rank.length,nflow:RD.nflow,M:!!(RD.M&&RD.M.long&&RD.M.short),cal:Object.keys(RD.calib).length,rel:!!RD.rel,
      eth:RD.coins.ETH&&{wl:RD.coins.ETH.wl,flow:RD.coins.ETH.flow,sc:RD.coins.ETH.sc,fund:RD.coins.ETH.parts.fund},solfund:RD.coins.SOL&&RD.coins.SOL.parts.fund,sol:RD.coins.SOL&&RD.coins.SOL.flow,
-     rows:st&&st.rows.length,flow:fl&&fl.top&&fl.top.length,pan:!!document.querySelector('#rdView .rdpan'),
-     exP:RD.ex,exs:!!(RD.exs&&RD.exs.lad&&RD.exs.lad.all),extab:!!document.querySelector('#rdView .rdex'),auto:RB.items.filter(i=>i.k==='auto').length,sig:rdList().filter(x=>x.dir!=='wait').length,seen:seen.filter((x,i)=>i%5===0),gone:!document.getElementById('rdProgBox')};});
+     rows:st&&st.rows.length,flow:fl&&fl.top&&fl.top.length,pan,capd,aopen,
+     exP:RD.ex,exs:!!(RD.exs&&RD.exs.lad&&RD.exs.lad.all),extab,auto:RB.items.filter(i=>i.k==='auto').length,sig:rdList().filter(x=>x.dir!=='wait').length,seen:seen.filter((x,i)=>i%5===0),gone:!document.getElementById('rdProgBox')};});
  console.log('   ',JSON.stringify(full),JSON.stringify(REQ));
  ok(full.seen.length>2&&full.seen.every(x=>/\d+٪/.test(x)&&/\d:\d\d/.test(x))&&full.seen.some(x=>/ارز \d+ از 10/.test(x))&&full.gone,'نوار پیشرفت: درصد، کار الان و تایمر؛ آخر کار برداشته شد');
  ok(full.n===10&&full.rank===10,'بار اول فقط 10 ارز اول ('+full.rank+')، در '+full.ms+'ms');
@@ -184,7 +187,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(full.M&&full.cal>0&&full.rel&&full.pan,'مدل لانگ و شورت، کارنامه، صداقت مدل و پنل ساخته شد');
  ok(full.eth&&full.eth.fund!=null&&full.solfund==null,'تاریخچه‌ی فاندینگ: ETH دارد، SOL (بی فیوچرز) ندارد');
  ok(full.eth&&full.eth.flow&&full.eth.wl>50&&full.sol===false&&full.nflow===2,'ETH با داده‌ی نهنگ/مردم؛ SOL بی فیوچرز');
- ok(full.auto===full.sig,'همه‌ی پیشنهادهای 70+ در «دفتر پیشنهادها» ثبت شد ('+full.auto+')');
+ ok(full.auto===full.capd&&full.aopen.every(n=>n<=3),'پیشنهادهای 70+ در «دفتر پیشنهادها» ثبت شد، هر جهت حداکثر 3 باز ('+full.auto+' از '+full.sig+')');
  const mk2=await p.evaluate(()=>{const r=mdMetrics(MD);RDV='sig';renderRadar();const G=document.getElementById('rdView');
    const tiles=[...G.querySelectorAll('.mdt')].map(x=>x.textContent);go('signals',true);bucket='live';sigFilter='now';paintGlance();const now=!!document.querySelector('#glance .mdbox');go('radar',true);renderRadar();
    return {r,tiles,flags:[...G.querySelectorAll('.mdbox .flag')].map(x=>x.textContent),now,mf:RDMF.size,w:RD.M&&RD.M.long.w.length,last:RD.mk7&&{tot:RD.mk7.tot.slice(-1)[0],bd:RD.mk7.bd.slice(-1)[0],ud:RD.mk7.ud.slice(-1)[0],n:RD.mk7.tot.length},mkl:RD.mkl,
@@ -199,11 +202,11 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    const o=Array.from({length:60},()=>50);o[30]=25;o[50]=35;const o2=o.slice();o2[50]=20;
    const sh=mk(false).map(k=>({t:k.t,o:-k.o,h:-k.l,l:-k.h,c:-k.c})),oS=o.map(x=>100-x);
    return {bull:rdDiv(mk(false),o,55,2),brk:rdDiv(mk(true),o,55,2),none:rdDiv(mk(false),o2,55,2),bear:rdDiv(sh,oS,55,2),
-     divs:RD.divs&&Object.keys(RD.divs).sort().join(','),tbl:(document.querySelector('#rdView .rddiv')||{}).textContent||'',f:RD_FEAT.includes('divr')&&RD_FEAT.includes('divm'),
-     chip:[...document.querySelectorAll('#rdFbar .fc')].map(x=>x.textContent).join(',')};});
+     divs:RD.divs&&Object.keys(RD.divs).sort().join(','),tbl:(RDV='model',renderRadar(),(document.querySelector('#rdView .rddiv')||{}).textContent||''),f:RD_FEAT.includes('divr')&&RD_FEAT.includes('divm'),
+     chip:(RDV='sig',renderRadar(),[...document.querySelectorAll('#rdFbar .fc')].map(x=>x.textContent).join(','))};});
  console.log('   ',JSON.stringify(Object.assign({},dv,{tbl:dv.tbl.slice(0,120)})));
  ok(Math.abs(dv.bull-0.85)<1e-9&&dv.brk===0&&dv.none===0&&Math.abs(dv.bear+0.85)<1e-9,'واگرایی: مثبت در کف، منفی در سقف؛ کف شکسته یا RSI پایین‌تر = هیچ');
- ok(dv.f&&/all\|no/.test(dv.divs)&&/هم‌جهت با سیگنال/.test(dv.tbl)&&/خلاف سیگنال/.test(dv.tbl)&&/فقط با واگرایی هم‌جهت/.test(dv.chip),'عامل واگرایی در مدل، جدول «اثر واگرایی» و فیلتر «فقط با واگرایی هم‌جهت»');
+ ok(dv.f&&/all\|no/.test(dv.divs)&&/هم‌جهت با سیگنال/.test(dv.tbl)&&/خلاف سیگنال/.test(dv.tbl)&&/واگرایی هم‌جهت/.test(dv.chip),'عامل واگرایی در مدل، جدول «اثر واگرایی» (کارنامه) و فیلتر «واگرایی هم‌جهت»');
  // هرس خودکار: عامل تکراری (کپی یک عامل دیگر) و عامل‌های بی‌اثر کنار می‌روند و وزنشان صفر می‌شود
  const pr=await p.evaluate(()=>{const N=3000,F0=RD_F0,X=new Float32Array(N*F0),R={long:[],short:[]},J={long:[],short:[]},t=[];let sd=7;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647;
    for(let q=0;q<N;q++){let z=0;for(let k=0;k<6;k++){const v=rnd()<0.5?-1:1;X[q*F0+k]=v;z+=v*(k+1)*0.25;}X[q*F0+6]=X[q*F0];
@@ -215,7 +218,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  // خروج سریع: همه در +0.5R، نصف در +0.5R، و خروج بعد از 1 ساعت با قیمت همان لحظه
  const qx=await p.evaluate(()=>{const C=Array.from({length:30},(_,j)=>j===0?{t:0,o:10,h:10,l:10,c:10}:j===1?{t:36e5,o:10,h:10.05,l:9.95,c:10.04}:{t:j*36e5,o:10.1,h:10.32,l:10.05,c:10.3});
    const cost=(2*(+S.fee||0)+(+S.slip||0))/100/0.02,w=rdWalkX(C,0,{dir:'long',E:10,sd:0.02});
-   return {n:RD_EXN.length,q:+(w.q05.R+cost).toFixed(6),qj:w.q05.j,h:+(w.h05.R+cost).toFixed(6),t:+(w.t1h.R+cost).toFixed(6),tj:w.t1h.j,th:w.t1h.how,rows:document.querySelectorAll('#rdView .rdex tbody tr').length};});
+   return {n:RD_EXN.length,q:+(w.q05.R+cost).toFixed(6),qj:w.q05.j,h:+(w.h05.R+cost).toFixed(6),t:+(w.t1h.R+cost).toFixed(6),tj:w.t1h.j,th:w.t1h.how,rows:(()=>{RDV='model';renderRadar();const n=document.querySelectorAll('#rdView .rdex tbody tr').length;RDV='sig';renderRadar();return n;})()};});
  console.log('   ',JSON.stringify(qx));
  ok(qx.n===6&&qx.rows===6&&qx.q===0.5&&qx.qj===2&&qx.h===1&&qx.t===0.2&&qx.tj===1&&qx.th==='time','خروج سریع در سنجش: +0.5R، نصف +0.5R/باقی +1.5R، بعد از 1 ساعت (+0.2R)؛ شش ردیف در جدول نقشه‌ی خروج');
  const R0=Object.assign({},REQ);
@@ -239,7 +242,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const stb=await p.evaluate(async()=>{RB.items=[];const st=await idbGet('rdc:ETH');st.at-=10*60000;await idbSet('rdc:ETH',st);
    const snap=()=>({mt0:RD.mt0,cal:JSON.stringify(RD.calib),sc:RD.rank.map(t=>t+':'+RD.coins[t].sc+':'+RD.coins[t].dir+':'+RD.coins[t].since).join(',')});
    const a=snap();await rdScan('refresh');const b=snap();
-   RDV='sig';renderRadar();const hint=(document.querySelector('#rdView .rdtime')||{}).textContent||'';
+   RDV='model';renderRadar();const hint=(document.querySelector('#rdView .rdtime')||{}).textContent||'';RDV='sig';renderRadar();
    await rdScan('learn');const c=snap();return {same:a.mt0===b.mt0&&a.cal===b.cal&&a.sc===b.sc,learn:c.mt0>a.mt0,hint};});
  ok(stb.same,'«تازه کن» در همان ساعت: مدل، ستاره‌ها و امتیازها همان می‌مانند');
  ok(stb.learn&&/امتیازها برای کندلِ بسته‌شده‌ی ساعت/.test(stb.hint)&&/یادگیری دوباره/.test(stb.hint),'«یادگیری دوباره» مدل را از نو می‌سازد؛ توضیح زمان امتیاز');

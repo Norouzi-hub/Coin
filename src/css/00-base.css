@@ -1588,3 +1588,77 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rdpk{display:flex;gap:6px;margin-top:6px}.rdpk input{flex:1;min-width:0}.rdfav{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}.rdfav .pill{cursor:pointer}
 .rdfavb{background:none;border:0;padding:0 2px;font-size:17px;line-height:1;color:var(--tx3);cursor:pointer}.rdfavb.on{color:var(--gold)}.glit .rdcap{color:var(--tx3);font-size:10.5px}
 .rblabr{line-height:1.7}.rblab td:first-child{text-align:start;font-size:12px}.rblab tr.on td{font-weight:700}
+/* ---- تب «بازار» (طرح تازه): کارت وضعیت، بازار کل تاشو، کارت سیگنال جمع‌وجور، زیرتب کارنامه ---- */
+#rdFbar{flex-wrap:wrap;gap:6px}
+#rdFbar .fseg{flex:1 1 100%}
+#rdFbar .fb{min-height:40px;flex-direction:row;gap:6px}
+#rdFbar .fb i{font-size:13px;line-height:1}
+.rdview{margin:4px 0 12px}
+.rdview .glb{padding:0;gap:10px}
+.rdview .sec.sub2{margin:0}
+.rdhero{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:16px;background:var(--card);border:1px solid var(--line);
+  border-inline-start:4px solid var(--gold)}
+.rdhero.go{border-inline-start-color:var(--up);background:color-mix(in srgb,var(--up) 6%,var(--card))}
+.rdhero.stop{border-inline-start-color:var(--dn);background:color-mix(in srgb,var(--dn) 7%,var(--card))}
+.rdht{display:flex;gap:10px;align-items:flex-start}
+.rdht>i{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;font-style:normal;font-weight:900;font-size:16px;
+  background:var(--inset);color:var(--gold);border:1px solid var(--line)}
+.rdhero.go .rdht>i{background:var(--up);color:#fff;border-color:transparent}
+.rdhero.stop .rdht>i{background:var(--dn);color:#fff;border-color:transparent}
+.rdht>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rdht>div>b{font-size:16.5px;font-weight:900;color:var(--tx)}
+.rdhero.go .rdht>div>b{color:var(--up)}.rdhero.stop .rdht>div>b{color:var(--dn)}
+.rdht>div>span{font-size:12.5px;line-height:1.85;color:var(--tx2)}
+.rdht>div>span b{color:var(--tx)}
+.rdchips{display:flex;flex-wrap:wrap;gap:5px}
+.rdchip{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--inset);border:1px solid var(--line);color:var(--tx2);line-height:1.6}
+.rdchip.u{color:var(--up)}.rdchip.d{color:var(--dn)}
+.rdchip.w{color:var(--gold);border-color:color-mix(in srgb,var(--gold) 45%,var(--line))}
+.rdwarn{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;font-size:12px;line-height:1.8;color:var(--tx2);
+  background:color-mix(in srgb,var(--gold) 7%,var(--inset));border:1px dashed color-mix(in srgb,var(--gold) 45%,var(--line))}
+.rdwarn span{flex:1 1 200px}
+.rdhero .rdbar{gap:6px;padding-top:10px;border-top:1px solid var(--line)}
+.rdhero .rdbar .rdcnt{font-size:12px;font-weight:800;color:var(--tx2)}
+.rdhero .rdbar small{margin-inline-end:auto}
+.rdhero .rdprog{margin:0}
+.rdmk{border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.rdmk>summary{display:flex;align-items:center;gap:8px;padding:11px 12px;cursor:pointer;list-style:none;font-size:12.5px;min-height:44px}
+.rdmk>summary::-webkit-details-marker{display:none}
+.rdmk>summary .ic{width:16px;height:16px;color:var(--gold);flex:none}
+.rdmkh{font-weight:800;color:var(--tx);flex:none}
+.rdmks{flex:1;min-width:0;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:end}
+.rdmks b{color:var(--tx)}.rdmks .u{color:var(--up)}.rdmks .d{color:var(--dn)}
+.rdmk>summary::after{content:'';flex:none;width:7px;height:7px;border-inline-end:2px solid var(--tx3);border-bottom:2px solid var(--tx3);transform:rotate(45deg);margin-top:-3px;transition:transform .2s}
+.rdmk[open]>summary::after{transform:rotate(-135deg);margin-top:3px}
+.rdmk>:not(summary){margin:0 10px 10px}
+.rdsh{display:flex;align-items:center;gap:8px;margin:6px 2px 0;font-size:13.5px}
+.rdsh b{font-weight:900;color:var(--tx2)}.rdsh.go b{color:var(--up)}
+.rdsh i{font-style:normal;font-size:11.5px;font-weight:800;padding:1px 9px;border-radius:99px;background:var(--inset);border:1px solid var(--line);color:var(--tx2)}
+.rdsh small{margin-inline-start:auto;color:var(--tx3);font-size:11px}
+.rdit{gap:8px;padding:10px;background:var(--card)}
+.rdit.ok{border-color:color-mix(in srgb,var(--up) 40%,var(--line))}
+.rdit.weak{opacity:.9}
+.rdit .glit{flex-wrap:wrap;gap:6px;padding:0}
+.rdit .rdtk{font-size:16px;font-weight:900}
+.rdit .glit .rdst{margin-inline-start:auto}
+.rdkv{display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:6px}
+.rdkv>div{display:flex;flex-direction:column;gap:1px;padding:6px 8px;border-radius:10px;background:var(--inset);border:1px solid var(--line);min-width:0}
+.rdkv small{font-size:10.5px;color:var(--tx3)}
+.rdkv b{font-size:13px;font-weight:800;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.rdit .glact{margin:0}
+.rdit .glact .btn[data-a="iso"]{flex:2 1 150px}
+.rdit .glact .btn[data-a="iso"]:not(.ok){border-color:var(--line2)}
+.rdmore{border-top:1px dashed var(--line);padding-top:6px}
+.rdmore>summary{cursor:pointer;list-style:none;font-size:12px;font-weight:700;color:var(--tx3);display:flex;align-items:center;gap:6px;min-height:28px}
+.rdmore>summary::-webkit-details-marker{display:none}
+.rdmore>summary::before{content:'';width:6px;height:6px;border-inline-end:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-top:-3px;transition:transform .2s}
+.rdmore[open]>summary::before{transform:rotate(-135deg);margin-top:2px}
+.rdmore[open]{display:flex;flex-direction:column;gap:6px}
+.rdwl{display:flex;flex-wrap:wrap;gap:4px;padding-top:6px}
+.rdkpis{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.rdk{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border-radius:12px;background:var(--card);border:1px solid var(--line);min-width:0}
+.rdk b{font-size:16px;font-weight:900;color:var(--tx)}.rdk b.u{color:var(--up)}.rdk b.d{color:var(--dn)}.rdk b.w{color:var(--gold)}
+.rdk small{font-size:10.5px;color:var(--tx3);text-align:center;line-height:1.5}
+.rdview .rdpan{gap:8px;padding:0;background:none;border:0}
+.rdsec .rdtab{margin-top:6px}
+.rbtop .btn.ok{flex:1}

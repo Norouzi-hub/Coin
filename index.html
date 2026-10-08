@@ -1605,6 +1605,80 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rdpk{display:flex;gap:6px;margin-top:6px}.rdpk input{flex:1;min-width:0}.rdfav{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}.rdfav .pill{cursor:pointer}
 .rdfavb{background:none;border:0;padding:0 2px;font-size:17px;line-height:1;color:var(--tx3);cursor:pointer}.rdfavb.on{color:var(--gold)}.glit .rdcap{color:var(--tx3);font-size:10.5px}
 .rblabr{line-height:1.7}.rblab td:first-child{text-align:start;font-size:12px}.rblab tr.on td{font-weight:700}
+/* ---- تب «بازار» (طرح تازه): کارت وضعیت، بازار کل تاشو، کارت سیگنال جمع‌وجور، زیرتب کارنامه ---- */
+#rdFbar{flex-wrap:wrap;gap:6px}
+#rdFbar .fseg{flex:1 1 100%}
+#rdFbar .fb{min-height:40px;flex-direction:row;gap:6px}
+#rdFbar .fb i{font-size:13px;line-height:1}
+.rdview{margin:4px 0 12px}
+.rdview .glb{padding:0;gap:10px}
+.rdview .sec.sub2{margin:0}
+.rdhero{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:16px;background:var(--card);border:1px solid var(--line);
+  border-inline-start:4px solid var(--gold)}
+.rdhero.go{border-inline-start-color:var(--up);background:color-mix(in srgb,var(--up) 6%,var(--card))}
+.rdhero.stop{border-inline-start-color:var(--dn);background:color-mix(in srgb,var(--dn) 7%,var(--card))}
+.rdht{display:flex;gap:10px;align-items:flex-start}
+.rdht>i{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;font-style:normal;font-weight:900;font-size:16px;
+  background:var(--inset);color:var(--gold);border:1px solid var(--line)}
+.rdhero.go .rdht>i{background:var(--up);color:#fff;border-color:transparent}
+.rdhero.stop .rdht>i{background:var(--dn);color:#fff;border-color:transparent}
+.rdht>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rdht>div>b{font-size:16.5px;font-weight:900;color:var(--tx)}
+.rdhero.go .rdht>div>b{color:var(--up)}.rdhero.stop .rdht>div>b{color:var(--dn)}
+.rdht>div>span{font-size:12.5px;line-height:1.85;color:var(--tx2)}
+.rdht>div>span b{color:var(--tx)}
+.rdchips{display:flex;flex-wrap:wrap;gap:5px}
+.rdchip{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--inset);border:1px solid var(--line);color:var(--tx2);line-height:1.6}
+.rdchip.u{color:var(--up)}.rdchip.d{color:var(--dn)}
+.rdchip.w{color:var(--gold);border-color:color-mix(in srgb,var(--gold) 45%,var(--line))}
+.rdwarn{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;font-size:12px;line-height:1.8;color:var(--tx2);
+  background:color-mix(in srgb,var(--gold) 7%,var(--inset));border:1px dashed color-mix(in srgb,var(--gold) 45%,var(--line))}
+.rdwarn span{flex:1 1 200px}
+.rdhero .rdbar{gap:6px;padding-top:10px;border-top:1px solid var(--line)}
+.rdhero .rdbar .rdcnt{font-size:12px;font-weight:800;color:var(--tx2)}
+.rdhero .rdbar small{margin-inline-end:auto}
+.rdhero .rdprog{margin:0}
+.rdmk{border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.rdmk>summary{display:flex;align-items:center;gap:8px;padding:11px 12px;cursor:pointer;list-style:none;font-size:12.5px;min-height:44px}
+.rdmk>summary::-webkit-details-marker{display:none}
+.rdmk>summary .ic{width:16px;height:16px;color:var(--gold);flex:none}
+.rdmkh{font-weight:800;color:var(--tx);flex:none}
+.rdmks{flex:1;min-width:0;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:end}
+.rdmks b{color:var(--tx)}.rdmks .u{color:var(--up)}.rdmks .d{color:var(--dn)}
+.rdmk>summary::after{content:'';flex:none;width:7px;height:7px;border-inline-end:2px solid var(--tx3);border-bottom:2px solid var(--tx3);transform:rotate(45deg);margin-top:-3px;transition:transform .2s}
+.rdmk[open]>summary::after{transform:rotate(-135deg);margin-top:3px}
+.rdmk>:not(summary){margin:0 10px 10px}
+.rdsh{display:flex;align-items:center;gap:8px;margin:6px 2px 0;font-size:13.5px}
+.rdsh b{font-weight:900;color:var(--tx2)}.rdsh.go b{color:var(--up)}
+.rdsh i{font-style:normal;font-size:11.5px;font-weight:800;padding:1px 9px;border-radius:99px;background:var(--inset);border:1px solid var(--line);color:var(--tx2)}
+.rdsh small{margin-inline-start:auto;color:var(--tx3);font-size:11px}
+.rdit{gap:8px;padding:10px;background:var(--card)}
+.rdit.ok{border-color:color-mix(in srgb,var(--up) 40%,var(--line))}
+.rdit.weak{opacity:.9}
+.rdit .glit{flex-wrap:wrap;gap:6px;padding:0}
+.rdit .rdtk{font-size:16px;font-weight:900}
+.rdit .glit .rdst{margin-inline-start:auto}
+.rdkv{display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:6px}
+.rdkv>div{display:flex;flex-direction:column;gap:1px;padding:6px 8px;border-radius:10px;background:var(--inset);border:1px solid var(--line);min-width:0}
+.rdkv small{font-size:10.5px;color:var(--tx3)}
+.rdkv b{font-size:13px;font-weight:800;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.rdit .glact{margin:0}
+.rdit .glact .btn[data-a="iso"]{flex:2 1 150px}
+.rdit .glact .btn[data-a="iso"]:not(.ok){border-color:var(--line2)}
+.rdmore{border-top:1px dashed var(--line);padding-top:6px}
+.rdmore>summary{cursor:pointer;list-style:none;font-size:12px;font-weight:700;color:var(--tx3);display:flex;align-items:center;gap:6px;min-height:28px}
+.rdmore>summary::-webkit-details-marker{display:none}
+.rdmore>summary::before{content:'';width:6px;height:6px;border-inline-end:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-top:-3px;transition:transform .2s}
+.rdmore[open]>summary::before{transform:rotate(-135deg);margin-top:2px}
+.rdmore[open]{display:flex;flex-direction:column;gap:6px}
+.rdwl{display:flex;flex-wrap:wrap;gap:4px;padding-top:6px}
+.rdkpis{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.rdk{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border-radius:12px;background:var(--card);border:1px solid var(--line);min-width:0}
+.rdk b{font-size:16px;font-weight:900;color:var(--tx)}.rdk b.u{color:var(--up)}.rdk b.d{color:var(--dn)}.rdk b.w{color:var(--gold)}
+.rdk small{font-size:10.5px;color:var(--tx3);text-align:center;line-height:1.5}
+.rdview .rdpan{gap:8px;padding:0;background:none;border:0}
+.rdsec .rdtab{margin-top:6px}
+.rbtop .btn.ok{flex:1}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -9601,6 +9675,9 @@ function asSig(x){return {isSignal:true,ticker:x.tk,direction:x.dir,dirSet:true,
    لحظه فقط یک معامله‌ی باز، و ستاره از «بدترین حالت محتمل» (کران پایین 90٪، با خوشه‌بندی روزانه چون
    ارزها با هم بالا و پایین می‌روند). */
 const RD_KEY='signaldesk.radar.v5', RD_HIST=3000, RD_STEP=10, RD_MAX=150, RD_MIN=70;
+/* RD_CAP: حداکثر معامله‌ی باز هم‌جهت (ارزها با هم بالا و پایین می‌روند؛ 20 لانگ هم‌زمان یعنی یک شرط بزرگ).
+   RD_NC_OK: کمترین تعداد ارز برای اعتماد به ستاره‌ها؛ زیر RD_NC_MIN ستاره حداکثر 3 است. */
+const RD_CAP=3, RD_NC_OK=50, RD_NC_MIN=30;
 const RD_CF=['t4','t1','macd','rsi','brk','vol','btc','ext','rs','d50','volc','whale','crowd','taker','oi','rbull','rbear',
   // عامل‌های شناخته‌شده‌ی دیگر (هر کدام فقط اگر در آزمون بیرون از یادگیری کمک کند وزن می‌گیرد):
   'ma200','ma200s','adx','bbp','vwap','obv','mom','r24','hl30','fund',
@@ -9905,32 +9982,40 @@ function rdAdd(cal,k,R,t){const o=cal[k]||(cal[k]={n:0,w:0,r:0,d:{}});o.n++;o.r+
 function rdSum(o){const D=Object.values(o.d),G=D.length,m=o.r/o.n;let v=0;for(const [r,n] of D)v+=(r-n*m)**2;
   const se=G>1?Math.sqrt(v*G/(G-1))/o.n:Infinity;return {n:o.n,w:o.w,r:+o.r.toFixed(3),g:G,lb:+(m-1.2816*se).toFixed(3)};}
 /* سنجش یک دوره با مدلی که آن دوره را ندیده: برای هر ارز در هر لحظه فقط یک معامله‌ی باز */
-function rdEvalFold(SS,M,a,b,cal,rel,busy,recs){
-  const F=RD_F0;
-  for(const s of SS){let free=busy.get(s.tk)||0;
+function rdEvalFold(SS,M,a,b,cal,rel,busy,recs,open){
+  // اول همه‌ی لحظه‌های امتیاز 70+ همه‌ی ارزها، بعد به ترتیب زمان (و در یک لحظه، امتیاز بالاتر اول):
+  // هر ارز یک معامله‌ی باز، و در هر جهت حداکثر RD_CAP معامله‌ی باز هم‌زمان (مثل واقعیت)
+  const F=RD_F0, Q=[];open=open||{long:[],short:[]};
+  for(const s of SS)
     for(let q=0;q<s.t.length;q++){const t=s.t[q];if(t<a||t>=b)continue;
       const o=q*F,mr=RDMF.get(t),pL=rdPred(M.long,s.X,o,mr),pS=rdPred(M.short,s.X,o,mr);
       for(const [d,p] of [['long',pL],['short',pS]]){const bi=Math.min(5,Math.max(0,Math.floor(p*10)-2)),x=rel[d][bi];x[0]++;x[1]+=p;if(s.R[d][q]>0)x[2]++;
         if(s.RX)RD_EXN.forEach((n,e)=>rdAdd(cal,'base|'+n+'|'+d,s.RX[d][q*RD_EXN.length+e],t));else rdAdd(cal,(recs?'base|tp|':'base|')+d,s.R[d][q],t);}
-      const sL=rdPct(M.long,pL),sS=rdPct(M.short,pS),d=sL>=sS?'long':'short',sc=Math.max(sL,sS);
-      if(sc<RD_MIN||t<free)continue;
-      free=s.J[d][q];
-      const bk=rdBucket(sc),g=s.G[q];
-      if(recs)recs.push({d,bk,g,t,R:s.RX?RD_EXN.map((_,e)=>s.RX[d][q*RD_EXN.length+e]):RD_EXN.map(()=>s.R[d][q]),dv:s.DV?s.DV[q]*(d==='long'?1:-1):0});
-      else{const R=s.R[d][q];rdAdd(cal,d,R,t);rdAdd(cal,d+'|'+bk,R,t);if(g){rdAdd(cal,d+'|'+g,R,t);rdAdd(cal,d+'|'+g+'|'+bk,R,t);}}
-    }
-    busy.set(s.tk,free);}
+      const sL=rdPct(M.long,pL),sS=rdPct(M.short,pS),sc=Math.max(sL,sS);
+      if(sc>=RD_MIN)Q.push({s,q,t,sc,d:sL>=sS?'long':'short'});}
+  Q.sort((x,y)=>x.t-y.t||y.sc-x.sc);
+  let capped=0;
+  for(const {s,q,t,sc,d} of Q){
+    if(t<(busy.get(s.tk)||0))continue;
+    const od=open[d];for(let i=od.length-1;i>=0;i--)if(od[i]<=t)od.splice(i,1);
+    if(od.length>=RD_CAP){capped++;continue;}
+    const end=s.J[d][q];busy.set(s.tk,end);od.push(end);
+    const bk=rdBucket(sc),g=s.G[q];
+    if(recs)recs.push({d,bk,g,t,R:s.RX?RD_EXN.map((_,e)=>s.RX[d][q*RD_EXN.length+e]):RD_EXN.map(()=>s.R[d][q]),dv:s.DV?s.DV[q]*(d==='long'?1:-1):0});
+    else{const R=s.R[d][q];rdAdd(cal,d,R,t);rdAdd(cal,d+'|'+bk,R,t);if(g){rdAdd(cal,d+'|'+g,R,t);rdAdd(cal,d+'|'+g+'|'+bk,R,t);}}
+  }
+  return capped;
 }
 /* آزمون پیش‌رونده روی نیمه‌ی دوم (سه دوره) + مدل نهایی روی همه برای الان */
 async function rdModel(){
   const SS=[...RDS.values()].filter(s=>s.t.length);if(!SS.length)return false;
   let t0=Infinity,t1=-Infinity;for(const s of SS){t0=Math.min(t0,s.t[0]);t1=Math.max(t1,s.t[s.t.length-1]);}
   const cut=[0.5,2/3,5/6,1].map(f=>t0+(t1-t0)*f);cut[3]=t1+1;
-  const cal={},rel={long:Array.from({length:6},()=>[0,0,0]),short:Array.from({length:6},()=>[0,0,0])},busy=new Map(),recs=[];
+  const cal={},rel={long:Array.from({length:6},()=>[0,0,0]),short:Array.from({length:6},()=>[0,0,0])},busy=new Map(),recs=[],open={long:[],short:[]};let capN=0;
   for(let k=0;k<3;k++){
     RDQ.msg='سنجش صادقانه: دوره‌ی '+(k+1)+' از 3 (یادگیری روی گذشته، سنجش روی بعدش)…';RDQ.pm=k/4;rdPaintProg();await rdYield();
     const M={long:rdFitP(SS,'long',cut[k])};await rdYield();M.short=rdFitP(SS,'short',cut[k]);
-    if(M.long&&M.short)rdEvalFold(SS,M,cut[k],cut[k+1],cal,rel,busy,recs);
+    if(M.long&&M.short)capN+=rdEvalFold(SS,M,cut[k],cut[k+1],cal,rel,busy,recs,open);
   }
   RDQ.msg='یادگیری مدل نهایی روی همه‌ی داده…';RDQ.pm=3/4;rdPaintProg();await rdYield();
   const ML=rdFitP(SS,'long',Infinity);await rdYield();const MS=rdFitP(SS,'short',Infinity);
@@ -9947,7 +10032,7 @@ async function rdModel(){
   const divs={};for(const k in dvc)divs[k]=rdSum(dvc[k]);
   for(const d of ['long','short'])if(cal['base|'+ex+'|'+d])cal['base|'+d]=cal['base|'+ex+'|'+d];
   const C2={};for(const k in cal)if(!/^base\|[a-z0-9]+\|/.test(k))C2[k]=rdSum(cal[k]);
-  Object.assign(RD,{ex,exs,divs,mt0:Date.now(),M:{long:ML,short:MS},calib:C2,rel,ns:SS.reduce((s,x)=>s+x.t.length,0),span:[t0,t1],ncoin:SS.length});
+  Object.assign(RD,{ex,exs,divs,capN,cap:RD_CAP,mt0:Date.now(),M:{long:ML,short:MS},calib:C2,rel,ns:SS.reduce((s,x)=>s+x.t.length,0),span:[t0,t1],ncoin:SS.length});
   return true;
 }
 /* ستاره از کارنامه‌ی بیرون از یادگیری: 0 = نمونه‌ی کم، 1 = زیان، 2 = سود ولی شاید شانس، 3+ = حتی در بدترین حالت محتمل سود */
@@ -10184,19 +10269,46 @@ function rdPaintProg(){
   const b=$('#rdProg');if(b)b.textContent=RDQ.on?'':(RD.at?ageTxt(RD.at):'');
   if(!RDQ.on&&box)box.remove();
 }
+/* سلامت کل مدل: میانگین همه‌ی سیگنال‌های 70+ بیرون از یادگیری (با سقف هم‌جهت و نقشه‌ی خروج انتخاب‌شده) */
+function rdHealth(){
+  const c=RD.calib||{},L=c.long,Sh=c.short,n=(L?L.n:0)+(Sh?Sh.n:0),r=(L?L.r:0)+(Sh?Sh.r:0),w=(L?L.w:0)+(Sh?Sh.w:0);
+  const nc=RD.ncoin!=null?RD.ncoin:null;
+  return {n,avg:n?r/n:null,win:n?w/n:null,neg:n>=30&&r/n<=0,nc,few:nc!=null&&nc<RD_NC_OK,cap:nc!=null&&nc<RD_NC_MIN?3:5};
+}
+/* خلاف حال بازار: لانگ در بازار نزولی یا شورت در بازار صعودی */
+const rdAgainst=d=>(RD.reg==='bear'&&d==='long')||(RD.reg==='bull'&&d==='short');
+/* معامله‌های باز هم‌جهت: تست‌ها و پوزیشن‌های واقعیِ رادار */
+function rdOpenDir(d){
+  let n=0;try{for(const it of RB.items)if(it.k==='test'&&it.st==='open'&&it.dir===d)n++;}catch(e){}
+  try{for(const p of DB.positions||[])if(p.status==='open'&&p.dir===d&&posSrc(p).sub==='radar')n++;}catch(e){}
+  return n;
+}
 /* رتبه‌ی هر ارز: کارنامه‌ی همان جهت و شدت در همان حال بازار (اگر بس است)، وگرنه بی حال بازار */
 function rdRate(x){
   if(x.dir==='wait')return null;
   const b=rdBucket(x.sc), c1=RD.reg?RD.calib[x.dir+'|'+RD.reg+'|'+b]:null, c2=RD.calib[x.dir+'|'+b];
-  const o=rdStars(c1)?c1:c2;return o?{o,stars:rdStars(o),exp:o.n?o.r/o.n:null,lb:o.lb,reg:o===c1}:null;
+  const o=rdStars(c1)?c1:c2;if(!o)return null;
+  const s0=rdStars(o),stars=Math.min(s0,rdHealth().cap);
+  return {o,stars,s0,exp:o.n?o.r/o.n:null,lb:o.lb,reg:o===c1};
 }
+/* RD_WHY: چرا سیگنالی «قابل گرفتن» نیست */
+const RD_WHY={stars:'سابقه‌ی مطمئن (3 ستاره) ندارد',neg:'مدل در کل زیان‌ده است',reg:'خلاف روند بیت‌کوین',cap:'سقف '+RD_CAP+' معامله‌ی هم‌جهت پر است'};
 function rdList(){
-  const out=[];
+  const H=rdHealth(),out=[];
   for(const tk of RD.rank){const x=RD.coins[tk];if(!x)continue;
-    const rt=rdRate(x), exp=rt?rt.exp:null;
-    out.push(Object.assign({tk,rt,cb:rt&&rt.o,exp,stars:rt?rt.stars:0,ok:!!rt&&rt.stars>=3},x));}
-  out.sort((a,b)=>(b.ok-a.ok)||(b.stars-a.stars)||(((b.rt&&b.rt.lb)??-9)-((a.rt&&a.rt.lb)??-9))||(b.sc-a.sc));
-  return out;
+    const rt=rdRate(x), exp=rt?rt.exp:null, stars=rt?rt.stars:0;
+    let why=null;
+    if(x.dir!=='wait'){
+      if(stars<3)why='stars';
+      else if(H.neg)why='neg';
+      else if(rdAgainst(x.dir)&&!rt.reg)why='reg';}
+    out.push(Object.assign({tk,rt,cb:rt&&rt.o,exp,stars,ok:x.dir!=='wait'&&!why,why},x));}
+  const rank=(a,b)=>(b.ok-a.ok)||(b.stars-a.stars)||(((b.rt&&b.rt.lb)??-9)-((a.rt&&a.rt.lb)??-9))||(b.sc-a.sc);
+  out.sort(rank);
+  // سقف هم‌جهت: بازها (تست و واقعی) + فرصت‌های بالای فهرست
+  const used={long:rdOpenDir('long'),short:rdOpenDir('short')};
+  for(const x of out)if(x.ok){if(used[x.dir]>=RD_CAP){x.ok=false;x.why='cap';}else used[x.dir]++;}
+  return out.sort(rank);
 }
 const rdCount=()=>rdList().filter(x=>x.ok).length;
 /* دلیل‌ها: سهم هر عامل در احتمالِ همان جهت (وزن × مقدار)؛ ✓ یعنی به نفع این معامله */
@@ -10241,78 +10353,103 @@ const RDREG_FA={bull:'صعودی',flat:'خنثی',bear:'نزولی'};
 function rdPanelHtml(){
   const cal=RD.calib||{}, reg=RD.reg;
   if(!Object.keys(cal).length)return '';
-  const sp=RD.span?Math.round((RD.span[1]-RD.span[0])/864e5/2):0;
-  let h='<div class="rdpan"><div class="mkh"><b>'+ic('bars')+'کارنامه‌ی سیگنال‌ها</b><small>'+(sp?faN(sp)+' روز آخر، ':'')+'بیرون از یادگیری</small></div>';
-  const tbl=(title,pre)=>'<div class="sechd">'+title+'</div><table class="rdtab"><thead><tr><th></th><th>همه</th>'+RD_B.map(b=>'<th dir="ltr">'+b+'</th>').join('')+'</tr></thead><tbody>'+
+  const tbl=(pre)=>'<table class="rdtab"><thead><tr><th></th><th>همه</th>'+RD_B.map(b=>'<th dir="ltr">'+b+'</th>').join('')+'</tr></thead><tbody>'+
     ['long','short'].map(d=>'<tr><td><span class="pill '+d+'">'+(d==='long'?'لانگ':'شورت')+'</span></td><td>'+rdCell(cal[d+pre])+'</td>'+RD_B.map(b=>'<td>'+rdCell(cal[d+pre+'|'+b])+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
-  if(reg)h+=tbl('در بازار '+RDREG_FA[reg]+' (مثل الان'+(MKT&&MKT.btc!=null?': بیت‌کوین '+fmtPct(MKT.btc)+' در 24 ساعت':'')+')','|'+reg);
-  h+=tbl('در همه‌ی حال‌های بازار','');
+  const sec=(title,body,open,cl)=>'<details class="sec sub2 rdsec'+(cl?' '+cl:'')+'"'+(open?' open':'')+'><summary>'+title+'</summary>'+body+'</details>';
   const bl=cal['base|long'],bs=cal['base|short'];
-  h+='<div class="hint rdcap">ستون‌ها: امتیاز (صدک؛ 90 یعنی از 90٪ لحظه‌های گذشته امیدوارکننده‌تر). هر خانه: ستاره، میانگین R بعد از کارمزد، درصد برد، تعداد معامله و روزها. '+
-    '<b>ستاره‌ی 3 به بالا</b> یعنی حتی در بدترین حالتِ محتمل (90٪) سودده بوده؛ 2 ستاره یعنی سود داده ولی ممکن است شانس باشد.'+
-    (bl&&bs?' برای مقایسه، معامله در هر لحظه بی‌انتخاب: لانگ <b class="'+cls(bl.r/bl.n)+'" dir="ltr">'+fmtR(bl.r/bl.n)+'</b>، شورت <b class="'+cls(bs.r/bs.n)+'" dir="ltr">'+fmtR(bs.r/bs.n)+'</b>.':'')+'</div>';
-  // کار امروز: دسته‌های جهت×شدت که در حال بازار امروز (یا در کل) بدترین حالتشان هم سود است
-  const cand=[];
-  for(const d of ['long','short'])for(const b of RD_B){const o=reg?cal[d+'|'+reg+'|'+b]:null, p=rdStars(o)?o:cal[d+'|'+b];
-    if(rdStars(p)>=3)cand.push({d,b,o:p,a:p.r/p.n});}
-  cand.sort((x,y)=>y.o.lb-x.o.lb);
-  const bad=['long','short'].filter(d=>{const o=reg&&rdStars(cal[d+'|'+reg])?cal[d+'|'+reg]:cal[d];return rdStars(o)===1;});
-  const nm=x=>'<b>'+(x.d==='long'?'لانگ':'شورت')+'‌های امتیاز <bdi dir="ltr">'+x.b+'</bdi></b> ('+faN(rdStars(x.o))+' ستاره، '+faN(Math.round(x.o.w/x.o.n*100))+'٪ برد، <bdi dir="ltr">'+fmtR(x.a)+'</bdi>)';
-  h+='<div class="flag '+(cand.length?'u':'w')+' rdtodo"><i>'+(cand.length?'✓':'!')+'</i><span><b>کار امروز:</b> '+
-    (cand.length?'فقط '+cand.slice(0,2).map(nm).join(' و ')+'.':'هیچ دسته‌ای هنوز سابقه‌ی مطمئن (3 ستاره) ندارد — صبر کن، با «تست» امتحان کن یا ارزهای بیشتری بررسی کن.')+
-    (bad.length?' '+bad.map(d=>(d==='long'?'لانگ':'شورت')).join(' و ')+' در این حال بازار زیان داده؛ نگیر.':'')+'</span></div>';
-  // نقشه‌ی خروج: هر سه روی همان معامله‌های بیرون از یادگیری
+  let h='<div class="rdpan">';
+  if(reg)h+=sec('در بازار '+RDREG_FA[reg]+' (مثل الان)',tbl('|'+reg),true);
+  h+=sec('در همه‌ی حال‌های بازار',tbl('')+
+    '<div class="hint rdcap">ستون‌ها: امتیاز (صدک؛ 90 یعنی از 90٪ لحظه‌های گذشته امیدوارکننده‌تر). هر خانه: ستاره، میانگین R بعد از کارمزد، درصد برد، تعداد معامله و روزها. '+
+    '<b>3 ستاره به بالا</b> یعنی حتی در بدترین حالتِ محتمل (90٪) سودده بوده؛ 2 ستاره یعنی سود داده ولی ممکن است شانس باشد.'+
+    (bl&&bs?' برای مقایسه، معامله در هر لحظه بی‌انتخاب: لانگ <b class="'+cls(bl.r/bl.n)+'" dir="ltr">'+fmtR(bl.r/bl.n)+'</b>، شورت <b class="'+cls(bs.r/bs.n)+'" dir="ltr">'+fmtR(bs.r/bs.n)+'</b>.':'')+'</div>',!reg);
+  // نقشه‌ی خروج: همه روی همان معامله‌های بیرون از یادگیری
   if(RD.exs){const PL=rdExPlans();
-    h+='<div class="sechd">نقشه‌ی خروج (همان سیگنال‌ها، '+faN(RD_EXN.length)+' جور خروج)</div><table class="rdtab rdex"><thead><tr><th></th><th>لانگ</th><th>شورت</th><th>همه</th></tr></thead><tbody>'+
+    h+=sec('نقشه‌ی خروج: '+faN(RD_EXN.length)+' جور خروج روی همان سیگنال‌ها','<table class="rdtab rdex"><thead><tr><th></th><th>لانگ</th><th>شورت</th><th>همه</th></tr></thead><tbody>'+
       RD_EXN.map(n=>{const o=RD.exs[n]||{};return '<tr class="'+(n===RD.ex?'on':'')+'"><td>'+esc(PL[n].n)+(n===RD.ex?' ✓':'')+'</td><td>'+rdCell(o.long)+'</td><td>'+rdCell(o.short)+'</td><td>'+rdCell(o.all)+'</td></tr>';}).join('')+
-      '</tbody></table><div class="hint rdcap">✓ = بیشترین میانگین R؛ «تست» و «ایزوله» با همین (یا نقشه‌ای که در «آزمایشی» انتخاب کنی) خارج می‌شوند. '+RD_EXN.map(n=>'<b>'+esc(PL[n].n)+'</b>: '+esc(PL[n].d)).join('. ')+'.</div>';}
+      '</tbody></table><div class="hint rdcap">✓ = بیشترین میانگین R؛ «تست» و «ایزوله» با همین (یا نقشه‌ای که در «آزمایشی» انتخاب کنی) خارج می‌شوند. '+RD_EXN.map(n=>'<b>'+esc(PL[n].n)+'</b>: '+esc(PL[n].d)).join('. ')+'.</div>');}
   // اثر واگرایی 1 ساعته روی همان سیگنال‌ها
   if(RD.divs){const D=RD.divs,row=(k,t)=>'<tr><td>'+t+'</td><td>'+rdCell(D['long|'+k])+'</td><td>'+rdCell(D['short|'+k])+'</td><td>'+rdCell(D['all|'+k])+'</td></tr>';
     const a=D['all|al'],o=D['all|no'],av=x=>x&&x.n?x.r/x.n:null;
-    const vd=a&&o&&a.n>=20?(av(a)>av(o)+0.03?'<b class="win">سیگنال‌های با واگرایی هم‌جهت بهتر بوده‌اند</b> ('+fmtR(av(a))+' در برابر '+fmtR(av(o))+')؛ فیلتر «فقط با واگرایی» بالای صفحه را امتحان کن.':
+    const vd=a&&o&&a.n>=20?(av(a)>av(o)+0.03?'<b class="win">سیگنال‌های با واگرایی هم‌جهت بهتر بوده‌اند</b> ('+fmtR(av(a))+' در برابر '+fmtR(av(o))+')؛ فیلتر «واگرایی هم‌جهت» در «سیگنال‌ها» را امتحان کن.':
       av(a)<av(o)-0.03?'<b class="lose">واگرایی هم‌جهت این‌جا کمکی نکرده</b> ('+fmtR(av(a))+' در برابر '+fmtR(av(o))+').':'واگرایی هم‌جهت تفاوت روشنی نساخته ('+fmtR(av(a))+' در برابر '+fmtR(av(o))+').'):'نمونه‌ی سیگنال با واگرایی هنوز کم است.';
-    h+='<div class="sechd">اثر واگرایی 1 ساعته (RSI یا MACD)</div><table class="rdtab rddiv"><thead><tr><th></th><th>لانگ</th><th>شورت</th><th>همه</th></tr></thead><tbody>'+
+    h+=sec('اثر واگرایی 1 ساعته (RSI یا MACD)','<table class="rdtab rddiv"><thead><tr><th></th><th>لانگ</th><th>شورت</th><th>همه</th></tr></thead><tbody>'+
       row('al','هم‌جهت با سیگنال')+row('no','بی واگرایی')+row('ag','خلاف سیگنال')+'</tbody></table>'+
-      '<div class="hint rdcap">'+vd+' واگرایی مثبت: قیمت کف پایین‌تری زده ولی RSI/MACD کف بالاتری (فروش دارد ضعیف می‌شود)؛ منفی برعکس در سقف. فقط کف/سقف‌های 12 ساعت اخیر که 2 کندل بعدشان بسته شده و هنوز شکسته نشده‌اند. «هم‌جهت» یعنی واگرایی مثبت برای لانگ یا منفی برای شورت.</div>';}
+      '<div class="hint rdcap">'+vd+' واگرایی مثبت: قیمت کف پایین‌تری زده ولی RSI/MACD کف بالاتری (فروش دارد ضعیف می‌شود)؛ منفی برعکس در سقف. فقط کف/سقف‌های 12 ساعت اخیر که 2 کندل بعدشان بسته شده و هنوز شکسته نشده‌اند. «هم‌جهت» یعنی واگرایی مثبت برای لانگ یا منفی برای شورت.</div>');}
   // صداقت مدل: احتمالی که گفت در برابر آنچه شد
   if(RD.rel){const lab=['زیر 30٪','30-40٪','40-50٪','50-60٪','60-70٪','70٪+'];
-    h+='<details class="sec sub2"><summary>صداقت مدل: گفت چقدر، شد چقدر</summary><table class="rdtab rdrel"><thead><tr><th>مدل گفت</th><th>لانگ: شد</th><th>شورت: شد</th></tr></thead><tbody>'+
+    h+=sec('صداقت مدل: گفت چقدر، شد چقدر','<table class="rdtab rdrel"><thead><tr><th>مدل گفت</th><th>لانگ: شد</th><th>شورت: شد</th></tr></thead><tbody>'+
       lab.map((l,i)=>{const c=d=>{const x=RD.rel[d][i];return x[0]>=30?'<b>'+faN(Math.round(x[2]/x[0]*100))+'٪</b><small class="n">'+faN(x[0])+' بار</small>':'<small>—</small>';};
         return RD.rel.long[i][0]>=30||RD.rel.short[i][0]>=30?'<tr><td dir="ltr">'+l+'</td><td>'+c('long')+'</td><td>'+c('short')+'</td></tr>':'';}).join('')+
-      '</tbody></table><div class="hint">اگر ستون «شد» نزدیک «گفت» است و با آن بالا می‌رود، مدل واقعاً چیزی می‌فهمد؛ اگر همه یکی است، عامل‌ها پیش‌بینی ندارند.</div></details>';}
+      '</tbody></table><div class="hint">اگر ستون «شد» نزدیک «گفت» است و با آن بالا می‌رود، مدل واقعاً چیزی می‌فهمد؛ اگر همه یکی است، عامل‌ها پیش‌بینی ندارند.</div>');}
   // وزن‌های یادگرفته (برای شورت، علامت عامل‌های جهت‌دار برعکس می‌شود تا «+» یعنی به نفع همان معامله)
-  if(RD.M){h+='<details class="sec sub2"><summary>وزن عامل‌ها (یادگرفته از '+faN(RD.ns||0)+' نمونه'+(RD.ncoin?' در '+faN(RD.ncoin)+' ارز':'')+')</summary><div class="rdwts">';
+  if(RD.M){let b='<div class="rdwts">';
     for(const d of ['long','short']){const w=RD.M[d].w,ks=RD_FEAT.map((k,n)=>[k,d==='short'&&!RD_NOSIGN.includes(k)?-w[n]:w[n]]).filter(x=>Math.abs(x[1])>=0.02).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
-      h+='<div><b>'+(d==='long'?'لانگ':'شورت')+':</b> '+(ks.length?ks.map(([k,v])=>'<span class="pill '+(v>0?'mut':'lose')+'">'+esc(RD_FA[k])+' <bdi dir="ltr">'+(v>0?'+':'−')+Math.abs(v).toFixed(2)+'</bdi></span>').join(''):'هیچ عاملی اثر روشن نداشت')+'</div>';}
+      b+='<div><b>'+(d==='long'?'لانگ':'شورت')+':</b> '+(ks.length?ks.map(([k,v])=>'<span class="pill '+(v>0?'mut':'lose')+'">'+esc(RD_FA[k])+' <bdi dir="ltr">'+(v>0?'+':'−')+Math.abs(v).toFixed(2)+'</bdi></span>').join(''):'هیچ عاملی اثر روشن نداشت')+'</div>';}
     for(const d of ['long','short']){const D=RD.M[d].drop;if(!D||!Object.keys(D).length)continue;
       const wk=Object.keys(D).filter(k=>D[k]==='w'),dp=Object.keys(D).filter(k=>D[k]!=='w');
-      h+='<div class="rddrop"><b>کنار گذاشته در '+(d==='long'?'لانگ':'شورت')+' ('+faN(wk.length+dp.length)+'):</b> '+
+      b+='<div class="rddrop"><b>کنار گذاشته در '+(d==='long'?'لانگ':'شورت')+' ('+faN(wk.length+dp.length)+'):</b> '+
         (wk.length?'<span class="hint">کم‌اثر:</span> '+wk.map(k=>'<span class="pill mut">'+esc(RD_FA[k]||k)+'</span>').join(''):'')+
         (dp.length?' <span class="hint">تکراری:</span> '+dp.map(k=>'<span class="pill mut" title="همبستگی بالا">'+esc(RD_FA[k]||k)+' ≈ '+esc(RD_FA[D[k].slice(2)]||D[k].slice(2))+'</span>').join(''):'')+'</div>';}
-    h+='<div class="hint">«+» یعنی این عامل به نفع همین جهت بوده؛ «−» یعنی برعکسِ انتظار عمل کرده. عامل‌های کم‌اثر (|وزن| زیر '+RD_WEAK+') و تکراری (همبستگی '+RD_DUP+' به بالا با عاملی قوی‌تر) خودکار کنار می‌روند و مدل بی آن‌ها دوباره یاد می‌گیرد؛ این کار در هر دوره‌ی سنجش هم فقط با داده‌ی یادگیری همان دوره انجام می‌شود.</div></div></details>';}
+    b+='<div class="hint">«+» یعنی این عامل به نفع همین جهت بوده؛ «−» یعنی برعکسِ انتظار عمل کرده. عامل‌های کم‌اثر (|وزن| زیر '+RD_WEAK+') و تکراری (همبستگی '+RD_DUP+' به بالا با عاملی قوی‌تر) خودکار کنار می‌روند و مدل بی آن‌ها دوباره یاد می‌گیرد؛ این کار در هر دوره‌ی سنجش هم فقط با داده‌ی یادگیری همان دوره انجام می‌شود.</div></div>';
+    h+=sec('وزن عامل‌ها (یادگرفته از '+faN(RD.ns||0)+' نمونه'+(RD.ncoin?' در '+faN(RD.ncoin)+' ارز':'')+')',b);}
   return h+'</div>';
 }
+/* زیرتب «کارنامه»: خلاصه‌ی مدل در چند عدد، بعد جدول‌ها (تاشو) */
+function rdModelHtml(){
+  const H=rdHealth();
+  let h='';
+  if(!RD.M)return '<div class="empty">هنوز مدلی یاد گرفته نشده؛ در «سیگنال‌ها» «تازه کن» را بزن.</div>';
+  const sp=RD.span?Math.round((RD.span[1]-RD.span[0])/864e5/2):0;
+  const kpi=(v,l,c)=>'<div class="rdk"><b class="'+(c||'')+'" dir="ltr">'+v+'</b><small>'+l+'</small></div>';
+  h+='<div class="rdkpis">'+kpi(H.avg!=null?fmtR(H.avg):'—','میانگین هر معامله',H.avg!=null?cls(H.avg):'')+kpi(H.win!=null?faN(Math.round(H.win*100))+'٪':'—','برد')+
+    kpi(faN(H.n),'معامله در '+(sp?faN(sp)+' روز':'گذشته'))+kpi(faN(RD.ncoin||0),'ارز',H.few?'w':'')+'</div>';
+  h+='<div class="hint">همه‌ی سیگنال‌های امتیاز '+faN(RD_MIN)+'+، روی دوره‌ای که مدل ندیده، با نقشه‌ی خروج انتخاب‌شده، بعد از کارمزد، هر ارز یک معامله و در هر جهت حداکثر '+faN(RD_CAP)+' معامله‌ی هم‌زمان'+
+    (RD.capN?' (سقف هم‌جهت '+faN(RD.capN)+' معامله‌ی هم‌زمانِ اضافه را کنار گذاشت)':'')+'.</div>';
+  if(H.neg)h+='<div class="flag d"><i>!</i><span><b>مدل در کل زیان‌ده است.</b> تا وقتی این عدد مثبت نشده، هیچ سیگنالی «قابل گرفتن» نیست؛ ارزهای بیشتر یا چند روز داده‌ی تازه کمک می‌کند.</span></div>';
+  if(H.few)h+='<div class="flag w"><i>!</i><span>ستاره‌ها روی '+faN(H.nc)+' ارز ساخته شده‌اند؛ برای اعتماد دست‌کم '+faN(RD_NC_OK)+' ارز لازم است'+(H.cap<5?' (زیر '+faN(RD_NC_MIN)+' ارز، ستاره‌ی هر سیگنال حداکثر 3 است)':'')+'.</span></div>';
+  const tt=Object.values(RD.coins).map(x=>x.t||0),t=tt.length?Math.max(...tt):0;
+  if(RD.mt0)h+='<div class="hint rdtime">'+(t?'امتیازها برای کندلِ بسته‌شده‌ی ساعت <b dir="ltr">'+rdHH(t+36e5)+'</b> است و تا بسته شدن کندل بعدی (<b dir="ltr">'+rdHH(t+2*36e5)+'</b>) عوض نمی‌شود. ':'')+
+    'مدل و ستاره‌ها '+ageTxt(RD.mt0)+' یاد گرفته شده‌اند و روزی یک بار (یا با ارزهای تازه) از نو یاد گرفته می‌شوند. '+
+    '<button class="lnk" data-rdlearn="1"'+(RDQ.on?' disabled':'')+'>یادگیری دوباره</button></div>';
+  h+=rdPanelHtml();
+  h+='<div class="hint">مدل: رگرسیون لجستیک، جدا برای لانگ و شورت، روی نتیجه‌ی همین معامله (بعد از کارمزد). '+faN(RD_FEAT.length)+' عامل: قیمت، میانگین 200، ADX، بولینگر، VWAP، OBV، مومنتوم، بیت‌کوین، قدرت نسبی، روند روزانه، نوسان، فاندینگ، واگرایی 1 ساعته، جریان پول فیوچرز بایننس'+
+    (RD.nflow!=null?' ('+faN(RD.nflow)+' ارز داده‌اش را داشتند)':'')+'، و کل بازار (TOTAL، TOTAL2، TOTAL3، دامیننس بیت‌کوین و تتر)'+(RD.mkl&&RD.mkl.cov?'؛ تاریخچه‌اش از ارزهای بررسی‌شده بازسازی شده که '+faN(Math.round(RD.mkl.cov*100))+'٪ کل بازارند':'')+'. کارنامه با آزمون پیش‌رونده: مدل هر دوره را ندیده سنجیده شده. سود گذشته تضمین آینده نیست؛ «تست» بزن و در «دفتر» ببین در عمل چه شد.</div>';
+  return h;
+}
+/* کارت سیگنال: سربرگ (نماد، جهت، امتیاز، ستاره)، سه عدد اصلی، چند برچسب، دکمه‌ها؛ بقیه در «جزئیات» */
 function rdRowHtml(x,i){
   const z=x.pl?isoSize(x.pl.E,x.pl.SL):null, f=RD.fund&&RD.fund[x.tk], R=rdReasons(x), dn=x.dir==='long'?'لانگ':'شورت';
-  const rk=rdRankOf(x.tk);
-  return '<div class="glsig rdit'+(x.ok?'':' weak')+'" data-rd="'+esc(x.tk)+'"><div class="glit"><span class="rdrk">'+faN(i+1)+'</span>'+
-    '<button class="rdfavb'+(rdIsFav(x.tk)?' on':'')+'" data-a="fav" title="واچ‌لیست">'+(rdIsFav(x.tk)?'★':'☆')+'</button><b dir="ltr">'+esc(x.tk)+'</b>'+(rk?'<small class="rdcap" title="رتبه‌ی ارزش بازار">#'+rk+'</small>':'')+'<span class="pill '+x.dir+'">'+dn+'</span>'+
+  const rk=rdRankOf(x.tk), ex=rbExEff(), PL=rdExPlans()[ex], dv=rdDivOf(x);
+  const tags=[];
+  if(!x.ok&&x.why)tags.push('<span class="pill lose rdwhy0">'+esc(RD_WHY[x.why]+(x.why==='reg'?' ('+RDREG_FA[RD.reg]+')':''))+'</span>');
+  if(dv)tags.push('<span class="pill '+(dv>0?'win':'lose')+' rddv">'+(dv>0?'✓ واگرایی هم‌جهت':'✗ واگرایی خلاف')+'</span>');
+  R.slice(0,dv?2:3).forEach(r=>tags.push('<span class="pill '+(r.good==null?'mut':r.good?'win':'lose')+'">'+(r.good?'✓ ':r.good===false?'✗ ':'')+esc(r.t)+'</span>'));
+  const kv=x.pl?'<div class="rdkv"><div><small>ورود</small><b dir="ltr">'+fmtPrice(x.pl.E)+'</b></div><div><small>استاپ</small><b dir="ltr">'+fmtPrice(x.pl.SL)+'</b><small dir="ltr">'+fmtNum(x.pl.sd*100)+'%</small></div>'+
+    '<div><small>خروج</small><b>'+esc(PL?PL.n:'')+'</b></div></div>':'';
+  return '<div class="glsig rdit'+(x.ok?' ok':' weak')+'" data-rd="'+esc(x.tk)+'">'+
+    '<div class="glit"><span class="rdrk">'+faN(i+1)+'</span>'+
+      '<button class="rdfavb'+(rdIsFav(x.tk)?' on':'')+'" data-a="fav" title="واچ‌لیست" aria-label="واچ‌لیست">'+(rdIsFav(x.tk)?'★':'☆')+'</button><b dir="ltr" class="rdtk">'+esc(x.tk)+'</b>'+(rk?'<small class="rdcap" title="رتبه‌ی ارزش بازار">#'+rk+'</small>':'')+
+      '<span class="pill '+x.dir+'">'+dn+'</span>'+
       '<span class="rdsc '+(x.dir==='long'?'u':'d')+'">امتیاز '+faN(x.sc)+'</span>'+rdStarHtml(x.stars)+'</div>'+
-    (x.cb?'<div class="glnum glh2">سابقه‌ی '+dn+'‌های امتیاز '+rdBucket(x.sc)+(x.rt.reg?' در بازار '+RDREG_FA[RD.reg]:'')+': '+faN(x.cb.n)+' بار در '+faN(x.cb.g||0)+' روز، '+faN(Math.round(x.cb.w/x.cb.n*100))+'٪ برد، میانگین <b class="'+cls(x.cb.r/x.cb.n)+'" dir="ltr">'+fmtR(x.cb.r/x.cb.n)+'</b>'+
-      (x.cb.lb!=null&&isFinite(x.cb.lb)?'، بدترین حالت محتمل <b class="'+cls(x.cb.lb)+'" dir="ltr">'+fmtR(x.cb.lb)+'</b>':'')+'</div>':'')+
-    (x.p!=null?'<div class="glnum">احتمال سود به گفته‌ی مدل: <b>'+faN(Math.round(x.p*100))+'٪</b>'+(x.since?' · سیگنال از ساعت <b dir="ltr">'+rdHH(x.since)+'</b>':'')+'</div>':'')+
-    (x.wl!=null||x.rl!=null||x.tb!=null?'<div class="glnum rdflow">'+[x.wl!=null?'نهنگ‌ها <b>'+faN(Math.round(x.wl))+'٪</b> لانگ':'',x.rl!=null?'مردم <b>'+faN(Math.round(x.rl))+'٪</b> لانگ':'',
-      x.tb!=null?'خرید تهاجمی <b>'+faN(Math.round(x.tb))+'٪</b>':'',x.doi!=null?'OI <b class="'+cls(x.doi)+'">'+fmtPct(x.doi)+'</b> (6 ساعت)':''].filter(Boolean).join(' · ')+'</div>':'')+
-    '<div class="glnum rdwhy">'+R.map(r=>'<span class="pill '+(r.good==null?'mut':r.good?'win':'lose')+'">'+(r.good?'✓ ':r.good===false?'✗ ':'')+esc(r.t)+'</span>').join('')+
-      (f!=null&&Math.abs(f)>=0.03?'<span class="pill mut" title="فاندینگ فیوچرز؛ در امتیاز نیست">فاندینگ '+fmtNum(f)+'٪ '+(f>0?'(لانگ‌ها شلوغ)':'(شورت‌ها شلوغ)')+'</span>':'')+
-      (!x.flow?'<span class="pill mut">بی داده‌ی فیوچرز بایننس</span>':'')+'</div>'+
-    rdDivHtml(x)+rdConfHtml(x)+
-    (x.pl?'<div class="glnum">ورود <b dir="ltr">'+fmtPrice(x.pl.E)+'</b> · استاپ <b dir="ltr">'+fmtPrice(x.pl.SL)+'</b> ('+fmtNum(x.pl.sd*100)+'٪) · حداکثر '+faN(AS_HOLD)+' ساعت</div>'+
-      '<div class="glnum rbplan">'+rbPlanTxt({E:x.pl.E,sd:x.pl.sd,dir:x.dir,ex:rbExEff()})+'</div>':'')+
-    '<div class="glact">'+(z?'<button class="btn sm ok" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
-      (x.pl?'<button class="btn sm" data-a="test" title="معامله‌ی آزمایشی: مثل واقعی دنبال می‌شود، بی پول">'+ic('flag')+'<span>تست</span></button>':'')+
-      '<button class="btn sm side" data-a="copy" title="برای اپ صرافی">'+ic('share')+'</button>'+
-      '<button class="btn sm side" data-a="rm" title="بیرون از فهرست رادار">'+ic('x')+'</button></div></div>';
+    kv+
+    (tags.length?'<div class="glnum rdwhy">'+tags.join('')+'</div>':'')+
+    '<div class="glact">'+(z?'<button class="btn sm '+(x.ok?'ok':'')+'" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
+      (x.pl?'<button class="btn sm" data-a="test" title="معامله‌ی آزمایشی: مثل واقعی دنبال می‌شود، بی پول">'+ic('flag')+'<span>تست</span></button>':'')+'</div>'+
+    '<details class="rdmore"><summary>جزئیات و دلیل‌ها</summary>'+
+      (x.cb?'<div class="glnum">سابقه‌ی '+dn+'‌های امتیاز '+rdBucket(x.sc)+(x.rt.reg?' در بازار '+RDREG_FA[RD.reg]:'')+': '+faN(x.cb.n)+' بار در '+faN(x.cb.g||0)+' روز، '+faN(Math.round(x.cb.w/x.cb.n*100))+'٪ برد، میانگین <b class="'+cls(x.cb.r/x.cb.n)+'" dir="ltr">'+fmtR(x.cb.r/x.cb.n)+'</b>'+
+        (x.cb.lb!=null&&isFinite(x.cb.lb)?'، بدترین حالت محتمل <b class="'+cls(x.cb.lb)+'" dir="ltr">'+fmtR(x.cb.lb)+'</b>':'')+(x.rt&&x.rt.s0>x.stars?' (ستاره‌ی خامش '+faN(x.rt.s0)+'؛ با ارزهای کم حداکثر '+faN(x.stars)+')':'')+'</div>':'')+
+      (x.p!=null?'<div class="glnum">احتمال سود به گفته‌ی مدل: <b>'+faN(Math.round(x.p*100))+'٪</b>'+(x.since?' · سیگنال از ساعت <b dir="ltr">'+rdHH(x.since)+'</b>':'')+'</div>':'')+
+      (x.wl!=null||x.rl!=null||x.tb!=null?'<div class="glnum rdflow">'+[x.wl!=null?'نهنگ‌ها <b>'+faN(Math.round(x.wl))+'٪</b> لانگ':'',x.rl!=null?'مردم <b>'+faN(Math.round(x.rl))+'٪</b> لانگ':'',
+        x.tb!=null?'خرید تهاجمی <b>'+faN(Math.round(x.tb))+'٪</b>':'',x.doi!=null?'OI <b class="'+cls(x.doi)+'">'+fmtPct(x.doi)+'</b> (6 ساعت)':''].filter(Boolean).join(' · ')+'</div>':'')+
+      '<div class="glnum rdwhy">'+R.map(r=>'<span class="pill '+(r.good==null?'mut':r.good?'win':'lose')+'">'+(r.good?'✓ ':r.good===false?'✗ ':'')+esc(r.t)+'</span>').join('')+
+        (f!=null&&Math.abs(f)>=0.03?'<span class="pill mut" title="فاندینگ فیوچرز">فاندینگ '+fmtNum(f)+'٪ '+(f>0?'(لانگ‌ها شلوغ)':'(شورت‌ها شلوغ)')+'</span>':'')+
+        (!x.flow?'<span class="pill mut">بی داده‌ی فیوچرز بایننس</span>':'')+'</div>'+
+      rdDivHtml(x)+rdConfHtml(x)+
+      (x.pl?'<div class="glnum">هدف ثابت <b dir="ltr">'+fmtPrice(x.pl.TP)+'</b> · حداکثر '+faN(AS_HOLD)+' ساعت</div><div class="glnum rbplan">'+rbPlanTxt({E:x.pl.E,sd:x.pl.sd,dir:x.dir,ex})+'</div>':'')+
+      '<div class="glact">'+(x.pl?'<button class="btn sm side" data-a="copy" title="برای اپ صرافی">'+ic('share')+'<span>کپی برای صرافی</span></button>':'')+
+        '<button class="btn sm side" data-a="rm" title="بیرون از فهرست رادار">'+ic('x')+'<span>بیرون از فهرست</span></button></div>'+
+    '</details></div>';
 }
 /* واگرایی هم‌جهت/خلاف برای این سیگنال (+1 هم‌جهت، −1 خلاف، 0 هیچ) */
 const rdDivOf=x=>{if(!x||!x.parts||x.dir==='wait')return 0;const v=Math.sign((x.parts.divr||0)+(x.parts.divm||0));return v*(x.dir==='long'?1:-1);};
@@ -10345,45 +10482,74 @@ function rdConfHtml(x){
   else t='نزدیک جای ورود؛ تأیید 5 دقیقه‌ای کامل نیست ('+faN(d.score)+' از '+faN(d.checks.length)+')';
   return '<div class="glnum"><span class="pill '+cl+' rdconf" title="بولینگر و RSI روی کندل 5 دقیقه‌ای؛ راهنمای زمان ورود، سنجیده در کارنامه نیست">'+esc(t)+'</span></div>';
 }
-let RDV=(()=>{try{return localStorage.getItem('signaldesk.rdview')||'sig';}catch(e){return 'sig';}})();
+let RDV=(()=>{try{const v=localStorage.getItem('signaldesk.rdview')||'sig';return ['sig','test','model','log'].includes(v)?v:'sig';}catch(e){return 'sig';}})();
+let RDMKOPEN=(()=>{try{return localStorage.getItem('signaldesk.rdmk')==='1';}catch(e){return false;}})();
+/* کارت «وضعیت امروز»: یک حکم روشن، چند برچسب، هشدارها و دکمه‌های اصلی */
+function rdHeroHtml(L){
+  const H=rdHealth(), ok=L.filter(x=>x.ok), n=rdListOf().length;
+  const opn={long:rdOpenDir('long'),short:rdOpenDir('short')};
+  let st,title,sub;
+  if(!RD.at&&!RDQ.on){st='wait';title='هنوز بررسی نشده';sub='همین الان '+faN(RD_STEP)+' ارز اول بررسی می‌شود (بار اول هر ارز ~125 روز تاریخچه می‌گیرد؛ چند ثانیه برای هر ارز).';}
+  else if(H.neg){st='stop';title='امروز معامله نکن';sub='مدل در کل زیان‌ده است: میانگین <b dir="ltr">'+fmtR(H.avg)+'</b> در '+faN(H.n)+' معامله‌ی گذشته (بیرون از یادگیری). فقط «تست» بزن.';}
+  else if(ok.length){st='go';title=faN(ok.length)+' فرصت قابل گرفتن';
+    sub=ok.slice(0,4).map(x=>'<b dir="ltr">'+esc(x.tk)+'</b> '+(x.dir==='long'?'لانگ':'شورت')).join('، ')+(ok.length>4?' و '+faN(ok.length-4)+' تای دیگر':'')+'. پایین‌تر ببین و «ایزوله» یا «تست» بزن.';}
+  else if(RD.M){st='wait';title='فرصت مطمئنی نیست';
+    const L2=L.filter(x=>x.dir!=='wait'),w=k=>L2.filter(x=>x.why===k).length;
+    sub=(L2.length?faN(L2.length)+' سیگنال هست ولی '+[w('stars')?faN(w('stars'))+' تا سابقه‌ی مطمئن ندارند':'',w('reg')?faN(w('reg'))+' تا خلاف روند بیت‌کوین‌اند':'',w('cap')?faN(w('cap'))+' تا پشت سقف هم‌جهت‌اند':''].filter(Boolean).join('، ')+'. ':'')+
+      'صبر کن، «تست» بزن یا ارزهای بیشتری بررسی کن.';}
+  else{st='wait';title='در حال یادگیری…';sub='بعد از گرفتن داده‌ی ارزها، مدل یاد می‌گیرد و سیگنال‌ها این‌جا می‌آیند.';}
+  const chips=[];
+  if(RD.reg)chips.push('<span class="rdchip '+(RD.reg==='bull'?'u':RD.reg==='bear'?'d':'')+'" title="روند بیت‌کوین (همان که مدل و ستاره‌ها با آن سنجیده می‌شوند)">روند بیت‌کوین '+RDREG_FA[RD.reg]+(MKT&&MKT.btc!=null?' · <bdi dir="ltr">'+fmtPct(MKT.btc)+'</bdi> در 24h':'')+'</span>');
+  if(RD.mt0)chips.push('<span class="rdchip">مدل '+ageTxt(RD.mt0)+' · '+faN(RD.ncoin||n)+' ارز</span>');
+  if(RD.ex)chips.push('<span class="rdchip">خروج: '+esc(rdExPlans()[rbExEff()].n)+'</span>');
+  if(opn.long||opn.short)chips.push('<span class="rdchip'+(opn.long>=RD_CAP||opn.short>=RD_CAP?' w':'')+'" title="تست‌ها و پوزیشن‌های رادار">باز: '+faN(opn.long)+' لانگ · '+faN(opn.short)+' شورت (سقف '+faN(RD_CAP)+')</span>');
+  let h='<div class="rdhero '+st+'"><div class="rdht"><i>'+(st==='go'?'✓':st==='stop'?'✕':'…')+'</i><div><b>'+title+'</b><span>'+sub+'</span></div></div>'+
+    (chips.length?'<div class="rdchips">'+chips.join('')+'</div>':'');
+  if(H.few&&RD.M){const need=Math.max(0,Math.min(RD_NC_OK,RD_MAX)-n);
+    h+='<div class="rdwarn"><span>ستاره‌ها روی '+faN(H.nc)+' ارز ساخته شده‌اند؛ برای اعتماد دست‌کم '+faN(RD_NC_OK)+' ارز لازم است'+(H.cap<5?' (فعلاً ستاره حداکثر 3)':'')+'.</span>'+
+      (need?'<button class="btn sm" data-rd50="1"'+(RDQ.on?' disabled':'')+'>'+ic('plus')+'<span>رساندن به '+faN(RD_NC_OK)+' ارز</span></button>':'')+'</div>';}
+  h+='<div class="rdbar"><span class="rdcnt">'+(n?faN(n)+' ارز':'')+'</span><small id="rdProg">'+(RDQ.on?'':RD.at?ageTxt(RD.at):'')+'</small>'+
+    '<button class="btn sm" data-rdrun="1"'+(RDQ.on?' disabled':'')+'>'+ic('refresh')+'<span>تازه کن</span></button>'+
+    (n<RD_MAX?'<button class="btn sm" data-rdmore="1"'+(RDQ.on?' disabled':'')+'>'+ic('plus')+'<span>'+faN(RD_STEP)+' ارز بعدی</span></button>':'')+'</div>'+
+    (RDQ.on?rdProgHtml():'')+'</div>';
+  return h;
+}
+/* بازار کل در یک خط؛ با زدن، کارت‌های حال بازار، TOTAL و دامیننس‌ها باز می‌شود */
+function rdMktHtml(){
+  if((!MKT||Date.now()-MKT.at>MK_TTL)&&Date.now()-MKTRY>120000){MKTRY=Date.now();const was=MKT&&MKT.at;
+    mktLoad().then(m=>{if(m&&m.at!==was)rdRepaintNow();}).catch(()=>{});}
+  let r=null;try{r=mdMetrics(MD);}catch(e){}
+  const bits=[];
+  if(MKT)bits.push('24h <b>'+MK_REG_FA[MKT.reg]+'</b>');
+  if(r){bits.push('TOTAL <bdi dir="ltr" class="'+cls(r.tot[1])+'">'+fmtPct(r.tot[1])+'</bdi>');bits.push('BTC.D <bdi dir="ltr">'+fmtNum(r.bd[0])+'%</bdi>');bits.push('USDT.D <bdi dir="ltr">'+fmtNum(r.ud[0])+'%</bdi>');}
+  return '<details class="rdmk"'+(RDMKOPEN?' open':'')+'><summary>'+ic('bars')+'<span class="rdmkh">بازار کل</span><span class="rdmks">'+(bits.length?bits.join(' · '):'در حال گرفتن…')+'</span></summary>'+
+    (MKT?mktHtml(MKT,null):'')+mdHtml()+'</details>';
+}
 function rdHtml(){
-  const L=rdList(), wait=L.filter(x=>x.dir==='wait'), ob=rbOpen();
-  // فیلترهای تب «بازار»: جهت و «فقط 3 ستاره به بالا»
+  const L=rdList(), ob=rbOpen();
+  if(RDV==='test'||RDV==='log')return '<div class="glb">'+rbHtml(RDV)+'</div>';
+  if(RDV==='model')return '<div class="glb">'+rdModelHtml()+'</div>';
   const fv=x=>!VIEW.mktFav||rdIsFav(x.tk);
-  const fd=VIEW.mktDir||'all', act=L.filter(x=>x.dir!=='wait'&&(fd==='all'||x.dir===fd)&&(!VIEW.mktOk||x.ok)&&(!VIEW.mktDiv||rdDivOf(x)>0)&&fv(x)),
-    hid=L.filter(x=>x.dir!=='wait').length-act.length;
-  let h='<div class="glh"><b>'+ic('trend')+'رادار بازار</b><span>'+(L.length?faN(L.filter(x=>x.ok).length)+' فرصت با رتبه‌ی خوب از '+faN(L.length)+' ارز':'')+'</span></div><div class="glb">';
-  if(RDV!=='sig')return h+rbHtml(RDV)+'</div>';
-  const LL=rdListOf(), n=LL.length, top=(()=>{const U=rdUniverse(n);let k=0;while(k<U.length&&LL.includes(U[k]))k++;return k;})();
-  h+='<div class="rdbar"><span class="rdcnt">'+(n?faN(n)+' ارز'+(top?' (رتبه‌ی 1 تا '+faN(top)+(n>top?' و '+faN(n-top)+' ارز دیگر':'')+')':''):'')+'</span>'+
-    (n<RD_MAX?'<button class="btn sm" data-rdmore="1"'+(RDQ.on?' disabled':'')+'>'+ic('plus')+'<span>'+faN(RD_STEP)+' ارز بعدی</span></button>':'')+
-    '<button class="btn sm" data-rdrun="1"'+(RDQ.on?' disabled':'')+'>'+ic('refresh')+'<span>تازه کن</span></button><small id="rdProg">'+(RDQ.on?'':RD.at?ageTxt(RD.at):'')+'</small></div>'+(RDQ.on?rdProgHtml():'');
+  const fd=VIEW.mktDir||'all', sig=L.filter(x=>x.dir!=='wait'), act=sig.filter(x=>(fd==='all'||x.dir===fd)&&(!VIEW.mktOk||x.ok)&&(!VIEW.mktDiv||rdDivOf(x)>0)&&fv(x)),
+    hid=sig.length-act.length, wait=L.filter(x=>x.dir==='wait').filter(fv);
+  let h='<div class="glb">'+rdHeroHtml(L);
   // انتخاب ارزها: بازه‌ی رتبه، نماد، واچ‌لیست
+  const LL=rdListOf();
   h+='<details class="sec sub2 rdpick"'+(RDPICKOPEN?' open':'')+'><summary>'+ic('search')+'انتخاب ارزها و واچ‌لیست'+(RDFAV.length?' ('+faN(RDFAV.length)+' ★)':'')+'</summary>'+
     '<div class="rdpk"><input id="rdPickIn" placeholder="20-40 · 200 تا 231 · ETH, SOL, PEPE" autocomplete="off" dir="auto"><button class="btn sm ok" data-rdadd="1"'+(RDQ.on?' disabled':'')+'>'+ic('plus')+'<span>بررسی</span></button></div>'+
     '<div class="hint">بازه‌ی رتبه (ارزش بازار CoinGecko، بی استیبل‌کوین‌ها؛ تا حدود 450) یا یک یا چند نماد با فاصله یا ویرگول. فقط ارزهای تازه گرفته می‌شوند و مدل با آن‌ها دوباره یاد می‌گیرد. سقف فهرست '+faN(RD_MAX)+' ارز.</div>'+
     '<div class="rdfav">'+(RDFAV.length?RDFAV.map(t=>'<span class="pill gold" data-favtk="'+esc(t)+'">★ <b dir="ltr">'+esc(t)+'</b>'+(LL.includes(t)?'':' <small>(بررسی‌نشده)</small>')+'</span>').join(''):'<span class="hint">واچ‌لیست خالی است؛ روی ☆ هر ارز بزن.</span>')+'</div>'+
     '<div class="srow">'+(RDFAV.length?'<button class="btn sm" data-rdfavscan="1"'+(RDQ.on?' disabled':'')+'>'+ic('star')+'<span>بررسی واچ‌لیست</span></button>':'')+
       '<button class="btn sm side" data-rdreset="1"'+(RDQ.on?' disabled':'')+'>'+ic('undo')+'<span>از نو: فقط '+faN(RD_STEP)+' ارز اول'+(RDFAV.length?' و واچ‌لیست':'')+'</span></button></div></details>';
-  // چرا امتیاز عوض می‌شود: فقط با بسته شدن هر کندل ساعتی، و مدل/ستاره فقط وقتی دوباره یاد گرفته شود
-  {const tt=Object.values(RD.coins).map(x=>x.t||0),t=tt.length?Math.max(...tt):0;
-   if(t&&RD.mt0)h+='<div class="hint rdtime">امتیازها برای کندلِ بسته‌شده‌ی ساعت <b dir="ltr">'+rdHH(t+36e5)+'</b> است و تا بسته شدن کندل بعدی ('+'<b dir="ltr">'+rdHH(t+2*36e5)+'</b>) عوض نمی‌شود. '+
-     'مدل و ستاره‌ها '+ageTxt(RD.mt0)+' یاد گرفته شده‌اند و روزی یک بار (یا با «10 ارز بعدی») از نو یاد گرفته می‌شوند. '+
-     '<button class="lnk" data-rdlearn="1"'+(RDQ.on?' disabled':'')+'>یادگیری دوباره</button></div>';}
-  if(!RD.at&&!RDQ.on)h+='<div class="hint">هنوز بررسی نشده؛ همین الان 10 ارز اول شروع می‌شود (بار اول هر ارز ~125 روز تاریخچه می‌گیرد؛ چند ثانیه برای هر ارز).</div>';
-  if((!MKT||Date.now()-MKT.at>MK_TTL)&&Date.now()-MKTRY>120000){MKTRY=Date.now();const was=MKT&&MKT.at;
-    mktLoad().then(m=>{if(m&&m.at!==was)rdRepaintNow();}).catch(()=>{});}
-  if(MKT)h+=mktHtml(MKT,null);
-  h+=mdHtml();
-  h+=rdPanelHtml();
-  act.forEach((x,i)=>{h+=rdRowHtml(x,i);});
-  if(hid)h+='<div class="hint">'+faN(hid)+' سیگنال دیگر با فیلتر بالای صفحه پنهان است.</div>';
-  const wv=wait.filter(fv);
-  if(wv.length)h+='<div class="hint rdwait"><b>صبر</b> (امتیاز زیر '+faN(RD_MIN)+'): '+wv.map(x=>(rdIsFav(x.tk)?'★':'')+esc(x.tk)+' <span class="'+(x.best==='long'?'win':'lose')+'">'+(x.best==='long'?'L':'S')+faN(x.sc)+'</span>').join('، ')+'</div>';
-  if(VIEW.mktFav&&!act.length&&!wv.length)h+='<div class="empty">هیچ‌کدام از ارزهای واچ‌لیست هنوز بررسی نشده؛ «انتخاب ارزها» ← «بررسی واچ‌لیست».</div>';
-  h+='<div class="hint">مدل: رگرسیون لجستیک، جدا برای لانگ و شورت، روی نتیجه‌ی همین معامله (بعد از کارمزد). '+faN(RD_FEAT.length)+' عامل: قیمت، میانگین 200، ADX، بولینگر، VWAP، OBV، مومنتوم، بیت‌کوین، قدرت نسبی، روند روزانه، نوسان، فاندینگ، واگرایی 1 ساعته، جریان پول فیوچرز بایننس'+
-    (RD.nflow!=null?' ('+faN(RD.nflow)+' ارز داده‌اش را داشتند)':'')+'، و کل بازار (TOTAL، TOTAL2، TOTAL3، دامیننس بیت‌کوین و تتر)'+(RD.mkl&&RD.mkl.cov?'؛ تاریخچه‌اش از ارزهای بررسی‌شده بازسازی شده که '+faN(Math.round(RD.mkl.cov*100))+'٪ کل بازارند':'')+'. کارنامه با آزمون پیش‌رونده: مدل هر دوره را ندیده سنجیده شده. سود گذشته تضمین آینده نیست؛ «تست» بزن و در «دفتر پیشنهادها» ببین در عمل چه شد.</div></div>';
-  return h;
+  h+=rdMktHtml();
+  const okL=act.filter(x=>x.ok), weak=act.filter(x=>!x.ok);let i=0;
+  if(okL.length)h+='<div class="rdsh go"><b>قابل گرفتن</b><i>'+faN(okL.length)+'</i></div>'+okL.map(x=>rdRowHtml(x,i++)).join('');
+  if(weak.length)h+='<div class="rdsh"><b>بی اعتبار کافی</b><i>'+faN(weak.length)+'</i><small>فقط برای «تست»</small></div>'+weak.map(x=>rdRowHtml(x,i++)).join('');
+  if(!act.length&&RD.at)h+='<div class="empty">'+(hid?'با فیلتر بالای صفحه سیگنالی نماند.':VIEW.mktFav?'هیچ‌کدام از ارزهای واچ‌لیست الان سیگنال ندارد؛ «انتخاب ارزها» ← «بررسی واچ‌لیست».':'الان هیچ ارزی امتیاز '+faN(RD_MIN)+'+ ندارد.')+'</div>';
+  if(hid&&act.length)h+='<div class="hint">'+faN(hid)+' سیگنال دیگر با فیلتر بالای صفحه پنهان است.</div>';
+  if(wait.length)h+='<details class="sec sub2 rdwait"><summary><b>صبر</b> ('+faN(wait.length)+' ارز با امتیاز زیر '+faN(RD_MIN)+')</summary><div class="rdwl">'+
+    wait.map(x=>'<span class="pill mut">'+(rdIsFav(x.tk)?'★':'')+'<b dir="ltr">'+esc(x.tk)+'</b> <span class="'+(x.best==='long'?'win':'lose')+'">'+(x.best==='long'?'L':'S')+faN(x.sc)+'</span></span>').join('')+'</div></details>';
+  return h+'</div>';
 }
 /* تب «بازار» (مستقل، در نوار پایین): نوار فیلتر خودش و همان رادار */
 const rdRepaintNow=()=>{if(view==='radar')renderRadar();};
@@ -10391,24 +10557,24 @@ function rdFbar(){
   const bar=$('#rdFbar');if(!bar)return;bar.innerHTML='';
   const chip=(row,label,on,fn)=>{const b=el('button','fc'+(on?' on':''),'<span>'+label+'</span>');b.setAttribute('aria-pressed',on?'true':'false');b.onclick=fn;row.appendChild(b);return b;};
   const set=o=>{Object.assign(VIEW,o);lsSet(VIEWKEY,VIEW);renderRadar();};
-  const seg=el('div','fseg');
+  const seg=el('div','fseg');seg.setAttribute('role','tablist');
   const ob=rbOpen();
-  for(const [k,t,n] of [['sig','سیگنال‌ها',rdCount()],['test','آزمایشی',ob.test],['log','دفتر پیشنهادها',null]]){
-    const b=el('button','fb'+(RDV===k?' on':''),'<span>'+t+'</span>'+(n!=null?'<i>'+faN(n)+'</i>':''));b.setAttribute('role','tab');b.setAttribute('aria-selected',RDV===k?'true':'false');
+  for(const [k,t,n,ti] of [['sig','سیگنال‌ها',rdCount(),'فرصت‌های قابل گرفتن'],['test','آزمایشی',ob.test,'معامله‌های آزمایشی باز'],['model','کارنامه',null,'مدل چقدر درست گفته'],['log','دفتر',null,'دفتر پیشنهادها: همه‌ی پیشنهادها و نتیجه‌شان']]){
+    const b=el('button','fb'+(RDV===k?' on':''),'<span>'+t+'</span>'+(n!=null?'<i>'+faN(n)+'</i>':''));b.title=ti;b.setAttribute('role','tab');b.setAttribute('aria-selected',RDV===k?'true':'false');
     b.onclick=()=>{RDV=k;try{localStorage.setItem('signaldesk.rdview',RDV);}catch(e){}renderRadar();window.scrollTo({top:0,behavior:'smooth'});};seg.appendChild(b);}
   bar.appendChild(seg);
   if(RDV!=='sig')return;
-  const row=el('div','frow ftab'),g=el('div','fcg');g.appendChild(el('span','fcl','جهت'));
+  const row=el('div','frow ftab rdflt'),g=el('div','fcg');g.appendChild(el('span','fcl','جهت'));
   for(const [v,t] of [['all','همه'],['long','لانگ'],['short','شورت']])chip(g,t,(VIEW.mktDir||'all')===v,()=>set({mktDir:v}));
   row.appendChild(g);
-  chip(row,'فقط ۳ ستاره به بالا',!!VIEW.mktOk,()=>set({mktOk:!VIEW.mktOk}));
-  chip(row,'فقط با واگرایی هم‌جهت',!!VIEW.mktDiv,()=>set({mktDiv:!VIEW.mktDiv}));
-  chip(row,'★ فقط واچ‌لیست',!!VIEW.mktFav,()=>set({mktFav:!VIEW.mktFav}));
+  chip(row,'فقط قابل گرفتن',!!VIEW.mktOk,()=>set({mktOk:!VIEW.mktOk}));
+  chip(row,'واگرایی هم‌جهت',!!VIEW.mktDiv,()=>set({mktDiv:!VIEW.mktDiv}));
+  chip(row,'★ واچ‌لیست',!!VIEW.mktFav,()=>set({mktFav:!VIEW.mktFav}));
   bar.appendChild(row);
 }
 function renderRadar(){const g=$('#rdView');if(!g)return;paintRadar(g);}
 function paintRadar(g){
-  rdFbar();g.className='glance gltab';g.innerHTML=rdHtml();
+  rdFbar();g.className='rdview';g.innerHTML=rdHtml();
   if(!RDQ.on&&(Date.now()-RD.at>30*60000||!RD.rank.length))setTimeout(()=>rdScan('refresh'),300);
   try{rbCatchUp();}catch(e){}
   const mo=g.querySelector('[data-rdmore]');if(mo)mo.onclick=()=>{rdScan('more');paintRadar(g);};
@@ -10420,6 +10586,9 @@ function paintRadar(g){
     const nw=L.filter(t=>!rdListOf().includes(t));toast(nw.length?faN(nw.length)+' ارز تازه بررسی می‌شود: '+nw.slice(0,8).join('، ')+(nw.length>8?'…':''):'همه‌شان در فهرست‌اند؛ تازه می‌شوند','info');
     rdScan(nw.length?'add':'refresh',nw);paintRadar(g);};
   if(ad)ad.onclick=doAdd;if(inp)inp.onkeydown=e=>{if(e.key==='Enter')doAdd();};
+  const r50=g.querySelector('[data-rd50]');if(r50)r50.onclick=()=>{const L0=rdListOf(),nw=rdUniverse(RD_NC_OK).filter(t=>!L0.includes(t)).slice(0,Math.max(0,RD_MAX-L0.length));
+    if(!nw.length)return;toast(faN(nw.length)+' ارز تازه بررسی می‌شود (چند دقیقه)','info');rdScan('add',nw);paintRadar(g);};
+  const mk=g.querySelector('.rdmk');if(mk)mk.ontoggle=()=>{RDMKOPEN=mk.open;try{localStorage.setItem('signaldesk.rdmk',RDMKOPEN?'1':'0');}catch(e){}};
   const fs=g.querySelector('[data-rdfavscan]');if(fs)fs.onclick=()=>{VIEW.mktFav=true;lsSet(VIEWKEY,VIEW);rdScan('add',RDFAV.slice());renderRadar();};
   const rs=g.querySelector('[data-rdreset]');if(rs)rs.onclick=()=>{if(!confirm('فهرست رادار به '+faN(RD_STEP)+' ارز اول'+(RDFAV.length?' و واچ‌لیست':'')+' برگردد؟'))return;
     const keep=new Set(rdUniverse(RD_STEP).concat(RDFAV));for(const t of rdListOf())if(!keep.has(t))rdRemove(t);
@@ -10470,9 +10639,15 @@ function rbRepaint(){clearTimeout(RBT);RBT=setTimeout(()=>{try{if(view==='radar'
 function rbAdd(kind,x,quiet){
   if(!x||!x.pl)return null;
   if(RB.items.some(it=>it.k===kind&&it.st==='open'&&it.tk===x.tk&&(kind==='auto'||it.dir===x.dir))){if(!quiet)toast('همین معامله‌ی آزمایشی باز است','err');return null;}
+  // سقف هم‌جهت: دفتر پیشنهادها همان قانون سنجش را دارد؛ تست با پرسیدن
+  if(kind==='auto'&&RB.items.filter(it=>it.k==='auto'&&it.st==='open'&&it.dir===x.dir).length>=RD_CAP)return null;
+  if(kind==='test'&&!quiet){const n=rdOpenDir(x.dir);
+    if(n>=RD_CAP&&!confirm(faN(n)+' معامله‌ی '+(x.dir==='long'?'لانگ':'شورت')+' باز داری (سقف '+faN(RD_CAP)+'). ارزها با هم حرکت می‌کنند و این‌ها عملاً یک شرط‌اند. باز هم ثبت شود؟'))return null;}
   const pl=rdPlanAt(x.pl,PRICES.get(x.tk)||x.pl.E), now=Date.now();
   const it={id:kind[0]+now.toString(36)+Math.random().toString(36).slice(2,5),k:kind,tk:x.tk,dir:x.dir,t:now,E:pl.E,SL:pl.SL,TP:pl.TP,sd:pl.sd,rr:pl.rr,
-    sc:x.sc,stars:x.stars||0,p:x.p!=null?+x.p.toFixed(3):null,exp:x.exp!=null?+x.exp.toFixed(3):null,reg:RD.reg||null,be:false,st:'open',
+    sc:x.sc,stars:x.stars||0,p:x.p!=null?+x.p.toFixed(3):null,exp:x.exp!=null?+x.exp.toFixed(3):null,reg:RD.reg||null,be:false,st:'open',why:x.why||null,
+    // عکس عامل‌ها در لحظه‌ی ورود (برای بررسی بعدی در خروجی)
+    pv:x.parts?Object.fromEntries(RD_FEAT.filter(k=>x.parts[k]!=null&&x.parts[k]!==0).map(k=>[k,+(+x.parts[k]).toFixed(2)])):null,
     ex:kind==='test'?rbExEff():(RD.ex||'tp'),x:exNew()};
   RB.items.push(it);RBLC.set(it.id,now);
   // اندازه‌ی حافظه: قدیمی‌ترین بسته‌های خودکار اول می‌روند
@@ -10579,18 +10754,20 @@ function rbHtml(kind){
   const k=kind==='test'?'test':'auto', L=RB.items.filter(it=>it.k===k), open=L.filter(it=>it.st==='open'), done=L.filter(it=>it.st!=='open').sort((a,b)=>b.xt-a.xt);
   let h='';
   if(k==='test'){
-    h+='<div class="hint">معامله‌ی آزمایشی مثل واقعی دنبال می‌شود (پله‌های سیو سود، استاپ، حداکثر 24 ساعت، بعد از کارمزد) ولی پولی در کار نیست و در پوزیشن‌ها و کارنامه‌ی اصلی نمی‌آید. '+
-      'از زیرتب «سیگنال‌ها»ی همین تب روی <b>تست</b> بزن. دلار با ریسک هر معامله‌ی تنظیمات ('+fmtUsd(riskUsd())+') حساب می‌شود.</div>';
-    h+=rbExPicker();
-    h+=rbLabHtml();
     h+=rbSumHtml(done,'نتیجه');
     if(open.length){const px=it=>PRICES.get(it.tk),liv=open.filter(it=>px(it)>0),sum=liv.reduce((a,it)=>a+rbLiveR(it,px(it)),0);
       h+='<div class="rbsum"><b>بازها الان</b><span>'+faN(open.length)+' معامله · جمع <b class="'+cls(sum)+'" dir="ltr">'+fmtR(sum)+'</b> · به دلار <b class="'+cls(sum)+'" dir="ltr">'+fmtUsd(sum*riskUsd())+'</b></span>'+
         '<button class="btn sm" data-rb="closeall">'+ic('x')+'<span>بستن همه با قیمت الان</span></button></div>';}
+    if(L.length)h+='<div class="srow rbtop"><button class="btn sm ok" data-rbl="dl" title="همه‌ی تست‌ها با مسیر واقعی قیمت، عامل‌های لحظه‌ی ورود و خلاصه‌ی مدل">'+ic('down')+'<span>خروجی برای بررسی</span></button>'+
+      '<button class="btn sm side" data-rbl="copy">'+ic('share')+'<span>کپی</span></button></div>';
+    h+='<details class="sec sub2 rbexw"><summary>نقشه‌ی خروج: '+esc(rdExPlans()[rbExEff()].n)+(RBEX==='auto'?' (خودکار)':'')+'</summary>'+rbExPicker()+'</details>';
+    h+=rbLabHtml();
     if(open.length)h+='<div class="sechd">باز ('+faN(open.length)+')</div>'+open.map(it=>rbRowHtml(it,true)).join('');
     if(done.length)h+='<div class="sechd">بسته</div>'+done.slice(0,40).map(it=>rbRowHtml(it,true)).join('');
-    if(!L.length)h+='<div class="empty">هنوز معامله‌ی آزمایشی نداری.</div>';
-    else h+='<div class="glact"><button class="btn sm side" data-rb="clear">'+ic('trash')+'<span>پاک کردن همه‌ی بسته‌ها</span></button></div>';
+    if(!L.length)h+='<div class="empty">هنوز معامله‌ی آزمایشی نداری. در «سیگنال‌ها» روی <b>تست</b> هر سیگنال بزن.</div>';
+    h+='<div class="hint">معامله‌ی آزمایشی مثل واقعی دنبال می‌شود (پله‌های سیو سود، استاپ، حداکثر 24 ساعت، بعد از کارمزد) ولی پولی در کار نیست و در پوزیشن‌ها و کارنامه‌ی اصلی نمی‌آید؛ حتی وقتی برنامه بسته است با کندل 5 دقیقه‌ای دنبال می‌شود. '+
+      'دلار با ریسک هر معامله‌ی تنظیمات ('+fmtUsd(riskUsd())+') حساب می‌شود. حداکثر '+faN(RD_CAP)+' تست هم‌جهت باز (بیشترش را می‌پرسد).</div>';
+    if(done.length)h+='<div class="glact"><button class="btn sm side" data-rb="clear">'+ic('trash')+'<span>پاک کردن همه‌ی بسته‌ها</span></button></div>';
     return h;
   }
   h+='<div class="hint">هر پیشنهاد رادار (امتیاز '+faN(RD_MIN)+'+) از لحظه‌ای که نشان داده شد خودش ثبت و دنبال می‌شود؛ برای هر ارز یکی در هر لحظه. این آزمون واقعیِ <b>آینده</b> است: '+
@@ -10627,7 +10804,7 @@ function rbBind(g){
 function rbExPicker(){
   const PL=rdExPlans(), eff=rbExEff(), S0=RD.exs||{};
   const m=n=>{const o=S0[n]&&S0[n].all;return o&&o.n?' <small dir="ltr" class="'+cls(o.r/o.n)+'">'+fmtR(o.r/o.n)+'</small>':'';};
-  return '<div class="rbex"><div class="sechd">نقشه‌ی خروج (سیو سود)</div><div class="pbpick">'+
+  return '<div class="rbex"><div class="pbpick">'+
     '<button class="pbc'+(RBEX==='auto'?' on':'')+'" data-rbex="auto">خودکار'+(RD.ex?' ('+esc(PL[RD.ex].n)+')':'')+'</button>'+
     RD_EXN.map(n=>'<button class="pbc'+(RBEX===n?' on':'')+'" data-rbex="'+n+'" title="'+esc(PL[n].d)+'">'+esc(PL[n].n)+m(n)+'</button>').join('')+'</div>'+
     '<div class="hint">'+esc(PL[eff].d)+'. عدد کنار هر نقشه: میانگین R همان سیگنال‌های رادار با آن نقشه، روی دوره‌ای که مدل ندیده. «خودکار» بهترینش را برمی‌دارد. با عوض کردن نقشه، معامله‌های باز هم از لحظه‌ی ورود با نقشه‌ی تازه دوباره حساب می‌شوند.</div></div>';
@@ -10733,12 +10910,16 @@ let RBLOPEN=false;
 /* خروجی: تنظیمات، هر معامله، آمار مسیر و خودِ مسیر (h/l/c نسبت به ورود، ده‌هزارم؛ هر 5 دقیقه) */
 function rbLabExport(){
   const res=RBL.res||[];
-  return JSON.stringify({v:1,app:'signaldesk',kind:'radar-test-paths',at:new Date().toISOString(),
+  const H=rdHealth(),M=RD.M||{},W=d=>M[d]&&M[d].w?Object.fromEntries(RD_FEAT.map((k,i)=>[k,M[d].w[i]]).filter(([,v])=>v)):null;
+  return JSON.stringify({v:2,app:'signaldesk',kind:'radar-test-paths',at:new Date().toISOString(),
     settings:{fee:+S.fee||0,slip:+S.slip||0,riskUsd:riskUsd(),rMul:S.rMul,maxLev:+S.maxLev||null,isoMaxSd:isoMaxSd(),exit:rbExEff(),hold:AS_HOLD},
-    model:{ex:RD.ex||null,exs:RD.exs||null,reg:RD.reg||null,mt0:RD.mt0||null},
+    model:{ex:RD.ex||null,exs:RD.exs||null,reg:RD.reg||null,mt0:RD.mt0||null,ncoin:RD.ncoin||null,ns:RD.ns||null,
+      span:RD.span?RD.span.map(t=>new Date(t).toISOString()):null,health:H,cap:RD_CAP,capN:RD.capN??null,divs:RD.divs||null,
+      calib:Object.fromEntries(Object.entries(RD.calib||{}).filter(([k])=>!/\|/.test(k)||/^base\|/.test(k)||/^(long|short)\|[0-9]/.test(k))),
+      weights:{long:W('long'),short:W('short')},drop:{long:M.long&&M.long.drop||null,short:M.short&&M.short.drop||null}},
     trades:res.map(({it,C,st})=>{const t0=C.length?C[0].t:it.t;
       return {id:it.id,kind:it.k,tk:it.tk,dir:it.dir,t:new Date(it.t).toISOString(),E:it.E,SL:it.SL,sd:+it.sd.toFixed(5),rr:it.rr,ex:it.ex||null,sc:it.sc,stars:it.stars,p:it.p,exp:it.exp,reg:it.reg,
-        st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
+        why:it.why||null,pv:it.pv||null,st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
         lev:st.lev,stats:{mfe:+st.mfe.toFixed(3),tMfeMin:st.tMfe?Math.round((st.tMfe-it.t)/6e4):null,mfe24:+st.mfe24.toFixed(3),mae:+st.mae.toFixed(3),
           stopMin:st.stopAt?Math.round((st.stopAt-it.t)/6e4):null,touchMin:Object.fromEntries(Object.entries(st.touch).map(([k,v])=>[k,Math.round((v-it.t)/6e4)])),full:st.full},
         path:{t0:new Date(t0).toISOString(),stepMin:5,unit:'1e-4 of entry',hlc:C.map(k=>[Math.round((k.h/it.E-1)*1e4),Math.round((k.l/it.E-1)*1e4),Math.round((k.c/it.E-1)*1e4)])}};})});
@@ -10749,6 +10930,7 @@ function rbLabBind(g){
     if(a==='auto'){b.onchange=()=>{RBL.auto=b.checked;};return;}
     b.onclick=async()=>{
       if(a==='run'){RBLOPEN=true;rbLabRun();return;}
+      if(!RBL.res){await rbLabRun();if(!RBL.res)return;}
       const txt=rbLabExport();
       if(a==='dl'){dl('signaldesk-tests-'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')+'.json',txt);toast('فایل ساخته شد','ok');}
       else{try{await navigator.clipboard.writeText(txt);toast('کپی شد ('+faN(Math.round(txt.length/1024))+' کیلوبایت)','ok');}catch(e){toast('کپی نشد؛ «دانلود فایل» را بزن','err');}}
