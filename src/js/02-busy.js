@@ -17,7 +17,7 @@ const ABUSY={b:null,t:0,base:0,set:new Map()};
 const actN=()=>NET.n+WORK.n;
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('button,.btn');
   // وسط یک کار طولانیِ پس‌زمینه (مثل بررسی رادار) درخواست‌ها مال آن‌اند، نه این دکمه
-  if(b&&!b.disabled&&!WORK.n&&!b.closest('#tabs,[role=tablist],.fseg,.frow,.fbar,.pbpick'))Object.assign(ABUSY,{b,t:Date.now(),base:actN()});},true);
+  if(b&&!b.disabled&&!WORK.n&&!b.closest('#tabs,[role=tablist],.fseg,.frow,.fbar,.pbpick,#jobBar'))Object.assign(ABUSY,{b,t:Date.now(),base:actN()});},true);
 function abusyOn(){const b=ABUSY.b;if(!b)return;ABUSY.b=null;
   if(Date.now()-ABUSY.t>800||!b.isConnected||b.classList.contains('is-busy')||b.disabled)return;
   b.classList.add('abusy');b.setAttribute('aria-busy','true');ABUSY.set.set(b,{base:ABUSY.base,t0:Date.now()});setTimeout(abusyOff,30500);}
@@ -51,3 +51,41 @@ function ageTxt(ts){
   return faN(Math.round(s/86400))+' روز پیش';
 }
 
+/* ==================== کارهای در حال انجام ====================
+   هر کار طولانی (بررسی بازار، سنجش کانال، گرفتن پست‌ها، خروجی تست‌ها…) اینجا ثبت می‌شود و
+   در نوار بالای صفحه می‌آید: چه کاری، چند درصد؛ زدنش به همان بخش می‌برد؛ کارهای چندمرحله‌ای
+   توقف/ادامه و لغو دارند. توقف و لغو فقط بین مرحله‌ها اثر می‌کند (jobGate)، پس داده نیمه‌کاره نمی‌ماند.
+   کاری که زیر 0.6 ثانیه تمام شود اصلاً نشان داده نمی‌شود تا نوار چشمک نزند. */
+const JOBS=new Map();
+let JOBT=null,JOBIV=null;
+function jobSet(id,o){let j=JOBS.get(id);if(!j){j={id,t0:Date.now(),paused:false,stop:false};JOBS.set(id,j);setTimeout(jobPaint,650);}
+  Object.assign(j,o||{});jobPaint();return j;}
+function jobEnd(id){if(JOBS.delete(id))jobPaint();}
+const jobStopped=id=>{const j=JOBS.get(id);return !!(j&&j.stop);};
+/* بین دو مرحله صدا بزن: تا «ادامه» صبر می‌کند؛ false یعنی لغو شد */
+async function jobGate(id){const j=JOBS.get(id);if(!j)return true;
+  while(j.paused&&!j.stop&&JOBS.get(id)===j)await new Promise(r=>setTimeout(r,300));return !j.stop;}
+const jobVal=v=>typeof v==='function'?(()=>{try{return v();}catch(e){return null;}})():v;
+function jobPaint(){
+  if(JOBT)return;JOBT=setTimeout(()=>{JOBT=null;
+    const bar=document.getElementById('jobBar');if(!bar)return;
+    const L=[...JOBS.values()].filter(j=>Date.now()-j.t0>=600);
+    bar.classList.toggle('hide',!L.length);
+    if(!L.length){bar.innerHTML='';clearInterval(JOBIV);JOBIV=null;return;}
+    if(!JOBIV)JOBIV=setInterval(jobPaint,1000);
+    bar.innerHTML=L.map(j=>{const p=jobVal(j.pct),m=jobVal(j.msg),pc=p!=null&&isFinite(p)?Math.max(1,Math.min(99,Math.round(p))):null;
+      return '<div class="job'+(j.paused?' paused':'')+'" data-job="'+j.id+'">'+
+        '<button class="jobm" data-jgo="1"'+(j.go?'':' disabled')+' title="'+(j.go?'برو به همین بخش':'')+'">'+(j.paused?'<span class="jpz">'+ic('pause')+'</span>':'<span class="bspin"></span>')+
+        '<b>'+esc(j.title||'در حال کار')+'</b>'+(m?'<small>'+esc(String(m))+'</small>':'')+(pc!=null?'<i class="jpct" dir="ltr">'+pc+'%</i>':'')+'</button>'+
+        (j.pause?'<button class="jbt" data-jp="1" title="'+(j.paused?'ادامه':'توقف')+'" aria-label="'+(j.paused?'ادامه':'توقف')+'">'+ic(j.paused?'play':'pause')+'</button>':'')+
+        (j.cancel?'<button class="jbt" data-jx="1" title="لغو" aria-label="لغو">'+ic('x')+'</button>':'')+
+        (pc!=null?'<i class="jbar" style="width:'+pc+'%"></i>':'')+'</div>';}).join('');
+  },40);
+}
+document.addEventListener('click',e=>{
+  const b=e.target&&e.target.closest&&e.target.closest('#jobBar button');if(!b)return;
+  const j=JOBS.get(b.closest('[data-job]').dataset.job);if(!j)return;
+  if(b.dataset.jgo&&j.go){j.go();return;}
+  if(b.dataset.jp){j.paused=!j.paused;toast((j.title||'کار')+(j.paused?': متوقف شد':': ادامه'),'info');jobPaint();return;}
+  if(b.dataset.jx){j.stop=true;j.paused=false;if(j.onCancel)try{j.onCancel();}catch(x){}toast((j.title||'کار')+' لغو شد','info');jobPaint();}
+});

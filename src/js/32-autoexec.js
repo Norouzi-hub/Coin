@@ -273,6 +273,7 @@ async function audRun(force,needPath){
   const jobs=audJobs(force,needPath);
   if(!jobs.length){AUDQ.at=Date.now();paintAudProgress();return;}
   Object.assign(AUDQ,{on:true,n:jobs.length,done:0,fail:0,err:'',t0:Date.now()});
+  jobSet('aud',{title:'سنجش کانال',pause:true,cancel:true,pct:()=>AUDQ.done/Math.max(1,AUDQ.n)*100,msg:()=>faN(AUDQ.done)+' از '+faN(AUDQ.n)+' سیگنال',go:()=>go('audit')});
   logIt('info','کانال‌سنج: '+jobs.length+' سیگنال در صف');
   paintAudProgress();
   const R=audRules(), failed=[];
@@ -280,6 +281,8 @@ async function audRun(force,needPath){
   // سه‌تا هم‌زمان: هم سریع است هم به محدودیت درخواستِ صرافی نمی‌خورد
   const worker=async()=>{
     while(idx<jobs.length){
+      if(!(await jobGate('aud'))){idx=jobs.length;break;}
+      if(idx>=jobs.length)break;            // وسط صبرِ «توقف»، بقیه‌ی کارگرها صف را تمام کرده‌اند
       const job=jobs[idx++];
       // هر سیگنال حداکثر 90 ثانیه؛ یک درخواستِ گیرکرده نباید کل صف را برای همیشه نگه دارد
       try{await Promise.race([audOne(job,R),new Promise((_,rj)=>setTimeout(()=>rj(new Error('timeout')),90000))]);ok++;}
@@ -299,7 +302,7 @@ async function audRun(force,needPath){
         tries:((a&&a.k===j.k&&a.tries)||0)+1,at:Date.now()};
     }
   }else if(failed.length)toast('کندل‌ها نیامد — اتصال یا واسط قیمت را بررسی کن'+(AUDQ.err?' ('+AUDQ.err+')':''),'err');
-  Object.assign(AUDQ,{on:false,at:Date.now(),fail:failed.length});
+  Object.assign(AUDQ,{on:false,at:Date.now(),fail:failed.length});jobEnd('aud');
   logIt(failed.length&&!ok?'err':'info','کانال‌سنج: '+ok+' سنجیده، '+failed.length+' ناموفق'+(AUDQ.err?' · '+AUDQ.err:''));
   audSave();
   renderAll();

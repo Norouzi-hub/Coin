@@ -27,12 +27,15 @@ function syncNote(msg,kind){
 }
 async function syncReq(method,body){
   const base=String(syncCfg.url||'').replace(/\/+$/,'');
+  jobSet('sync',{title:method==='GET'?'همگام‌سازی: دریافت از سرور':'همگام‌سازی: ارسال به سرور',go:()=>openPanel('setVeil')});
+  try{
   const r=await netFetch(base+'/db',{method,cache:'no-store',
     headers:Object.assign({'Authorization':'Bearer '+syncCfg.token},
       body?{'Content-Type':'application/json'}:{}),
     body:body?JSON.stringify(body):undefined});
   let j=null;try{j=await r.json();}catch(e){}
   return {ok:r.ok,status:r.status,j};
+  }finally{jobEnd('sync');}
 }
 async function syncPull(silent){
   if(!syncOn())return false;

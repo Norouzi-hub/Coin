@@ -69,8 +69,11 @@ function lessonScore(p){
 }
 async function scanLessons(maxPages,onStep){
   const found=new Map();
-  let before=null;
+  let before=null,pg=0;
+  jobSet('lscan',{title:'خواندن آموزش‌های کانال',pause:true,cancel:true,pct:()=>pg/maxPages*100,msg:()=>'صفحه‌ی '+faN(pg)+' · '+faN(found.size)+' کاندیدا',go:()=>go('learn')});
+  try{
   for(let i=0;i<maxPages;i++){
+    if(!(await jobGate('lscan')))break;pg=i+1;
     let res;
     try{res=await loadChannel(before);}catch(e){onStep(i+1,found.size,'خطا در صفحه‌ی '+faN(i+1));break;}
     for(const p of res.posts){
@@ -81,6 +84,7 @@ async function scanLessons(maxPages,onStep){
     if(!res.before)break;                 // به اولین پست کانال رسیدیم
     before=res.before;
   }
+  }finally{jobEnd('lscan');}
   return [...found.values()].sort((a,b)=>b.sc-a.sc||b.p.num-a.p.num);
 }
 function sheetScan(){

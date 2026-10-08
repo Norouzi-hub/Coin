@@ -48,13 +48,17 @@ async function rbLabRun(){
   const L=RB.items.filter(it=>it.k==='test'||(RBL.auto&&it.k==='auto')).filter(it=>it.E>0&&it.sd>0);
   if(!L.length){toast('هنوز معامله‌ی آزمایشی نداری','err');return;}
   Object.assign(RBL,{on:true,done:0,n:L.length,res:null});rbRepaint();
-  const res=[];
+  jobSet('rblab',{title:'آماده‌سازی خروجی تست‌ها',pause:true,cancel:true,pct:()=>RBL.done/Math.max(1,RBL.n)*100,msg:()=>faN(RBL.done)+' از '+faN(RBL.n)+' تست',
+    go:()=>{RDV='test';if(view==='radar')renderRadar();else go('radar');}});
+  const res=[];let stop=false;
   try{
     for(const it of L){
+      if(!(await jobGate('rblab'))){stop=true;break;}
       try{const C=await rbPath(it);if(C.length)res.push({it,C,st:rbPathStats(it,C)});}catch(e){}
       RBL.done++;rbRepaint();
     }
-  }finally{RBL.on=false;}
+  }finally{RBL.on=false;jobEnd('rblab');}
+  if(stop){rbRepaint();return;}                // لغو: خروجی نیمه‌کاره ساخته نمی‌شود
   RBL.res=res;RBL.at=Date.now();RBL.sig=rbLabSig();rbRepaint();
   if(!res.length)toast('مسیر قیمت هیچ معامله‌ای نیامد (اینترنت/فیلترشکن؟)','err');
 }

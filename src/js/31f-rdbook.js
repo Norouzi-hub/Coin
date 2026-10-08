@@ -126,14 +126,19 @@ function rbClose(it,st,px,t){
   else it.R=+(st==='tp'?it.rr-c:st==='sl'?-1-c:st==='be'?-c:rbRof(it,px)-c).toFixed(3);
 }
 /* یک قدم با یک قیمت یا یک کندل، با نقشه‌ی خروج همان معامله (موتور مشترک با سنجش رادار) */
-function rbStep(it,hi,lo,t){
+/* c: قیمت بسته شدن (کندل 5 دقیقه‌ای)؛ برای «استاپ با بسته شدن کندل» فقط کندلی که ساعت را می‌بندد حساب است.
+   با قیمت زنده (بی c)، آخرین قیمتِ پیش از رسیدن ساعت جای بسته شدن کندل یک‌ساعته را می‌گیرد. */
+function rbStep(it,hi,lo,t,c){
   if(!it.x){it.ex=it.ex||'tp';it.x=exNew();}
   const P=rdExPlans()[it.ex]||rdExPlans().tp, s=it.dir==='long'?1:-1;
   const fav=s>0?rbRof(it,hi):rbRof(it,lo), adv=s>0?rbRof(it,lo):rbRof(it,hi);
+  let cl=null;
+  if(P.cs){if(c!=null){if(t%36e5===0)cl=rbRof(it,c);}
+    else{const h=Math.floor(t/36e5);if(it.x.lh!=null&&h>it.x.lh&&it.x.lp>0)cl=rbRof(it,it.x.lp);it.x.lh=h;it.x.lp=(hi+lo)/2;}}
   const k0=it.x.k;
   // خروج زمانی (مثلاً بعد از 1 ساعت): با قیمت میانه‌ی همین قدم
   if(P.tmax&&t-it.t>=P.tmax*36e5){rbClose(it,'time',(hi+lo)/2,t);return true;}
-  if(exStep(it.x,P,fav,adv)){const how=it.x.how;rbClose(it,how,how==='tp'?rbPx(it,it.x.out):rbPx(it,it.x.stop),t);return true;}
+  if(exStep(it.x,P,fav,adv,cl)){rbClose(it,it.x.how,rbPx(it,it.x.out),t);return true;}
   it.be=it.x.be;
   if(it.x.k>k0)it.x.at=t;                     // زمان آخرین سیو سود
   return false;
@@ -155,13 +160,16 @@ function rbCheck(){
 async function rbCatchUp(force){
   const now=Date.now();if(RBCUON||(!force&&now-RBCU<3*60000))return;
   const todo=RB.items.filter(it=>it.st==='open'&&now-(RBLC.get(it.id)||0)>10*60000);if(!todo.length)return;
-  RBCU=now;RBCUON=true;let ch=false;const away=[];
+  RBCU=now;RBCUON=true;let ch=false,nd=0;const away=[];
+  jobSet('rbcu',{title:'دنبال کردن تست‌ها با کندل 5 دقیقه‌ای',pause:true,cancel:true,pct:()=>nd/todo.length*100,msg:()=>faN(nd)+' از '+faN(todo.length),
+    go:()=>{RDV='test';if(view==='radar')renderRadar();else go('radar');}});
   try{
     for(const it of todo){
+      if(!(await jobGate('rbcu')))break;nd++;
       const M5=3e5, from=it.chk||Math.floor(it.t/M5)*M5+M5, end=it.t+AS_HOLD*36e5;
       let C;try{C=await audCandles(it.tk,'5m',from,300,true);}catch(e){continue;}
       let last=null;
-      for(const k of C){if(k.t<from)continue;if(k.t>=end)break;last=k;if(rbStep(it,k.h,k.l,k.t+M5))break;}
+      for(const k of C){if(k.t<from)continue;if(k.t>=end)break;last=k;if(rbStep(it,k.h,k.l,k.t+M5,k.c))break;}
       if(it.st!=='open'&&it.k==='test')away.push(it);
       if(it.st==='open'){
         if(last)it.chk=last.t;                  // کندل آخر شاید نیمه است: بار بعد از همان دوباره
@@ -169,7 +177,7 @@ async function rbCatchUp(force){
         else RBLC.set(it.id,Date.now());}
       ch=true;
     }
-  }finally{RBCUON=false;}
+  }finally{RBCUON=false;jobEnd('rbcu');}
   if(ch){rbSave();rbRepaint();}
   // خلاصه‌ی آنچه در نبودِ برنامه بسته شد
   if(away.length){const r=away.reduce((a,it)=>a+(it.R||0),0);

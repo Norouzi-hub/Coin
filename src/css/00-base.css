@@ -1771,3 +1771,16 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .btn.rdhelpb .ic{color:var(--gold)}
 .rdhelpl.btn{align-self:stretch;justify-content:center;padding:10px 12px;font-size:13px;font-weight:800;text-decoration:none}
 .rdexck{color:var(--gold);margin-inline-end:4px}
+/* نوار کارهای در حال انجام (زیر سربرگ) */
+.jobbar{display:flex;flex-direction:column;gap:4px;max-width:var(--maxw,820px);margin:6px auto 0;padding:0 12px 6px}
+.job{position:relative;display:flex;align-items:center;gap:4px;border:1px solid color-mix(in srgb,var(--gold) 35%,var(--line));border-radius:12px;background:var(--card);overflow:hidden}
+.job.paused{border-color:var(--line2);opacity:.85}
+.jobm{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:8px;padding:7px 10px;background:none;border:0;color:var(--tx);font:inherit;font-size:12.5px;text-align:start;cursor:pointer}
+.jobm b{font-weight:800;white-space:nowrap}
+.jobm small{color:var(--tx3);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1 1 auto}
+.jobm .jpct{font-style:normal;font-weight:800;color:var(--gold);margin-inline-start:auto}
+.jobm .bspin{width:13px;height:13px;color:var(--gold)}
+.jpz .ic{width:13px;height:13px;color:var(--tx3)}
+.jbt{flex:none;display:grid;place-items:center;width:34px;height:34px;background:none;border:0;border-inline-start:1px solid var(--line);color:var(--tx2);cursor:pointer}
+.jbt .ic{width:15px;height:15px}
+.jbar{position:absolute;inset-inline-start:0;bottom:0;height:2px;background:var(--gold);transition:width .4s}

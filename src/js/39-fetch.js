@@ -7,6 +7,7 @@ async function refresh(append,silent){
   // بعد از تمام شدن کار فعلی خودش دوباره اجرا می‌شود
   if(busy){if(!append)pendingRefresh=true;return false;}
   busy=true;
+  jobSet('tg',{title:append?'پست‌های قدیمی‌تر کانال':'گرفتن پست‌های تازه‌ی کانال',msg:'@'+S.channel,go:()=>go('signals')});
   const btn=$('#btnRef');
   if(!append)btnBusy(btn,true);
   if(append){$('#moreSkel').classList.remove('hide');$('#moreSkel').innerHTML=skelHTML(2);}
@@ -59,7 +60,7 @@ async function refresh(append,silent){
     renderAll();
     return okAny;
   }finally{
-    busy=false;
+    busy=false;jobEnd('tg');
     btnBusy(btn,false);
     $('#moreSkel').classList.add('hide');$('#moreSkel').innerHTML='';
     if(!append)setTimer();
