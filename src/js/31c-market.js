@@ -42,7 +42,7 @@ function mkSummarize(rows){
   all.sort((a,b)=>a-b);
   const med=all[all.length>>1], dn=down/n, upS=up/n;
   const reg=dn>=0.75?'bear2':dn>=0.6?'bear':upS>=0.75?'bull2':upS>=0.6?'bull':'flat';
-  // پرحجم‌ترین‌ها: فهرستی که «پیشنهاد برنامه» بررسی می‌کند (31d-autosig.js)
+  // پرحجم‌ترین‌ها: فهرست پشتیبان رادار وقتی ارزش بازار CoinGecko نیامد
   const top=vols.sort((a,b)=>b[1]-a[1]).slice(0,120).map(x=>x[0]);
   return {at:Date.now(),n,up,down,flat:n-up-down,med,btc,bins,reg,top};
 }
@@ -122,7 +122,7 @@ function mkEventsOf(C){
   if(Math.abs(mv)>=5)ev.push({k:'move',bear:mv<0,t:(mv<0?'ریزش':'رشد')+' ناگهانی '+fmtPct(mv)+' در 3 ساعت'});
   return ev;
 }
-/* کندل یک‌ساعته‌ی ~۴۱ روز هر ارز، نیم ساعت در حافظه؛ مشترکِ رویدادها و «پیشنهاد برنامه» */
+/* کندل یک‌ساعته‌ی ~۴۱ روز هر ارز، نیم ساعت در حافظه؛ برای رویدادهای کارت سیگنال */
 const MKC=new Map();
 async function mkCandles(tk){
   const c=MKC.get(tk);if(c&&Date.now()-c.at<MKEV_TTL)return c.C;

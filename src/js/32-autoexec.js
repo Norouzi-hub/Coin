@@ -18,7 +18,7 @@ function autoSince(p){
   const lg=(p.log||[]).reduce((a,l)=>Math.max(a,l.at||0),0);
   return Math.max(AUTOSEEN[p.id]||0,p.openedAt||0,lg);
 }
-/* سقف زمانِ نقشه (رادار، پیشنهاد برنامه): وقتی رسید، با قیمت همان لحظه بسته می‌شود */
+/* سقف زمانِ نقشه (رادار): وقتی رسید، با قیمت همان لحظه بسته می‌شود */
 const autoDue=(p,t)=>!!(p.untilAuto&&p.until&&t>=p.until);
 const autoGap=()=>Math.max(4*60e3,(S.auto||0)*2500);
 /* hi/lo: بالاترین و پایین‌ترین قیمتِ یک بازه؛ برای قیمت زنده هر دو یکی است */

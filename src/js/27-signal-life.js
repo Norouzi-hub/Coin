@@ -903,7 +903,7 @@ function sheetEnter(p,sig,ov,px,opt){
          ?('خرید اسپات '+fmtUsd(v.margin)+' روی '+fmtPrice(v.entry))
          :('ورود با '+fmtUsd(v.margin)+' مارجین و اهرم '+(+v.lev)+'x روی '+fmtPrice(v.entry)));
        if(opt.until)pos.until=opt.until;               // سقف زمانِ قاعده‌ی من
-       if(opt.until&&opt.untilAuto)pos.untilAuto=true;  // رادار و پیشنهاد برنامه: در سقف زمان خودش بسته می‌شود (همان که سنجیده شده)
+       if(opt.until&&opt.untilAuto)pos.untilAuto=true;  // رادار: در سقف زمان خودش بسته می‌شود (همان که سنجیده شده)
        if(opt.iso)pos.iso=true;
        if(pbTps(pos).length&&pbAttach(pos,pbSel))logAdd(pos,'plan','نقشه‌ی خروج: '+pos.pb.n);
        DB.positions.push(pos);
@@ -997,9 +997,9 @@ function renderFbar(){
     if(postKind(p)==='res')nRes++;
   }
   let nNow=0;
-  try{if(POSTS.length){nNow=glanceData().take.length+(F('autosig')?asSuggestions().list.length:0);}}catch(e){}
+  try{if(POSTS.length){nNow=glanceData().take.length;}}catch(e){}
   const segs=[
-    {k:'now', label:'الان چه کنم؟', n:nNow, hint:'همه‌ی سیگنال‌های قابل گرفتن با دکمه‌ی اقدام، حال بازار و پیشنهاد برنامه'},
+    {k:'now', label:'الان چه کنم؟', n:nNow, hint:'همه‌ی سیگنال‌های قابل گرفتن با دکمه‌ی اقدام و حال بازار'},
     {k:'new', label:'در انتظار', n:nNew, hint:'سیگنال‌های این '+faN(S.staleDays||7)+' روز که هنوز تصمیمشان را نگرفته‌ای'},
     {k:'all', label:'همه',       n:nLive, hint:'سیگنال‌ها و نتیجه‌ها؛ خبر، اطلاع‌رسانی و یادداشت خودشان در آرشیوند'}
   ];
@@ -1029,7 +1029,6 @@ function renderFbar(){
   if(!inAll){
     const row=el('div','frow ftab');
     if(sigFilter==='now'){
-      seg(row,'منبع','nowSrc',[['all','همه'],['ch','کانال'],['app','برنامه']]);
       seg(row,'جهت','nowDir',DIRS);
     }else if(sigFilter==='new'){
       seg(row,'جهت','newDir',DIRS);

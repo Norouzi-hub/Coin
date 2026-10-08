@@ -17,19 +17,19 @@
 const RD_KEY='signaldesk.radar.v5', RD_HIST=3000, RD_STEP=10, RD_MAX=150, RD_MIN=70;
 const RD_CF=['t4','t1','macd','rsi','brk','vol','btc','ext','rs','d50','volc','whale','crowd','taker','oi','rbull','rbear',
   // عامل‌های شناخته‌شده‌ی دیگر (هر کدام فقط اگر در آزمون بیرون از یادگیری کمک کند وزن می‌گیرد):
-  'ma200','ma200s','adx','bbp','vwap','obv','mom','r24','hl30','fund','hs','hc','wknd',
+  'ma200','ma200s','adx','bbp','vwap','obv','mom','r24','hl30','fund',
   // عامل‌های کوتاه‌مدت: کندل برگشتی (سایه)، برگشت RSI از اشباع، حرکت یک ساعت اخیر بیت‌کوین
   'wick','rsit','btc1',
   // واگرایی 1 ساعته: قیمت کف/سقف تازه می‌زند ولی RSI یا هیستوگرام MACD نه
   'divr','divm'];
 /* عامل‌های کل بازار (برای همه‌ی ارزها در یک لحظه یکی): همه طوری که «+» یعنی به نفع بالا رفتن */
 const RD_MF=['mtot','mt2','mt3','mbd','mud'], RD_FEAT=RD_CF.concat(RD_MF), RD_F0=RD_CF.length;
-const RD_FLOW=['whale','crowd','taker','oi'], RD_NOSIGN=['volc','rbull','rbear','hs','hc','wknd'];
+const RD_FLOW=['whale','crowd','taker','oi'], RD_NOSIGN=['volc','rbull','rbear'];
 const RD_FA={t4:'روند 4 ساعته',t1:'روند 1 ساعته',macd:'MACD',rsi:'RSI',brk:'شکست 7 روزه',vol:'حجم',btc:'روند بیت‌کوین',ext:'فاصله از میانگین',
   rs:'قدرت نسبی به بیت‌کوین',d50:'روند روزانه',volc:'فشردگی نوسان',
   whale:'نهنگ‌ها در برابر مردم',crowd:'ازدحام مردم',taker:'خرید/فروش تهاجمی',oi:'Open Interest',rbull:'بازار صعودی',rbear:'بازار نزولی',
   ma200:'میانگین 200 (4 ساعته)',ma200s:'شیب میانگین 200',adx:'قدرت روند (ADX)',bbp:'باند بولینگر',vwap:'VWAP روزانه',obv:'OBV (حجم تجمعی)',
-  mom:'مومنتوم 14 روزه',r24:'بازده 24 ساعته',hl30:'جای قیمت در سقف/کف 30 روزه',fund:'فاندینگ',hs:'ساعت روز',hc:'ساعت روز',wknd:'آخر هفته',wick:'کندل برگشتی (سایه)',divr:'واگرایی RSI (1 ساعته)',divm:'واگرایی MACD (1 ساعته)',rsit:'برگشت RSI از اشباع',btc1:'بیت‌کوین در 1 ساعت',
+  mom:'مومنتوم 14 روزه',r24:'بازده 24 ساعته',hl30:'جای قیمت در سقف/کف 30 روزه',fund:'فاندینگ',wick:'کندل برگشتی (سایه)',divr:'واگرایی RSI (1 ساعته)',divm:'واگرایی MACD (1 ساعته)',rsit:'برگشت RSI از اشباع',btc1:'بیت‌کوین در 1 ساعت',
   mtot:'کل بازار (TOTAL)',mt2:'TOTAL2',mt3:'TOTAL3 (آلت‌ها)',mbd:'دامیننس بیت‌کوین',mud:'دامیننس تتر'};
 const RD_B=['70-85','85-95','95+'];
 const RD_SKIP=/^(USDT|USDC|FDUSD|TUSD|DAI|BUSD|USDP|USDD|USDE|SUSDE|USDS|PYUSD|USD0|USD1|RLUSD|EURC|EURT|PAXG|XAUT|WBTC|WETH|WBETH|STETH|WSTETH|WEETH|CBBTC|BTCB|RETH|METH|LEO|BSC-USD|BFUSD|USDF)$/;
@@ -157,8 +157,6 @@ function rdParts(P,i){
   // واگرایی 1 ساعته (RSI: دست‌کم 2 واحد؛ MACD: دست‌کم 5٪ ATR)
   p.divr=rdDiv(C,rsi,i,2);p.divm=rdDiv(C,hist,i,0.05*atr);
   p.btc1=null;if(bc){const b0=bc.get(C[i].t-H),b1=bc.get(C[i].t);if(b0&&b1){p.btc1=clamp1((b1/b0-1)*100/1.5);m.b1=(b1/b0-1)*100;}}
-  // فصلی: ساعت روز (UTC) و آخر هفته
-  {const dt=new Date(C[i].t+H),hh=dt.getUTCHours(),wd=dt.getUTCDay();p.hs=Math.sin(2*Math.PI*hh/24);p.hc=Math.cos(2*Math.PI*hh/24);p.wknd=wd===0||wd===6?1:0;}
   // جریان پول: مقدارِ ساعتِ همان کندل (منتشرشده تا بسته شدنش)
   const t=C[i].t;
   for(const k of RD_FLOW)p[k]=null;
@@ -262,16 +260,16 @@ function rdPred(M,X,o,mr){if(!M)return null;const w=M.w,F=w.length-1;let z=w[F];
 /* صدک احتمال در میان پیش‌بینی‌های دوره‌ی یادگیری: 0..100 */
 function rdPct(M,p){if(!M||p==null)return 0;const q=M.q;let lo=0,hi=q.length;while(lo<hi){const m=(lo+hi)>>1;if(q[m]<=p)lo=m+1;else hi=m;}return Math.max(0,lo-1);}
 /* یادگیری روی نمونه‌هایی که معامله‌شان پیش از tEnd تمام شده (بی نشت از دوره‌ی سنجش) */
-function rdFit(SS,d,tEnd){
+function rdFit(SS,d,tEnd,mask,w0){
   const F=RD_FEAT.length,F0=RD_F0,K=F+1,rows=[];
   for(const s of SS)for(let q=0;q<s.t.length;q++)if(s.J[d][q]<tEnd)rows.push(s,q);
   const n=rows.length/2;if(n<300)return null;
   const step=Math.max(1,Math.ceil(n/25000)), lam=0.02*n/step;
-  const w=new Float64Array(K);
+  const w=new Float64Array(K);if(w0)for(let k=0;k<K;k++)w[k]=mask&&k<F&&!mask[k]?0:+w0[k]||0;
   for(let it=0;it<7;it++){
     const g=new Float64Array(K),A=new Float64Array(K*K),x=new Float64Array(K);x[F]=1;
     for(let r=0;r<rows.length;r+=2*step){const s=rows[r],q=rows[r+1],o=q*F0,X=s.X,mr=RDMF.get(s.t[q]);
-      let z=w[F];for(let k=0;k<F;k++){x[k]=k<F0?X[o+k]:mr?mr[k-F0]:0;z+=w[k]*x[k];}
+      let z=w[F];for(let k=0;k<F;k++){x[k]=mask&&!mask[k]?0:k<F0?X[o+k]:mr?mr[k-F0]:0;z+=w[k]*x[k];}
       const p=rdSig(z),e=p-(s.R[d][q]>0?1:0),v=Math.max(p*(1-p),1e-6);
       for(let a=0;a<K;a++){const xa=x[a];if(!xa)continue;g[a]+=e*xa;for(let b=a;b<K;b++)if(x[b])A[a*K+b]+=v*xa*x[b];}}
     for(let a=0;a<F;a++){g[a]+=lam*w[a];A[a*K+a]+=lam;}A[F*K+F]+=1e-6;
@@ -284,6 +282,35 @@ function rdFit(SS,d,tEnd){
   const ps=[];for(let r=0;r<rows.length;r+=2*Math.max(1,Math.ceil(n/6000)))ps.push(rdPred(M,rows[r].X,rows[r+1]*F0,RDMF.get(rows[r].t[rows[r+1]])));
   ps.sort((a,b)=>a-b);M.q=Array.from({length:101},(_,k)=>+ps[Math.min(ps.length-1,Math.floor(k/100*(ps.length-1)))].toFixed(5));
   return M;
+}
+/* هرس خودکار عامل‌ها (روی همان داده‌ی یادگیری، پس سنجش بیرون از یادگیری صادق می‌ماند):
+   - کم‌اثر: |وزن| زیر RD_WEAK
+   - تکراری: دو عامل با همبستگی |r| ≥ RD_DUP؛ آنکه وزن کمتری دارد کنار می‌رود
+   بعد مدل فقط با عامل‌های مانده دوباره یاد می‌گیرد. M.drop: عامل ← 'w' یا 'd:عامل هم‌ارزش' */
+const RD_WEAK=0.03, RD_DUP=0.85;
+function rdCorr(SS,d,tEnd){
+  const F=RD_FEAT.length,F0=RD_F0,rows=[];
+  for(const s of SS)for(let q=0;q<s.t.length;q++)if(s.J[d][q]<tEnd)rows.push(s,q);
+  const n=rows.length/2,step=Math.max(1,Math.ceil(n/8000)),S1=new Float64Array(F),S2=new Float64Array(F*F),x=new Float64Array(F);let m=0;
+  for(let r=0;r<rows.length;r+=2*step){const s=rows[r],q=rows[r+1],o=q*F0,mr=RDMF.get(s.t[q]);m++;
+    for(let k=0;k<F;k++){x[k]=k<F0?s.X[o+k]:mr?mr[k-F0]:0;S1[k]+=x[k];}
+    for(let a=0;a<F;a++){const xa=x[a];if(xa)for(let b=a;b<F;b++)S2[a*F+b]+=xa*x[b];}}
+  const R=new Float64Array(F*F);if(m<2)return R;
+  const sd=k=>Math.sqrt(Math.max(0,S2[k*F+k]/m-(S1[k]/m)**2));
+  for(let a=0;a<F;a++)for(let b=a+1;b<F;b++){const v=sd(a)*sd(b);R[a*F+b]=v>1e-9?(S2[a*F+b]/m-S1[a]/m*S1[b]/m)/v:0;}
+  return R;
+}
+function rdFitP(SS,d,tEnd){
+  const M0=rdFit(SS,d,tEnd);if(!M0)return null;
+  const F=RD_FEAT.length,mask=new Uint8Array(F).fill(1),drop={},aw=k=>Math.abs(M0.w[k]);
+  for(let k=0;k<F;k++)if(aw(k)<RD_WEAK){mask[k]=0;drop[RD_FEAT[k]]='w';}
+  const R=rdCorr(SS,d,tEnd),P=[];
+  for(let a=0;a<F;a++)for(let b=a+1;b<F;b++)if(Math.abs(R[a*F+b])>=RD_DUP)P.push([Math.abs(R[a*F+b]),a,b]);
+  P.sort((x,y)=>y[0]-x[0]);
+  for(const [,a,b] of P){if(!mask[a]||!mask[b])continue;const [lo,hi]=aw(a)<aw(b)?[a,b]:[b,a];mask[lo]=0;drop[RD_FEAT[lo]]='d:'+RD_FEAT[hi];}
+  if(!Object.keys(drop).length||mask.reduce((s,x)=>s+x,0)<5)return M0;
+  const M=rdFit(SS,d,tEnd,mask,M0.w);if(!M)return M0;
+  M.drop=drop;return M;
 }
 /* ---- کارنامه‌ی صادق ---- */
 function rdAdd(cal,k,R,t){const o=cal[k]||(cal[k]={n:0,w:0,r:0,d:{}});o.n++;o.r+=R;if(R>0)o.w++;
@@ -316,11 +343,11 @@ async function rdModel(){
   const cal={},rel={long:Array.from({length:6},()=>[0,0,0]),short:Array.from({length:6},()=>[0,0,0])},busy=new Map(),recs=[];
   for(let k=0;k<3;k++){
     RDQ.msg='سنجش صادقانه: دوره‌ی '+(k+1)+' از 3 (یادگیری روی گذشته، سنجش روی بعدش)…';RDQ.pm=k/4;rdPaintProg();await rdYield();
-    const M={long:rdFit(SS,'long',cut[k])};await rdYield();M.short=rdFit(SS,'short',cut[k]);
+    const M={long:rdFitP(SS,'long',cut[k])};await rdYield();M.short=rdFitP(SS,'short',cut[k]);
     if(M.long&&M.short)rdEvalFold(SS,M,cut[k],cut[k+1],cal,rel,busy,recs);
   }
   RDQ.msg='یادگیری مدل نهایی روی همه‌ی داده…';RDQ.pm=3/4;rdPaintProg();await rdYield();
-  const ML=rdFit(SS,'long',Infinity);await rdYield();const MS=rdFit(SS,'short',Infinity);
+  const ML=rdFitP(SS,'long',Infinity);await rdYield();const MS=rdFitP(SS,'short',Infinity);
   RDQ.msg='';RDQ.pm=1;
   if(!ML||!MS)return false;
   // نقشه‌ی خروج: هر سه روی همان معامله‌های بیرون از یادگیری؛ بیشترین میانگین R برنده است
@@ -613,13 +640,10 @@ function rdReasons(x){
     else if(k==='r24')t='بازده 24 ساعته '+fmtPct(x.r24);
     else if(k==='hl30')t=v>0?'نزدیک سقف 30 روزه':'نزدیک کف 30 روزه';
     else if(k==='fund')t='فاندینگ '+fmtNum(x.fu)+'٪ '+(v>0?'(لانگ‌ها شلوغ)':'(شورت‌ها شلوغ)');
-    else if(k==='hc')return;
     else if(k==='wick')t=v>0?'سایه‌ی پایین بلند (کف رد شد)':'سایه‌ی بالا بلند (سقف رد شد)';
     else if(k==='rsit')t=v>0?'RSI از اشباع فروش برگشت':'RSI از اشباع خرید افتاد';
     else if(k==='divr'||k==='divm')t=(v>0?'واگرایی مثبت ':'واگرایی منفی ')+(k==='divr'?'RSI':'MACD')+' (1 ساعته؛ '+(v>0?'کف پایین‌تر، نوسانگر بالاتر':'سقف بالاتر، نوسانگر پایین‌تر')+')';
     else if(k==='btc1')t='بیت‌کوین '+fmtPct(x.b1)+' در 1 ساعت';
-    else if(k==='hs')t='ساعت روز (UTC '+new Date(x.t+36e5).getUTCHours()+')';
-    else if(k==='wknd')t='آخر هفته';
     else if(k==='mtot')t='کل بازار (TOTAL) '+(v>0?'بالای':'زیر')+' میانگین 7 روزه';
     else if(k==='mt2'||k==='mt3'){const q=RD.mkl&&RD.mkl[k==='mt2'?'t2c':'t3c'];t=RD_FA[k]+' '+(q!=null?fmtPct(q):v>0?'رو به بالا':'رو به پایین')+' در 24 ساعت';}
     else if(k==='mbd'||k==='mud'){const q=RD.mkl&&RD.mkl[k==='mbd'?'bdD':'udD'];t=RD_FA[k]+' '+(v>0?'در حال افت':'در حال رشد')+(q!=null?' ('+(q>0?'+':'')+q.toFixed(2)+' واحد در 24 ساعت)':'');}
@@ -674,7 +698,12 @@ function rdPanelHtml(){
   if(RD.M){h+='<details class="sec sub2"><summary>وزن عامل‌ها (یادگرفته از '+faN(RD.ns||0)+' نمونه'+(RD.ncoin?' در '+faN(RD.ncoin)+' ارز':'')+')</summary><div class="rdwts">';
     for(const d of ['long','short']){const w=RD.M[d].w,ks=RD_FEAT.map((k,n)=>[k,d==='short'&&!RD_NOSIGN.includes(k)?-w[n]:w[n]]).filter(x=>Math.abs(x[1])>=0.02).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
       h+='<div><b>'+(d==='long'?'لانگ':'شورت')+':</b> '+(ks.length?ks.map(([k,v])=>'<span class="pill '+(v>0?'mut':'lose')+'">'+esc(RD_FA[k])+' <bdi dir="ltr">'+(v>0?'+':'−')+Math.abs(v).toFixed(2)+'</bdi></span>').join(''):'هیچ عاملی اثر روشن نداشت')+'</div>';}
-    h+='<div class="hint">«+» یعنی این عامل به نفع همین جهت بوده؛ «−» یعنی برعکسِ انتظار عمل کرده. عامل‌های کم‌اثر نشان داده نمی‌شوند.</div></div></details>';}
+    for(const d of ['long','short']){const D=RD.M[d].drop;if(!D||!Object.keys(D).length)continue;
+      const wk=Object.keys(D).filter(k=>D[k]==='w'),dp=Object.keys(D).filter(k=>D[k]!=='w');
+      h+='<div class="rddrop"><b>کنار گذاشته در '+(d==='long'?'لانگ':'شورت')+' ('+faN(wk.length+dp.length)+'):</b> '+
+        (wk.length?'<span class="hint">کم‌اثر:</span> '+wk.map(k=>'<span class="pill mut">'+esc(RD_FA[k]||k)+'</span>').join(''):'')+
+        (dp.length?' <span class="hint">تکراری:</span> '+dp.map(k=>'<span class="pill mut" title="همبستگی بالا">'+esc(RD_FA[k]||k)+' ≈ '+esc(RD_FA[D[k].slice(2)]||D[k].slice(2))+'</span>').join(''):'')+'</div>';}
+    h+='<div class="hint">«+» یعنی این عامل به نفع همین جهت بوده؛ «−» یعنی برعکسِ انتظار عمل کرده. عامل‌های کم‌اثر (|وزن| زیر '+RD_WEAK+') و تکراری (همبستگی '+RD_DUP+' به بالا با عاملی قوی‌تر) خودکار کنار می‌روند و مدل بی آن‌ها دوباره یاد می‌گیرد؛ این کار در هر دوره‌ی سنجش هم فقط با داده‌ی یادگیری همان دوره انجام می‌شود.</div></div></details>';}
   return h+'</div>';
 }
 function rdRowHtml(x,i){
@@ -766,7 +795,7 @@ function rdHtml(){
   const wv=wait.filter(fv);
   if(wv.length)h+='<div class="hint rdwait"><b>صبر</b> (امتیاز زیر '+faN(RD_MIN)+'): '+wv.map(x=>(rdIsFav(x.tk)?'★':'')+esc(x.tk)+' <span class="'+(x.best==='long'?'win':'lose')+'">'+(x.best==='long'?'L':'S')+faN(x.sc)+'</span>').join('، ')+'</div>';
   if(VIEW.mktFav&&!act.length&&!wv.length)h+='<div class="empty">هیچ‌کدام از ارزهای واچ‌لیست هنوز بررسی نشده؛ «انتخاب ارزها» ← «بررسی واچ‌لیست».</div>';
-  h+='<div class="hint">مدل: رگرسیون لجستیک، جدا برای لانگ و شورت، روی نتیجه‌ی همین معامله (بعد از کارمزد). '+faN(RD_FEAT.length)+' عامل: قیمت، میانگین 200، ADX، بولینگر، VWAP، OBV، مومنتوم، بیت‌کوین، قدرت نسبی، روند روزانه، نوسان، فاندینگ، ساعت و روز، واگرایی 1 ساعته، جریان پول فیوچرز بایننس'+
+  h+='<div class="hint">مدل: رگرسیون لجستیک، جدا برای لانگ و شورت، روی نتیجه‌ی همین معامله (بعد از کارمزد). '+faN(RD_FEAT.length)+' عامل: قیمت، میانگین 200، ADX، بولینگر، VWAP، OBV، مومنتوم، بیت‌کوین، قدرت نسبی، روند روزانه، نوسان، فاندینگ، واگرایی 1 ساعته، جریان پول فیوچرز بایننس'+
     (RD.nflow!=null?' ('+faN(RD.nflow)+' ارز داده‌اش را داشتند)':'')+'، و کل بازار (TOTAL، TOTAL2، TOTAL3، دامیننس بیت‌کوین و تتر)'+(RD.mkl&&RD.mkl.cov?'؛ تاریخچه‌اش از ارزهای بررسی‌شده بازسازی شده که '+faN(Math.round(RD.mkl.cov*100))+'٪ کل بازارند':'')+'. کارنامه با آزمون پیش‌رونده: مدل هر دوره را ندیده سنجیده شده. سود گذشته تضمین آینده نیست؛ «تست» بزن و در «دفتر پیشنهادها» ببین در عمل چه شد.</div></div>';
   return h;
 }

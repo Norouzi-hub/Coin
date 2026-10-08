@@ -67,13 +67,11 @@ function paintGlance(){
   if(!POSTS.length){g.className='glance gltab';g.innerHTML='<div class="empty">'+STAR+'هنوز پستی نیامده.</div>';return;}
   const d=glanceData();
   // فیلترهای همین تب: منبع (کانال / برنامه) و جهت
-  const src=VIEW.nowSrc||'all', dirF=VIEW.nowDir||'all', take=d.take.filter(x=>dirF==='all'||x.dir===dirF);
+  const dirF=VIEW.nowDir||'all', take=d.take.filter(x=>dirF==='all'||x.dir===dirF);
   // حال بازار هر ۱۵ دقیقه؛ رسیدنش دوباره می‌کشد
   // اگر نیامد، حداکثر هر دو دقیقه یک بار؛ فقط وقتی داده‌ی تازه رسید دوباره می‌کشد (نه حلقه)
   if((!MKT||Date.now()-MKT.at>MK_TTL)&&Date.now()-MKTRY>120000){MKTRY=Date.now();const was=MKT&&MKT.at;
     mktLoad().then(m=>{if(m&&m.at!==was&&view==='signals')paintGlance();}).catch(()=>{});}
-  // پیشنهاد برنامه: هر نیم ساعت یک بار بررسی (در پس‌زمینه، دو ارز هم‌زمان)
-  if(F('autosig')&&!ASQ.on&&Date.now()-AS.at>30*60000&&(SYMBOLS.size||MKT))setTimeout(()=>asScan(),400);
   g.className='glance gltab';
   // تب است، نه کارت تاشو: سربرگ فقط خلاصه است
   let h='<div class="glh"><b>'+ic('bolt')+'الان چه کنم؟</b><span>'+
@@ -84,15 +82,11 @@ function paintGlance(){
     if(d.lock)h+='<div class="flag d"><i>!</i><span>'+faN(d.lock.n)+' باخت پیاپی — تا فردا ورود تازه نه.</span></div>';
     {const dirs={long:0,short:0};for(const x of take)dirs[x.dir]++;h+=mktHtml(MKT,dirs)+mdHtml();}
     if(d.nL+d.nS)h+='<div class="hint gldir">کانال در 30 روز اخیر: <b class="u">'+faN(d.nL)+' لانگ</b> · <b class="d">'+faN(d.nS)+' شورت</b>'+
-      (d.nS<d.nL*0.15?' — کانال تقریباً فقط لانگ می‌دهد؛ شورت را «پیشنهاد برنامه» (شکست کف، تقاطع نزولی) پیدا می‌کند.':'')+'</div>';
+      (d.nS<d.nL*0.15?' — کانال تقریباً فقط لانگ می‌دهد؛ شورت را در تب «بازار» (رادار) پیدا کن.':'')+'</div>';
     const list=GLALL?take:take.slice(0,GLMAX);
-    if(src!=='app'){
-      list.forEach((x,i)=>h+=glSigHtml(x,i));
-      if(take.length>list.length)h+='<button class="btn sm glmore" data-more="1">'+faN(take.length-list.length)+' سیگنال دیگر</button>';
-      if(!take.length&&d.take.length)h+='<div class="hint">سیگنال کانالی با این فیلتر نیست ('+faN(d.take.length)+' سیگنال دیگر پنهان است).</div>';
-    }
-    // اول سیگنال‌های کانال، بعد پیشنهاد خود برنامه
-    if(src!=='ch')h+=asHtml();
+    list.forEach((x,i)=>h+=glSigHtml(x,i));
+    if(take.length>list.length)h+='<button class="btn sm glmore" data-more="1">'+faN(take.length-list.length)+' سیگنال دیگر</button>';
+    if(!take.length&&d.take.length)h+='<div class="hint">سیگنال کانالی با این فیلتر نیست ('+faN(d.take.length)+' سیگنال دیگر پنهان است).</div>';
     if(d.late||d.lt||d.nost)h+='<div class="hint glskip">'+[d.nost?faN(d.nost)+' سیگنال بی‌استاپ (نه در متن، نه از سیگنال قبلی؛ برای ایزوله نه)':'',d.late?faN(d.late)+' سیگنال دیر رسیده (قیمت بیش از نیمی از راه تا تارگت 1 را رفته)':'',
       d.lt?faN(d.lt)+' سیگنال بلندمدت (اسپات یا استاپ دورتر از '+fmtNum(isoMaxSd())+'٪)':''].filter(Boolean).join(' · ')+' — در فهرست «در انتظار» هستند.</div>';
     if(d.dl)h+='<button class="glit" data-pos="'+esc(d.dl.p.id)+'"><b dir="ltr">'+esc(d.dl.p.ticker)+'</b><span>'+ic('clock')+(d.dl.t<=Date.now()?'مهلت گذشت — ببند':fmtLeft(d.dl.t-Date.now())+' تا پایان مهلت')+'</span></button>';
@@ -104,7 +98,6 @@ function paintGlance(){
   g.querySelectorAll('[data-pos]').forEach(b=>b.onclick=()=>advDo({t:'pos',id:b.dataset.pos}));
   g.querySelectorAll('[data-bell]').forEach(b=>b.onclick=sheetAdvice);
   const mb=g.querySelector('[data-more]');if(mb)mb.onclick=()=>{GLALL=true;paintGlance();};
-  asWire(g);
   g.querySelectorAll('.glsig').forEach(w=>{
     const x=take[+w.dataset.i];if(!x)return;
     w.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{

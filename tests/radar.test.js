@@ -50,7 +50,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(e.p.t4>0&&e.p.rs>0&&e.p.d50>0&&e.p.volc!=null,'روند صعودی قوی‌تر از بیت‌کوین ← روند 4ساعته، قدرت نسبی و روند روزانه مثبت');
  ok(e.same,'عامل‌های هر کندل فقط از گذشته (بی نگاه به آینده)');
  ok(e.p2.ma200>0&&e.p2.ma200s>0&&e.p2.adx>0&&e.adx>20&&e.p2.mom>0&&e.p2.obv>0&&e.p2.hl30>0.5,'عامل‌های تازه در روند صعودی: بالای میانگین 200 و رو به بالا، ADX '+Math.round(e.adx)+' صعودی، مومنتوم و OBV مثبت، نزدیک سقف 30 روزه');
- ok(Math.abs(e.p2.fund-0.6)<1e-9&&e.p2.hs!=null&&e.p2.wknd!=null&&e.p2.bbp!=null&&e.p2.vwap!=null,'فاندینگ 0.03٪ ← 0.6؛ ساعت روز، آخر هفته، بولینگر، VWAP');
+ ok(Math.abs(e.p2.fund-0.6)<1e-9&&!('hs' in e.p2)&&!('wknd' in e.p2)&&e.p2.bbp!=null&&e.p2.vwap!=null,'فاندینگ 0.03٪ ← 0.6؛ بولینگر، VWAP؛ ساعت روز و آخر هفته برداشته شد');
  ok(e.n>500&&e.xl===e.n*e.F&&e.exitOk,'نمونه‌ها: هر 2 ساعت، '+e.F+' عامل قیمتی، خروج بعد از ورود ('+e.n+')');
  ok(e.longWin>e.shortWin,'در روند صعودی لانگ بیشتر سود داده تا شورت ('+e.longWin.toFixed(2)+' در برابر '+e.shortWin.toFixed(2)+')');
 
@@ -186,7 +186,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(full.eth&&full.eth.flow&&full.eth.wl>50&&full.sol===false&&full.nflow===2,'ETH با داده‌ی نهنگ/مردم؛ SOL بی فیوچرز');
  ok(full.auto===full.sig,'همه‌ی پیشنهادهای 70+ در «دفتر پیشنهادها» ثبت شد ('+full.auto+')');
  const mk2=await p.evaluate(()=>{const r=mdMetrics(MD);RDV='sig';renderRadar();const G=document.getElementById('rdView');
-   const tiles=[...G.querySelectorAll('.mdt')].map(x=>x.textContent);AS.at=Date.now();go('signals',true);bucket='live';sigFilter='now';paintGlance();const now=!!document.querySelector('#glance .mdbox');go('radar',true);renderRadar();
+   const tiles=[...G.querySelectorAll('.mdt')].map(x=>x.textContent);go('signals',true);bucket='live';sigFilter='now';paintGlance();const now=!!document.querySelector('#glance .mdbox');go('radar',true);renderRadar();
    return {r,tiles,flags:[...G.querySelectorAll('.mdbox .flag')].map(x=>x.textContent),now,mf:RDMF.size,w:RD.M&&RD.M.long.w.length,last:RD.mk7&&{tot:RD.mk7.tot.slice(-1)[0],bd:RD.mk7.bd.slice(-1)[0],ud:RD.mk7.ud.slice(-1)[0],n:RD.mk7.tot.length},mkl:RD.mkl,
      mrow:[...RDMF.values()].slice(-1)[0],nF:RD_FEAT.length};});
  console.log('   ',JSON.stringify(mk2).slice(0,900));
@@ -204,6 +204,14 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  console.log('   ',JSON.stringify(Object.assign({},dv,{tbl:dv.tbl.slice(0,120)})));
  ok(Math.abs(dv.bull-0.85)<1e-9&&dv.brk===0&&dv.none===0&&Math.abs(dv.bear+0.85)<1e-9,'واگرایی: مثبت در کف، منفی در سقف؛ کف شکسته یا RSI پایین‌تر = هیچ');
  ok(dv.f&&/all\|no/.test(dv.divs)&&/هم‌جهت با سیگنال/.test(dv.tbl)&&/خلاف سیگنال/.test(dv.tbl)&&/فقط با واگرایی هم‌جهت/.test(dv.chip),'عامل واگرایی در مدل، جدول «اثر واگرایی» و فیلتر «فقط با واگرایی هم‌جهت»');
+ // هرس خودکار: عامل تکراری (کپی یک عامل دیگر) و عامل‌های بی‌اثر کنار می‌روند و وزنشان صفر می‌شود
+ const pr=await p.evaluate(()=>{const N=3000,F0=RD_F0,X=new Float32Array(N*F0),R={long:[],short:[]},J={long:[],short:[]},t=[];let sd=7;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647;
+   for(let q=0;q<N;q++){let z=0;for(let k=0;k<6;k++){const v=rnd()<0.5?-1:1;X[q*F0+k]=v;z+=v*(k+1)*0.25;}X[q*F0+6]=X[q*F0];
+     const y=rnd()<1/(1+Math.exp(-z))?1:-1;R.long.push(y);R.short.push(-y);J.long.push(q);J.short.push(q);t.push(q*36e5);}
+   const M=rdFitP([{tk:'Z',t,X,R,J}],'long',Infinity),D=M.drop||{},k6=RD_FEAT[6],k0=RD_FEAT[0];
+   return {dup:D[k6]==='d:'+k0||D[k0]==='d:'+k6,w0:M.w[D[k6]?0:6],weak:Object.values(D).filter(x=>x==='w').length,kept:[1,2,3,4,5].every(k=>!D[RD_FEAT[k]]),zero:Object.keys(D).every(k=>M.w[RD_FEAT.indexOf(k)]===0),nF:RD_FEAT.length};});
+ console.log('   ',JSON.stringify(pr));
+ ok(pr.dup&&pr.kept&&pr.zero&&pr.weak>=pr.nF-8&&Math.abs(pr.w0)>0.1,'هرس خودکار: کپیِ یک عامل «تکراری» و عامل‌های بی‌اثر «کم‌اثر» کنار رفتند؛ عامل‌های مفید ماندند');
  // خروج سریع: همه در +0.5R، نصف در +0.5R، و خروج بعد از 1 ساعت با قیمت همان لحظه
  const qx=await p.evaluate(()=>{const C=Array.from({length:30},(_,j)=>j===0?{t:0,o:10,h:10,l:10,c:10}:j===1?{t:36e5,o:10,h:10.05,l:9.95,c:10.04}:{t:j*36e5,o:10.1,h:10.32,l:10.05,c:10.3});
    const cost=(2*(+S.fee||0)+(+S.slip||0))/100/0.02,w=rdWalkX(C,0,{dir:'long',E:10,sd:0.02});
