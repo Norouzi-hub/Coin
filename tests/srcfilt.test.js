@@ -15,7 +15,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const a=await p.evaluate(()=>{posFilter='all';go('positions',true);renderPositions();
    const src=Object.fromEntries(DB.positions.map(x=>[x.id,posSrc(x).k+'/'+posSrc(x).sub]));
    const pill=id=>{const c=document.getElementById('pos-'+id);return c&&c.querySelector('.pill.psrc')?c.querySelector('.pill.psrc').textContent:null;};
-   const chips=[...document.querySelectorAll('#posSummary .psrcbar .fc')].map(x=>x.textContent);
+   const chips=[...document.querySelectorAll('#posSrcBar .psrcbar .fc')].map(x=>x.textContent);
    const cmp=(document.querySelector('#posSummary .srcwrap')||{}).textContent||'';
    return {src,pills:{p1:pill('p1'),p3:pill('p3'),r1:pill('r1'),a1:pill('a1')},chips,cmp};});
  console.log('   ',JSON.stringify(a).slice(0,600));
@@ -23,7 +23,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(a.pills.p1==='کانال'&&a.pills.p3==='خودم'&&a.pills.r1==='رادار'&&a.pills.a1==='برنامه','برچسب روی کارت');
  ok(a.chips.join('|')==='همه5|کانال2|خودم3','فیلتر منبع با شمارش: '+a.chips.join('|'));
  ok(/کانال در برابر خودم/.test(a.cmp)&&/رادار/.test(a.cmp)&&/پیشنهاد برنامه/.test(a.cmp),'جدول «کانال در برابر خودم»');
- const f=await p.evaluate(()=>{[...document.querySelectorAll('#posSummary .psrcbar .fc')][2].click();
+ const f=await p.evaluate(()=>{[...document.querySelectorAll('#posSrcBar .psrcbar .fc')][2].click();
    return {ids:[...document.querySelectorAll('#posList .card')].map(c=>c.id.slice(4)).sort().join(','),saved:localStorage.getItem('signaldesk.possrc')};});
  ok(f.ids==='a1,p3,r1'&&f.saved==='me','«خودم»: فقط پوزیشن‌های خودم ('+f.ids+')، روی دستگاه می‌ماند');
  // فرم ویرایش: منبع را دستی عوض کن

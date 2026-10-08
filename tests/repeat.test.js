@@ -54,11 +54,11 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    SYMVER++;KGEN++;Object.assign(S,{riskUsd:2});bucket='live';sigFilter='now';go('signals',true);renderAll();
    const G=document.getElementById('glance');
    return {n:G.querySelectorAll('.glsig').length,acts:[...G.querySelectorAll('.glsig')[0].querySelectorAll('[data-a]')].map(x=>x.dataset.a),
-     num:G.querySelector('.glsig .glnum').textContent,head:G.querySelector('.glh').textContent};});
+     num:G.querySelector('.glsig .rdkv').textContent,head:G.querySelector('.glh').textContent};});
  console.log('   ',JSON.stringify(g));
  ok(g.n>=6,'بیش از چهار سیگنال قابل گرفتن فهرست شد: '+g.n);
  ok(g.acts.join(',')==='iso,form,skip,copy','دکمه‌ها: ایزوله، فرم کامل، وارد نشدم، کپی');
- ok(/ورود 100/.test(g.num)&&/استاپ 96 \(4٪\)/.test(g.num),'عددها روی همان ردیف: '+g.num);
+ ok(/ورود\s*100/.test(g.num)&&/استاپ\s*96\s*4%/.test(g.num)&&/تارگت\s*108/.test(g.num),'سه خانه‌ی ورود، استاپ (با درصد) و تارگت: '+g.num);
  await p.evaluate(()=>document.querySelector('#glance .glsig [data-a="iso"]').click());await p.waitForTimeout(500);
  const isoS=await p.evaluate(()=>({ok:!!document.querySelector('#sheet #ok'),t:(document.querySelector('#sheet')||{}).textContent||'',m:(document.querySelector('#f_m')||{}).value}));
  console.log('   ',isoS.t.slice(0,140));

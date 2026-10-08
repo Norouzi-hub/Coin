@@ -666,7 +666,7 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .rwarn.info{background:var(--inset);color:var(--tx2);border:1px solid var(--line2)}
 /* کارت پوزیشن جمع‌شده: سربرگ + سود/ضرر درشت */
 .card.pct{cursor:pointer}
-.card.pct .body>*:not(.pnlhero),.card.pct .acts,.card.pct .pmore{display:none}
+.card.pct .body>*:not(.pnlhero):not(.pmini),.card.pct .acts,.card.pct .pmore{display:none}
 .card.pct .body{padding-bottom:12px}
 .card.pcopen .chead{cursor:pointer}
 .pchev{flex:none;width:8px;height:8px;border-right:2px solid var(--tx3);border-bottom:2px solid var(--tx3);
@@ -1675,3 +1675,60 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rdhelpl .ic{width:15px;height:15px}
 .rdchgd{color:var(--tx2)}
 .pill.rdchg{font-weight:800}
+/* ---- سیگنال‌ها و پوزیشن‌ها (طرح تازه) ---- */
+/* نوار وضعیت: یک ردیف برچسب کوچک به‌جای جعبه‌ی دوخطی */
+#status:not(.bad):not(.warn):not(.upd){flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:6px;padding:8px 10px;line-height:1.5}
+#status:not(.bad):not(.warn):not(.upd)::-webkit-scrollbar{display:none}
+#status:not(.bad):not(.warn):not(.upd) .sc{flex:none;font-size:11.5px;padding:3px 9px;border-radius:99px;background:var(--inset);border:1px solid var(--line)}
+#status:not(.bad):not(.warn):not(.upd) .sc.grow{background:none;border:0;padding-inline:2px}
+/* «الان چه کنم؟»: بی کارت تودرتو؛ سربرگ کارت وضعیت است */
+.topcard:has(.glnow:not(:empty)){border:0;background:none;overflow:visible}
+.topcard>.status:not(:empty)+.glance.glnow:not(:empty){border-top:0}
+.glance.glnow{background:none;border:0;overflow:visible;margin:8px 0}
+.glnow .glh{position:relative;padding:12px 14px 12px 12px;margin-bottom:10px;border-radius:16px;background:var(--card);border:1px solid var(--line);
+  border-inline-start:4px solid var(--gold);flex-wrap:wrap;row-gap:2px}
+.glnow .glh.go{border-inline-start-color:var(--up);background:color-mix(in srgb,var(--up) 6%,var(--card))}
+.glnow .glh.stop{border-inline-start-color:var(--dn);background:color-mix(in srgb,var(--dn) 7%,var(--card))}
+.glnow .glh .glst{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;font-style:normal;font-weight:900;font-size:14px;background:var(--inset);color:var(--gold);border:1px solid var(--line)}
+.glnow .glh.go .glst{background:var(--up);color:#fff;border-color:transparent}.glnow .glh.stop .glst{background:var(--dn);color:#fff;border-color:transparent}
+.glnow .glh b{font-size:15px}.glnow .glh.go b{color:var(--up)}
+.glnow .glh span{flex:1 1 100%;white-space:normal;padding-inline-start:38px;font-size:12px;line-height:1.7}
+.glnow .glb{padding:0;gap:10px}
+.glnow .glsig{padding:10px;gap:8px;background:var(--card)}
+.glnow .glsig .glit{flex-wrap:wrap;gap:6px}
+.glnow .glsig .glit .rdtk{font-size:16px;font-weight:900}
+.glnow .glsig .glz{font-size:11.5px;color:var(--gold);font-weight:800}
+.glnow .gldir{padding:0 4px}
+/* کارت پست: بازار و مبلغ تاشو */
+.advset{border:1px solid var(--line);border-radius:12px;background:var(--inset);margin:6px 0}
+.advset>summary{display:flex;align-items:center;gap:8px;padding:9px 11px;cursor:pointer;list-style:none;font-size:12.5px;color:var(--tx2);min-height:40px}
+.advset>summary::-webkit-details-marker{display:none}
+.advset>summary .ic{width:15px;height:15px;color:var(--gold);flex:none}
+.advset>summary b{color:var(--tx)}
+.advset>summary::after{content:'';margin-inline-start:auto;width:7px;height:7px;border-inline-end:2px solid var(--tx3);border-bottom:2px solid var(--tx3);transform:rotate(45deg);margin-top:-3px;transition:transform .2s}
+.advset[open]>summary::after{transform:rotate(-135deg);margin-top:3px}
+.advset[open]{padding-bottom:8px}
+.advset>:not(summary){margin:4px 10px 0}
+.card:not(.lesson) .shot img{max-height:min(30vh,230px)}
+/* پوزیشن‌ها: منبع و مرتب‌سازی در یک ردیف، آمار یک‌ردیفه، نوار کوچک استاپ تا تارگت */
+.psrow{display:flex;align-items:center;gap:8px;width:100%;flex-wrap:wrap}
+.psrow #posSrcBar{flex:1 1 180px;min-width:0}
+.psrow #posSrcBar .psrcbar{margin:0}
+.psrow .psort{margin-top:0;flex:none}
+#posSummary .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;border-radius:14px;overflow:hidden}
+#posSummary .st{padding:9px 8px;box-shadow:none;background:var(--card);min-width:0}
+#posSummary .st b{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#posSummary .st span{font-size:15px;text-align:start}
+#posSummary .st small{font-size:10px;text-align:start}
+.card:not(.pct) .pmini{display:none}
+.pmini{margin:2px 2px 0;display:flex;flex-direction:column;gap:4px}
+.pmtrk{position:relative;height:6px;border-radius:99px;background:linear-gradient(90deg,color-mix(in srgb,var(--dn) 35%,var(--inset)),var(--inset) 45%,color-mix(in srgb,var(--up) 35%,var(--inset)))}
+.pmtrk i{position:absolute;top:0;height:100%}
+.pmfill{border-radius:99px;opacity:.9}.pmfill.u{background:var(--up)}.pmfill.d{background:var(--dn)}
+.pment{width:2px;margin-left:-1px;background:var(--tx2);top:-3px!important;height:12px!important;border-radius:2px}
+.pmdot{width:12px;height:12px!important;top:-3px!important;margin-left:-6px;border-radius:50%;border:2px solid var(--card)}
+.pmdot.u{background:var(--up)}.pmdot.d{background:var(--dn)}
+.pmlab{display:flex;justify-content:space-between;font-size:10.5px;color:var(--tx3);font-variant-numeric:tabular-nums}
+.pmlab .u{color:var(--up)}.pmlab .d{color:var(--dn)}
+.psrow .psort>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}.psrow .psort select{min-height:36px}
+.rdhelpl.lnk{background:none;border:0;padding:4px 0;color:var(--gold);font-weight:800;cursor:pointer}

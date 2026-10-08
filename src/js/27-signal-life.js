@@ -366,6 +366,7 @@ function mktToggle(cur,guess,onPick){
 }
 /* حالت بسته: فقط آنچه برای تصمیم لازم است، به‌علاوه‌ی دو دکمه. باز کردن جزئیات
    یک کار جداست تا لیست بلند نشود و پیمایش سنگین نشود. */
+const ADVOPEN=new Set();
 function buildBrief(p,sig,ov,px){
   const I=planInputsOf(p,sig,ov,px);
   const w=el('div','brief');
@@ -382,9 +383,14 @@ function buildBrief(p,sig,ov,px){
   w.appendChild(kv);
   // قاعده‌ی من، اندازه‌ی ایزوله، دیر رسیدی، سابقه (27b-entry-tools.js)
   {const ib=buildIsoBox(p,sig,ov,px);if(ib)w.appendChild(ib);}
-  /* کلیدی که قبل از هر عددی تکلیف را روشن می‌کند: اسپات یا فیوچرز */
-  w.appendChild(mktToggle(I.market,I.marketGuess,k=>setOv(p,'market',k,true)));
-  if(!decisionOf(p.id))w.appendChild(amtRow(I.amt,v=>setAmt(p,v),I.spot));
+  /* کلیدی که قبل از هر عددی تکلیف را روشن می‌کند: اسپات یا فیوچرز. وقتی بازار حدسی است جلوی چشم می‌ماند؛
+     وگرنه با مبلغ در یک ردیف تاشو («بازار و مبلغ») تا کارت کوتاه شود — ایزوله مبلغ را خودش از ریسک حساب می‌کند. */
+  const mt=mktToggle(I.market,I.marketGuess,k=>setOv(p,'market',k,true)), ar=!decisionOf(p.id)?amtRow(I.amt,v=>setAmt(p,v),I.spot):null;
+  if(I.marketGuess){w.appendChild(mt);if(ar)w.appendChild(ar);}
+  else{const d=el('details','advset'+(ADVOPEN.has(p.id)?'':''));if(ADVOPEN.has(p.id))d.open=true;
+    d.appendChild(el('summary',null,ic('sliders')+'<span>بازار و مبلغ: <b>'+(I.spot?'اسپات':'فیوچرز')+(I.amt?' · '+fmtUsd(I.amt):'')+'</b></span>'));
+    d.ontoggle=()=>{d.open?ADVOPEN.add(p.id):ADVOPEN.delete(p.id);};
+    d.appendChild(mt);if(ar)d.appendChild(ar);w.appendChild(d);}
   const a=el('div','acts');
   /* یک دکمه‌ی اصلی: «ایزوله» (اهرم امن، حجم از ریسک دلاری، استاپ و هدفِ قاعده‌ی من) وقتی ممکن است؛
      وگرنه «بررسی و ورود». فرم کامل همیشه دکمه‌ی دوم است. «ورود سریع» برداشته شد: ایزوله همان کار را

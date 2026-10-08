@@ -40,16 +40,18 @@ function glSigHtml(x,i){
   const {p,sig,I,px,z,pl}=x, E=I.entry, sd=E&&I.stop?Math.abs(E-I.stop)/E*100:null;
   const tps=(sig.targets||[]).filter(t=>E&&(t-E)*(x.dir==='long'?1:-1)>0).slice(0,3);
   const far=px&&E?(px-E)/E*100*(x.dir==='long'?1:-1):null;     // مثبت: قیمت از ورود به سمت سود رفته
-  const nums=[E?'ورود <b dir="ltr">'+fmtPrice(E)+'</b>':(sig.trigger!=null?'تریگر <b dir="ltr">'+fmtPrice(sig.trigger)+'</b>':'ورود بازار'),
-    I.stop?'استاپ <b dir="ltr">'+fmtPrice(I.stop)+'</b>'+(sd!=null?' ('+fmtNum(sd)+'٪)':'')+(I.stopInh?' <span class="m">از سیگنال قبلی</span>':''):'<span class="d">بی‌استاپ</span>',
-    tps.length?'تارگت <b dir="ltr">'+tps.map(fmtPrice).join(' / ')+'</b>':''].filter(Boolean).join(' · ');
+  // سه عدد اصلی در سه خانه (مثل کارت رادار): ورود، استاپ، تارگت
+  const kv='<div class="rdkv">'+
+    '<div><small>'+(E?'ورود':sig.trigger!=null?'تریگر':'ورود')+'</small><b dir="ltr">'+(E?fmtPrice(E):sig.trigger!=null?fmtPrice(sig.trigger):'بازار')+'</b></div>'+
+    '<div><small>استاپ'+(I.stopInh?' (سیگنال قبلی)':'')+'</small>'+(I.stop?'<b dir="ltr">'+fmtPrice(I.stop)+'</b>'+(sd!=null?'<small dir="ltr">'+fmtNum(sd)+'%</small>':''):'<b class="d">بی‌استاپ</b>')+'</div>'+
+    '<div><small>تارگت</small><b dir="ltr">'+(tps.length?tps.slice(0,2).map(fmtPrice).join(' / '):'—')+'</b>'+(tps.length>2?'<small>+'+faN(tps.length-2)+'</small>':'')+'</div></div>';
   const now=px!=null?'قیمت الان <b dir="ltr">'+fmtPrice(px)+'</b>'+(far!=null?' · <span class="'+(Math.abs(far)<0.3?'u':far>0?'w':'m')+'">'+
     (Math.abs(far)<0.3?'روی ورود':far>0?fmtNum(far)+'٪ جلوتر از ورود':fmtNum(-far)+'٪ مانده تا ورود')+'</span>':''):'';
   const hl=histLine(p);
   return '<div class="glsig" data-i="'+i+'">'+
-    '<button class="glit" data-sig="'+esc(p.id)+'"><b dir="ltr">'+esc(x.tk||'')+'</b><span class="pill '+x.dir+'">'+(x.dir==='long'?'لانگ':'شورت')+'</span>'+
-      (z?'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span>':'')+'<small>'+relTime(p.date)+'</small></button>'+
-    '<div class="glnum">'+nums+'</div>'+
+    '<button class="glit" data-sig="'+esc(p.id)+'"><b dir="ltr" class="rdtk">'+esc(x.tk||'')+'</b><span class="pill '+x.dir+'">'+(x.dir==='long'?'لانگ':'شورت')+'</span>'+
+      (z?'<span class="glz">ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span>':'')+'<small>'+relTime(p.date)+'</small></button>'+
+    kv+
     (now?'<div class="glnum">'+now+'</div>':'')+
     (pl?'<div class="glnum">قاعده‌ی من: '+esc(xRuleName(pl.r))+' · هدف <b dir="ltr">'+fmtPrice(pl.tp)+'</b></div>':'')+
     (hl?'<div class="glnum glh2">سابقه: '+hl+'</div>':'')+
@@ -72,15 +74,16 @@ function paintGlance(){
   // اگر نیامد، حداکثر هر دو دقیقه یک بار؛ فقط وقتی داده‌ی تازه رسید دوباره می‌کشد (نه حلقه)
   if((!MKT||Date.now()-MKT.at>MK_TTL)&&Date.now()-MKTRY>120000){MKTRY=Date.now();const was=MKT&&MKT.at;
     mktLoad().then(m=>{if(m&&m.at!==was&&view==='signals')paintGlance();}).catch(()=>{});}
-  g.className='glance gltab';
-  // تب است، نه کارت تاشو: سربرگ فقط خلاصه است
-  let h='<div class="glh"><b>'+ic('bolt')+'الان چه کنم؟</b><span>'+
+  g.className='glance gltab glnow';
+  // تب است، نه کارت تاشو: سربرگ کارت وضعیت است (سبز: سیگنال قابل گرفتن هست)
+  let h='<div class="glh '+(d.lock?'stop':d.take.length?'go':'wait')+'"><i class="glst">'+(d.lock?'✕':d.take.length?'✓':'…')+'</i><b>'+ic('bolt')+'الان چه کنم؟</b><span>'+
     [d.take.length?faN(d.take.length)+' سیگنال قابل گرفتن':'سیگنال قابل گرفتنی نیست',d.dl?'مهلت '+d.dl.p.ticker+': '+(d.dl.t<=Date.now()?'گذشت':fmtLeft(d.dl.t-Date.now())):'',
      d.unread?faN(d.unread)+' پیشنهاد تازه':'',MKT?'بازار '+MK_REG_FA[MKT.reg]:''].filter(Boolean).join(' · ')+'</span></div>';
   {
     h+='<div class="glb">';
     if(d.lock)h+='<div class="flag d"><i>!</i><span>'+faN(d.lock.n)+' باخت پیاپی — تا فردا ورود تازه نه.</span></div>';
-    {const dirs={long:0,short:0};for(const x of take)dirs[x.dir]++;h+=mktHtml(MKT,dirs)+mdHtml();}
+    // بازار کل: یک خط تاشو؛ هشدارِ «بازار خلاف سیگنال‌هایت» بیرون از آن، جلوی چشم
+    {const dirs={long:0,short:0};for(const x of take)dirs[x.dir]++;h+=mkStripHtml()+mktFlagsHtml(MKT,dirs);}
     if(d.nL+d.nS)h+='<div class="hint gldir">کانال در 30 روز اخیر: <b class="u">'+faN(d.nL)+' لانگ</b> · <b class="d">'+faN(d.nS)+' شورت</b>'+
       (d.nS<d.nL*0.15?' — کانال تقریباً فقط لانگ می‌دهد؛ شورت را در تب «بازار» (رادار) پیدا کن.':'')+'</div>';
     const list=GLALL?take:take.slice(0,GLMAX);
@@ -98,6 +101,7 @@ function paintGlance(){
   g.querySelectorAll('[data-pos]').forEach(b=>b.onclick=()=>advDo({t:'pos',id:b.dataset.pos}));
   g.querySelectorAll('[data-bell]').forEach(b=>b.onclick=sheetAdvice);
   const mb=g.querySelector('[data-more]');if(mb)mb.onclick=()=>{GLALL=true;paintGlance();};
+  mkStripBind(g);
   g.querySelectorAll('.glsig').forEach(w=>{
     const x=take[+w.dataset.i];if(!x)return;
     w.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{

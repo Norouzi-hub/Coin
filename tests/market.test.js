@@ -21,11 +21,11 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const g=await p.evaluate(()=>{const now=Date.now();SYMBOLS.add('MKA');PRICES.set('MKA',100);SYMVER++;
    POSTS.unshift({id:'ccoineres/97100',num:97100,text:'#MKA لانگ\nورود 100\nحد ضرر 96\nتارگت 108',date:new Date(now-6e4),link:'x'});
    KGEN++;bucket='live';sigFilter='now';go('signals',true);renderAll();
-   const G=document.getElementById('glance');return {mkt:(G.querySelector('.mkst')||{}).textContent||'',head:G.querySelector('.glh').textContent,bars:G.querySelectorAll('.mkbars i').length};});
+   const G=document.getElementById('glance');return {mkt:(G.querySelector('.mkst')||{}).textContent||'',head:G.querySelector('.glh').textContent,all:G.textContent,bars:G.querySelectorAll('.mkbars i').length};});
  console.log('   ',g.mkt.slice(0,160));
  ok(/حال بازار · خیلی نزولی/.test(g.mkt)&&/صعودی 10/.test(g.mkt)&&/نزولی 90/.test(g.mkt)&&g.bars===11,'در «الان چه کنم؟»: عددها و نمودار ۱۱ ستونه');
  ok(/بازار خیلی نزولی/.test(g.head),'در سربرگ بسته هم: «بازار خیلی نزولی»');
- ok(/سیگنالِ لانگ داری/.test(g.mkt),'هشدار: بازار نزولی و سیگنال لانگ');
+ ok(/سیگنالِ لانگ داری/.test(g.all)&&!/سیگنالِ لانگ داری/.test(g.mkt),'هشدار: بازار نزولی و سیگنال لانگ (جلوی چشم، بیرون از «بازار کل» تاشو)');
 
  console.log('=== ۲: رویدادهای ارز ===');
  const e=await p.evaluate(()=>{const H=36e5,t0=Math.floor(Date.now()/H)*H-30*24*H,C=[];
@@ -67,7 +67,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  console.log('   ',JSON.stringify({bear:r.bear,bull:r.bull}));
  ok(r.bear&&r.bear.n===6&&r.bear.w===1&&r.bull&&r.bull.n===6&&r.bull.w===4,'لانگ در روزهای نزولی ۱ از ۶، صعودی ۴ از ۶');
  ok(/به تفکیک حال بازار/.test(r.h)&&/لانگ · بازار نزولی/.test(r.h)&&/بدتر بوده‌اند/.test(r.h),'جدول و هشدار «لانگ‌ها در روزهای نزولی بدتر»');
- const g2=await p.evaluate(()=>{paintGlance();return (document.querySelector('#glance .mkst')||{}).textContent||'';});
+ const g2=await p.evaluate(()=>{paintGlance();return (document.querySelector('#glance')||{}).textContent||'';});
  ok(/سابقه‌ی کانال: لانگ‌ها در روزهای نزولیِ بیت‌کوین 1 از 6 برد/.test(g2),'در «الان چه کنم؟»: سابقه‌ی کانال در همین حال بازار');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');})();

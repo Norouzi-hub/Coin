@@ -683,7 +683,7 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .rwarn.info{background:var(--inset);color:var(--tx2);border:1px solid var(--line2)}
 /* کارت پوزیشن جمع‌شده: سربرگ + سود/ضرر درشت */
 .card.pct{cursor:pointer}
-.card.pct .body>*:not(.pnlhero),.card.pct .acts,.card.pct .pmore{display:none}
+.card.pct .body>*:not(.pnlhero):not(.pmini),.card.pct .acts,.card.pct .pmore{display:none}
 .card.pct .body{padding-bottom:12px}
 .card.pcopen .chead{cursor:pointer}
 .pchev{flex:none;width:8px;height:8px;border-right:2px solid var(--tx3);border-bottom:2px solid var(--tx3);
@@ -1692,6 +1692,63 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rdhelpl .ic{width:15px;height:15px}
 .rdchgd{color:var(--tx2)}
 .pill.rdchg{font-weight:800}
+/* ---- سیگنال‌ها و پوزیشن‌ها (طرح تازه) ---- */
+/* نوار وضعیت: یک ردیف برچسب کوچک به‌جای جعبه‌ی دوخطی */
+#status:not(.bad):not(.warn):not(.upd){flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:6px;padding:8px 10px;line-height:1.5}
+#status:not(.bad):not(.warn):not(.upd)::-webkit-scrollbar{display:none}
+#status:not(.bad):not(.warn):not(.upd) .sc{flex:none;font-size:11.5px;padding:3px 9px;border-radius:99px;background:var(--inset);border:1px solid var(--line)}
+#status:not(.bad):not(.warn):not(.upd) .sc.grow{background:none;border:0;padding-inline:2px}
+/* «الان چه کنم؟»: بی کارت تودرتو؛ سربرگ کارت وضعیت است */
+.topcard:has(.glnow:not(:empty)){border:0;background:none;overflow:visible}
+.topcard>.status:not(:empty)+.glance.glnow:not(:empty){border-top:0}
+.glance.glnow{background:none;border:0;overflow:visible;margin:8px 0}
+.glnow .glh{position:relative;padding:12px 14px 12px 12px;margin-bottom:10px;border-radius:16px;background:var(--card);border:1px solid var(--line);
+  border-inline-start:4px solid var(--gold);flex-wrap:wrap;row-gap:2px}
+.glnow .glh.go{border-inline-start-color:var(--up);background:color-mix(in srgb,var(--up) 6%,var(--card))}
+.glnow .glh.stop{border-inline-start-color:var(--dn);background:color-mix(in srgb,var(--dn) 7%,var(--card))}
+.glnow .glh .glst{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;font-style:normal;font-weight:900;font-size:14px;background:var(--inset);color:var(--gold);border:1px solid var(--line)}
+.glnow .glh.go .glst{background:var(--up);color:#fff;border-color:transparent}.glnow .glh.stop .glst{background:var(--dn);color:#fff;border-color:transparent}
+.glnow .glh b{font-size:15px}.glnow .glh.go b{color:var(--up)}
+.glnow .glh span{flex:1 1 100%;white-space:normal;padding-inline-start:38px;font-size:12px;line-height:1.7}
+.glnow .glb{padding:0;gap:10px}
+.glnow .glsig{padding:10px;gap:8px;background:var(--card)}
+.glnow .glsig .glit{flex-wrap:wrap;gap:6px}
+.glnow .glsig .glit .rdtk{font-size:16px;font-weight:900}
+.glnow .glsig .glz{font-size:11.5px;color:var(--gold);font-weight:800}
+.glnow .gldir{padding:0 4px}
+/* کارت پست: بازار و مبلغ تاشو */
+.advset{border:1px solid var(--line);border-radius:12px;background:var(--inset);margin:6px 0}
+.advset>summary{display:flex;align-items:center;gap:8px;padding:9px 11px;cursor:pointer;list-style:none;font-size:12.5px;color:var(--tx2);min-height:40px}
+.advset>summary::-webkit-details-marker{display:none}
+.advset>summary .ic{width:15px;height:15px;color:var(--gold);flex:none}
+.advset>summary b{color:var(--tx)}
+.advset>summary::after{content:'';margin-inline-start:auto;width:7px;height:7px;border-inline-end:2px solid var(--tx3);border-bottom:2px solid var(--tx3);transform:rotate(45deg);margin-top:-3px;transition:transform .2s}
+.advset[open]>summary::after{transform:rotate(-135deg);margin-top:3px}
+.advset[open]{padding-bottom:8px}
+.advset>:not(summary){margin:4px 10px 0}
+.card:not(.lesson) .shot img{max-height:min(30vh,230px)}
+/* پوزیشن‌ها: منبع و مرتب‌سازی در یک ردیف، آمار یک‌ردیفه، نوار کوچک استاپ تا تارگت */
+.psrow{display:flex;align-items:center;gap:8px;width:100%;flex-wrap:wrap}
+.psrow #posSrcBar{flex:1 1 180px;min-width:0}
+.psrow #posSrcBar .psrcbar{margin:0}
+.psrow .psort{margin-top:0;flex:none}
+#posSummary .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;border-radius:14px;overflow:hidden}
+#posSummary .st{padding:9px 8px;box-shadow:none;background:var(--card);min-width:0}
+#posSummary .st b{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#posSummary .st span{font-size:15px;text-align:start}
+#posSummary .st small{font-size:10px;text-align:start}
+.card:not(.pct) .pmini{display:none}
+.pmini{margin:2px 2px 0;display:flex;flex-direction:column;gap:4px}
+.pmtrk{position:relative;height:6px;border-radius:99px;background:linear-gradient(90deg,color-mix(in srgb,var(--dn) 35%,var(--inset)),var(--inset) 45%,color-mix(in srgb,var(--up) 35%,var(--inset)))}
+.pmtrk i{position:absolute;top:0;height:100%}
+.pmfill{border-radius:99px;opacity:.9}.pmfill.u{background:var(--up)}.pmfill.d{background:var(--dn)}
+.pment{width:2px;margin-left:-1px;background:var(--tx2);top:-3px!important;height:12px!important;border-radius:2px}
+.pmdot{width:12px;height:12px!important;top:-3px!important;margin-left:-6px;border-radius:50%;border:2px solid var(--card)}
+.pmdot.u{background:var(--up)}.pmdot.d{background:var(--dn)}
+.pmlab{display:flex;justify-content:space-between;font-size:10.5px;color:var(--tx3);font-variant-numeric:tabular-nums}
+.pmlab .u{color:var(--up)}.pmlab .d{color:var(--dn)}
+.psrow .psort>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}.psrow .psort select{min-height:36px}
+.rdhelpl.lnk{background:none;border:0;padding:4px 0;color:var(--gold);font-weight:800;cursor:pointer}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -1901,12 +1958,13 @@ html.fx .incoming{box-shadow:0 0 26px -8px rgba(var(--glow),.8)}
           <button class="fb fbucket" id="btnManual"><span>افزودن</span><i>+</i></button>
         </div>
       </div>
+      <div class="psrow"><div id="posSrcBar"></div>
       <label class="psort"><span>مرتب‌سازی</span>
         <select id="posSort" aria-label="مرتب‌سازی پوزیشن‌ها">
           <option value="new">جدیدترین</option><option value="old">قدیمی‌ترین</option>
           <option value="pnlD">بیشترین سود</option><option value="pnlA">بیشترین ضرر</option>
           <option value="rD">بیشترین R</option><option value="tk">نماد (الفبا)</option>
-        </select></label>
+        </select></label></div>
     </div>
     <div id="posSummary"></div>
     <div id="posList"></div>
@@ -6113,6 +6171,7 @@ function mktToggle(cur,guess,onPick){
 }
 /* حالت بسته: فقط آنچه برای تصمیم لازم است، به‌علاوه‌ی دو دکمه. باز کردن جزئیات
    یک کار جداست تا لیست بلند نشود و پیمایش سنگین نشود. */
+const ADVOPEN=new Set();
 function buildBrief(p,sig,ov,px){
   const I=planInputsOf(p,sig,ov,px);
   const w=el('div','brief');
@@ -6129,9 +6188,14 @@ function buildBrief(p,sig,ov,px){
   w.appendChild(kv);
   // قاعده‌ی من، اندازه‌ی ایزوله، دیر رسیدی، سابقه (27b-entry-tools.js)
   {const ib=buildIsoBox(p,sig,ov,px);if(ib)w.appendChild(ib);}
-  /* کلیدی که قبل از هر عددی تکلیف را روشن می‌کند: اسپات یا فیوچرز */
-  w.appendChild(mktToggle(I.market,I.marketGuess,k=>setOv(p,'market',k,true)));
-  if(!decisionOf(p.id))w.appendChild(amtRow(I.amt,v=>setAmt(p,v),I.spot));
+  /* کلیدی که قبل از هر عددی تکلیف را روشن می‌کند: اسپات یا فیوچرز. وقتی بازار حدسی است جلوی چشم می‌ماند؛
+     وگرنه با مبلغ در یک ردیف تاشو («بازار و مبلغ») تا کارت کوتاه شود — ایزوله مبلغ را خودش از ریسک حساب می‌کند. */
+  const mt=mktToggle(I.market,I.marketGuess,k=>setOv(p,'market',k,true)), ar=!decisionOf(p.id)?amtRow(I.amt,v=>setAmt(p,v),I.spot):null;
+  if(I.marketGuess){w.appendChild(mt);if(ar)w.appendChild(ar);}
+  else{const d=el('details','advset'+(ADVOPEN.has(p.id)?'':''));if(ADVOPEN.has(p.id))d.open=true;
+    d.appendChild(el('summary',null,ic('sliders')+'<span>بازار و مبلغ: <b>'+(I.spot?'اسپات':'فیوچرز')+(I.amt?' · '+fmtUsd(I.amt):'')+'</b></span>'));
+    d.ontoggle=()=>{d.open?ADVOPEN.add(p.id):ADVOPEN.delete(p.id);};
+    d.appendChild(mt);if(ar)d.appendChild(ar);w.appendChild(d);}
   const a=el('div','acts');
   /* یک دکمه‌ی اصلی: «ایزوله» (اهرم امن، حجم از ریسک دلاری، استاپ و هدفِ قاعده‌ی من) وقتی ممکن است؛
      وگرنه «بررسی و ورود». فرم کامل همیشه دکمه‌ی دوم است. «ورود سریع» برداشته شد: ایزوله همان کار را
@@ -9421,7 +9485,11 @@ function mktHtml(m,dirs){
       'هر ارز با تغییر قیمتش در 24 ساعت گذشته شمرده شده: <b class="d">'+faN(m.down)+'</b> بیش از 0.3٪ ریخته‌اند، <b class="u">'+faN(m.up)+'</b> بیش از 0.3٪ رشد کرده‌اند و '+faN(m.flat)+' تقریباً بی‌تغییرند. '+
       'ستون‌ها از چپ: چند ارز بیش از 10٪ ریخته‌اند، 7 تا 10٪، 5 تا 7٪، 3 تا 5٪، 1 تا 3٪، تقریباً صفر، و همین‌طور تا رشد بیش از 10٪. «میانه» تغییرِ ارزِ وسطِ صف است. '+
       'نام حال بازار: بیش از 75٪ ارزها منفی = خیلی نزولی، 60٪ = نزولی (و برعکس برای صعودی)، وگرنه خنثی.</div></details>';
-  // هشدار وقتی بازار خلاف جهتِ سیگنال‌های قابل گرفتن است، با سابقه‌ی کانال در همین حال
+  return h+mktFlagsHtml(m,dirs)+'</div>';
+}
+/* هشدار وقتی بازار خلاف جهتِ سیگنال‌های قابل گرفتن است، با سابقه‌ی کانال در همین حال */
+function mktFlagsHtml(m,dirs){
+  if(!m||!dirs)return '';const pu=m.up/m.n*100, pd=m.down/m.n*100;let h='';
   const reg=regOfBtc(m.btc);
   for(const d of ['long','short']){
     if(!dirs||!dirs[d])continue;
@@ -9433,7 +9501,7 @@ function mktHtml(m,dirs){
       (st&&st.n>=5?' سابقه‌ی کانال: '+(d==='long'?'لانگ‌ها':'شورت‌ها')+' در روزهای '+REG_FA[reg]+'ِ بیت‌کوین '+faN(st.w)+' از '+faN(st.n)+' برد، میانگین <b class="'+cls(st.r/st.n)+'">'+fmtR(st.r/st.n)+'</b>.':'')+
       '</span></div>';
   }
-  return h+'</div>';
+  return h;
 }
 
 /* ---- ۲) رویدادهای هر ارز (از کندل یک‌ساعته‌ی ۳۰ روز اخیر) ---- */
@@ -10388,9 +10456,13 @@ function rdPanelHtml(){
       '</tbody></table><div class="hint rdcap">✓ = بیشترین میانگین R؛ «تست» و «ایزوله» با همین (یا نقشه‌ای که در «آزمایشی» انتخاب کنی) خارج می‌شوند. '+RD_EXN.map(n=>'<b>'+esc(PL[n].n)+'</b>: '+esc(PL[n].d)).join('. ')+'.</div>');}
   // اثر واگرایی 1 ساعته روی همان سیگنال‌ها
   if(RD.divs){const D=RD.divs,row=(k,t)=>'<tr><td>'+t+'</td><td>'+rdCell(D['long|'+k])+'</td><td>'+rdCell(D['short|'+k])+'</td><td>'+rdCell(D['all|'+k])+'</td></tr>';
-    const a=D['all|al'],o=D['all|no'],av=x=>x&&x.n?x.r/x.n:null;
-    const vd=a&&o&&a.n>=20?(av(a)>av(o)+0.03?'<b class="win">سیگنال‌های با واگرایی هم‌جهت بهتر بوده‌اند</b> ('+fmtR(av(a))+' در برابر '+fmtR(av(o))+')؛ فیلتر «واگرایی هم‌جهت» در «سیگنال‌ها» را امتحان کن.':
-      av(a)<av(o)-0.03?'<b class="lose">واگرایی هم‌جهت این‌جا کمکی نکرده</b> ('+fmtR(av(a))+' در برابر '+fmtR(av(o))+').':'واگرایی هم‌جهت تفاوت روشنی نساخته ('+fmtR(av(a))+' در برابر '+fmtR(av(o))+').'):'نمونه‌ی سیگنال با واگرایی هنوز کم است.';
+    // حکم برای هر جهت جدا: واگرایی ممکن است برای لانگ کمک کند و برای شورت نه
+    const av=x=>x&&x.n?x.r/x.n:null, one=d=>{const a=D[d+'|al'],o=D[d+'|no'],fa=d==='long'?'لانگ':'شورت';
+      if(!a||!o||a.n<20)return fa+': نمونه‌ی واگرایی هنوز کم است'+(a?' ('+faN(a.n)+' بار)':'');
+      const x=av(a),y=av(o);
+      return x>y+0.03?'<b class="win">'+fa+': واگرایی هم‌جهت بهتر بوده</b> ('+fmtR(x)+' در برابر '+fmtR(y)+'، '+faN(a.n)+' بار)':
+        x<y-0.03?'<b class="lose">'+fa+': واگرایی هم‌جهت کمکی نکرده</b> ('+fmtR(x)+' در برابر '+fmtR(y)+')':fa+': تفاوت روشنی نساخته ('+fmtR(x)+' در برابر '+fmtR(y)+')';};
+    const vd=one('long')+'. '+one('short')+'.';
     h+=sec('اثر واگرایی 1 ساعته (RSI یا MACD)','<table class="rdtab rddiv"><thead><tr><th></th><th>لانگ</th><th>شورت</th><th>همه</th></tr></thead><tbody>'+
       row('al','هم‌جهت با سیگنال')+row('no','بی واگرایی')+row('ag','خلاف سیگنال')+'</tbody></table>'+
       '<div class="hint rdcap">'+vd+' واگرایی مثبت: قیمت کف پایین‌تری زده ولی RSI/MACD کف بالاتری (فروش دارد ضعیف می‌شود)؛ منفی برعکس در سقف. فقط کف/سقف‌های 12 ساعت اخیر که 2 کندل بعدشان بسته شده و هنوز شکسته نشده‌اند. «هم‌جهت» یعنی واگرایی مثبت برای لانگ یا منفی برای شورت.</div>');}
@@ -10632,9 +10704,17 @@ function rdMktHtml(){
   const bits=[];
   if(MKT)bits.push('24h <b>'+MK_REG_FA[MKT.reg]+'</b>');
   if(r){bits.push('TOTAL <bdi dir="ltr" class="'+cls(r.tot[1])+'">'+fmtPct(r.tot[1])+'</bdi>');bits.push('BTC.D <bdi dir="ltr">'+fmtNum(r.bd[0])+'%</bdi>');bits.push('USDT.D <bdi dir="ltr">'+fmtNum(r.ud[0])+'%</bdi>');}
+  return mkStripHtml(bits);
+}
+/* نوار تاشوی «بازار کل» (مشترک «بازار» و «الان چه کنم؟»): یک خط خلاصه، با زدن حال بازار و TOTAL و دامیننس‌ها */
+function mkStripHtml(bits){
+  if(!bits){bits=[];let r=null;try{r=mdMetrics(MD);}catch(e){}
+    if(MKT)bits.push('24h <b>'+MK_REG_FA[MKT.reg]+'</b>');
+    if(r){bits.push('TOTAL <bdi dir="ltr" class="'+cls(r.tot[1])+'">'+fmtPct(r.tot[1])+'</bdi>');bits.push('BTC.D <bdi dir="ltr">'+fmtNum(r.bd[0])+'%</bdi>');}}
   return '<details class="rdmk"'+(RDMKOPEN?' open':'')+'><summary>'+ic('bars')+'<span class="rdmkh">بازار کل</span><span class="rdmks">'+(bits.length?bits.join(' · '):'در حال گرفتن…')+'</span></summary>'+
     (MKT?mktHtml(MKT,null):'')+mdHtml()+'</details>';
 }
+function mkStripBind(g){const mk=g.querySelector('.rdmk');if(mk)mk.ontoggle=()=>{RDMKOPEN=mk.open;try{localStorage.setItem('signaldesk.rdmk',RDMKOPEN?'1':'0');}catch(e){}};}
 function rdHtml(){
   const L=rdList(), ob=rbOpen();
   if(RDV==='test'||RDV==='log')return '<div class="glb">'+rbHtml(RDV)+'</div>';
@@ -10699,7 +10779,7 @@ function paintRadar(g){
   const r50=g.querySelector('[data-rd50]');if(r50)r50.onclick=()=>{const L0=rdListOf(),nw=rdUniverse(RD_NC_OK).filter(t=>!L0.includes(t)).slice(0,Math.max(0,RD_MAX-L0.length));
     if(!nw.length)return;toast(faN(nw.length)+' ارز تازه بررسی می‌شود (چند دقیقه)','info');rdScan('add',nw);paintRadar(g);};
   g.querySelectorAll('[data-rdhelp]').forEach(b=>b.onclick=rdGuide);
-  const mk=g.querySelector('.rdmk');if(mk)mk.ontoggle=()=>{RDMKOPEN=mk.open;try{localStorage.setItem('signaldesk.rdmk',RDMKOPEN?'1':'0');}catch(e){}};
+  mkStripBind(g);
   const fs=g.querySelector('[data-rdfavscan]');if(fs)fs.onclick=()=>{VIEW.mktFav=true;lsSet(VIEWKEY,VIEW);rdScan('add',RDFAV.slice());renderRadar();};
   const rs=g.querySelector('[data-rdreset]');if(rs)rs.onclick=()=>{if(!confirm('فهرست رادار به '+faN(RD_STEP)+' ارز اول'+(RDFAV.length?' و واچ‌لیست':'')+' برگردد؟'))return;
     const keep=new Set(rdUniverse(RD_STEP).concat(RDFAV));for(const t of rdListOf())if(!keep.has(t))rdRemove(t);
@@ -12267,8 +12347,8 @@ function renderPositions(){
 }
 function renderPositions0(){
   queueMicrotask(countUps);
-  const wrap=$('#posList'), sum=$('#posSummary');
-  wrap.innerHTML='';sum.innerHTML='';
+  const wrap=$('#posList'), sum=$('#posSummary'), sbar=$('#posSrcBar');
+  wrap.innerHTML='';sum.innerHTML='';if(sbar)sbar.innerHTML='';
   const nWait=DB.pending.length, nAct=activePending().length;
   const cw=$('#cWait');if(cw){cw.textContent=faN(nAct);cw.classList.toggle('z',!nAct);}
   for(const[id,v]of[['pWait','pending'],['pOpen','open'],['pClosed','closed'],['pAllP','all']]){
@@ -12288,7 +12368,7 @@ function renderPositions0(){
     for(const [k,t,n] of [['all','همه',every.length],['ch','کانال',nC],['me','خودم',every.length-nC]]){
       const b=el('button','fc'+(POSSRC===k?' on':''),'<span>'+t+'</span><i>'+faN(n)+'</i>');b.setAttribute('aria-pressed',POSSRC===k?'true':'false');
       b.onclick=()=>{POSSRC=k;try{localStorage.setItem('signaldesk.possrc',k);}catch(e){}renderPositions();};row.appendChild(b);}
-    sum.appendChild(row);
+    (sbar||sum).appendChild(row);
   }
   const all=POSSRC==='all'?every:every.filter(p=>posSrc(p).k===POSSRC);
   const open=all.filter(p=>p.status==='open');
@@ -12507,6 +12587,20 @@ function destack(L){
    پوزیشنی که نوار تأیید استاپش باز است همیشه باز می‌ماند. */
 const POSOPEN=new Set(), POSMENU=new Set();
 let POSSORT=lsGet('signaldesk.possort.v1')||'new';
+/* جای قیمت میان استاپ و نزدیک‌ترین تارگتِ جلوی ورود (برای یک نگاه سریع) */
+function posMiniBar(p,live){
+  const S0=+p.stop, E=+p.entry, sg=p.dir==='long'?1:-1;if(!(S0>0)||!(E>0)||!(live>0))return null;
+  const tps=(p.targets||[]).map(Number).filter(t=>t>0&&(t-E)*sg>0).sort((a,b)=>(a-b)*sg);
+  const T=tps.find(t=>(t-live)*sg>0)||tps[tps.length-1];if(!T||(T-S0)*sg<=0)return null;
+  const f=x=>Math.max(0,Math.min(1,(x-S0)/(T-S0))), pe=f(E)*100, pl=f(live)*100, up=(live-E)*sg>=0;
+  const n=tps.indexOf(T)+1;
+  const w=el('div','pmini');w.setAttribute('dir','ltr');
+  w.innerHTML='<div class="pmtrk"><i class="pmfill '+(up?'u':'d')+'" style="left:'+Math.min(pe,pl).toFixed(1)+'%;width:'+Math.abs(pl-pe).toFixed(1)+'%"></i>'+
+    '<i class="pment" style="left:'+pe.toFixed(1)+'%"></i><i class="pmdot '+(up?'u':'d')+'" style="left:'+pl.toFixed(1)+'%"></i></div>'+
+    '<div class="pmlab"><span class="d">SL '+fmtPrice(S0)+'</span><span>'+(up?'':'')+Math.round(pl)+'%</span><span class="u">TP'+n+' '+fmtPrice(T)+'</span></div>';
+  w.title='استاپ تا تارگت '+n+': قیمت الان '+Math.round(pl)+'٪ از راه است';
+  return w;
+}
 function buildPosCard(p,opt){
   ensureBase(p);
   const live=pxOf(p), m=posMetrics(p,live), open=p.status==='open';
@@ -12559,6 +12653,8 @@ function buildPosCard(p,opt){
       '<div class="lp'+(open&&flashOf(p.ticker)?' fl-'+flashOf(p.ticker):'')+'">'+
       (m.exit!=null?fmtPrice(m.exit):'—')+'</div></div>';
   b.appendChild(hero);
+  // کارت بسته‌ی آکاردئون: نوار کوچک «استاپ ← ورود ← تارگت» با جای قیمت الان
+  if(open){const mb=posMiniBar(p,live);if(mb)b.appendChild(mb);}
 
   b.appendChild(buildLadder(p,live,m));
   if(open)b.appendChild(el('div','ladhint',p.stop?'دستگیره طلایی را بکش تا حد ضرر جابجا شود':'برای گذاشتن حد ضرر، دستگیره را بکش'));
@@ -13782,16 +13878,18 @@ function glSigHtml(x,i){
   const {p,sig,I,px,z,pl}=x, E=I.entry, sd=E&&I.stop?Math.abs(E-I.stop)/E*100:null;
   const tps=(sig.targets||[]).filter(t=>E&&(t-E)*(x.dir==='long'?1:-1)>0).slice(0,3);
   const far=px&&E?(px-E)/E*100*(x.dir==='long'?1:-1):null;     // مثبت: قیمت از ورود به سمت سود رفته
-  const nums=[E?'ورود <b dir="ltr">'+fmtPrice(E)+'</b>':(sig.trigger!=null?'تریگر <b dir="ltr">'+fmtPrice(sig.trigger)+'</b>':'ورود بازار'),
-    I.stop?'استاپ <b dir="ltr">'+fmtPrice(I.stop)+'</b>'+(sd!=null?' ('+fmtNum(sd)+'٪)':'')+(I.stopInh?' <span class="m">از سیگنال قبلی</span>':''):'<span class="d">بی‌استاپ</span>',
-    tps.length?'تارگت <b dir="ltr">'+tps.map(fmtPrice).join(' / ')+'</b>':''].filter(Boolean).join(' · ');
+  // سه عدد اصلی در سه خانه (مثل کارت رادار): ورود، استاپ، تارگت
+  const kv='<div class="rdkv">'+
+    '<div><small>'+(E?'ورود':sig.trigger!=null?'تریگر':'ورود')+'</small><b dir="ltr">'+(E?fmtPrice(E):sig.trigger!=null?fmtPrice(sig.trigger):'بازار')+'</b></div>'+
+    '<div><small>استاپ'+(I.stopInh?' (سیگنال قبلی)':'')+'</small>'+(I.stop?'<b dir="ltr">'+fmtPrice(I.stop)+'</b>'+(sd!=null?'<small dir="ltr">'+fmtNum(sd)+'%</small>':''):'<b class="d">بی‌استاپ</b>')+'</div>'+
+    '<div><small>تارگت</small><b dir="ltr">'+(tps.length?tps.slice(0,2).map(fmtPrice).join(' / '):'—')+'</b>'+(tps.length>2?'<small>+'+faN(tps.length-2)+'</small>':'')+'</div></div>';
   const now=px!=null?'قیمت الان <b dir="ltr">'+fmtPrice(px)+'</b>'+(far!=null?' · <span class="'+(Math.abs(far)<0.3?'u':far>0?'w':'m')+'">'+
     (Math.abs(far)<0.3?'روی ورود':far>0?fmtNum(far)+'٪ جلوتر از ورود':fmtNum(-far)+'٪ مانده تا ورود')+'</span>':''):'';
   const hl=histLine(p);
   return '<div class="glsig" data-i="'+i+'">'+
-    '<button class="glit" data-sig="'+esc(p.id)+'"><b dir="ltr">'+esc(x.tk||'')+'</b><span class="pill '+x.dir+'">'+(x.dir==='long'?'لانگ':'شورت')+'</span>'+
-      (z?'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span>':'')+'<small>'+relTime(p.date)+'</small></button>'+
-    '<div class="glnum">'+nums+'</div>'+
+    '<button class="glit" data-sig="'+esc(p.id)+'"><b dir="ltr" class="rdtk">'+esc(x.tk||'')+'</b><span class="pill '+x.dir+'">'+(x.dir==='long'?'لانگ':'شورت')+'</span>'+
+      (z?'<span class="glz">ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span>':'')+'<small>'+relTime(p.date)+'</small></button>'+
+    kv+
     (now?'<div class="glnum">'+now+'</div>':'')+
     (pl?'<div class="glnum">قاعده‌ی من: '+esc(xRuleName(pl.r))+' · هدف <b dir="ltr">'+fmtPrice(pl.tp)+'</b></div>':'')+
     (hl?'<div class="glnum glh2">سابقه: '+hl+'</div>':'')+
@@ -13814,15 +13912,16 @@ function paintGlance(){
   // اگر نیامد، حداکثر هر دو دقیقه یک بار؛ فقط وقتی داده‌ی تازه رسید دوباره می‌کشد (نه حلقه)
   if((!MKT||Date.now()-MKT.at>MK_TTL)&&Date.now()-MKTRY>120000){MKTRY=Date.now();const was=MKT&&MKT.at;
     mktLoad().then(m=>{if(m&&m.at!==was&&view==='signals')paintGlance();}).catch(()=>{});}
-  g.className='glance gltab';
-  // تب است، نه کارت تاشو: سربرگ فقط خلاصه است
-  let h='<div class="glh"><b>'+ic('bolt')+'الان چه کنم؟</b><span>'+
+  g.className='glance gltab glnow';
+  // تب است، نه کارت تاشو: سربرگ کارت وضعیت است (سبز: سیگنال قابل گرفتن هست)
+  let h='<div class="glh '+(d.lock?'stop':d.take.length?'go':'wait')+'"><i class="glst">'+(d.lock?'✕':d.take.length?'✓':'…')+'</i><b>'+ic('bolt')+'الان چه کنم؟</b><span>'+
     [d.take.length?faN(d.take.length)+' سیگنال قابل گرفتن':'سیگنال قابل گرفتنی نیست',d.dl?'مهلت '+d.dl.p.ticker+': '+(d.dl.t<=Date.now()?'گذشت':fmtLeft(d.dl.t-Date.now())):'',
      d.unread?faN(d.unread)+' پیشنهاد تازه':'',MKT?'بازار '+MK_REG_FA[MKT.reg]:''].filter(Boolean).join(' · ')+'</span></div>';
   {
     h+='<div class="glb">';
     if(d.lock)h+='<div class="flag d"><i>!</i><span>'+faN(d.lock.n)+' باخت پیاپی — تا فردا ورود تازه نه.</span></div>';
-    {const dirs={long:0,short:0};for(const x of take)dirs[x.dir]++;h+=mktHtml(MKT,dirs)+mdHtml();}
+    // بازار کل: یک خط تاشو؛ هشدارِ «بازار خلاف سیگنال‌هایت» بیرون از آن، جلوی چشم
+    {const dirs={long:0,short:0};for(const x of take)dirs[x.dir]++;h+=mkStripHtml()+mktFlagsHtml(MKT,dirs);}
     if(d.nL+d.nS)h+='<div class="hint gldir">کانال در 30 روز اخیر: <b class="u">'+faN(d.nL)+' لانگ</b> · <b class="d">'+faN(d.nS)+' شورت</b>'+
       (d.nS<d.nL*0.15?' — کانال تقریباً فقط لانگ می‌دهد؛ شورت را در تب «بازار» (رادار) پیدا کن.':'')+'</div>';
     const list=GLALL?take:take.slice(0,GLMAX);
@@ -13840,6 +13939,7 @@ function paintGlance(){
   g.querySelectorAll('[data-pos]').forEach(b=>b.onclick=()=>advDo({t:'pos',id:b.dataset.pos}));
   g.querySelectorAll('[data-bell]').forEach(b=>b.onclick=sheetAdvice);
   const mb=g.querySelector('[data-more]');if(mb)mb.onclick=()=>{GLALL=true;paintGlance();};
+  mkStripBind(g);
   g.querySelectorAll('.glsig').forEach(w=>{
     const x=take[+w.dataset.i];if(!x)return;
     w.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{

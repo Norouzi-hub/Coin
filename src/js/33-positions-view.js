@@ -103,8 +103,8 @@ function renderPositions(){
 }
 function renderPositions0(){
   queueMicrotask(countUps);
-  const wrap=$('#posList'), sum=$('#posSummary');
-  wrap.innerHTML='';sum.innerHTML='';
+  const wrap=$('#posList'), sum=$('#posSummary'), sbar=$('#posSrcBar');
+  wrap.innerHTML='';sum.innerHTML='';if(sbar)sbar.innerHTML='';
   const nWait=DB.pending.length, nAct=activePending().length;
   const cw=$('#cWait');if(cw){cw.textContent=faN(nAct);cw.classList.toggle('z',!nAct);}
   for(const[id,v]of[['pWait','pending'],['pOpen','open'],['pClosed','closed'],['pAllP','all']]){
@@ -124,7 +124,7 @@ function renderPositions0(){
     for(const [k,t,n] of [['all','همه',every.length],['ch','کانال',nC],['me','خودم',every.length-nC]]){
       const b=el('button','fc'+(POSSRC===k?' on':''),'<span>'+t+'</span><i>'+faN(n)+'</i>');b.setAttribute('aria-pressed',POSSRC===k?'true':'false');
       b.onclick=()=>{POSSRC=k;try{localStorage.setItem('signaldesk.possrc',k);}catch(e){}renderPositions();};row.appendChild(b);}
-    sum.appendChild(row);
+    (sbar||sum).appendChild(row);
   }
   const all=POSSRC==='all'?every:every.filter(p=>posSrc(p).k===POSSRC);
   const open=all.filter(p=>p.status==='open');
@@ -343,6 +343,20 @@ function destack(L){
    پوزیشنی که نوار تأیید استاپش باز است همیشه باز می‌ماند. */
 const POSOPEN=new Set(), POSMENU=new Set();
 let POSSORT=lsGet('signaldesk.possort.v1')||'new';
+/* جای قیمت میان استاپ و نزدیک‌ترین تارگتِ جلوی ورود (برای یک نگاه سریع) */
+function posMiniBar(p,live){
+  const S0=+p.stop, E=+p.entry, sg=p.dir==='long'?1:-1;if(!(S0>0)||!(E>0)||!(live>0))return null;
+  const tps=(p.targets||[]).map(Number).filter(t=>t>0&&(t-E)*sg>0).sort((a,b)=>(a-b)*sg);
+  const T=tps.find(t=>(t-live)*sg>0)||tps[tps.length-1];if(!T||(T-S0)*sg<=0)return null;
+  const f=x=>Math.max(0,Math.min(1,(x-S0)/(T-S0))), pe=f(E)*100, pl=f(live)*100, up=(live-E)*sg>=0;
+  const n=tps.indexOf(T)+1;
+  const w=el('div','pmini');w.setAttribute('dir','ltr');
+  w.innerHTML='<div class="pmtrk"><i class="pmfill '+(up?'u':'d')+'" style="left:'+Math.min(pe,pl).toFixed(1)+'%;width:'+Math.abs(pl-pe).toFixed(1)+'%"></i>'+
+    '<i class="pment" style="left:'+pe.toFixed(1)+'%"></i><i class="pmdot '+(up?'u':'d')+'" style="left:'+pl.toFixed(1)+'%"></i></div>'+
+    '<div class="pmlab"><span class="d">SL '+fmtPrice(S0)+'</span><span>'+(up?'':'')+Math.round(pl)+'%</span><span class="u">TP'+n+' '+fmtPrice(T)+'</span></div>';
+  w.title='استاپ تا تارگت '+n+': قیمت الان '+Math.round(pl)+'٪ از راه است';
+  return w;
+}
 function buildPosCard(p,opt){
   ensureBase(p);
   const live=pxOf(p), m=posMetrics(p,live), open=p.status==='open';
@@ -395,6 +409,8 @@ function buildPosCard(p,opt){
       '<div class="lp'+(open&&flashOf(p.ticker)?' fl-'+flashOf(p.ticker):'')+'">'+
       (m.exit!=null?fmtPrice(m.exit):'—')+'</div></div>';
   b.appendChild(hero);
+  // کارت بسته‌ی آکاردئون: نوار کوچک «استاپ ← ورود ← تارگت» با جای قیمت الان
+  if(open){const mb=posMiniBar(p,live);if(mb)b.appendChild(mb);}
 
   b.appendChild(buildLadder(p,live,m));
   if(open)b.appendChild(el('div','ladhint',p.stop?'دستگیره طلایی را بکش تا حد ضرر جابجا شود':'برای گذاشتن حد ضرر، دستگیره را بکش'));

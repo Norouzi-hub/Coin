@@ -715,9 +715,13 @@ function rdPanelHtml(){
       '</tbody></table><div class="hint rdcap">✓ = بیشترین میانگین R؛ «تست» و «ایزوله» با همین (یا نقشه‌ای که در «آزمایشی» انتخاب کنی) خارج می‌شوند. '+RD_EXN.map(n=>'<b>'+esc(PL[n].n)+'</b>: '+esc(PL[n].d)).join('. ')+'.</div>');}
   // اثر واگرایی 1 ساعته روی همان سیگنال‌ها
   if(RD.divs){const D=RD.divs,row=(k,t)=>'<tr><td>'+t+'</td><td>'+rdCell(D['long|'+k])+'</td><td>'+rdCell(D['short|'+k])+'</td><td>'+rdCell(D['all|'+k])+'</td></tr>';
-    const a=D['all|al'],o=D['all|no'],av=x=>x&&x.n?x.r/x.n:null;
-    const vd=a&&o&&a.n>=20?(av(a)>av(o)+0.03?'<b class="win">سیگنال‌های با واگرایی هم‌جهت بهتر بوده‌اند</b> ('+fmtR(av(a))+' در برابر '+fmtR(av(o))+')؛ فیلتر «واگرایی هم‌جهت» در «سیگنال‌ها» را امتحان کن.':
-      av(a)<av(o)-0.03?'<b class="lose">واگرایی هم‌جهت این‌جا کمکی نکرده</b> ('+fmtR(av(a))+' در برابر '+fmtR(av(o))+').':'واگرایی هم‌جهت تفاوت روشنی نساخته ('+fmtR(av(a))+' در برابر '+fmtR(av(o))+').'):'نمونه‌ی سیگنال با واگرایی هنوز کم است.';
+    // حکم برای هر جهت جدا: واگرایی ممکن است برای لانگ کمک کند و برای شورت نه
+    const av=x=>x&&x.n?x.r/x.n:null, one=d=>{const a=D[d+'|al'],o=D[d+'|no'],fa=d==='long'?'لانگ':'شورت';
+      if(!a||!o||a.n<20)return fa+': نمونه‌ی واگرایی هنوز کم است'+(a?' ('+faN(a.n)+' بار)':'');
+      const x=av(a),y=av(o);
+      return x>y+0.03?'<b class="win">'+fa+': واگرایی هم‌جهت بهتر بوده</b> ('+fmtR(x)+' در برابر '+fmtR(y)+'، '+faN(a.n)+' بار)':
+        x<y-0.03?'<b class="lose">'+fa+': واگرایی هم‌جهت کمکی نکرده</b> ('+fmtR(x)+' در برابر '+fmtR(y)+')':fa+': تفاوت روشنی نساخته ('+fmtR(x)+' در برابر '+fmtR(y)+')';};
+    const vd=one('long')+'. '+one('short')+'.';
     h+=sec('اثر واگرایی 1 ساعته (RSI یا MACD)','<table class="rdtab rddiv"><thead><tr><th></th><th>لانگ</th><th>شورت</th><th>همه</th></tr></thead><tbody>'+
       row('al','هم‌جهت با سیگنال')+row('no','بی واگرایی')+row('ag','خلاف سیگنال')+'</tbody></table>'+
       '<div class="hint rdcap">'+vd+' واگرایی مثبت: قیمت کف پایین‌تری زده ولی RSI/MACD کف بالاتری (فروش دارد ضعیف می‌شود)؛ منفی برعکس در سقف. فقط کف/سقف‌های 12 ساعت اخیر که 2 کندل بعدشان بسته شده و هنوز شکسته نشده‌اند. «هم‌جهت» یعنی واگرایی مثبت برای لانگ یا منفی برای شورت.</div>');}
@@ -959,9 +963,17 @@ function rdMktHtml(){
   const bits=[];
   if(MKT)bits.push('24h <b>'+MK_REG_FA[MKT.reg]+'</b>');
   if(r){bits.push('TOTAL <bdi dir="ltr" class="'+cls(r.tot[1])+'">'+fmtPct(r.tot[1])+'</bdi>');bits.push('BTC.D <bdi dir="ltr">'+fmtNum(r.bd[0])+'%</bdi>');bits.push('USDT.D <bdi dir="ltr">'+fmtNum(r.ud[0])+'%</bdi>');}
+  return mkStripHtml(bits);
+}
+/* نوار تاشوی «بازار کل» (مشترک «بازار» و «الان چه کنم؟»): یک خط خلاصه، با زدن حال بازار و TOTAL و دامیننس‌ها */
+function mkStripHtml(bits){
+  if(!bits){bits=[];let r=null;try{r=mdMetrics(MD);}catch(e){}
+    if(MKT)bits.push('24h <b>'+MK_REG_FA[MKT.reg]+'</b>');
+    if(r){bits.push('TOTAL <bdi dir="ltr" class="'+cls(r.tot[1])+'">'+fmtPct(r.tot[1])+'</bdi>');bits.push('BTC.D <bdi dir="ltr">'+fmtNum(r.bd[0])+'%</bdi>');}}
   return '<details class="rdmk"'+(RDMKOPEN?' open':'')+'><summary>'+ic('bars')+'<span class="rdmkh">بازار کل</span><span class="rdmks">'+(bits.length?bits.join(' · '):'در حال گرفتن…')+'</span></summary>'+
     (MKT?mktHtml(MKT,null):'')+mdHtml()+'</details>';
 }
+function mkStripBind(g){const mk=g.querySelector('.rdmk');if(mk)mk.ontoggle=()=>{RDMKOPEN=mk.open;try{localStorage.setItem('signaldesk.rdmk',RDMKOPEN?'1':'0');}catch(e){}};}
 function rdHtml(){
   const L=rdList(), ob=rbOpen();
   if(RDV==='test'||RDV==='log')return '<div class="glb">'+rbHtml(RDV)+'</div>';
@@ -1026,7 +1038,7 @@ function paintRadar(g){
   const r50=g.querySelector('[data-rd50]');if(r50)r50.onclick=()=>{const L0=rdListOf(),nw=rdUniverse(RD_NC_OK).filter(t=>!L0.includes(t)).slice(0,Math.max(0,RD_MAX-L0.length));
     if(!nw.length)return;toast(faN(nw.length)+' ارز تازه بررسی می‌شود (چند دقیقه)','info');rdScan('add',nw);paintRadar(g);};
   g.querySelectorAll('[data-rdhelp]').forEach(b=>b.onclick=rdGuide);
-  const mk=g.querySelector('.rdmk');if(mk)mk.ontoggle=()=>{RDMKOPEN=mk.open;try{localStorage.setItem('signaldesk.rdmk',RDMKOPEN?'1':'0');}catch(e){}};
+  mkStripBind(g);
   const fs=g.querySelector('[data-rdfavscan]');if(fs)fs.onclick=()=>{VIEW.mktFav=true;lsSet(VIEWKEY,VIEW);rdScan('add',RDFAV.slice());renderRadar();};
   const rs=g.querySelector('[data-rdreset]');if(rs)rs.onclick=()=>{if(!confirm('فهرست رادار به '+faN(RD_STEP)+' ارز اول'+(RDFAV.length?' و واچ‌لیست':'')+' برگردد؟'))return;
     const keep=new Set(rdUniverse(RD_STEP).concat(RDFAV));for(const t of rdListOf())if(!keep.has(t))rdRemove(t);
