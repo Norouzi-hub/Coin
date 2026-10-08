@@ -63,7 +63,6 @@ function glSigHtml(x,i){
 }
 function paintGlance(){
   const g=$('#glance');if(!g)return;
-  if(view==='signals'&&bucket==='live'&&sigFilter==='mkt'){paintRadar(g);return;}
   if(view!=='signals'||bucket!=='live'||sigFilter!=='now'){g.innerHTML='';g.className='';return;}
   if(!POSTS.length){g.className='glance gltab';g.innerHTML='<div class="empty">'+STAR+'هنوز پستی نیامده.</div>';return;}
   const d=glanceData();
@@ -118,11 +117,11 @@ function paintGlance(){
   });
 }
 
-/* ۴۳) ?v=signals|positions|audit|report|scalp|bell از میان‌برهای آیکون برنامه */
+/* ۴۳) ?v=signals|positions|audit|report|radar|bell از میان‌برهای آیکون برنامه */
 function openFromUrl(){
   let v=null;try{v=new URLSearchParams(location.search).get('v');}catch(e){}
   if(!v)return;
   if(v==='bell')setTimeout(sheetAdvice,400);
-  else if(['signals','positions','audit','report','scalp'].includes(v)){if(v==='signals'){bucket='live';sigFilter='new';}go(v,true);}
+  else if(['signals','positions','audit','report','radar'].includes(v)){if(v==='signals'){bucket='live';sigFilter='new';}go(v,true);}
   try{history.replaceState(null,'',location.pathname);}catch(e){}
 }

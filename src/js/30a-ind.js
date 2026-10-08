@@ -1,15 +1,17 @@
-/* ==================== اندیکاتورها و تصمیم اسکلپ (حداکثر حدود یک ساعت) ==================== */
-/* همه‌ی اندیکاتورها «علّی»اند: مقدارِ کندل i فقط از کندل‌های ۰ تا i ساخته می‌شود؛ پس همین‌ها را
-   هم روی لحظه‌ی حال و هم در تست خودکار روی گذشته می‌شود صدا زد، بی‌آنکه آینده دیده شود.
-
-   تصمیم اسکلپ (scDecide) — برگشت به میانگین، هم‌جهت با روند کوتاه:
-   - جا: قیمت کنار باند پایین بولینگر (۲۰، ۲) ← فقط لانگ؛ کنار باند بالا ← فقط شورت؛ وسط ← صبر.
-   - تارگت: تا میانه‌ی بولینگر، دست‌کم ۱.۲ برابر ATR، و نه بیشتر از ۶۰٪ نوسانِ معمولِ یک ساعتِ توکن
-     (تا در حدود یک ساعت برسد). استاپ: آن سوی کف/سقفِ دو کندل آخر، دست‌کم ۱.۲ برابر ATR.
-   - شرط‌ها (هر کدام یک امتیاز؛ هر کدام را می‌شود خاموش کرد): روند ۱۵ دقیقه (EMA ۲۰/۵۰)، سمتِ VWAP،
-     برگشت RSI از اشباع، کندل برگشتی، نبودِ شکستِ پرحجم، و بیت‌کوین که خلاف جهت نریخته باشد.
-   - ورود فقط وقتی جا درست است، بیشتر از «حداکثر شرطِ ردشده» شرط رد نشده، تارگت دست‌کم ۳ برابرِ کارمزد و لغزش است، و
-     استاپ آن‌قدر بزرگ نیست که با این اهرم به لیکوئید نزدیک شود. */
+/* ==================== اندیکاتورهای مشترک (از بخش اسکلپِ حذف‌شده) ====================
+   بخش اسکلپ برداشته شد؛ این تکه‌ها جای دیگر به کار می‌آیند:
+   - swAggr: کندل‌های بزرگ‌تر از کندل‌های کوچک (4 ساعته و روزانه‌ی رادار، رویدادهای حال بازار)
+   - scSeries و scDecide: «تأیید ورود 5 دقیقه‌ای» رادار (قیمت کجای باند بولینگرِ 5 دقیقه‌ای است)
+   - fmtNum و medOf: نمایش عدد و میانه
+   همه‌ی اندیکاتورها «علّی»اند: مقدار کندل i فقط از کندل‌های 0 تا i ساخته می‌شود. */
+const fmtNum=v=>v==null||!isFinite(v)?'—':String(+(+v).toFixed(v<1?2:1));
+function swAggr(C,ms){
+  const out=[];
+  for(const k of C){const t=Math.floor(k.t/ms)*ms, b=out[out.length-1];
+    if(b&&b.t===t){b.h=Math.max(b.h,k.h);b.l=Math.min(b.l,k.l);b.c=k.c;b.v+=k.v||0;}
+    else out.push({t,o:k.o,h:k.h,l:k.l,c:k.c,v:k.v||0});}
+  return out;
+}
 function indEma(v,n){
   const k=2/(n+1), out=new Array(v.length).fill(null);let e=null,s=0;
   for(let i=0;i<v.length;i++){
@@ -131,61 +133,6 @@ function scDecide(x,o){
   else act=near;
   return {act,side,why,pb,trend,hm,hmT,tmax,costX,checks,score,need,plan,x,cost};
 }
-/* تنظیم‌های اسکلپ از SWOPT (یا از تنظیم یک ربات) */
+/* تنظیم‌های تصمیم 5 دقیقه‌ای (برای تأیید ورود رادار) */
 const scOpt=o=>({lev:+o.lev||10,fee:o.fee!=null?+o.fee:+S.fee||0,slip:o.slip!=null?+o.slip:Math.max(0,+S.slip||0),
   miss:o.miss!=null?+o.miss:2,tmax:+o.tmax||60,costX:+o.costX||3,flt:Object.assign({},o.flt||{})});
-
-/* ---- نمایش ---- */
-const SC_TREND={up:'صعودی ↗',down:'نزولی ↘',flat:'خنثی ↔'};
-function scDecideHtml(d,o){
-  const mg=swMg(), lev=+o.lev||10, S2=faSide(d.side), x=d.x;
-  if(d.why==='nodata')return '<div class="swdec wait"><div class="dv">نمی‌شود گفت</div><div class="dw">'+SC_WHY.nodata+'</div>'+swDecBtns()+'</div>';
-  const head=d.act==='long'?'الان: لانگ':d.act==='short'?'الان: شورت':'صبر کن';
-  const pl=d.plan, f=d.cost*lev;
-  const winU=(pl.tpP*lev-f)/100*mg, lossU=-(pl.slP*lev+f)/100*mg;
-  const where=d.pb<=0.15?'کنار باند پایین':d.pb>=0.85?'کنار باند بالا':'وسط باندها';
-  const lvl=d.act==='wait'&&d.why==='mid'?'<div class="dw">لانگ نزدیک <b dir="ltr">'+fmtPrice(x.bbL)+'</b> · شورت نزدیک <b dir="ltr">'+fmtPrice(x.bbU)+'</b> (باندهای بولینگر)</div>':'';
-  const checks=d.checks.length?'<ul class="sccheck">'+d.checks.map(c=>'<li class="'+(c.ok?'ok':'no')+'"><i>'+(c.ok?'✓':'✗')+'</i>'+SC_FLT[c.k]+'</li>').join('')+'</ul>':'';
-  return '<div class="swdec '+(d.act==='long'?'long':d.act==='short'?'short':'wait')+'">'+
-    '<div class="dv">'+head+(d.checks.length?' <span class="scs">'+faN(d.score)+' از '+faN(d.checks.length)+'</span>':'')+'</div>'+
-    '<div class="dw">قیمت <b dir="ltr">'+fmtPrice(x.p)+'</b> '+where+' · روند ۱۵ دقیقه: <b>'+SC_TREND[d.trend]+'</b> · نوسانِ معمولِ '+
-      (d.tmax===60?'یک ساعت':faN(d.tmax)+' دقیقه')+': <b>'+fmtNum(d.hmT)+'٪</b></div>'+
-    (d.act==='wait'?'<div class="dw">'+SC_WHY[d.why]+(d.why==='score'?' ('+faN(d.score)+' از '+faN(d.need)+' لازم)':d.why==='cost'?' (تارگت '+fmtNum(d.plan.tpP)+'٪؛ لازم دست‌کم '+fmtNum(d.costX*d.cost)+'٪ = '+fmtNum(d.costX)+' برابرِ هزینه)':'')+'</div>':'')+lvl+
-    checks+
-    (d.why!=='mid'?'<div class="dplan">'+(d.act==='wait'?'اگر '+S2+' می‌گرفتی:':'برنامه (حداکثر '+faN(+o.tmax||60)+' دقیقه):')+
-      '<div class="dnum"><span><i>ورود '+S2+'</i><b dir="ltr">'+fmtPrice(pl.en)+'</b></span><span><i>تارگت</i><b dir="ltr" class="u">'+fmtPrice(pl.tp)+'</b></span><span><i>استاپ</i><b dir="ltr" class="d">'+fmtPrice(pl.stop)+'</b></span></div>'+
-      '<div class="dw">با '+fmtNum(lev)+'x و $'+fmtNum(mg)+': هر بُرد حدود <b class="u">'+fmtUsd(winU)+'</b> ('+fmtNum(pl.tpP)+'٪) · هر استاپ حدود <b class="d">'+fmtUsd(lossU)+'</b> ('+fmtNum(pl.slP)+'٪) · کارمزد و لغزش '+fmtNum(d.cost)+'٪</div></div>':'')+
-    swDecBtns()+
-  '</div>';
-}
-/* جدول اندیکاتورها و نمودار کوچک: قیمت، باندهای بولینگر و VWAP */
-function scIndHtml(d,ser){
-  const x=d.x;if(!x)return '';
-  const k=(l,v,c,sub)=>stHtml(l,v,c,sub);
-  const rs=x.rsi, rsC=rs<=30?'u':rs>=70?'d':'';
-  const tr=x.e20==null?'—':fmtPrice(x.e20)+' / '+fmtPrice(x.e50);
-  let h='<details class="sec sub2 scind"><summary>اندیکاتورها</summary>'+scChart(ser,x.i,90)+
-    '<div class="swleg"><i class="p"></i>قیمت<i class="b"></i>باندهای بولینگر<i class="v"></i>VWAP</div><div class="stats">'+
-    k('RSI (۱۴)',fmtNum(rs)+(x.rsi>x.rsiP?' ↗':' ↘'),rsC,rs<=30?'اشباع فروش':rs>=70?'اشباع خرید':'عادی')+
-    k('بولینگر (۲۰، ۲)',faN(Math.round(d.pb*100))+'٪','', 'جای قیمت بین باند پایین (۰) و بالا (۱۰۰)')+
-    k('EMA ۲۰ / ۵۰ (۱۵ دقیقه)',tr,d.trend==='up'?'u':d.trend==='down'?'d':'','روند '+SC_TREND[d.trend])+
-    k('VWAP روزانه',fmtPrice(x.vwap),x.p>x.vwap?'u':'d','قیمت '+(x.p>x.vwap?'بالای':'زیر')+' آن')+
-    k('ATR (۱۴)',fmtNum(x.atr/x.p*100)+'٪','','نوسانِ هر کندل')+
-    k('حجم',x.volR==null?'—':'×'+fmtNum(x.volR),x.volR>=2?'w':'','نسبت به میانگین ۲۰ کندل')+
-    k('بیت‌کوین ۱۵ دقیقه',x.btc==null?'—':fmtPct(x.btc),x.btc==null?'m':cls(x.btc),x.btc==null?'برای همین نماد لازم نیست':'')+
-    k('نوسان یک ساعت',fmtNum(d.hm)+'٪','','میانه‌ی '+faN(x.hn||0)+' ساعت اخیر')+
-    '</div><div class="hint">همه از کندل‌های بسته؛ آخرین کندلِ نیمه‌کاره حساب نمی‌شود.</div></details>';
-  return h;
-}
-function scChart(ser,i,n){
-  if(!ser||i==null)return '';
-  const i0=Math.max(0,i-n+1), C=ser.TF.slice(i0,i+1);if(C.length<5)return '';
-  const U=ser.bb.up.slice(i0,i+1), L=ser.bb.lo.slice(i0,i+1), V=ser.vw.slice(i0,i+1);
-  const vals=C.map(k=>k.c).concat(U,L,V).filter(v=>v!=null&&isFinite(v));
-  let lo=Math.min(...vals),hi=Math.max(...vals);if(hi-lo<1e-12){hi+=1;lo-=1;}
-  const W=300,H=90,pad=(hi-lo)*0.06;lo-=pad;hi+=pad;
-  const X=j=>(j/(C.length-1)*W).toFixed(1), Y=v=>(H-(v-lo)/(hi-lo)*H).toFixed(1);
-  const line=(A,cl)=>{const pts=A.map((v,j)=>v==null?null:X(j)+','+Y(v)).filter(Boolean).join(' ');return pts?'<polyline fill="none" class="'+cl+'" points="'+pts+'"/>':'';};
-  return '<svg class="swsvg scchart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" role="img" aria-label="قیمت با باندهای بولینگر و VWAP">'+
-    line(U,'swl b')+line(L,'swl b')+line(V,'scv')+line(C.map(k=>k.c),'swp')+'</svg>';
-}

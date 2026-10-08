@@ -30,7 +30,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(r.t.st!=='open'&&r.t.R!=null,'تست آزمایشی از 30 ساعت پیش: از کندل‌ها نتیجه گرفت ('+r.t.st+' '+r.t.R+'R)');
  ok(/وقتی برنامه بسته بود/.test(r.msgs+r.log),'پیغام «وقتی برنامه بسته بود …»');
 
- console.log('=== تأیید ورود 5 دقیقه‌ای (کارت اسکلپ) ===');
+ console.log('=== تأیید ورود 5 دقیقه‌ای (بولینگر و RSI) ===');
  const c=await p.evaluate(async()=>{const d=await rdConf('SOL');const x={tk:'SOL',dir:d.side};
    const h=rdConfHtml(x), x2={tk:'SOL',dir:d.side==='long'?'short':'long'}, h2=rdConfHtml(x2);
    return {side:d.side,act:d.act,why:d.why,h:h.replace(/<[^>]+>/g,''),h2:h2.replace(/<[^>]+>/g,'')};});

@@ -18,8 +18,10 @@ const RD_KEY='signaldesk.radar.v5', RD_HIST=3000, RD_STEP=10, RD_MAX=150, RD_MIN
 const RD_CF=['t4','t1','macd','rsi','brk','vol','btc','ext','rs','d50','volc','whale','crowd','taker','oi','rbull','rbear',
   // عامل‌های شناخته‌شده‌ی دیگر (هر کدام فقط اگر در آزمون بیرون از یادگیری کمک کند وزن می‌گیرد):
   'ma200','ma200s','adx','bbp','vwap','obv','mom','r24','hl30','fund','hs','hc','wknd',
-  // از کارت اسکلپ: کندل برگشتی (سایه)، برگشت RSI از اشباع، حرکت یک ساعت اخیر بیت‌کوین
-  'wick','rsit','btc1'];
+  // عامل‌های کوتاه‌مدت: کندل برگشتی (سایه)، برگشت RSI از اشباع، حرکت یک ساعت اخیر بیت‌کوین
+  'wick','rsit','btc1',
+  // واگرایی 1 ساعته: قیمت کف/سقف تازه می‌زند ولی RSI یا هیستوگرام MACD نه
+  'divr','divm'];
 /* عامل‌های کل بازار (برای همه‌ی ارزها در یک لحظه یکی): همه طوری که «+» یعنی به نفع بالا رفتن */
 const RD_MF=['mtot','mt2','mt3','mbd','mud'], RD_FEAT=RD_CF.concat(RD_MF), RD_F0=RD_CF.length;
 const RD_FLOW=['whale','crowd','taker','oi'], RD_NOSIGN=['volc','rbull','rbear','hs','hc','wknd'];
@@ -27,7 +29,7 @@ const RD_FA={t4:'روند 4 ساعته',t1:'روند 1 ساعته',macd:'MACD',r
   rs:'قدرت نسبی به بیت‌کوین',d50:'روند روزانه',volc:'فشردگی نوسان',
   whale:'نهنگ‌ها در برابر مردم',crowd:'ازدحام مردم',taker:'خرید/فروش تهاجمی',oi:'Open Interest',rbull:'بازار صعودی',rbear:'بازار نزولی',
   ma200:'میانگین 200 (4 ساعته)',ma200s:'شیب میانگین 200',adx:'قدرت روند (ADX)',bbp:'باند بولینگر',vwap:'VWAP روزانه',obv:'OBV (حجم تجمعی)',
-  mom:'مومنتوم 14 روزه',r24:'بازده 24 ساعته',hl30:'جای قیمت در سقف/کف 30 روزه',fund:'فاندینگ',hs:'ساعت روز',hc:'ساعت روز',wknd:'آخر هفته',wick:'کندل برگشتی (سایه)',rsit:'برگشت RSI از اشباع',btc1:'بیت‌کوین در 1 ساعت',
+  mom:'مومنتوم 14 روزه',r24:'بازده 24 ساعته',hl30:'جای قیمت در سقف/کف 30 روزه',fund:'فاندینگ',hs:'ساعت روز',hc:'ساعت روز',wknd:'آخر هفته',wick:'کندل برگشتی (سایه)',divr:'واگرایی RSI (1 ساعته)',divm:'واگرایی MACD (1 ساعته)',rsit:'برگشت RSI از اشباع',btc1:'بیت‌کوین در 1 ساعت',
   mtot:'کل بازار (TOTAL)',mt2:'TOTAL2',mt3:'TOTAL3 (آلت‌ها)',mbd:'دامیننس بیت‌کوین',mud:'دامیننس تتر'};
 const RD_B=['70-85','85-95','95+'];
 const RD_SKIP=/^(USDT|USDC|FDUSD|TUSD|DAI|BUSD|USDP|USDD|USDE|SUSDE|USDS|PYUSD|USD0|USD1|RLUSD|EURC|EURT|PAXG|XAUT|WBTC|WETH|WBETH|STETH|WSTETH|WEETH|CBBTC|BTCB|RETH|METH|LEO|BSC-USD|BFUSD|USDF)$/;
@@ -75,6 +77,26 @@ function rdPrep(C,B,FL,FU){
   return {C,c,v,e20,e50,hist,rsi,F,f20,f50,fIdx,D,d50,dIdx,pre,bt,bc,f200,adx,adir,obv,FU:FU&&FU.length?FU:null,FL:FL||null,reg:rdRegMap(B||C)};
 }
 /* عامل‌ها در کندل i (بسته‌شده): هر کدام حدود −1..+1، یا null اگر داده نیست */
+/* واگرایی کلاسیک روی 1 ساعته: کف (یا سقف) تازه‌ی قیمت در برابر کف (سقف) قبلی، در حالی که نوسانگر o خلافش را نشان می‌دهد.
+   کف/سقف فقط وقتی حساب است که 2 کندل بعدش هم بسته شده باشد (بی نگاه به آینده)؛ کف تازه باید در 12 کندل اخیر باشد،
+   کف قبلی 5 تا 48 کندل پیش‌ترش، و از کف تازه تا الان قیمت آن را نشکسته باشد.
+   خروجی: +1 واگرایی مثبت (به نفع بالا رفتن)، −1 منفی، 0 هیچ؛ با تازگی کم‌رنگ‌تر می‌شود. mn: کمترین فاصله‌ی نوسانگر */
+function rdDiv(C,o,i,mn){
+  const pv=(k,lo)=>{if(k<2||k+2>i)return false;for(let q=k-2;q<=k+2;q++)if(q!==k&&(lo?C[q].l<C[k].l:C[q].h>C[k].h))return false;return true;};
+  let out=0;
+  for(const lo of [true,false]){
+    let k1=-1;for(let k=i-2;k>=i-12;k--)if(pv(k,lo)){k1=k;break;}
+    if(k1<0)continue;
+    let k0=-1;for(let k=k1-5;k>=k1-48&&k>=2;k--)if(pv(k,lo)){k0=k;break;}
+    if(k0<0||o[k0]==null||o[k1]==null)continue;
+    let ok=true;for(let q=k1+1;q<=i;q++)if(lo?C[q].l<C[k1].l:C[q].h>C[k1].h){ok=false;break;}
+    if(!ok)continue;
+    const fr=1-0.5*(i-k1-2)/10;
+    if(lo&&C[k1].l<C[k0].l&&o[k1]-o[k0]>mn)out+=fr;
+    if(!lo&&C[k1].h>C[k0].h&&o[k0]-o[k1]>mn)out-=fr;
+  }
+  return clamp1(out);
+}
 function rdParts(P,i){
   const {C,c,v,e20,e50,hist,rsi,f20,f50,fIdx,D,d50,dIdx,pre,bt,bc,FL}=P, H=36e5;
   if(i<200)return null;
@@ -128,10 +150,12 @@ function rdParts(P,i){
   p.fund=null;
   if(FU){const tt=C[i].t+H;let lo2=0,hi2=FU.length-1;if(FU[0][0]<=tt){while(lo2<hi2){const md=(lo2+hi2+1)>>1;if(FU[md][0]<=tt)lo2=md;else hi2=md-1;}
     if(tt-FU[lo2][0]<=9*H){p.fund=clamp1(FU[lo2][1]/0.05);m.fu=FU[lo2][1];}}}
-  // از اسکلپ: سایه‌ی پایین در برابر بالا (رد شدن کف/سقف)، RSI که از زیر 35 برگشته یا از بالای 65 افتاده، و بیت‌کوین در یک ساعت
+  // کوتاه‌مدت: سایه‌ی پایین در برابر بالا (رد شدن کف/سقف)، RSI که از زیر 35 برگشته یا از بالای 65 افتاده، و بیت‌کوین در یک ساعت
   {const k=C[i],rg=k.h-k.l;p.wick=rg>0?clamp1(((Math.min(k.o,k.c)-k.l)-(k.h-Math.max(k.o,k.c)))/rg):0;}
   {const lo3=Math.min(rsi[i],rsi[i-1],rsi[i-2]),hi3=Math.max(rsi[i],rsi[i-1],rsi[i-2]);
     p.rsit=lo3<=35&&rsi[i]>rsi[i-1]?1:hi3>=65&&rsi[i]<rsi[i-1]?-1:0;}
+  // واگرایی 1 ساعته (RSI: دست‌کم 2 واحد؛ MACD: دست‌کم 5٪ ATR)
+  p.divr=rdDiv(C,rsi,i,2);p.divm=rdDiv(C,hist,i,0.05*atr);
   p.btc1=null;if(bc){const b0=bc.get(C[i].t-H),b1=bc.get(C[i].t);if(b0&&b1){p.btc1=clamp1((b1/b0-1)*100/1.5);m.b1=(b1/b0-1)*100;}}
   // فصلی: ساعت روز (UTC) و آخر هفته
   {const dt=new Date(C[i].t+H),hh=dt.getUTCHours(),wd=dt.getUTCDay();p.hs=Math.sin(2*Math.PI*hh/24);p.hc=Math.cos(2*Math.PI*hh/24);p.wknd=wd===0||wd===6?1:0;}
@@ -158,11 +182,15 @@ const rdBucket=s=>s>=95?'95+':s>=85?'85-95':'70-85';
    بیرون از یادگیری) خودکار انتخاب می‌شود؛ معامله‌ی آزمایشی و پوزیشن رادار با همان خارج می‌شوند.
    t: پله‌های هدف، f: سهمی که در هر پله بسته می‌شود، st: استاپ بعد از هر پله، be: ریسک‌فری بی بستن،
    trail: استاپ متحرک به فاصله‌ی چند R پشت بیشترین سود (بعد از پله‌ی اول). */
-const RD_EXN=['tp','lad','trl'];
+const RD_EXN=['tp','lad','trl','q05','h05','t1h'];
 const rdExPlans=()=>{const rr=+(S.rMul&&S.rMul[0])||1.5;return {
   tp:{n:'هدف ثابت',d:'همه در +'+rr+'R؛ در +1R استاپ به ورود',t:[rr],f:[1],st:[0],be:1},
   lad:{n:'سیو سود پله‌ای',d:'نصف در +1R و استاپ به ورود؛ یک‌چهارم در +2R و استاپ به +1R؛ باقی در +3R',t:[1,2,3],f:[.5,.25,.25],st:[0,1,2]},
-  trl:{n:'سیو سود + استاپ متحرک',d:'نصف در +1R و استاپ به ورود؛ باقی با استاپ متحرک 1R پشت بیشترین سود',t:[1],f:[.5],st:[0],trail:1}};};
+  trl:{n:'سیو سود + استاپ متحرک',d:'نصف در +1R و استاپ به ورود؛ باقی با استاپ متحرک 1R پشت بیشترین سود',t:[1],f:[.5],st:[0],trail:1},
+  // خروج سریع (از تحلیل مسیر واقعی تست‌ها: بیشتر سیگنال‌ها زود +0.5R می‌دهند و بعد برمی‌گردند)
+  q05:{n:'خروج سریع +0.5R',d:'همه در +0.5R',t:[0.5],f:[1],st:[0]},
+  h05:{n:'نصف در +0.5R',d:'نصف در +0.5R و استاپ به ورود؛ باقی در +1.5R',t:[0.5,1.5],f:[.5,.5],st:[0,0]},
+  t1h:{n:'خروج بعد از 1 ساعت',d:'بعد از یک ساعت با قیمت همان لحظه (استاپ سر جایش)',t:[],f:[],st:[],tmax:1}};};
 const exNew=()=>({rem:1,acc:0,stop:-1,k:0,peak:0,be:false});
 /* یک قدم (کندل یا قیمت): fav بهترین و adv بدترین R در این قدم؛ اول استاپ (محافظه‌کار)، بعد پله‌ها.
    تغییر استاپ از قدم بعد اثر می‌کند. true یعنی معامله تمام شد. */
@@ -184,7 +212,9 @@ function rdWalkX(C,i,pl){
   let left=RD_EXN.length;
   for(let j=i+1;j<C.length&&j<=i+AS_HOLD&&left;j++){
     const k=C[j], fav=sign>0?(k.h-pl.E)/u:(pl.E-k.l)/u, adv=sign>0?(k.l-pl.E)/u:(pl.E-k.h)/u;
-    for(const n of RD_EXN)if(!out[n]&&exStep(st[n],PL[n],fav,adv)){out[n]={R:st[n].acc-cost,j,how:st[n].how};left--;}
+    for(const n of RD_EXN){if(out[n])continue;
+      if(exStep(st[n],PL[n],fav,adv)){out[n]={R:st[n].acc-cost,j,how:st[n].how};left--;}
+      else if(PL[n].tmax&&j-i>=PL[n].tmax){out[n]={R:exR(st[n],(k.c-pl.E)*sign/u)-cost,j,how:'time'};left--;}}
   }
   if(left){const end=i+AS_HOLD;if(end>C.length-1)return null;
     const cR=(C[end].c-pl.E)*sign/u;for(const n of RD_EXN)if(!out[n])out[n]={R:exR(st[n],cR)-cost,j:end,how:'time'};}
@@ -195,17 +225,19 @@ function rdWalk(C,i,pl){const w=rdWalkX(C,i,pl);return w&&w.tp;}
 /* نمونه‌های یک ارز: هر 2 ساعت، عامل‌ها و نتیجه‌ی معامله‌ی لانگ و شورت از همان لحظه */
 function rdSamples(P,tk){
   const C=P.C,H=36e5,F=RD_F0,last=C[C.length-1].t+H>Date.now()?C.length-2:C.length-1;
-  const t=[],X=[],R={long:[],short:[]},J={long:[],short:[]},G=[],RX={long:[],short:[]};
+  const t=[],X=[],R={long:[],short:[]},J={long:[],short:[]},G=[],RX={long:[],short:[]},DV=[];
   for(let i=210;i<=last-AS_HOLD;i+=2){
     const r=rdParts(P,i);if(!r)continue;
     const w={};
     for(const d of ['long','short']){const pl=asPlan(C,i,d);w[d]=pl&&rdWalkX(C,i,pl);}
     if(!w.long||!w.short)continue;
     t.push(C[i].t);X.push(...rdVec(r.p));G.push(P.reg?P.reg(C[i].t):null);
+    // واگرایی هر لحظه (هر کدام از RSI یا MACD): برای جدول «اثر واگرایی»
+    DV.push(Math.sign((r.p.divr||0)+(r.p.divm||0)));
     // برچسب مدل و «یک معامله در هر لحظه» با نقشه‌ی هدف ثابت؛ R هر سه نقشه برای انتخاب نقشه‌ی خروج
     for(const d of ['long','short']){R[d].push(w[d].tp.R);J[d].push(C[w[d].tp.j].t);for(const n of RD_EXN)RX[d].push(w[d][n].R);}
   }
-  return {tk,t,X:Float32Array.from(X),R,J,G,F,RX:{long:Float32Array.from(RX.long),short:Float32Array.from(RX.short)}};
+  return {tk,t,X:Float32Array.from(X),R,J,G,F,RX:{long:Float32Array.from(RX.long),short:Float32Array.from(RX.short)},DV:Int8Array.from(DV)};
 }
 /* حال الانِ یک ارز (آخرین کندل بسته) و نقشه‌ی هر دو جهت */
 function rdLiveOf(P){
@@ -266,12 +298,12 @@ function rdEvalFold(SS,M,a,b,cal,rel,busy,recs){
     for(let q=0;q<s.t.length;q++){const t=s.t[q];if(t<a||t>=b)continue;
       const o=q*F,mr=RDMF.get(t),pL=rdPred(M.long,s.X,o,mr),pS=rdPred(M.short,s.X,o,mr);
       for(const [d,p] of [['long',pL],['short',pS]]){const bi=Math.min(5,Math.max(0,Math.floor(p*10)-2)),x=rel[d][bi];x[0]++;x[1]+=p;if(s.R[d][q]>0)x[2]++;
-        if(s.RX)RD_EXN.forEach((n,e)=>rdAdd(cal,'base|'+n+'|'+d,s.RX[d][q*3+e],t));else rdAdd(cal,(recs?'base|tp|':'base|')+d,s.R[d][q],t);}
+        if(s.RX)RD_EXN.forEach((n,e)=>rdAdd(cal,'base|'+n+'|'+d,s.RX[d][q*RD_EXN.length+e],t));else rdAdd(cal,(recs?'base|tp|':'base|')+d,s.R[d][q],t);}
       const sL=rdPct(M.long,pL),sS=rdPct(M.short,pS),d=sL>=sS?'long':'short',sc=Math.max(sL,sS);
       if(sc<RD_MIN||t<free)continue;
       free=s.J[d][q];
       const bk=rdBucket(sc),g=s.G[q];
-      if(recs)recs.push({d,bk,g,t,R:s.RX?[0,1,2].map(e=>s.RX[d][q*3+e]):[s.R[d][q],s.R[d][q],s.R[d][q]]});
+      if(recs)recs.push({d,bk,g,t,R:s.RX?RD_EXN.map((_,e)=>s.RX[d][q*RD_EXN.length+e]):RD_EXN.map(()=>s.R[d][q]),dv:s.DV?s.DV[q]*(d==='long'?1:-1):0});
       else{const R=s.R[d][q];rdAdd(cal,d,R,t);rdAdd(cal,d+'|'+bk,R,t);if(g){rdAdd(cal,d+'|'+g,R,t);rdAdd(cal,d+'|'+g+'|'+bk,R,t);}}
     }
     busy.set(s.tk,free);}
@@ -297,9 +329,12 @@ async function rdModel(){
   let ex='tp';for(const n of RD_EXN)if(exs[n].all&&exs[ex].all&&exs[n].all.r/exs[n].all.n>exs[ex].all.r/exs[ex].all.n+0.005)ex=n;
   const e=RD_EXN.indexOf(ex);
   for(const r of recs){const R=r.R[e];rdAdd(cal,r.d,R,r.t);rdAdd(cal,r.d+'|'+r.bk,R,r.t);if(r.g){rdAdd(cal,r.d+'|'+r.g,R,r.t);rdAdd(cal,r.d+'|'+r.g+'|'+r.bk,R,r.t);}}
+  // اثر واگرایی: همان معامله‌ها (نقشه‌ی خروج انتخاب‌شده) در سه دسته — واگرایی هم‌جهت، بی واگرایی، خلاف جهت
+  const dvc={};for(const r of recs){const k=r.dv>0?'al':r.dv<0?'ag':'no';rdAdd(dvc,r.d+'|'+k,r.R[e],r.t);rdAdd(dvc,'all|'+k,r.R[e],r.t);}
+  const divs={};for(const k in dvc)divs[k]=rdSum(dvc[k]);
   for(const d of ['long','short'])if(cal['base|'+ex+'|'+d])cal['base|'+d]=cal['base|'+ex+'|'+d];
-  const C2={};for(const k in cal)if(!/^base\|(tp|lad|trl)\|/.test(k))C2[k]=rdSum(cal[k]);
-  Object.assign(RD,{ex,exs,mt0:Date.now(),M:{long:ML,short:MS},calib:C2,rel,ns:SS.reduce((s,x)=>s+x.t.length,0),span:[t0,t1],ncoin:SS.length});
+  const C2={};for(const k in cal)if(!/^base\|[a-z0-9]+\|/.test(k))C2[k]=rdSum(cal[k]);
+  Object.assign(RD,{ex,exs,divs,mt0:Date.now(),M:{long:ML,short:MS},calib:C2,rel,ns:SS.reduce((s,x)=>s+x.t.length,0),span:[t0,t1],ncoin:SS.length});
   return true;
 }
 /* ستاره از کارنامه‌ی بیرون از یادگیری: 0 = نمونه‌ی کم، 1 = زیان، 2 = سود ولی شاید شانس، 3+ = حتی در بدترین حالت محتمل سود */
@@ -459,7 +494,7 @@ async function rdScan(mode,add){
     // refresh: داده‌ی تازه برای همه؛ بقیه: فقط ارزهای تازه از شبکه، بقیه از حافظه
     const fresh=tk=>mode==='refresh'||!RDS.has(tk);
     // مدل و ستاره‌ها پایدار می‌مانند: فقط روزی یک بار، با «10 ارز بعدی» یا «یادگیری دوباره» از نو یاد گرفته می‌شوند
-    const fit=mode==='learn'||((mode==='more'||mode==='add')&&extra.length>0)||!RD.M||Date.now()-(RD.mt0||0)>24*36e5;
+    const fit=mode==='learn'||((mode==='more'||mode==='add')&&extra.length>0)||!RD.M||!RD.M.long||RD.M.long.w.length!==RD_FEAT.length+1||Date.now()-(RD.mt0||0)>24*36e5;
     RDQ.fail=[];
     RDQ.n=U.filter(tk=>fresh(tk)||!RDS.has(tk)).length;RDQ.msg='گرفتن تاریخچه‌ی بیت‌کوین (برای روند و حال بازار)…';rdPaintProg();
     let B=null;try{B=await rdCandles('BTC',true);}catch(e){}
@@ -488,7 +523,7 @@ async function rdScan(mode,add){
         if(fit||!RD.M){await rdModel();if(RDQ.fin)RD.mt=Date.now()-m0;}
         RDQ.pm=1;}
       rdLive(U);
-      if(view==='signals')renderSignals();
+      rdRepaintNow();
     }
     RD.fund=(await fundP)||RD.fund||{};
     if(RDQ.n)RD.ct=Math.round((Date.now()-RDQ.tc)/RDQ.n);
@@ -499,7 +534,7 @@ async function rdScan(mode,add){
     rdLive(RD.list);RD.at=Date.now();rdSave();
     try{rbLogAuto();}catch(e){}
   }finally{RDQ.on=false;RDQ.msg='';RDQ.cur.clear();clearInterval(RDQ.iv);}
-  if(view==='signals')renderSignals();
+  rdRepaintNow();
 }
 function rdRemove(tk){RD.list=rdListOf().filter(t=>t!==tk);RD.rank=RD.rank.filter(t=>t!==tk);delete RD.coins[tk];RDS.delete(tk);rdSave();}
 /* حال الانِ ارزها با مدل فعلی */
@@ -581,6 +616,7 @@ function rdReasons(x){
     else if(k==='hc')return;
     else if(k==='wick')t=v>0?'سایه‌ی پایین بلند (کف رد شد)':'سایه‌ی بالا بلند (سقف رد شد)';
     else if(k==='rsit')t=v>0?'RSI از اشباع فروش برگشت':'RSI از اشباع خرید افتاد';
+    else if(k==='divr'||k==='divm')t=(v>0?'واگرایی مثبت ':'واگرایی منفی ')+(k==='divr'?'RSI':'MACD')+' (1 ساعته؛ '+(v>0?'کف پایین‌تر، نوسانگر بالاتر':'سقف بالاتر، نوسانگر پایین‌تر')+')';
     else if(k==='btc1')t='بیت‌کوین '+fmtPct(x.b1)+' در 1 ساعت';
     else if(k==='hs')t='ساعت روز (UTC '+new Date(x.t+36e5).getUTCHours()+')';
     else if(k==='wknd')t='آخر هفته';
@@ -617,9 +653,17 @@ function rdPanelHtml(){
     (bad.length?' '+bad.map(d=>(d==='long'?'لانگ':'شورت')).join(' و ')+' در این حال بازار زیان داده؛ نگیر.':'')+'</span></div>';
   // نقشه‌ی خروج: هر سه روی همان معامله‌های بیرون از یادگیری
   if(RD.exs){const PL=rdExPlans();
-    h+='<div class="sechd">نقشه‌ی خروج (همان سیگنال‌ها، سه جور خروج)</div><table class="rdtab rdex"><thead><tr><th></th><th>لانگ</th><th>شورت</th><th>همه</th></tr></thead><tbody>'+
+    h+='<div class="sechd">نقشه‌ی خروج (همان سیگنال‌ها، '+faN(RD_EXN.length)+' جور خروج)</div><table class="rdtab rdex"><thead><tr><th></th><th>لانگ</th><th>شورت</th><th>همه</th></tr></thead><tbody>'+
       RD_EXN.map(n=>{const o=RD.exs[n]||{};return '<tr class="'+(n===RD.ex?'on':'')+'"><td>'+esc(PL[n].n)+(n===RD.ex?' ✓':'')+'</td><td>'+rdCell(o.long)+'</td><td>'+rdCell(o.short)+'</td><td>'+rdCell(o.all)+'</td></tr>';}).join('')+
       '</tbody></table><div class="hint rdcap">✓ = بیشترین میانگین R؛ «تست» و «ایزوله» با همین (یا نقشه‌ای که در «آزمایشی» انتخاب کنی) خارج می‌شوند. '+RD_EXN.map(n=>'<b>'+esc(PL[n].n)+'</b>: '+esc(PL[n].d)).join('. ')+'.</div>';}
+  // اثر واگرایی 1 ساعته روی همان سیگنال‌ها
+  if(RD.divs){const D=RD.divs,row=(k,t)=>'<tr><td>'+t+'</td><td>'+rdCell(D['long|'+k])+'</td><td>'+rdCell(D['short|'+k])+'</td><td>'+rdCell(D['all|'+k])+'</td></tr>';
+    const a=D['all|al'],o=D['all|no'],av=x=>x&&x.n?x.r/x.n:null;
+    const vd=a&&o&&a.n>=20?(av(a)>av(o)+0.03?'<b class="win">سیگنال‌های با واگرایی هم‌جهت بهتر بوده‌اند</b> ('+fmtR(av(a))+' در برابر '+fmtR(av(o))+')؛ فیلتر «فقط با واگرایی» بالای صفحه را امتحان کن.':
+      av(a)<av(o)-0.03?'<b class="lose">واگرایی هم‌جهت این‌جا کمکی نکرده</b> ('+fmtR(av(a))+' در برابر '+fmtR(av(o))+').':'واگرایی هم‌جهت تفاوت روشنی نساخته ('+fmtR(av(a))+' در برابر '+fmtR(av(o))+').'):'نمونه‌ی سیگنال با واگرایی هنوز کم است.';
+    h+='<div class="sechd">اثر واگرایی 1 ساعته (RSI یا MACD)</div><table class="rdtab rddiv"><thead><tr><th></th><th>لانگ</th><th>شورت</th><th>همه</th></tr></thead><tbody>'+
+      row('al','هم‌جهت با سیگنال')+row('no','بی واگرایی')+row('ag','خلاف سیگنال')+'</tbody></table>'+
+      '<div class="hint rdcap">'+vd+' واگرایی مثبت: قیمت کف پایین‌تری زده ولی RSI/MACD کف بالاتری (فروش دارد ضعیف می‌شود)؛ منفی برعکس در سقف. فقط کف/سقف‌های 12 ساعت اخیر که 2 کندل بعدشان بسته شده و هنوز شکسته نشده‌اند. «هم‌جهت» یعنی واگرایی مثبت برای لانگ یا منفی برای شورت.</div>';}
   // صداقت مدل: احتمالی که گفت در برابر آنچه شد
   if(RD.rel){const lab=['زیر 30٪','30-40٪','40-50٪','50-60٪','60-70٪','70٪+'];
     h+='<details class="sec sub2"><summary>صداقت مدل: گفت چقدر، شد چقدر</summary><table class="rdtab rdrel"><thead><tr><th>مدل گفت</th><th>لانگ: شد</th><th>شورت: شد</th></tr></thead><tbody>'+
@@ -647,7 +691,7 @@ function rdRowHtml(x,i){
     '<div class="glnum rdwhy">'+R.map(r=>'<span class="pill '+(r.good==null?'mut':r.good?'win':'lose')+'">'+(r.good?'✓ ':r.good===false?'✗ ':'')+esc(r.t)+'</span>').join('')+
       (f!=null&&Math.abs(f)>=0.03?'<span class="pill mut" title="فاندینگ فیوچرز؛ در امتیاز نیست">فاندینگ '+fmtNum(f)+'٪ '+(f>0?'(لانگ‌ها شلوغ)':'(شورت‌ها شلوغ)')+'</span>':'')+
       (!x.flow?'<span class="pill mut">بی داده‌ی فیوچرز بایننس</span>':'')+'</div>'+
-    rdConfHtml(x)+
+    rdDivHtml(x)+rdConfHtml(x)+
     (x.pl?'<div class="glnum">ورود <b dir="ltr">'+fmtPrice(x.pl.E)+'</b> · استاپ <b dir="ltr">'+fmtPrice(x.pl.SL)+'</b> ('+fmtNum(x.pl.sd*100)+'٪) · حداکثر '+faN(AS_HOLD)+' ساعت</div>'+
       '<div class="glnum rbplan">'+rbPlanTxt({E:x.pl.E,sd:x.pl.sd,dir:x.dir,ex:rbExEff()})+'</div>':'')+
     '<div class="glact">'+(z?'<button class="btn sm ok" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
@@ -655,9 +699,14 @@ function rdRowHtml(x,i){
       '<button class="btn sm side" data-a="copy" title="برای اپ صرافی">'+ic('share')+'</button>'+
       '<button class="btn sm side" data-a="rm" title="بیرون از فهرست رادار">'+ic('x')+'</button></div></div>';
 }
+/* واگرایی هم‌جهت/خلاف برای این سیگنال (+1 هم‌جهت، −1 خلاف، 0 هیچ) */
+const rdDivOf=x=>{if(!x||!x.parts||x.dir==='wait')return 0;const v=Math.sign((x.parts.divr||0)+(x.parts.divm||0));return v*(x.dir==='long'?1:-1);};
+function rdDivHtml(x){const v=rdDivOf(x);if(!v)return '';
+  const k=[x.parts.divr?'RSI':'',x.parts.divm?'MACD':''].filter(Boolean).join(' و ');
+  return '<div class="glnum"><span class="pill '+(v>0?'win':'lose')+' rddv">'+(v>0?'✓ واگرایی هم‌جهت ':'✗ واگرایی خلاف ')+k+' (1 ساعته)</span></div>';}
 let RDPICKOPEN=false;
-/* ---- تأیید ورود با کارت اسکلپ (5 دقیقه‌ای) ----
-   رادار جهت را برای چند ساعت آینده می‌گوید؛ کارت اسکلپ می‌گوید الان قیمت کجای باند بولینگرِ 5 دقیقه‌ای است.
+/* ---- تأیید ورود 5 دقیقه‌ای ----
+   رادار جهت را برای چند ساعت آینده می‌گوید؛ این تأیید می‌گوید الان قیمت کجای باند بولینگرِ 5 دقیقه‌ای است.
    لانگِ رادار نزدیک باند پایین (عقب‌نشینی) ورود بهتری است تا وسط یک جهش. فقط راهنمای زمان ورود است؛
    در کارنامه‌ی رادار سنجیده نشده. */
 const RDCF=new Map();let RDCFQ=false;
@@ -669,7 +718,7 @@ async function rdConf(tk){
 function rdConfPump(list){
   if(RDCFQ)return;const todo=list.filter(x=>{const c=RDCF.get(x.tk);return !c||Date.now()-c.at>5*60e3;}).slice(0,6);if(!todo.length)return;
   RDCFQ=true;(async()=>{let n=0;for(const x of todo){try{await rdConf(x.tk);n++;}catch(e){RDCF.set(x.tk,{at:Date.now(),d:null});}}
-    RDCFQ=false;if(n&&view==='signals'&&sigFilter==='mkt'&&RDV==='sig')paintGlance();})();
+    RDCFQ=false;if(n&&view==='radar'&&RDV==='sig')renderRadar();})();
 }
 function rdConfHtml(x){
   const c=RDCF.get(x.tk),d=c&&c.d;if(!d||!d.x)return '';
@@ -679,17 +728,16 @@ function rdConfHtml(x){
   else if(d.act&&d.act!=='wait'&&d.act!==dir||(d.why!=='mid'&&d.side!==dir)){cl='lose';t='⚠ 5 دقیقه‌ای خلاف جهت: قیمت کنار باند '+(dir==='long'?'بالا':'پایین')+'؛ برای ورود بهتر صبر کن تا نزدیک '+fmtPrice(band);}
   else if(d.why==='mid')t='ورود بهتر (عقب‌نشینی 5 دقیقه‌ای): نزدیک '+fmtPrice(band);
   else t='نزدیک جای ورود؛ تأیید 5 دقیقه‌ای کامل نیست ('+faN(d.score)+' از '+faN(d.checks.length)+')';
-  return '<div class="glnum"><span class="pill '+cl+' rdconf" title="کارت اسکلپ روی کندل 5 دقیقه‌ای؛ راهنمای زمان ورود، سنجیده در کارنامه نیست">'+esc(t)+'</span></div>';
+  return '<div class="glnum"><span class="pill '+cl+' rdconf" title="بولینگر و RSI روی کندل 5 دقیقه‌ای؛ راهنمای زمان ورود، سنجیده در کارنامه نیست">'+esc(t)+'</span></div>';
 }
 let RDV=(()=>{try{return localStorage.getItem('signaldesk.rdview')||'sig';}catch(e){return 'sig';}})();
 function rdHtml(){
   const L=rdList(), wait=L.filter(x=>x.dir==='wait'), ob=rbOpen();
   // فیلترهای تب «بازار»: جهت و «فقط 3 ستاره به بالا»
   const fv=x=>!VIEW.mktFav||rdIsFav(x.tk);
-  const fd=VIEW.mktDir||'all', act=L.filter(x=>x.dir!=='wait'&&(fd==='all'||x.dir===fd)&&(!VIEW.mktOk||x.ok)&&fv(x)),
+  const fd=VIEW.mktDir||'all', act=L.filter(x=>x.dir!=='wait'&&(fd==='all'||x.dir===fd)&&(!VIEW.mktOk||x.ok)&&(!VIEW.mktDiv||rdDivOf(x)>0)&&fv(x)),
     hid=L.filter(x=>x.dir!=='wait').length-act.length;
   let h='<div class="glh"><b>'+ic('trend')+'رادار بازار</b><span>'+(L.length?faN(L.filter(x=>x.ok).length)+' فرصت با رتبه‌ی خوب از '+faN(L.length)+' ارز':'')+'</span></div><div class="glb">';
-  h+='<div class="pbpick rdv">'+[['sig','سیگنال‌ها'],['test','آزمایشی'+(ob.test?' ('+faN(ob.test)+' باز)':'')],['log','دفتر پیشنهادها']].map(([k,t])=>'<button class="pbc'+(RDV===k?' on':'')+'" data-rdv="'+k+'">'+t+'</button>').join('')+'</div>';
   if(RDV!=='sig')return h+rbHtml(RDV)+'</div>';
   const LL=rdListOf(), n=LL.length, top=(()=>{const U=rdUniverse(n);let k=0;while(k<U.length&&LL.includes(U[k]))k++;return k;})();
   h+='<div class="rdbar"><span class="rdcnt">'+(n?faN(n)+' ارز'+(top?' (رتبه‌ی 1 تا '+faN(top)+(n>top?' و '+faN(n-top)+' ارز دیگر':'')+')':''):'')+'</span>'+
@@ -709,7 +757,7 @@ function rdHtml(){
      '<button class="lnk" data-rdlearn="1"'+(RDQ.on?' disabled':'')+'>یادگیری دوباره</button></div>';}
   if(!RD.at&&!RDQ.on)h+='<div class="hint">هنوز بررسی نشده؛ همین الان 10 ارز اول شروع می‌شود (بار اول هر ارز ~125 روز تاریخچه می‌گیرد؛ چند ثانیه برای هر ارز).</div>';
   if((!MKT||Date.now()-MKT.at>MK_TTL)&&Date.now()-MKTRY>120000){MKTRY=Date.now();const was=MKT&&MKT.at;
-    mktLoad().then(m=>{if(m&&m.at!==was&&view==='signals')paintGlance();}).catch(()=>{});}
+    mktLoad().then(m=>{if(m&&m.at!==was)rdRepaintNow();}).catch(()=>{});}
   if(MKT)h+=mktHtml(MKT,null);
   h+=mdHtml();
   h+=rdPanelHtml();
@@ -718,15 +766,36 @@ function rdHtml(){
   const wv=wait.filter(fv);
   if(wv.length)h+='<div class="hint rdwait"><b>صبر</b> (امتیاز زیر '+faN(RD_MIN)+'): '+wv.map(x=>(rdIsFav(x.tk)?'★':'')+esc(x.tk)+' <span class="'+(x.best==='long'?'win':'lose')+'">'+(x.best==='long'?'L':'S')+faN(x.sc)+'</span>').join('، ')+'</div>';
   if(VIEW.mktFav&&!act.length&&!wv.length)h+='<div class="empty">هیچ‌کدام از ارزهای واچ‌لیست هنوز بررسی نشده؛ «انتخاب ارزها» ← «بررسی واچ‌لیست».</div>';
-  h+='<div class="hint">مدل: رگرسیون لجستیک، جدا برای لانگ و شورت، روی نتیجه‌ی همین معامله (بعد از کارمزد). '+faN(RD_FEAT.length)+' عامل: قیمت، میانگین 200، ADX، بولینگر، VWAP، OBV، مومنتوم، بیت‌کوین، قدرت نسبی، روند روزانه، نوسان، فاندینگ، ساعت و روز، جریان پول فیوچرز بایننس'+
+  h+='<div class="hint">مدل: رگرسیون لجستیک، جدا برای لانگ و شورت، روی نتیجه‌ی همین معامله (بعد از کارمزد). '+faN(RD_FEAT.length)+' عامل: قیمت، میانگین 200، ADX، بولینگر، VWAP، OBV، مومنتوم، بیت‌کوین، قدرت نسبی، روند روزانه، نوسان، فاندینگ، ساعت و روز، واگرایی 1 ساعته، جریان پول فیوچرز بایننس'+
     (RD.nflow!=null?' ('+faN(RD.nflow)+' ارز داده‌اش را داشتند)':'')+'، و کل بازار (TOTAL، TOTAL2، TOTAL3، دامیننس بیت‌کوین و تتر)'+(RD.mkl&&RD.mkl.cov?'؛ تاریخچه‌اش از ارزهای بررسی‌شده بازسازی شده که '+faN(Math.round(RD.mkl.cov*100))+'٪ کل بازارند':'')+'. کارنامه با آزمون پیش‌رونده: مدل هر دوره را ندیده سنجیده شده. سود گذشته تضمین آینده نیست؛ «تست» بزن و در «دفتر پیشنهادها» ببین در عمل چه شد.</div></div>';
   return h;
 }
+/* تب «بازار» (مستقل، در نوار پایین): نوار فیلتر خودش و همان رادار */
+const rdRepaintNow=()=>{if(view==='radar')renderRadar();};
+function rdFbar(){
+  const bar=$('#rdFbar');if(!bar)return;bar.innerHTML='';
+  const chip=(row,label,on,fn)=>{const b=el('button','fc'+(on?' on':''),'<span>'+label+'</span>');b.setAttribute('aria-pressed',on?'true':'false');b.onclick=fn;row.appendChild(b);return b;};
+  const set=o=>{Object.assign(VIEW,o);lsSet(VIEWKEY,VIEW);renderRadar();};
+  const seg=el('div','fseg');
+  const ob=rbOpen();
+  for(const [k,t,n] of [['sig','سیگنال‌ها',rdCount()],['test','آزمایشی',ob.test],['log','دفتر پیشنهادها',null]]){
+    const b=el('button','fb'+(RDV===k?' on':''),'<span>'+t+'</span>'+(n!=null?'<i>'+faN(n)+'</i>':''));b.setAttribute('role','tab');b.setAttribute('aria-selected',RDV===k?'true':'false');
+    b.onclick=()=>{RDV=k;try{localStorage.setItem('signaldesk.rdview',RDV);}catch(e){}renderRadar();window.scrollTo({top:0,behavior:'smooth'});};seg.appendChild(b);}
+  bar.appendChild(seg);
+  if(RDV!=='sig')return;
+  const row=el('div','frow ftab'),g=el('div','fcg');g.appendChild(el('span','fcl','جهت'));
+  for(const [v,t] of [['all','همه'],['long','لانگ'],['short','شورت']])chip(g,t,(VIEW.mktDir||'all')===v,()=>set({mktDir:v}));
+  row.appendChild(g);
+  chip(row,'فقط ۳ ستاره به بالا',!!VIEW.mktOk,()=>set({mktOk:!VIEW.mktOk}));
+  chip(row,'فقط با واگرایی هم‌جهت',!!VIEW.mktDiv,()=>set({mktDiv:!VIEW.mktDiv}));
+  chip(row,'★ فقط واچ‌لیست',!!VIEW.mktFav,()=>set({mktFav:!VIEW.mktFav}));
+  bar.appendChild(row);
+}
+function renderRadar(){const g=$('#rdView');if(!g)return;paintRadar(g);}
 function paintRadar(g){
-  g.className='glance gltab';g.innerHTML=rdHtml();
+  rdFbar();g.className='glance gltab';g.innerHTML=rdHtml();
   if(!RDQ.on&&(Date.now()-RD.at>30*60000||!RD.rank.length))setTimeout(()=>rdScan('refresh'),300);
   try{rbCatchUp();}catch(e){}
-  g.querySelectorAll('[data-rdv]').forEach(b=>b.onclick=()=>{RDV=b.dataset.rdv;try{localStorage.setItem('signaldesk.rdview',RDV);}catch(e){}paintRadar(g);});
   const mo=g.querySelector('[data-rdmore]');if(mo)mo.onclick=()=>{rdScan('more');paintRadar(g);};
   const r=g.querySelector('[data-rdrun]');if(r)r.onclick=()=>{rdScan('refresh');paintRadar(g);};
   const ln=g.querySelector('[data-rdlearn]');if(ln)ln.onclick=()=>{rdScan('learn');paintRadar(g);};
@@ -736,7 +805,7 @@ function paintRadar(g){
     const nw=L.filter(t=>!rdListOf().includes(t));toast(nw.length?faN(nw.length)+' ارز تازه بررسی می‌شود: '+nw.slice(0,8).join('، ')+(nw.length>8?'…':''):'همه‌شان در فهرست‌اند؛ تازه می‌شوند','info');
     rdScan(nw.length?'add':'refresh',nw);paintRadar(g);};
   if(ad)ad.onclick=doAdd;if(inp)inp.onkeydown=e=>{if(e.key==='Enter')doAdd();};
-  const fs=g.querySelector('[data-rdfavscan]');if(fs)fs.onclick=()=>{VIEW.mktFav=true;lsSet(VIEWKEY,VIEW);rdScan('add',RDFAV.slice());renderSignals();};
+  const fs=g.querySelector('[data-rdfavscan]');if(fs)fs.onclick=()=>{VIEW.mktFav=true;lsSet(VIEWKEY,VIEW);rdScan('add',RDFAV.slice());renderRadar();};
   const rs=g.querySelector('[data-rdreset]');if(rs)rs.onclick=()=>{if(!confirm('فهرست رادار به '+faN(RD_STEP)+' ارز اول'+(RDFAV.length?' و واچ‌لیست':'')+' برگردد؟'))return;
     const keep=new Set(rdUniverse(RD_STEP).concat(RDFAV));for(const t of rdListOf())if(!keep.has(t))rdRemove(t);
     RD.list=[...keep];rdSave();rdScan('add',[]);paintRadar(g);};
@@ -753,9 +822,11 @@ function paintRadar(g){
       const p={id:'radar/'+x.tk+'/'+RD.at,num:0,text:'رادار بازار: '+x.tk+' '+(x.dir==='long'?'لانگ':'شورت')+' · امتیاز '+x.sc,date:new Date(),link:null,img:null,auto:true};
       if(b.dataset.a==='test'){rbAdd('test',x);paintRadar(g);return;}
       if(b.dataset.a==='iso'){const z=isoSize(x.pl.E,x.pl.SL),ex=rbExEff(),sg=asSig(k);
-        // نقشه‌ی خروج رادار روی پوزیشن واقعی: پله‌های +1R/+2R/+3R با سیو سود (استاپ متحرک با پله‌ها تقریب زده می‌شود)
-        if(ex!=='tp'){const sn=x.dir==='long'?1:-1;sg.targets=[1,2,3].map(r=>+(x.pl.E*(1+sn*x.pl.sd*r)).toPrecision(8));}
+        // نقشه‌ی خروج رادار روی پوزیشن واقعی: تارگت‌ها به واحد R و سبک خروج هم‌ارز
+        // (lad/trl: پله‌های +1R/+2R/+3R با سیو سود؛ q05: همه در +0.5R؛ h05: نصف در +0.5R و باقی در +1.5R؛ t1h: بستن خودکار بعد از 1 ساعت)
+        const sn=x.dir==='long'?1:-1,tR=r=>+(x.pl.E*(1+sn*x.pl.sd*r)).toPrecision(8),M={lad:[[1,2,3],'rd'],trl:[[1,2,3],'rd'],q05:[[0.5],'s1'],h05:[[0.5,1.5],'bal']}[ex];
+        if(M)sg.targets=M[0].map(tR);
         sheetEnter(p,sg,{stop:x.pl.SL,lev:z?z.lev:null,amt:z?z.margin:null,market:'futures'},PRICES.get(x.tk)||x.pl.E,
-          {iso:true,untilAuto:true,pb:ex==='tp'?'s1':'rd',note:'رادار بازار · امتیاز '+x.sc+(x.stars?' · '+x.stars+'★':''),until:Date.now()+AS_HOLD*36e5});}
+          {iso:true,untilAuto:true,pb:M?M[1]:'s1',note:'رادار بازار · امتیاز '+x.sc+(x.stars?' · '+x.stars+'★':'')+(ex!=='tp'?' · خروج: '+rdExPlans()[ex].n:''),until:Date.now()+(ex==='t1h'?1:AS_HOLD)*36e5});}
       else copyExch(p,asSig(k),{stop:x.pl.SL,market:'futures'},PRICES.get(x.tk)||x.pl.E);});});
 }

@@ -57,6 +57,7 @@
     <nav class="tabs" role="tablist" id="tabs">
       <span class="ind" id="tabInd"></span>
       <button class="tab" data-v="signals" role="tab" aria-selected="true" data-ic="trend"><span>سیگنال‌ها</span><span class="cnt g z" id="cSig">0</span></button>
+      <button class="tab" data-v="radar" role="tab" aria-selected="false" data-ic="bars"><span>بازار</span><span class="cnt g z" id="cRad">0</span></button>
       <button class="tab" data-v="positions" role="tab" aria-selected="false" data-ic="wallet"><span>پوزیشن‌ها</span><span class="cnt z" id="cPos">0</span></button>
       <button class="tab" data-v="audit" role="tab" aria-selected="false" data-ic="shield"><span>کانال‌سنج</span><span class="cnt z" id="cAud">0</span></button>
       <button class="tab" data-v="more" role="tab" aria-selected="false" data-ic="more"><span>سایر</span><span class="cnt z" id="cMore">0</span></button>
@@ -114,16 +115,15 @@
     <div id="posList"></div>
   </section>
 
-  <!-- اسکلپ: سنجش رنج و اجرای زنده -->
-  <section id="vScalp" class="view hide">
-    <button class="crumb" data-go="more">سایر</button>
-    <div id="scBody"></div>
+  <!-- بازار: رادار ارزها، معامله‌ی آزمایشی و دفتر پیشنهادها -->
+  <section id="vRadar" class="view hide">
+    <div class="tools"><div class="fbar" id="rdFbar"></div></div>
+    <div id="rdView"></div>
   </section>
 
-  <!-- سایر: اسکلپ، کارنامه، آموزش، تنظیمات -->
+  <!-- سایر: کارنامه، آموزش، تنظیمات -->
   <section id="vMore" class="view hide">
     <div class="morelist">
-      <button class="moreit" data-go="scalp"><i data-ic="bolt"></i><span><b>اسکلپ</b><small>بررسی توکن، ربات‌ها، تست‌ها و گزارش</small></span><span class="cnt g z" id="cScalp">0</span></button>
       <button class="moreit" data-go="report"><i data-ic="bars"></i><span><b>کارنامه</b><small>نتیجه‌ی معامله‌های خودت، روزانه و ماهانه</small></span></button>
       <button class="moreit" data-go="learn"><i data-ic="book"></i><span><b>آموزش</b><small>آموزش‌ها و دستورالعمل‌های کانال</small></span><span class="cnt g z" id="cLearn">0</span></button>
       <button class="moreit" data-go="settings"><i data-ic="sliders"></i><span><b>تنظیمات</b><small>اتصال، سرمایه و ریسک، همگام‌سازی، پشتیبان</small></span></button>
@@ -322,7 +322,7 @@
       <div class="fld"><label>لغزش روی استاپ (٪)</label><input id="sSlip" type="number" value="0.05" min="0" max="2" step="0.01"></div>
       <div class="fld"><label>فاندینگ تخمینی (٪ هر ۸ ساعت)</label><input id="sFund" type="number" value="0" min="-1" max="1" step="0.005"></div>
       <div class="fld"><label>سبک خروج پیش‌فرض</label><select id="sPb">
-        <option value="s1">اسکلپ · تارگت 1</option><option value="s2">اسکلپ · تارگت 2</option>
+        <option value="s1">سریع · همه در تارگت 1</option><option value="s2">همه در تارگت 2</option>
         <option value="bal">متعادل</option><option value="sw">سوئینگ پله‌ای</option><option value="cu">دلخواه</option></select></div>
     </div>
     <div class="hint">

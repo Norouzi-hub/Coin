@@ -119,7 +119,7 @@ function routeOrder(url,only,kind){
 /* همه‌ی مسیرها کنار هم فرستاده می‌شوند؛ اولین پاسخ درست برنده است و بقیه لغو می‌شوند */
 async function fetchVia(url,opt){
   opt=opt||{};
-  if(!opt.quiet)netStart();      // quiet: درخواست‌های پشت‌سرهمِ پس‌زمینه (قیمت اسکلپ) نوار بالا و گزارش را پر نکنند
+  if(!opt.quiet)netStart();      // quiet: درخواست‌های پشت‌سرهمِ پس‌زمینه (تأیید 5 دقیقه‌ای رادار) نوار بالا و گزارش را پر نکنند
   const label=opt.label||url;
   try{
     const order=routeOrder(url,opt.onlyRoutes,opt.kind);

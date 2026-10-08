@@ -1,8 +1,8 @@
 /* ==================== ناوبری ==================== */
 let view='signals';
-const VIEWS=[['vSignals','signals'],['vPositions','positions'],['vScalp','scalp'],['vReport','report'],['vMore','more'],['vAudit','audit'],['vLearn','learn']];
-/* اسکلپ، کارنامه و آموزش زیرِ «سایر»اند: وقتی بازند، همان تب روشن می‌ماند. */
-const TAB_OF={scalp:'more',report:'more',learn:'more'};
+const VIEWS=[['vSignals','signals'],['vRadar','radar'],['vPositions','positions'],['vReport','report'],['vMore','more'],['vAudit','audit'],['vLearn','learn']];
+/* کارنامه و آموزش زیرِ «سایر»اند: وقتی بازند، همان تب روشن می‌ماند. */
+const TAB_OF={report:'more',learn:'more'};
 function go(v,noScroll){
   if(view===v&&noScroll)return;
   view=v;
@@ -61,9 +61,9 @@ function renderAll(){
   else if(view==='positions')renderPositions();
   else if(view==='report')renderReport();
   else if(view==='learn')renderLessons();
-  else if(view==='scalp')renderScalp();
+  else if(view==='radar')renderRadar();
   paintLearnBadge();
-  paintBotBadge();
+  {const n=rdCount(),c=$('#cRad');if(c){c.textContent=faN(n);c.classList.toggle('z',!n);}}
   paintMoreBadge();
   destackAll();
   renderHealth();

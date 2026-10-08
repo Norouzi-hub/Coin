@@ -1000,7 +1000,6 @@ function renderFbar(){
   try{if(POSTS.length){nNow=glanceData().take.length+(F('autosig')?asSuggestions().list.length:0);}}catch(e){}
   const segs=[
     {k:'now', label:'الان چه کنم؟', n:nNow, hint:'همه‌ی سیگنال‌های قابل گرفتن با دکمه‌ی اقدام، حال بازار و پیشنهاد برنامه'},
-    {k:'mkt', label:'بازار', n:rdCount(), hint:'رادار بازار: ۲۰ تا ۱۰۰ ارز اول، لانگ یا شورت، با امتیاز و اولویت بر اساس سابقه'},
     {k:'new', label:'در انتظار', n:nNew, hint:'سیگنال‌های این '+faN(S.staleDays||7)+' روز که هنوز تصمیمشان را نگرفته‌ای'},
     {k:'all', label:'همه',       n:nLive, hint:'سیگنال‌ها و نتیجه‌ها؛ خبر، اطلاع‌رسانی و یادداشت خودشان در آرشیوند'}
   ];
@@ -1032,10 +1031,6 @@ function renderFbar(){
     if(sigFilter==='now'){
       seg(row,'منبع','nowSrc',[['all','همه'],['ch','کانال'],['app','برنامه']]);
       seg(row,'جهت','nowDir',DIRS);
-    }else if(sigFilter==='mkt'){
-      seg(row,'جهت','mktDir',DIRS);
-      chip(row,'فقط ۳ ستاره به بالا',null,!!VIEW.mktOk,()=>setView({mktOk:!VIEW.mktOk}));
-      chip(row,'★ فقط واچ‌لیست',null,!!VIEW.mktFav,()=>setView({mktFav:!VIEW.mktFav}));
     }else if(sigFilter==='new'){
       seg(row,'جهت','newDir',DIRS);
       seg(row,'بازار','newMkt',[['all','همه'],['futures','فیوچرز'],['spot','اسپات']]);
@@ -1232,7 +1227,7 @@ function renderSignals(){
   if(bucket==='les')bucket='live';     // آموزش حالا تبِ خودش را دارد
   if(!POSTS.length&&busy){list.innerHTML=skelHTML(3);$('#btnMore').classList.add('hide');showStatus();return;}
   // تبِ «الان چه کنم؟»: به‌جای کارت پست‌ها، همان فهرستِ اقدام (38b-simple.js)
-  if(bucket==='live'&&(sigFilter==='now'||sigFilter==='mkt')){
+  if(bucket==='live'&&sigFilter==='now'){
     CARDS.clear();list.innerHTML='';renderFbar();paintGlance();showStatus();
     $('#btnMore').classList.add('hide');const mi=$('#moreInfo');if(mi)mi.textContent='';
     return;

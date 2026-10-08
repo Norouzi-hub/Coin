@@ -881,8 +881,6 @@ html.fx .dsep.today b{text-shadow:0 0 12px rgba(var(--glow),.7)}
 .dnum b{font-size:14.5px;color:var(--tx)}.dnum b.u{color:var(--up)}.dnum b.d{color:var(--dn)}
 .swdec .flag{margin-top:10px}
 .swmore{margin-top:12px}
-.scalp{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
-.scalp .sechd b{color:var(--gold)}
 .sctr{margin-top:10px}
 .sctr table.tp{min-width:0;font-size:12px}
 .sctr table.tp th,.sctr table.tp td{padding:6px 5px}
@@ -1412,70 +1410,7 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 .crumb{display:inline-flex;align-items:center;gap:4px;margin:10px 0 0;padding:6px 10px 6px 12px;border-radius:99px;border:1px solid var(--line);
   background:var(--card);color:var(--tx2);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .crumb .ic{width:16px;height:16px}
-/* ---- اسکلپ زنده ---- */
-.sclive{margin-top:6px}
-.scard{margin:10px 0}
-.scard.off{opacity:.72}
-.scard .ladder{margin-top:6px}
-.scnext{display:flex;align-items:flex-start;gap:8px;margin:10px 0 4px;padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.9;color:var(--tx2);
-  background:color-mix(in srgb,var(--gold) 8%,var(--inset));border:1px solid color-mix(in srgb,var(--gold) 35%,var(--line))}
-.scnext .ic{flex:none;width:18px;height:18px;margin-top:4px;color:var(--gold)}
-.scnext b{color:var(--tx)}
-.scnext.wait{background:var(--inset);border-color:var(--line)}
-.scard .srow{margin-top:10px}
-.scard .sctr td small{display:block}
-.k span.rt{direction:rtl}
-/* ---- تست خودکار و ربات اسکلپ ---- */
-.swdecb{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
-.btres{margin-top:12px}
-.btres .tscroll{margin-top:8px}
-table.btv,table.btsum{min-width:0;font-size:12.5px}
-table.btv th,table.btv td,table.btsum th,table.btsum td{padding:7px 6px}
-table.btv td.num,table.btsum td.num{white-space:nowrap}
-table.btv tr.on td{background:color-mix(in srgb,var(--gold) 12%,transparent);font-weight:800}
-table.btv tr.on td:first-child{box-shadow:inset -3px 0 0 var(--gold)}
-table.btv td.u,table.btsum td.u{color:var(--up)}table.btv td.d,table.btsum td.d{color:var(--dn)}
-.btres .flag{margin-top:10px}
-.btbrk{line-height:2}
-.btrules{line-height:1.95}
-/* ---- اسکلپ: کارت تأییدها و اندیکاتورها ---- */
-.swdec .scs{font-size:13px;font-weight:800;padding:2px 9px;border-radius:99px;background:var(--card);border:1px solid var(--line);color:var(--tx2);vertical-align:middle}
-.sccheck{list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:12.5px}
-.sccheck li{display:flex;align-items:center;gap:6px;color:var(--tx2)}
-.sccheck li i{font-style:normal;font-weight:900;width:16px;text-align:center}
-.sccheck li.ok i{color:var(--up)}.sccheck li.no i{color:var(--dn)}.sccheck li.no{opacity:.75}
-.scind{margin-top:10px}
-.scchart .scv{stroke:var(--gold);stroke-width:1.3;vector-effect:non-scaling-stroke;fill:none}
-.swleg i.v{border-color:var(--gold)}
-.scflt .pbc{font-size:12px}
-table.btabl{min-width:0;font-size:12px}
-table.btabl th,table.btabl td{padding:6px 5px}
-table.btabl td.num{white-space:nowrap}
-table.btabl td.u{color:var(--up)}table.btabl td.d{color:var(--dn)}
-@media (max-width:380px){.sccheck{grid-template-columns:1fr}}
-.swleg i.p{border-color:var(--tx)}
-/* ---- تب اسکلپ: نوار، تاریخچه‌ی تست‌ها، فیلتر ربات‌ها، گزارش ---- */
-.scbar .fb .ic{width:16px;height:16px}
-.scsum{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--tx3);cursor:pointer;line-height:1.8}
-.scsum .ic{flex:none;width:14px;height:14px;color:var(--gold)}
-.scview{margin-top:10px}
 .btn.xs.on{border-color:var(--gold);color:var(--gold)}
-.bttools{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--tx3)}
-.bttools>span:first-child{margin-inline-end:auto}
-.btrow{margin-top:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--inset);cursor:pointer}
-.btrh{display:flex;align-items:center;gap:8px}
-.btrh .num{margin-inline-start:auto;font-weight:800}
-.btrh .num.u{color:var(--up)}.btrh .num.d{color:var(--dn)}
-.btrow small{display:block;margin-top:3px;font-size:11.5px;color:var(--tx3)}
-.btf{margin-top:6px}
-.btwhy{line-height:1.9}
-table.btcmp,table.reptb{min-width:0;font-size:12.5px}
-table.btcmp th small{display:block;font-weight:400;color:var(--tx3);font-size:11px}
-table.btcmp td,table.reptb td,table.reptb th{padding:6px 6px}
-table.reptb td.u,table.btcmp .u{color:var(--up)}table.reptb td.d,table.btcmp .d{color:var(--dn)}
-.botfl{display:flex;flex-direction:column;gap:6px;margin:10px 0 4px}
-.botf .pbc i{font-style:normal;opacity:.7;font-size:11px}
-.repp{margin:8px 0}
 /* ---- خروج کوتاه (کانال‌سنج) ---- */
 .xlab .afrow{margin-top:8px}
 table.xtab{min-width:0;font-size:12.5px}

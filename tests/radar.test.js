@@ -93,21 +93,21 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
             RDB:{sc:97,dir:'long',best:'long',p:0.52,flow:true,parts,rsi:66,rv:1.9,rsv:6,px:11,pl:pl(11,'long')},
             RDC:{sc:75,dir:'short',best:'short',p:0.4,parts:{t4:-1,t1:-1,macd:-1,rsi:-0.3,brk:-1,vol:0,btc:1,ext:0,rs:-0.5},rsi:44,rv:1,rsv:-5,px:12,pl:pl(12,'short')},
             RDD:{sc:55,dir:'wait',best:'long',parts,rsi:51,rv:1,px:13,pl:null}}};
-   RDV='sig';const L=rdList();bucket='live';sigFilter='mkt';go('signals',true);renderAll();
-   const G=document.getElementById('glance'), it=[...G.querySelectorAll('.rdit')];
-   return {order:L.map(x=>x.tk+':'+(x.ok?1:0)).join(','),segs:[...document.querySelectorAll('#fbar .fseg .fb span')].map(x=>x.textContent).join(','),
-     n:[...document.querySelectorAll('#fbar .fseg .fb')][1].querySelector('i').textContent,
-     items:it.map(x=>x.querySelector('.glit').textContent),first:it[0]&&it[0].textContent,wait:(G.querySelector('.rdwait')||{}).textContent||'',cards:document.querySelectorAll('#list .card').length,
+   RDV='sig';const L=rdList();bucket='live';sigFilter='all';go('signals',true);renderAll();
+   const segs=[...document.querySelectorAll('#fbar .fseg .fb span')].map(x=>x.textContent).join(',');go('radar',true);renderAll();
+   const G=document.getElementById('rdView'), it=[...G.querySelectorAll('.rdit')];
+   return {order:L.map(x=>x.tk+':'+(x.ok?1:0)).join(','),segs,n:document.getElementById('cRad').textContent,tab:!!document.querySelector('.tab[data-v="radar"]')&&!document.getElementById('vRadar').classList.contains('hide'),
+     items:it.map(x=>x.querySelector('.glit').textContent),first:it[0]&&it[0].textContent,wait:(G.querySelector('.rdwait')||{}).textContent||'',cards:G.querySelectorAll('.card').length,
      weak:it.filter(x=>x.classList.contains('weak')).length,more:!!G.querySelector('[data-rdmore]'),cnt:(G.querySelector('.rdcnt')||{}).textContent,
-     tabs:[...G.querySelectorAll('[data-rdv]')].map(x=>x.textContent).join(',')};});
+     tabs:[...document.querySelectorAll('#rdFbar .fseg .fb span')].map(x=>x.textContent).join(',')};});
  console.log('   ',JSON.stringify(Object.assign({},t,{first:t.first&&t.first.slice(0,260)})));
- ok(t.segs==='الان چه کنم؟,بازار,در انتظار,همه','تب «بازار» کنار «الان چه کنم؟»: '+t.segs);
+ ok(t.segs==='الان چه کنم؟,در انتظار,همه'&&t.tab,'«بازار» تب مستقل در نوار پایین؛ از سیگنال‌ها بیرون رفت: '+t.segs);
  ok(t.order==='RDB:1,RDA:1,RDC:0,RDD:0','اولویت: RDB (4★) بعد RDA (3★)، شورت RDC (1★) و صبر آخر — '+t.order);
- ok(t.n==='2'&&t.weak===1,'عدد تب = فرصت‌های با رتبه‌ی خوب (۲)؛ شورت RDC کم‌رنگ');
+ ok(t.n==='2'&&t.weak===1,'عدد تب پایین = فرصت‌های با رتبه‌ی خوب (۲)؛ شورت RDC کم‌رنگ');
  ok(/^1☆RDBلانگامتیاز 97/.test(t.items[0])&&/120 بار در 40 روز/.test(t.first)&&/★★★★☆/.test(t.first)&&/✓ روند 4 ساعته صعودی/.test(t.first)&&/احتمال سود به گفته‌ی مدل: 52٪/.test(t.first)&&/بدترین حالت محتمل/.test(t.first),'ردیف اول: رتبه، امتیاز، ستاره، سابقه با روزها، احتمال، دلیل‌ها');
  ok(/صبر/.test(t.wait)&&/RDD/.test(t.wait)&&t.cards===0,'«صبر» جدا؛ کارت پستی در این تب نیست');
  ok(t.more&&/^4 ارز/.test(t.cnt)&&t.tabs==='سیگنال‌ها,آزمایشی,دفتر پیشنهادها','دکمه‌ی «10 ارز بعدی» و سه زیرتب');
- await p.evaluate(()=>document.querySelector('#glance .rdit[data-rd="RDB"] [data-a="iso"]').click());await p.waitForTimeout(600);
+ await p.evaluate(()=>document.querySelector('#rdView .rdit[data-rd="RDB"] [data-a="iso"]').click());await p.waitForTimeout(600);
  ok(await p.evaluate(()=>/RDB/.test(document.querySelector('#sheet').textContent)&&+document.querySelector('#f_e').value===11),'«ایزوله» فرم ورود RDB را باز کرد');
  await p.evaluate(()=>closeSheet());await p.waitForTimeout(400);
  const u=await p.evaluate(()=>{RDCAP={at:Date.now(),list:['BTC','USDT','ETH','USDC','STETH','XRP','WBTC','SOL','BNB','FDUSD','DOGE']};return rdUniverse(5).join(',');});
@@ -116,8 +116,8 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  console.log('=== معامله‌ی آزمایشی ===');
  const T30=Date.now()-30*36e5;PXN['XRP:5m']=t=>t<T30+5*36e5?2:1.9;
  const bk=await p.evaluate(async(t0)=>{RB.items=[];RBEX='tp';   // این بخش: نقشه‌ی «هدف ثابت»
-   document.querySelector('#glance .rdit[data-rd="RDB"] [data-a="test"]').click();
-   const it=RB.items[0], tab=[...document.querySelectorAll('#glance [data-rdv]')].map(x=>x.textContent).join(',');
+   document.querySelector('#rdView .rdit[data-rd="RDB"] [data-a="test"]').click();
+   const it=RB.items[0], tab=[...document.querySelectorAll('#rdFbar .fseg .fb')].map(x=>x.textContent).join(',');
    const dup=rbAdd('test',rdList().find(x=>x.tk==='RDB'));
    // قیمت: +1R (ریسک‌فری) بعد برگشت به ورود
    PRICES.set('RDB',11*1.021);rbCheck();const be=it.be;PRICES.set('RDB',10.99);rbCheck();
@@ -128,10 +128,10 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    const H=36e5;
    const i3={id:'tx',k:'test',tk:'XRP',dir:'long',t:t0,E:2,SL:1.95,TP:2.1,sd:0.025,rr:2,be:false,st:'open'};RB.items.push(i3);
    await rbCatchUp(true);
-   RDV='test';paintGlance();const G=document.getElementById('glance');
+   RDV='test';renderRadar();const G=document.getElementById('rdView');
    return {r1,i2:{st:i2.st,R:i2.R},i3:{st:i3.st,R:i3.R,xt:i3.xt-t0},dup,tab,txt:G.textContent,rows:G.querySelectorAll('.rbrow').length};},T30);
  console.log('   ',JSON.stringify(Object.assign({},bk,{txt:bk.txt.slice(0,300)})));
- ok(bk.tab.includes('آزمایشی (1 باز)')&&bk.dup===null,'«تست» ثبت شد (زیرتب: آزمایشی (1 باز))؛ تکراری ثبت نمی‌شود');
+ ok(bk.tab.includes('آزمایشی1')&&bk.dup===null,'«تست» ثبت شد (زیرتب: آزمایشی با عدد 1)؛ تکراری ثبت نمی‌شود');
  ok(bk.r1.be&&bk.r1.st==='be'&&bk.r1.R<0&&bk.r1.R>-0.3,'ریسک‌فری بعد از +1R و بسته شدن در ورود ← '+bk.r1.R+'R');
  ok(bk.i2.st==='tp'&&bk.i2.R>1.3,'به هدف رسید ← +'+bk.i2.R+'R');
  ok(bk.i3.st==='sl'&&bk.i3.R<-1&&bk.i3.xt>5*36e5&&bk.i3.xt<6*36e5,'برنامه بسته بود: از کندل 5 دقیقه‌ای استاپ خورده پیدا شد ('+bk.i3.R+'R)');
@@ -148,12 +148,12 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    // تست زنده با «پله‌ای»: +1R ← سیو 50٪ و استاپ به ورود؛ برگشت به ورود ← بسته با سودِ همان نصف
    RBEX='lad';PRICES.set('RDB',11);const it=rbAdd('test',rdList().find(x=>x.tk==='RDB'),true);
    PRICES.set('RDB',11*1.0205);rbCheck();const s1={k:it.x.k,rem:it.x.rem,st:it.st,live:rbLiveR(it,11*1.0205)};
-   RDV='test';paintGlance();const mid=document.getElementById('glance').textContent;
+   RDV='test';renderRadar();const mid=document.getElementById('rdView').textContent;
    PRICES.set('RDB',10.999);rbCheck();
    // معامله‌ی بازِ قدیمی (بی نقشه، 3 ساعت پیش): از لحظه‌ی ورود با کندل 5 دقیقه‌ای و نقشه‌ی تازه دوباره حساب می‌شود
    const old={id:'old1',k:'test',tk:'XRP',dir:'long',t:t3,E:2,SL:1.95,TP:2.075,sd:0.025,rr:1.5,be:false,st:'open'};RB.items.push(old);
    const n=rbReplan(null,true);await rbCatchUp(true);
-   paintGlance();const G=document.getElementById('glance');
+   renderRadar();const G=document.getElementById('rdView');
    return {a1,a2,e1,ladR:L.acc,ts,e2,trR:T.acc,s1,mid,it:{st:it.st,R:it.R},n,old:{ex:old.ex,st:old.st,R:old.R,k:old.x&&old.x.k},
      pick:(G.querySelector('.rbex')||{}).textContent||''};},T3);
  console.log('   ',JSON.stringify(Object.assign({},ex,{mid:ex.mid.slice(0,200),pick:ex.pick.slice(0,160)})));
@@ -167,15 +167,15 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  console.log('=== بررسی کامل: ده‌تا‌ده‌تا، IndexedDB، دفتر پیشنهادها ===');
  const full=await p.evaluate(async()=>{RB.items=[];RD=rdEmpty();RDS.clear();RDV='sig';
    RDCAP={at:Date.now(),list:['BTC','ETH','SOL','XRP','ADA','DOGE','DOT','LINK','AVAX','NEAR','UNI','APT']};
-   bucket='live';sigFilter='mkt';renderAll();
+   renderAll();
    const t0=performance.now(),pr=rdScan('refresh');const seen=[];
    for(let i=0;i<40&&RDQ.on;i++){await new Promise(r=>setTimeout(r,100));const b=document.getElementById('rdProgBox');if(b)seen.push(b.textContent);}
    await pr;const ms=Math.round(performance.now()-t0);renderAll();
    const st=await idbGet('rdc:ETH'),fl=await idbGet('rdf:ETH');
    return {ms,n:RD.n,rank:RD.rank.length,nflow:RD.nflow,M:!!(RD.M&&RD.M.long&&RD.M.short),cal:Object.keys(RD.calib).length,rel:!!RD.rel,
      eth:RD.coins.ETH&&{wl:RD.coins.ETH.wl,flow:RD.coins.ETH.flow,sc:RD.coins.ETH.sc,fund:RD.coins.ETH.parts.fund},solfund:RD.coins.SOL&&RD.coins.SOL.parts.fund,sol:RD.coins.SOL&&RD.coins.SOL.flow,
-     rows:st&&st.rows.length,flow:fl&&fl.top&&fl.top.length,pan:!!document.querySelector('#glance .rdpan'),
-     exP:RD.ex,exs:!!(RD.exs&&RD.exs.lad&&RD.exs.lad.all),extab:!!document.querySelector('#glance .rdex'),auto:RB.items.filter(i=>i.k==='auto').length,sig:rdList().filter(x=>x.dir!=='wait').length,seen:seen.filter((x,i)=>i%5===0),gone:!document.getElementById('rdProgBox')};});
+     rows:st&&st.rows.length,flow:fl&&fl.top&&fl.top.length,pan:!!document.querySelector('#rdView .rdpan'),
+     exP:RD.ex,exs:!!(RD.exs&&RD.exs.lad&&RD.exs.lad.all),extab:!!document.querySelector('#rdView .rdex'),auto:RB.items.filter(i=>i.k==='auto').length,sig:rdList().filter(x=>x.dir!=='wait').length,seen:seen.filter((x,i)=>i%5===0),gone:!document.getElementById('rdProgBox')};});
  console.log('   ',JSON.stringify(full),JSON.stringify(REQ));
  ok(full.seen.length>2&&full.seen.every(x=>/\d+٪/.test(x)&&/\d:\d\d/.test(x))&&full.seen.some(x=>/ارز \d+ از 10/.test(x))&&full.gone,'نوار پیشرفت: درصد، کار الان و تایمر؛ آخر کار برداشته شد');
  ok(full.n===10&&full.rank===10,'بار اول فقط 10 ارز اول ('+full.rank+')، در '+full.ms+'ms');
@@ -185,8 +185,8 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(full.eth&&full.eth.fund!=null&&full.solfund==null,'تاریخچه‌ی فاندینگ: ETH دارد، SOL (بی فیوچرز) ندارد');
  ok(full.eth&&full.eth.flow&&full.eth.wl>50&&full.sol===false&&full.nflow===2,'ETH با داده‌ی نهنگ/مردم؛ SOL بی فیوچرز');
  ok(full.auto===full.sig,'همه‌ی پیشنهادهای 70+ در «دفتر پیشنهادها» ثبت شد ('+full.auto+')');
- const mk2=await p.evaluate(()=>{const r=mdMetrics(MD);RDV='sig';bucket='live';sigFilter='mkt';paintGlance();const G=document.getElementById('glance');
-   const tiles=[...G.querySelectorAll('.mdt')].map(x=>x.textContent);AS.at=Date.now();sigFilter='now';paintGlance();const now=!!document.querySelector('#glance .mdbox');sigFilter='mkt';paintGlance();
+ const mk2=await p.evaluate(()=>{const r=mdMetrics(MD);RDV='sig';renderRadar();const G=document.getElementById('rdView');
+   const tiles=[...G.querySelectorAll('.mdt')].map(x=>x.textContent);AS.at=Date.now();go('signals',true);bucket='live';sigFilter='now';paintGlance();const now=!!document.querySelector('#glance .mdbox');go('radar',true);renderRadar();
    return {r,tiles,flags:[...G.querySelectorAll('.mdbox .flag')].map(x=>x.textContent),now,mf:RDMF.size,w:RD.M&&RD.M.long.w.length,last:RD.mk7&&{tot:RD.mk7.tot.slice(-1)[0],bd:RD.mk7.bd.slice(-1)[0],ud:RD.mk7.ud.slice(-1)[0],n:RD.mk7.tot.length},mkl:RD.mkl,
      mrow:[...RDMF.values()].slice(-1)[0],nF:RD_FEAT.length};});
  console.log('   ',JSON.stringify(mk2).slice(0,900));
@@ -194,6 +194,22 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(mk2.tiles.length===6&&/TOTAL3/.test(mk2.tiles.join())&&/USDT\.D/.test(mk2.tiles.join())&&/\$3\.20T/.test(mk2.tiles[0])&&/57\.50%/.test(mk2.tiles[3])&&mk2.now,'شش کارت جدا: TOTAL، TOTAL2، TOTAL3، BTC.D، USDT.D، ETH.D (در «بازار» و «الان چه کنم؟»)');
  ok(mk2.flags.some(x=>/پول به تتر فرار/.test(x))&&mk2.flags.some(x=>/روز آلت‌کوین نیست/.test(x)),'خوانش: فرار به تتر و ضعف آلت‌ها');
  ok(mk2.mf>2000&&mk2.w===mk2.nF+1&&mk2.last&&Math.abs(mk2.last.tot/3.2e12-1)<0.001&&Math.abs(mk2.last.bd-57.5)<0.01&&mk2.last.n>40&&mk2.mrow.length===5,'تاریخچه‌ی ساعتی کل بازار بازسازی شد ('+mk2.mf+' ساعت)، ساعت آخر = CoinGecko؛ 5 عامل بازار در مدل');
+ // واگرایی 1 ساعته: کف پایین‌تر با RSI بالاتر = مثبت؛ شکسته شدن کف یا RSI پایین‌تر = هیچ
+ const dv=await p.evaluate(()=>{const mk=(brk)=>Array.from({length:60},(_,q)=>{const l=Math.min(10+0.1*Math.abs(q-30),9.5+0.1*Math.abs(q-50))-(brk&&q===54?1:0);return {t:q*36e5,o:l+0.5,h:l+1,l,c:l+0.5};});
+   const o=Array.from({length:60},()=>50);o[30]=25;o[50]=35;const o2=o.slice();o2[50]=20;
+   const sh=mk(false).map(k=>({t:k.t,o:-k.o,h:-k.l,l:-k.h,c:-k.c})),oS=o.map(x=>100-x);
+   return {bull:rdDiv(mk(false),o,55,2),brk:rdDiv(mk(true),o,55,2),none:rdDiv(mk(false),o2,55,2),bear:rdDiv(sh,oS,55,2),
+     divs:RD.divs&&Object.keys(RD.divs).sort().join(','),tbl:(document.querySelector('#rdView .rddiv')||{}).textContent||'',f:RD_FEAT.includes('divr')&&RD_FEAT.includes('divm'),
+     chip:[...document.querySelectorAll('#rdFbar .fc')].map(x=>x.textContent).join(',')};});
+ console.log('   ',JSON.stringify(Object.assign({},dv,{tbl:dv.tbl.slice(0,120)})));
+ ok(Math.abs(dv.bull-0.85)<1e-9&&dv.brk===0&&dv.none===0&&Math.abs(dv.bear+0.85)<1e-9,'واگرایی: مثبت در کف، منفی در سقف؛ کف شکسته یا RSI پایین‌تر = هیچ');
+ ok(dv.f&&/all\|no/.test(dv.divs)&&/هم‌جهت با سیگنال/.test(dv.tbl)&&/خلاف سیگنال/.test(dv.tbl)&&/فقط با واگرایی هم‌جهت/.test(dv.chip),'عامل واگرایی در مدل، جدول «اثر واگرایی» و فیلتر «فقط با واگرایی هم‌جهت»');
+ // خروج سریع: همه در +0.5R، نصف در +0.5R، و خروج بعد از 1 ساعت با قیمت همان لحظه
+ const qx=await p.evaluate(()=>{const C=Array.from({length:30},(_,j)=>j===0?{t:0,o:10,h:10,l:10,c:10}:j===1?{t:36e5,o:10,h:10.05,l:9.95,c:10.04}:{t:j*36e5,o:10.1,h:10.32,l:10.05,c:10.3});
+   const cost=(2*(+S.fee||0)+(+S.slip||0))/100/0.02,w=rdWalkX(C,0,{dir:'long',E:10,sd:0.02});
+   return {n:RD_EXN.length,q:+(w.q05.R+cost).toFixed(6),qj:w.q05.j,h:+(w.h05.R+cost).toFixed(6),t:+(w.t1h.R+cost).toFixed(6),tj:w.t1h.j,th:w.t1h.how,rows:document.querySelectorAll('#rdView .rdex tbody tr').length};});
+ console.log('   ',JSON.stringify(qx));
+ ok(qx.n===6&&qx.rows===6&&qx.q===0.5&&qx.qj===2&&qx.h===1&&qx.t===0.2&&qx.tj===1&&qx.th==='time','خروج سریع در سنجش: +0.5R، نصف +0.5R/باقی +1.5R، بعد از 1 ساعت (+0.2R)؛ شش ردیف در جدول نقشه‌ی خروج');
  const R0=Object.assign({},REQ);
  const more=await p.evaluate(async()=>{await rdScan('more');return {n:RD.n,rank:RD.rank.length,uni:RD.rank.includes('UNI')&&RD.rank.includes('APT')};});
  const d=k=>(REQ[k]||0)-(R0[k]||0);
@@ -203,9 +219,9 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const pk=await p.evaluate(async()=>{const a=rdParsePick('3-5').join(','),b=rdParsePick('۲ تا ۳').join(','),c=rdParsePick('eth, sol  PEPE').join(','),d=rdParsePick('12').join(',');
    rdRemove('APT');const r0=RD.rank.includes('APT');
    await rdScan('add',rdParsePick('APT LINK'));
-   const fav=rdFavToggle('UNI');bucket='live';sigFilter='mkt';RDV='sig';VIEW.mktFav=true;paintGlance();
-   const rows=[...document.querySelectorAll('#glance .rdit')].map(x=>x.dataset.rd),wt=(document.querySelector('#glance .rdwait')||{}).textContent||'',
-     pick=(document.querySelector('#glance .rdpick')||{}).textContent||'';VIEW.mktFav=false;paintGlance();
+   const fav=rdFavToggle('UNI');RDV='sig';VIEW.mktFav=true;renderRadar();
+   const rows=[...document.querySelectorAll('#rdView .rdit')].map(x=>x.dataset.rd),wt=(document.querySelector('#rdView .rdwait')||{}).textContent||'',
+     pick=(document.querySelector('#rdView .rdpick')||{}).textContent||'';VIEW.mktFav=false;renderRadar();
    return {a,b,c,d,r0,apt:RD.list.includes('APT')&&RD.rank.includes('APT'),fav,rows,wt,pick,list:RD.list.length};});
  console.log('   ',JSON.stringify(pk).slice(0,500));
  ok(pk.a==='SOL,XRP,ADA'&&pk.b==='ETH,SOL'&&pk.c==='ETH,SOL,PEPE'&&pk.d==='APT','«3-5»، «۲ تا ۳»، نمادها و یک رتبه ← '+pk.a+' | '+pk.b+' | '+pk.c+' | '+pk.d);
@@ -215,16 +231,16 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const stb=await p.evaluate(async()=>{RB.items=[];const st=await idbGet('rdc:ETH');st.at-=10*60000;await idbSet('rdc:ETH',st);
    const snap=()=>({mt0:RD.mt0,cal:JSON.stringify(RD.calib),sc:RD.rank.map(t=>t+':'+RD.coins[t].sc+':'+RD.coins[t].dir+':'+RD.coins[t].since).join(',')});
    const a=snap();await rdScan('refresh');const b=snap();
-   bucket='live';sigFilter='mkt';RDV='sig';paintGlance();const hint=(document.querySelector('#glance .rdtime')||{}).textContent||'';
+   RDV='sig';renderRadar();const hint=(document.querySelector('#rdView .rdtime')||{}).textContent||'';
    await rdScan('learn');const c=snap();return {same:a.mt0===b.mt0&&a.cal===b.cal&&a.sc===b.sc,learn:c.mt0>a.mt0,hint};});
  ok(stb.same,'«تازه کن» در همان ساعت: مدل، ستاره‌ها و امتیازها همان می‌مانند');
  ok(stb.learn&&/امتیازها برای کندلِ بسته‌شده‌ی ساعت/.test(stb.hint)&&/یادگیری دوباره/.test(stb.hint),'«یادگیری دوباره» مدل را از نو می‌سازد؛ توضیح زمان امتیاز');
  const d1=k=>(REQ[k]||0)-(R1[k]||0);
  ok(d1('ETH:1h')===1,'تازه کردن: فقط کندل‌های تازه (ETH: '+d1('ETH:1h')+' درخواست)');
- const lg=await p.evaluate(()=>{RDV='log';paintGlance();const G=document.getElementById('glance');return G.textContent;});
+ const lg=await p.evaluate(()=>{RDV='log';renderRadar();const G=document.getElementById('rdView');return G.textContent;});
  ok(/آزمون واقعیِ آینده/.test(lg)&&/باز \(/.test(lg),'زیرتب «دفتر پیشنهادها»');
- const mk=await p.evaluate(()=>{RDV='sig';MKT={at:Date.now(),n:650,up:93,down:545,flat:12,med:-5.8,btc:-3.2,bins:[50,80,90,60,50,20,10,5,3,2,1],reg:'bear2',src:'Binance',top:[]};paintGlance();
-   const d=document.querySelector('#glance .mkwhy');return d?d.textContent:'';});
+ const mk=await p.evaluate(()=>{RDV='sig';MKT={at:Date.now(),n:650,up:93,down:545,flat:12,med:-5.8,btc:-3.2,bins:[50,80,90,60,50,20,10,5,3,2,1],reg:'bear2',src:'Binance',top:[]};renderRadar();
+   const d=document.querySelector('#rdView .mkwhy');return d?d.textContent:'';});
  ok(/650 ارزِ بازار اسپات Binance/.test(mk)&&/545 بیش از 0.3٪ ریخته‌اند/.test(mk)&&/خیلی نزولی/.test(mk),'«حال بازار»: توضیح عددها');
  await p.screenshot({path:'/tmp/signaldesk-tests/logs/radar.png',fullPage:true});
  ok(errs.length===0,'بدون خطا '+errs.join('|'));

@@ -12,7 +12,7 @@ let bucket='live';
 const VIEWKEY='signaldesk.view.v1';
 const VIEW=Object.assign({day:'all',from:'',to:''},lsGet(VIEWKEY)||{});
 delete VIEW.cat;                  // دسته‌های دلخواه برداشته شد
-if(['now','mkt','new','all'].includes(VIEW.sf))sigFilter=VIEW.sf;
+if(['now','new','all'].includes(VIEW.sf))sigFilter=VIEW.sf;   // «بازار» حالا تب خودش را دارد
 else if(VIEW.sf==='sig')sigFilter='all';   // بخش «سیگنال‌ها» برداشته شد
 delete VIEW.kind;                 // ردیف نوع پست برداشته شد
 if(['live','res','arch','exp'].includes(VIEW.bk))bucket=VIEW.bk;

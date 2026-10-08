@@ -293,7 +293,7 @@ const mdSpark=(a,cl)=>{if(!a||a.length<3)return '';const lo=Math.min(...a),hi=Ma
     a.map((v,i)=>(i/(a.length-1)*60).toFixed(1)+','+(16-(v-lo)/d*14).toFixed(1)).join(' ')+'"/></svg>';};
 function mdHtml(){
   if((!MD||Date.now()-MD.at>MD_TTL)&&Date.now()-MDTRY>120000){MDTRY=Date.now();const was=MD&&MD.at;
-    mdLoad().then(m=>{if(m&&m.at!==was&&view==='signals')paintGlance();}).catch(()=>{});}
+    mdLoad().then(m=>{if(m&&m.at!==was){if(view==='signals')paintGlance();else if(view==='radar')renderRadar();}}).catch(()=>{});}
   const r=mdMetrics(MD);
   if(!r)return '<div class="mdbox"><div class="hint">'+(Date.now()-MDTRY<15000?'در حال گرفتن TOTAL و دامیننس‌ها از CoinGecko…':'TOTAL و دامیننس‌ها نیامد (CoinGecko در دسترس نبود).')+'</div></div>';
   const S=typeof RD!=='undefined'&&RD.mk7||{};

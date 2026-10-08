@@ -15,8 +15,8 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    RB.items=[{id:'L1',k:'test',tk:'LAB',dir:'long',t:T0,E:100,SL:98,TP:103,sd:0.02,rr:1.5,st:'sl',R:-1.1,xt:T0+3*36e5,ex:'tp'}];
    await rbLabRun();const x=RBL.res[0],st=x.st,it=x.it;
    const s1=rbThSim(it,x.C,1),s2=rbThSim(it,x.C,2);
-   bucket='live';sigFilter='mkt';RDV='test';RBLOPEN=true;go('signals',true);renderAll();
-   const G=document.getElementById('glance'),lab=(G.querySelector('.rblabw')||{}).textContent||'';
+   RDV='test';RBLOPEN=true;go('radar',true);renderAll();
+   const G=document.getElementById('rdView'),lab=(G.querySelector('.rblabw')||{}).textContent||'';
    const J=JSON.parse(rbLabExport());
    return {mfe:st.mfe,t:Math.round((st.tMfe-T0)/6e4),stop:Math.round((st.stopAt-T0)/6e4),t1:st.touch[1]!=null,t2:st.touch[2]!=null,full:st.full,lev:st.lev,
      s1,s2,lab,J:{n:J.trades.length,hlc:J.trades[0].path.hlc.length,max:Math.max(...J.trades[0].path.hlc.map(a=>a[0])),stats:J.trades[0].stats,settings:!!J.settings}};},T0);
@@ -26,7 +26,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(r.s1.how==='th'&&r.s1.R>0.8&&r.s2.how==='sl','خروج سریع در +1R ← برد؛ آستانه‌ی +2R ← استاپ');
  ok(/اگر خارج می‌شدیم در/.test(r.lab)&&/5٪ سود روی مارجین/.test(r.lab)&&/نقشه‌ی فعلی/.test(r.lab)&&/بیشترین سود پیش از استاپ/.test(r.lab),'جدول آستانه‌ها و فهرست معامله‌ها');
  ok(r.J.n===1&&r.J.hlc>=280&&r.J.max===300&&r.J.stats.mfe===1.5&&r.J.settings,'خروجی JSON: مسیر کامل (ده‌هزارم ورود؛ اوج +3٪) و آمار');
- const [d]=await Promise.all([p.waitForEvent('download'),p.evaluate(()=>document.querySelector('#glance [data-rbl="dl"]').click())]);
+ const [d]=await Promise.all([p.waitForEvent('download'),p.evaluate(()=>document.querySelector('#rdView [data-rbl="dl"]').click())]);
  ok(/signaldesk-tests-.*\.json$/.test(d.suggestedFilename()),'دکمه‌ی «دانلود فایل»: '+d.suggestedFilename());
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');})();

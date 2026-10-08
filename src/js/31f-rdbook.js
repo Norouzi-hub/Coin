@@ -19,7 +19,7 @@ function rbReplan(ex,onlyMissing){let n=0;
   if(n){rbSave();setTimeout(()=>rbCatchUp(true),50);}
   return n;}
 const rbOpen=()=>{const o={test:0,auto:0};for(const it of RB.items)if(it.st==='open')o[it.k]++;return o;};
-function rbRepaint(){clearTimeout(RBT);RBT=setTimeout(()=>{try{if(view==='signals'&&sigFilter==='mkt')paintGlance();}catch(e){}},400);}
+function rbRepaint(){clearTimeout(RBT);RBT=setTimeout(()=>{try{if(view==='radar')renderRadar();}catch(e){}},400);}
 function rbAdd(kind,x,quiet){
   if(!x||!x.pl)return null;
   if(RB.items.some(it=>it.k===kind&&it.st==='open'&&it.tk===x.tk&&(kind==='auto'||it.dir===x.dir))){if(!quiet)toast('همین معامله‌ی آزمایشی باز است','err');return null;}
@@ -53,6 +53,8 @@ function rbStep(it,hi,lo,t){
   const P=rdExPlans()[it.ex]||rdExPlans().tp, s=it.dir==='long'?1:-1;
   const fav=s>0?rbRof(it,hi):rbRof(it,lo), adv=s>0?rbRof(it,lo):rbRof(it,hi);
   const k0=it.x.k;
+  // خروج زمانی (مثلاً بعد از 1 ساعت): با قیمت میانه‌ی همین قدم
+  if(P.tmax&&t-it.t>=P.tmax*36e5){rbClose(it,'time',(hi+lo)/2,t);return true;}
   if(exStep(it.x,P,fav,adv)){const how=it.x.how;rbClose(it,how,how==='tp'?rbPx(it,it.x.out):rbPx(it,it.x.stop),t);return true;}
   it.be=it.x.be;
   if(it.x.k>k0)it.x.at=t;                     // زمان آخرین سیو سود
@@ -105,7 +107,7 @@ function rbSumHtml(L,label){const o=rbSumOf(L);if(!o.n)return '';
 function rbPlanTxt(it){
   const P=rdExPlans()[it.ex||'tp'];if(!P)return '';
   const st=P.t.map((r,i)=>(P.f[i]>=0.999?'همه':faN(Math.round(P.f[i]*100))+'٪')+' در <b dir="ltr">'+fmtPrice(rbPx(it,r))+'</b> <small dir="ltr">(+'+r+'R)</small>'+(it.x&&it.x.k>i?' ✓':''));
-  return esc(P.n)+': '+st.join(' · ')+(P.trail?' · باقی با استاپ متحرک':'');
+  return esc(P.n)+': '+(P.tmax?esc(P.d):st.join(' · ')+(P.trail?' · باقی با استاپ متحرک':''));
 }
 /* سود به R و دلار (دلار = R × ریسک هر معامله در تنظیمات) */
 /* و درصد روی مارجین ایزوله (همان مارجینی که دکمه‌ی «ایزوله» پیشنهاد می‌کند) */

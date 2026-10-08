@@ -40,26 +40,28 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
 
  console.log('=== فیلترهای هر تب سیگنال‌ها ===');
  const t=await p.evaluate(()=>{go('signals',true);const out={};
-   for(const k of ['now','mkt','new','all']){bucket='live';sigFilter=k;renderSignals();
+   for(const k of ['now','new','all']){bucket='live';sigFilter=k;renderSignals();
      out[k]={side:!!document.querySelector('#fbar .fside'),tab:(document.querySelector('#fbar .ftab')||{}).textContent||''};}
+   out.segs=[...document.querySelectorAll('#fbar .fseg .fb span')].map(x=>x.textContent).join(',');
+   go('radar',true);renderAll();out.mkt={tab:(document.querySelector('#rdFbar .ftab')||{}).textContent||''};go('signals',true);
    return out;});
  console.log('   ',JSON.stringify(t));
  ok(t.now.tab.includes('منبع')&&t.now.tab.includes('برنامه')&&t.now.tab.includes('جهت')&&!t.now.side,'«الان چه کنم؟»: منبع (کانال/برنامه) و جهت');
- ok(t.mkt.tab.includes('جهت')&&t.mkt.tab.includes('۳ ستاره')&&!t.mkt.side,'«بازار»: جهت و «فقط ۳ ستاره»');
+ ok(t.mkt.tab.includes('جهت')&&t.mkt.tab.includes('۳ ستاره')&&t.mkt.tab.includes('واگرایی')&&!/بازار/.test(t.segs),'تب «بازار» (مستقل): جهت، «فقط ۳ ستاره» و واگرایی؛ در سیگنال‌ها دیگر نیست');
  ok(t.new.tab.includes('بازار')&&t.new.tab.includes('اسپات')&&!t.new.side,'«در انتظار»: جهت و بازار');
  ok(t.all.side&&!t.all.tab,'«همه»: نتایج، منقضی، آرشیو و تاریخ — فقط همین‌جا');
  const nw=await p.evaluate(()=>{bucket='live';sigFilter='new';setView({newDir:'all'});const n0=document.querySelectorAll('#list .card').length;
    setView({newDir:'short'});const cards=[...document.querySelectorAll('#list .card')].map(c=>sigOf(POSTS.find(x=>x.id===c.dataset.id)).direction||'long');
-   const cnt=+[...document.querySelectorAll('#fbar .fseg .fb')][2].querySelector('i').textContent;setView({newDir:'all'});return {n0,cards,cnt};});
+   const cnt=+[...document.querySelectorAll('#fbar .fseg .fb')][1].querySelector('i').textContent;setView({newDir:'all'});return {n0,cards,cnt};});
  ok(nw.cards.every(d=>d==='short')&&nw.cards.length<nw.n0&&nw.cnt===nw.cards.length,'«در انتظار» + شورت: فقط شورت‌ها، عدد تب هم همان ('+nw.cards.length+' از '+nw.n0+')');
  const mk=await p.evaluate(()=>{const now=Date.now();const pl=(E,d)=>({dir:d,E,SL:d==='long'?E*0.98:E*1.02,TP:d==='long'?E*1.03:E*0.97,sd:0.02,rr:1.5});
    const c=(n,w,r,g,lb)=>({n,w,r,g,lb});const w=Array(RD_FEAT.length+1).fill(0);
    RD={v:4,at:now,mt0:now,n:10,reg:null,fund:{},rank:['AA','BB','CC'],M:{long:{w,q:[]},short:{w,q:[]}},calib:{'long|85-95':c(100,60,30,40,0.1),'short|85-95':c(100,40,-5,40,-0.2)},
      coins:{AA:{sc:90,dir:'long',best:'long',parts:{},px:1,t:now-36e5,pl:pl(1,'long')},BB:{sc:90,dir:'short',best:'short',parts:{},px:2,t:now-36e5,pl:pl(2,'short')},CC:{sc:50,dir:'wait',best:'long',parts:{},px:3,t:now-36e5,pl:null}}};
-   bucket='live';sigFilter='mkt';RDV='sig';setView({mktDir:'all',mktOk:false});const all=[...document.querySelectorAll('#glance .rdit')].map(x=>x.dataset.rd).join(',');
-   setView({mktDir:'short'});const sh=[...document.querySelectorAll('#glance .rdit')].map(x=>x.dataset.rd).join(',');
-   setView({mktDir:'all',mktOk:true});const good=[...document.querySelectorAll('#glance .rdit')].map(x=>x.dataset.rd).join(',');
-   const hid=(document.querySelector('#glance').textContent.match(/(\d+) سیگنال دیگر با فیلتر/)||[])[1];setView({mktOk:false});return {all,sh,good,hid};});
+   RDV='sig';go('radar',true);const sv=o=>{Object.assign(VIEW,o);renderRadar();};sv({mktDir:'all',mktOk:false});const all=[...document.querySelectorAll('#rdView .rdit')].map(x=>x.dataset.rd).join(',');
+   sv({mktDir:'short'});const sh=[...document.querySelectorAll('#rdView .rdit')].map(x=>x.dataset.rd).join(',');
+   sv({mktDir:'all',mktOk:true});const good=[...document.querySelectorAll('#rdView .rdit')].map(x=>x.dataset.rd).join(',');
+   const hid=(document.querySelector('#rdView').textContent.match(/(\d+) سیگنال دیگر با فیلتر/)||[])[1];sv({mktOk:false});go('signals',true);return {all,sh,good,hid};});
  ok(mk.all==='AA,BB'&&mk.sh==='BB'&&mk.good==='AA'&&mk.hid==='1','«بازار»: جهت و فقط ۳ ستاره (همه '+mk.all+'، شورت '+mk.sh+'، ۳★ '+mk.good+')');
  const nowF=await p.evaluate(()=>{bucket='live';sigFilter='now';setView({nowSrc:'app'});const g=document.getElementById('glance');
    const ch=g.querySelectorAll('.glsig:not(.assig):not(.rdit)').length;const as=!!g.querySelector('.assec');

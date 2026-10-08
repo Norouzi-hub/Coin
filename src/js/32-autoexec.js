@@ -174,7 +174,7 @@ const AUD_SRC=[
    iv:{'1m':'1min','3m':'3min','5m':'5min','30m':'30min','1h':'1h'},max:1000,ok:d=>d&&Array.isArray(d.data),
    p:d=>d.data.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]||0}))}
 ];
-// v: حجم (برای اندیکاتورهای اسکلپ: VWAP و حجم نسبی)
+// v: حجم (برای VWAP و حجم نسبی)
 const audParse=(src,d)=>src.p?src.p(d):d.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]||0}));
 async function audCandles(sym,iv,start,limit,quiet){
   /* اول منبعی که برای همین نماد جواب داده، بعد منبعی که آخرین بار برای هر نمادی جواب داده
@@ -1048,11 +1048,9 @@ function sheetAudPost(p){
    (DB.gone[p.id]?'<div class="flag d"><i>!</i><span>این پست دیگر در کانال نیست ('+jStampFa(new Date(DB.gone[p.id].at))+
      ' متوجه شدیم). متن بالا نسخه‌ای است که برنامه پیش از حذف دیده بود.</span></div>':'')+
    '<div class="sechd">متن پست</div><div class="audtxt">'+esc(p.origText||p.text||'')+'</div>'+
-   '<div class="srow"><button class="btn" id="swb">'+ic('bars')+'<span>نوسان این سیگنال</span></button>'+
-     '<button class="btn" id="fx">اصلاح عددها</button><button class="btn" id="cx">بستن</button></div>',
+   '<div class="srow"><button class="btn" id="fx">اصلاح عددها</button><button class="btn" id="cx">بستن</button></div>',
    ()=>{
      $('#cx').onclick=closeSheet;
-     $('#swb').onclick=()=>{closeSheet();setTimeout(()=>sheetSwing(p),260);};
      $('#fx').onclick=()=>{closeSheet();setTimeout(()=>sheetMarkSignal(p,sigOf(p)),260);};
    });
 }
