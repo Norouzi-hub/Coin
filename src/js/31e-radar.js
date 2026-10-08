@@ -647,9 +647,11 @@ function rdHealth(){
 }
 /* خلاف حال بازار: لانگ در بازار نزولی یا شورت در بازار صعودی */
 const rdAgainst=d=>(RD.reg==='bear'&&d==='long')||(RD.reg==='bull'&&d==='short');
-/* معامله‌های باز هم‌جهت: تست‌ها و پوزیشن‌های واقعیِ رادار */
-function rdOpenDir(d){
-  let n=0;try{for(const it of RB.items)if(it.k==='test'&&it.st==='open'&&it.dir===d)n++;}catch(e){}
+/* معامله‌های باز هم‌جهت، هر دفتر جدا: 'real' پوزیشن‌های واقعیِ رادار (برای «قابل گرفتن»)، 'test' معامله‌های آزمایشی
+   (فقط برای پرسیدن پیش از تست تازه). تست‌های امتحانی جلوی سیگنال واقعی را نمی‌گیرند. */
+function rdOpenDir(d,book){
+  let n=0;
+  if(book==='test'){try{for(const it of RB.items)if(it.k==='test'&&it.st==='open'&&it.dir===d)n++;}catch(e){}return n;}
   try{for(const p of DB.positions||[])if(p.status==='open'&&p.dir===d&&posSrc(p).sub==='radar')n++;}catch(e){}
   return n;
 }
@@ -662,7 +664,7 @@ function rdRate(x){
   return {o,stars,s0,exp:o.n?o.r/o.n:null,lb:o.lb,reg:o===c1};
 }
 /* RD_WHY: چرا سیگنالی «قابل گرفتن» نیست */
-const RD_WHY={cost:'استاپ خیلی نزدیک؛ کارمزد زیادی از سود می‌خورد',stars:'سابقه‌ی مطمئن (3 ستاره) ندارد',neg:'این جهت در کل زیان‌ده است',reg:'خلاف روند بیت‌کوین',cap:'سقف '+RD_CAP+' معامله‌ی هم‌جهت پر است'};
+const RD_WHY={cost:'استاپ خیلی نزدیک؛ کارمزد زیادی از سود می‌خورد',stars:'سابقه‌ی مطمئن (3 ستاره) ندارد',neg:'این جهت در کل زیان‌ده است',reg:'خلاف روند بیت‌کوین',cap:'سقف '+RD_CAP+' پوزیشن واقعیِ هم‌جهت پر است'};
 function rdList(){
   const H=rdHealth(),out=[];
   for(const tk of RD.rank){const x=RD.coins[tk];if(!x)continue;
@@ -677,7 +679,7 @@ function rdList(){
   const rank=(a,b)=>(b.ok-a.ok)||(b.stars-a.stars)||(((b.rt&&b.rt.lb)??-9)-((a.rt&&a.rt.lb)??-9))||(b.sc-a.sc);
   out.sort(rank);
   // سقف هم‌جهت: بازها (تست و واقعی) + فرصت‌های بالای فهرست
-  const used={long:rdOpenDir('long'),short:rdOpenDir('short')};
+  const used={long:rdOpenDir('long','real'),short:rdOpenDir('short','real')};
   for(const x of out)if(x.ok){if(used[x.dir]>=RD_CAP){x.ok=false;x.why='cap';}else used[x.dir]++;}
   try{rdStarTrack(out);}catch(e){}
   return out.sort(rank);
@@ -871,7 +873,7 @@ function rdGuideHtml(){
   sec('کِی مجاز به ورودیم؟','<p>وقتی سیگنال در گروه سبز <b>«قابل گرفتن»</b> است؛ یعنی همه با هم:</p><ol>'+
     '<li>امتیاز '+faN(RD_MIN)+' یا بیشتر</li><li><b>3 ستاره یا بیشتر</b></li><li>همان جهت (لانگ یا شورت) در کل زیان‌ده نیست</li>'+
     '<li>خلاف روند بیت‌کوین نیست (لانگ وقتی بیت‌کوین بیش از 2٪ ریخته)، مگر همان دسته در همین حال بازار 3 ستاره داشته باشد</li>'+
-    '<li>در آن جهت کمتر از '+faN(RD_CAP)+' معامله‌ی باز داری (تست یا واقعی)</li></ol>'+
+    '<li>در آن جهت کمتر از '+faN(RD_CAP)+' پوزیشن واقعیِ باز از رادار داری (تست‌ها سقف جدای خودشان را دارند و این‌جا شمرده نمی‌شوند)</li></ol>'+
     '<p>اگر یکی نباشد، کارت در «بی اعتبار کافی» است و دلیلش با برچسب قرمز روی خودش.</p>')+
   sec('روال عملی: کارت بالای صفحه','<ul>'+
     '<li><b class="win">سبز «N فرصت قابل گرفتن»:</b> همان‌ها را با «ایزوله» بگیر (اندازه با ریسک ثابت حساب شده). برای ورود بهتر «جزئیات» ← «تأیید 5 دقیقه‌ای». بعد کاری لازم نیست: خروج با نقشه و حداکثر '+faN(AS_HOLD)+' ساعت.</li>'+
@@ -957,7 +959,7 @@ let RDMKOPEN=(()=>{try{return localStorage.getItem('signaldesk.rdmk')==='1';}cat
 /* کارت «وضعیت امروز»: یک حکم روشن، چند برچسب، هشدارها و دکمه‌های اصلی */
 function rdHeroHtml(L){
   const H=rdHealth(), ok=L.filter(x=>x.ok), n=rdListOf().length;
-  const opn={long:rdOpenDir('long'),short:rdOpenDir('short')};
+  const opn={long:rdOpenDir('long','real'),short:rdOpenDir('short','real')},opt={long:rdOpenDir('long','test'),short:rdOpenDir('short','test')};
   let st,title,sub;
   if(!RD.at&&!RDQ.on){st='wait';title='هنوز بررسی نشده';sub='همین الان '+faN(RD_STEP)+' ارز اول بررسی می‌شود (بار اول هر ارز ~125 روز تاریخچه می‌گیرد؛ چند ثانیه برای هر ارز).';}
   else if(H.neg){st='stop';title='امروز معامله نکن';sub='مدل در هر دو جهت زیان‌ده است: لانگ <b dir="ltr">'+(H.d.long.n?fmtR(H.d.long.avg):'—')+'</b>، شورت <b dir="ltr">'+(H.d.short.n?fmtR(H.d.short.avg):'—')+'</b> میانگین هر معامله‌ی گذشته (بیرون از یادگیری). فقط «تست» بزن.';}
@@ -972,7 +974,8 @@ function rdHeroHtml(L){
   if(RD.reg)chips.push('<span class="rdchip '+(RD.reg==='bull'?'u':RD.reg==='bear'?'d':'')+'" title="روند بیت‌کوین (همان که مدل و ستاره‌ها با آن سنجیده می‌شوند)">روند بیت‌کوین '+RDREG_FA[RD.reg]+(MKT&&MKT.btc!=null?' · <bdi dir="ltr">'+fmtPct(MKT.btc)+'</bdi> در 24h':'')+'</span>');
   if(RD.mt0)chips.push('<span class="rdchip">مدل '+ageTxt(RD.mt0)+' · '+faN(RD.ncoin||n)+' ارز</span>');
   if(RD.ex)chips.push('<span class="rdchip">خروج: '+esc(rdExPlans()[rbExEff()].n)+'</span>');
-  if(opn.long||opn.short)chips.push('<span class="rdchip'+(opn.long>=RD_CAP||opn.short>=RD_CAP?' w':'')+'" title="تست‌ها و پوزیشن‌های رادار">باز: '+faN(opn.long)+' لانگ · '+faN(opn.short)+' شورت (سقف '+faN(RD_CAP)+')</span>');
+  if(opn.long||opn.short)chips.push('<span class="rdchip'+(opn.long>=RD_CAP||opn.short>=RD_CAP?' w':'')+'" title="پوزیشن‌های واقعیِ رادار">باز واقعی: '+faN(opn.long)+' لانگ · '+faN(opn.short)+' شورت (سقف '+faN(RD_CAP)+')</span>');
+  if(opt.long||opt.short)chips.push('<span class="rdchip" title="معامله‌های آزمایشی؛ سقف خودشان را دارند و جلوی سیگنال واقعی را نمی‌گیرند">تست باز: '+faN(opt.long)+' لانگ · '+faN(opt.short)+' شورت</span>');
   let h='<div class="rdhero '+st+'"><div class="rdht"><i>'+(st==='go'?'✓':st==='stop'?'✕':'…')+'</i><div><b>'+title+'</b><span>'+sub+'</span></div></div>'+
     (chips.length?'<div class="rdchips">'+chips.join('')+'</div>':'');
   // یک جهت زیان‌ده: فقط همان جهت بسته است

@@ -52,10 +52,10 @@ async function rbLabRun(){
   try{
     for(const it of L){
       try{const C=await rbPath(it);if(C.length)res.push({it,C,st:rbPathStats(it,C)});}catch(e){}
-      RBL.done++;if(RBL.done%3===0)rbRepaint();
+      RBL.done++;rbRepaint();
     }
   }finally{RBL.on=false;}
-  RBL.res=res;RBL.at=Date.now();rbRepaint();
+  RBL.res=res;RBL.at=Date.now();RBL.sig=rbLabSig();rbRepaint();
   if(!res.length)toast('مسیر قیمت هیچ معامله‌ای نیامد (اینترنت/فیلترشکن؟)','err');
 }
 /* جدول آستانه‌ها: سود روی مارجین (با اهرم ایزوله‌ی هر معامله) و R */
@@ -111,15 +111,50 @@ function rbLabExport(){
           stopMin:st.stopAt?Math.round((st.stopAt-it.t)/6e4):null,touchMin:Object.fromEntries(Object.entries(st.touch).map(([k,v])=>[k,Math.round((v-it.t)/6e4)])),full:st.full},
         path:{t0:new Date(t0).toISOString(),stepMin:5,unit:'1e-4 of entry',hlc:C.map(k=>[Math.round((k.h/it.E-1)*1e4),Math.round((k.l/it.E-1)*1e4),Math.round((k.c/it.E-1)*1e4)])}};})});
 }
+/* ---- خروجی برای بررسی ----
+   روی گوشی، دانلود و کپی فقط وقتی کار می‌کنند که مستقیم از زدن خودِ کاربر باشند؛ قبلاً دکمه اول مسیر قیمت همه‌ی
+   تست‌ها را می‌گرفت (چند ثانیه تا یک دقیقه، بی نشانه) و بعد دانلود می‌کرد، که مرورگر گوشی بی‌صدا جلویش را می‌گرفت.
+   حالا: یک زدن ← آماده‌سازی با پیشرفت روی خود دکمه ← ورقی با «دانلود فایل»، «اشتراک» و «کپی متن» که هر کدام زدن تازه‌اند. */
+const rbLabSig=()=>RB.items.filter(it=>(it.k==='test'||(RBL.auto&&it.k==='auto'))&&it.E>0&&it.sd>0).map(it=>it.id+':'+it.st).join(',');
+const rbExpName=()=>'signaldesk-tests-'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')+'.json';
+async function rbExportStart(){
+  if(RBL.on){toast('خروجی در حال آماده شدن است ('+faN(RBL.done)+' از '+faN(RBL.n)+')…','info');return;}
+  if(!(RBL.res&&RBL.sig===rbLabSig())){
+    const n=RB.items.filter(it=>(it.k==='test'||(RBL.auto&&it.k==='auto'))&&it.E>0&&it.sd>0).length;
+    if(!n){toast('هنوز معامله‌ی آزمایشی نداری','err');return;}
+    toast('آماده‌سازی خروجی: مسیر قیمت '+faN(n)+' معامله گرفته می‌شود…','info');
+    await rbLabRun();if(!RBL.res)return;
+  }
+  sheetExport();
+}
+function sheetExport(){
+  let txt='';try{txt=rbLabExport();}catch(e){toast('ساختن خروجی نشد: '+e.message,'err');return;}
+  const name=rbExpName(), n=(RBL.res||[]).length, kb=Math.max(1,Math.round(txt.length/1024));
+  let file=null;try{file=new File([txt],name,{type:'application/json'});}catch(e){}
+  const canShare=!!(file&&navigator.canShare&&navigator.canShare({files:[file]}));
+  openSheet('<h3>'+ic('down')+'خروجی برای بررسی آماده است</h3>'+
+    '<div class="hint">'+faN(n)+' معامله با مسیر واقعی قیمت، عامل‌های لحظه‌ی ورود و خلاصه‌ی مدل · '+faN(kb)+' کیلوبایت. یکی را بزن و فایل (یا متن) را برایم بفرست.</div>'+
+    '<div class="exacts">'+(canShare?'<button class="btn ok" id="exSh">'+ic('share')+'<span>اشتراک (تلگرام، …)</span></button>':'')+
+      '<button class="btn'+(canShare?'':' ok')+'" id="exDl">'+ic('down')+'<span>دانلود فایل</span></button>'+
+      '<button class="btn" id="exCp">'+ic('book')+'<span>کپی متن</span></button></div>'+
+    '<textarea class="cptxt extx" id="exTx" readonly aria-label="متن خروجی"></textarea>'+
+    '<div class="srow"><button class="btn" id="cx">بستن</button></div>',
+  sh=>{const ta=sh.querySelector('#exTx');ta.value=txt;
+    sh.querySelector('#cx').onclick=closeSheet;
+    sh.querySelector('#exDl').onclick=()=>{try{dl(name,txt);toast('فایل ساخته شد: '+name,'ok');}catch(e){toast('دانلود نشد؛ «کپی متن» را بزن','err');}};
+    const sb=sh.querySelector('#exSh');if(sb)sb.onclick=async()=>{try{await navigator.share({files:[file],title:name,text:'خروجی تست‌های میز سیگنال'});}
+      catch(e){if(e&&e.name!=='AbortError')toast('اشتراک نشد؛ «دانلود فایل» یا «کپی متن» را بزن','err');}};
+    sh.querySelector('#exCp').onclick=async()=>{let ok=false;
+      try{await navigator.clipboard.writeText(txt);ok=true;}catch(e){}
+      if(!ok){try{ta.focus();ta.select();ta.setSelectionRange(0,txt.length);ok=document.execCommand('copy');}catch(e){}}
+      toast(ok?'کپی شد ('+faN(kb)+' کیلوبایت)':'کپی نشد؛ متن پایین را نگه دار و «انتخاب همه» بزن',ok?'ok':'err');};});
+}
 function rbLabBind(g){
   const w=g.querySelector('.rblabw');if(w)w.ontoggle=()=>{RBLOPEN=w.open;};
   g.querySelectorAll('[data-rbl]').forEach(b=>{const a=b.dataset.rbl;
     if(a==='auto'){b.onchange=()=>{RBL.auto=b.checked;};return;}
     b.onclick=async()=>{
       if(a==='run'){RBLOPEN=true;rbLabRun();return;}
-      if(!RBL.res){await rbLabRun();if(!RBL.res)return;}
-      const txt=rbLabExport();
-      if(a==='dl'){dl('signaldesk-tests-'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')+'.json',txt);toast('فایل ساخته شد','ok');}
-      else{try{await navigator.clipboard.writeText(txt);toast('کپی شد ('+faN(Math.round(txt.length/1024))+' کیلوبایت)','ok');}catch(e){toast('کپی نشد؛ «دانلود فایل» را بزن','err');}}
+      rbExportStart();
     };});
 }

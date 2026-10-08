@@ -20,11 +20,15 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  await p.evaluate(()=>__mk());let s=await st();console.log('   ',JSON.stringify(s).slice(0,300));
  ok(s.ok==='L1,L2,L3,S1'&&s.why.L4==='cap'&&s.why.L5==='cap','از پنج لانگ فقط سه تای بالا «قابل گرفتن»؛ بقیه «سقف هم‌جهت»');
  ok(/go/.test(s.hero)&&/4 فرصت قابل گرفتن/.test(s.ht),'کارت وضعیت سبز: «4 فرصت قابل گرفتن»');
- await p.evaluate(()=>{const now=Date.now();RB.items.push({id:'o1',k:'test',tk:'X1',dir:'long',st:'open',t:now,E:1,SL:0.98,sd:0.02},{id:'o2',k:'test',tk:'X2',dir:'long',st:'open',t:now,E:1,SL:0.98,sd:0.02});renderRadar();});
- s=await st();ok(s.ok==='L1,S1'&&s.why.L2==='cap'&&/باز: 2 لانگ/.test(s.ht),'با دو لانگ باز (تست)، فقط یک لانگ تازه ('+s.ok+')');
+ // تست‌های باز جلوی سیگنال واقعی را نمی‌گیرند (سقف هر دفتر جدا)
+ await p.evaluate(()=>{const now=Date.now();for(let i=0;i<5;i++)RB.items.push({id:'t'+i,k:'test',tk:'T'+i,dir:'long',st:'open',t:now,E:1,SL:0.98,sd:0.02});renderRadar();});
+ s=await st();ok(s.ok==='L1,L2,L3,S1'&&/تست باز: 5 لانگ/.test(s.ht),'۵ تست لانگ باز: باز هم ۳ لانگ «قابل گرفتن» (تست‌ها سقف خودشان را دارند)');
+ await p.evaluate(()=>{const now=Date.now();RB.items=[];DB.positions.push(...[1,2].map(i=>({id:'rr'+i,sigId:'radar/R'+i+'/1',ticker:'R'+i,dir:'long',kind:'futures',entry:1,stop:0.98,stop0:0.98,margin:1,baseMargin:1,lev:5,openedAt:now,status:'open',partials:[],log:[]})));renderRadar();});
+ s=await st();ok(s.ok==='L1,S1'&&s.why.L2==='cap'&&/باز واقعی: 2 لانگ/.test(s.ht),'با دو پوزیشن واقعیِ لانگ از رادار، فقط یک لانگ تازه ('+s.ok+')');
+ await p.evaluate(()=>{DB.positions=DB.positions.filter(p=>!/^rr/.test(p.id));save();});
  // تست بیشتر از سقف: می‌پرسد (این‌جا «نه»)
  p.once('dialog',d=>d.dismiss());
- const t3=await p.evaluate(async()=>{RB.items.push({id:'o3',k:'test',tk:'X3',dir:'long',st:'open',t:Date.now(),E:1,SL:0.98,sd:0.02});const x=rdList().find(y=>y.tk==='L1');return !!(await rbAddAsk(x));});
+ const t3=await p.evaluate(async()=>{RB.items.push(...[1,2,3].map(i=>({id:'o'+i,k:'test',tk:'X'+i,dir:'long',st:'open',t:Date.now(),E:1,SL:0.98,sd:0.02})));const x=rdList().find(y=>y.tk==='L1');return !!(await rbAddAsk(x));});
  ok(!t3,'چهارمین تست هم‌جهت: می‌پرسد و با «نه» ثبت نمی‌شود');
  const au=await p.evaluate(()=>{RB.items=[];return rbLogAuto();});
  ok(au===4,'دفتر پیشنهادها هم سقف دارد: 3 لانگ + 1 شورت ('+au+')');
@@ -100,16 +104,16 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    DB.positions.push({id:'rp1',sigId:'radar/L1/1',ticker:'L1',dir:'long',kind:'futures',entry:10,stop:9.8,stop0:9.8,margin:2,baseMargin:2,lev:10,openedAt:n-3*H,status:'open',note:'رادار بازار · امتیاز 90 · 4★',partials:[],log:[],until:n+21*H,untilAuto:true},
      {id:'rp2',sigId:'radar/L2/1',ticker:'L2',dir:'long',kind:'futures',entry:11,stop:10.78,stop0:10.78,margin:2,baseMargin:2,lev:10,openedAt:n-10*H,closedAt:n-5*H,exitPrice:11.11,fees:0,status:'closed',note:'رادار بازار · امتیاز 89',partials:[],log:[]},
      {id:'cp1',sigId:'x/ch/1',ticker:'BTC',dir:'long',kind:'futures',entry:60000,stop:59000,stop0:59000,margin:5,baseMargin:5,lev:5,openedAt:n-2*H,status:'open',partials:[],log:[]});
-   save();const before=rdOpenDir('long');RDV='test';renderRadar();const box=(document.querySelector('#rdView .rbfp')||{}).textContent||'';
+   save();const before=rdOpenDir('long','real');RDV='test';renderRadar();const box=(document.querySelector('#rdView .rbfp')||{}).textContent||'';
    go('positions',true);renderAll();POSMENU.add('rp1');renderPositions();const mbtn=[...document.querySelectorAll('.pmore .btn')].some(b=>/انتقال به تست‌ها/.test(b.textContent));POSMENU.clear();
    const k=rbFromPosAll();const T=RB.items.filter(i=>i.from==='pos'),o=T.find(i=>i.tk==='L1'),c=T.find(i=>i.tk==='L2');
    const left=DB.positions.map(x=>x.id).join(',');
-   return {before,box,mbtn,k,left,o:o&&{st:o.st,t:o.t<n-2*H,sc:o.sc,stars:o.stars,ex:!!o.ex},c:c&&{st:c.st,R:c.R},after:rdOpenDir('long')};});
+   return {before,box,mbtn,k,left,o:o&&{st:o.st,t:o.t<n-2*H,sc:o.sc,stars:o.stars,ex:!!o.ex},c:c&&{st:c.st,R:c.R},after:rdOpenDir('long','real')};});
  console.log('   ',JSON.stringify(fp));
  ok(/2 پوزیشن رادار/.test(fp.box)&&/1 باز/.test(fp.box)&&fp.mbtn,'«آزمایشی» می‌گوید 2 پوزیشن رادار ثبت شده؛ در «پوزیشن‌ها» ⋯ ← «انتقال به تست‌ها»');
  ok(fp.k===2&&!/rp/.test(fp.left)&&/cp1/.test(fp.left)&&fp.o&&fp.o.st==='open'&&fp.o.t&&fp.o.sc===90&&fp.o.stars===4&&fp.o.ex&&fp.c&&fp.c.st==='man'&&fp.c.R>0.3&&fp.c.R<0.45,
    'انتقال: باز با همان زمان ورود و امتیاز، بسته با همان قیمت خروج (+'+(fp.c&&fp.c.R)+'R)؛ پوزیشن کانال دست نخورد');
- ok(fp.before===1&&fp.after===1,'سقف هم‌جهت همان می‌ماند (باز واقعی ← باز آزمایشی)');
+ ok(fp.before===1&&fp.after===0,'بعد از انتقال، آن لانگ دیگر جزو سقف پوزیشن‌های واقعی نیست');
  // راه آسان: کادر بالای «پوزیشن‌ها» ← فهرست تیک‌دار؛ تیکِ واقعی را برمی‌داری، یک زدن
  const fs=await p.evaluate(async()=>{const n=Date.now(),H=36e5;RBREAL.clear();rbRealSave();
    DB.positions.push({id:'rq1',sigId:'radar/L3/1',ticker:'L3',dir:'long',kind:'futures',entry:12,stop:11.76,stop0:11.76,margin:2,baseMargin:2,lev:10,openedAt:n-2*H,status:'open',note:'امتیاز 88',partials:[],log:[]},

@@ -1800,3 +1800,7 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rdwarn.bad{--ac:var(--dn);background:color-mix(in srgb,var(--dn) 7%,var(--inset));border-color:color-mix(in srgb,var(--dn) 30%,var(--line));border-inline-start-color:var(--dn)}
 .rdwarn.bad b{color:var(--dn)}
 .rdcost{border-inline-start:3px solid color-mix(in srgb,var(--gold) 70%,var(--line))}
+.exacts{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.exacts .btn{min-height:48px;justify-content:center}
+textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-align:left}
+.btn.busy{opacity:.85}

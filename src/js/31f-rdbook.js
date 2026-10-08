@@ -100,8 +100,8 @@ function rbFromPosAll(L){
 /* «تست» از کارت رادار: اگر سقف هم‌جهت پر است، اول با پنجره‌ی خودمان می‌پرسد */
 async function rbAddAsk(x){
   if(!x)return null;
-  const n=rdOpenDir(x.dir),dn=x.dir==='long'?'لانگ':'شورت';
-  if(n>=RD_CAP&&!(await askConfirm({title:faN(n)+' معامله‌ی '+dn+' باز داری',msg:'سقف '+faN(RD_CAP)+' معامله‌ی هم‌جهت است. ارزها با هم بالا و پایین می‌روند و این‌ها عملاً یک شرط بزرگ‌اند؛ یک ریزش همه را با هم استاپ می‌زند.',
+  const n=rdOpenDir(x.dir,'test'),dn=x.dir==='long'?'لانگ':'شورت';
+  if(n>=RD_CAP&&!(await askConfirm({title:faN(n)+' تست '+dn+' باز داری',msg:'سقف '+faN(RD_CAP)+' معامله‌ی هم‌جهت است. ارزها با هم بالا و پایین می‌روند و این‌ها عملاً یک شرط بزرگ‌اند؛ یک ریزش همه را با هم استاپ می‌زند.',
     ok:'باز هم ثبت کن',cancel:'نه، صبر می‌کنم'})))return null;
   return rbAdd('test',x);
 }
@@ -209,8 +209,8 @@ function rbHtml(kind){
     {const P=rbRadarAsk(),po=P.filter(p=>p.status==='open').length;
       if(P.length)h+='<div class="rdwarn rbfp"><span><b>'+faN(P.length)+' پوزیشن رادار</b> در «پوزیشن‌ها» ثبت شده'+(po?' ('+faN(po)+' باز)':'')+'. اگر این‌ها را در صرافی <b>نگرفته‌ای</b> و فقط برای امتحان بودند، بیاورشان این‌جا تا کارنامه‌ی واقعی‌ات قاطی نشود؛ دنبال کردنشان از لحظه‌ی ورود ادامه پیدا می‌کند.</span>'+
         '<button class="btn sm" data-rb="frompos">'+ic('undo')+'<span>انتقال به آزمایشی</span></button></div>';}
-    if(L.length)h+='<div class="srow rbtop"><button class="btn sm ok" data-rbl="dl" title="همه‌ی تست‌ها با مسیر واقعی قیمت، عامل‌های لحظه‌ی ورود و خلاصه‌ی مدل">'+ic('down')+'<span>خروجی برای بررسی</span></button>'+
-      '<button class="btn sm side" data-rbl="copy">'+ic('share')+'<span>کپی</span></button></div>';
+    if(L.length)h+='<div class="srow rbtop"><button class="btn sm ok'+(RBL.on?' busy':'')+'" data-rbl="dl" title="همه‌ی تست‌ها با مسیر واقعی قیمت، عامل‌های لحظه‌ی ورود و خلاصه‌ی مدل">'+ic('down')+
+      '<span>'+(RBL.on?'آماده‌سازی خروجی '+faN(RBL.done)+' از '+faN(RBL.n)+'…':'خروجی برای بررسی')+'</span></button></div>';
     h+='<details class="sec sub2 rbexw"><summary>نقشه‌ی خروج: '+esc(rdExPlans()[rbExEff()].n)+(RBEX==='auto'?' (خودکار)':'')+'</summary>'+rbExPicker()+'</details>';
     h+=rbLabHtml();
     if(open.length)h+='<div class="sechd">باز ('+faN(open.length)+')</div>'+open.map(it=>rbRowHtml(it,true)).join('');

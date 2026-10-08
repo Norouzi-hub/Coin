@@ -1817,6 +1817,10 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rdwarn.bad{--ac:var(--dn);background:color-mix(in srgb,var(--dn) 7%,var(--inset));border-color:color-mix(in srgb,var(--dn) 30%,var(--line));border-inline-start-color:var(--dn)}
 .rdwarn.bad b{color:var(--dn)}
 .rdcost{border-inline-start:3px solid color-mix(in srgb,var(--gold) 70%,var(--line))}
+.exacts{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.exacts .btn{min-height:48px;justify-content:center}
+textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-align:left}
+.btn.busy{opacity:.85}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -10501,9 +10505,11 @@ function rdHealth(){
 }
 /* خلاف حال بازار: لانگ در بازار نزولی یا شورت در بازار صعودی */
 const rdAgainst=d=>(RD.reg==='bear'&&d==='long')||(RD.reg==='bull'&&d==='short');
-/* معامله‌های باز هم‌جهت: تست‌ها و پوزیشن‌های واقعیِ رادار */
-function rdOpenDir(d){
-  let n=0;try{for(const it of RB.items)if(it.k==='test'&&it.st==='open'&&it.dir===d)n++;}catch(e){}
+/* معامله‌های باز هم‌جهت، هر دفتر جدا: 'real' پوزیشن‌های واقعیِ رادار (برای «قابل گرفتن»)، 'test' معامله‌های آزمایشی
+   (فقط برای پرسیدن پیش از تست تازه). تست‌های امتحانی جلوی سیگنال واقعی را نمی‌گیرند. */
+function rdOpenDir(d,book){
+  let n=0;
+  if(book==='test'){try{for(const it of RB.items)if(it.k==='test'&&it.st==='open'&&it.dir===d)n++;}catch(e){}return n;}
   try{for(const p of DB.positions||[])if(p.status==='open'&&p.dir===d&&posSrc(p).sub==='radar')n++;}catch(e){}
   return n;
 }
@@ -10516,7 +10522,7 @@ function rdRate(x){
   return {o,stars,s0,exp:o.n?o.r/o.n:null,lb:o.lb,reg:o===c1};
 }
 /* RD_WHY: چرا سیگنالی «قابل گرفتن» نیست */
-const RD_WHY={cost:'استاپ خیلی نزدیک؛ کارمزد زیادی از سود می‌خورد',stars:'سابقه‌ی مطمئن (3 ستاره) ندارد',neg:'این جهت در کل زیان‌ده است',reg:'خلاف روند بیت‌کوین',cap:'سقف '+RD_CAP+' معامله‌ی هم‌جهت پر است'};
+const RD_WHY={cost:'استاپ خیلی نزدیک؛ کارمزد زیادی از سود می‌خورد',stars:'سابقه‌ی مطمئن (3 ستاره) ندارد',neg:'این جهت در کل زیان‌ده است',reg:'خلاف روند بیت‌کوین',cap:'سقف '+RD_CAP+' پوزیشن واقعیِ هم‌جهت پر است'};
 function rdList(){
   const H=rdHealth(),out=[];
   for(const tk of RD.rank){const x=RD.coins[tk];if(!x)continue;
@@ -10531,7 +10537,7 @@ function rdList(){
   const rank=(a,b)=>(b.ok-a.ok)||(b.stars-a.stars)||(((b.rt&&b.rt.lb)??-9)-((a.rt&&a.rt.lb)??-9))||(b.sc-a.sc);
   out.sort(rank);
   // سقف هم‌جهت: بازها (تست و واقعی) + فرصت‌های بالای فهرست
-  const used={long:rdOpenDir('long'),short:rdOpenDir('short')};
+  const used={long:rdOpenDir('long','real'),short:rdOpenDir('short','real')};
   for(const x of out)if(x.ok){if(used[x.dir]>=RD_CAP){x.ok=false;x.why='cap';}else used[x.dir]++;}
   try{rdStarTrack(out);}catch(e){}
   return out.sort(rank);
@@ -10725,7 +10731,7 @@ function rdGuideHtml(){
   sec('کِی مجاز به ورودیم؟','<p>وقتی سیگنال در گروه سبز <b>«قابل گرفتن»</b> است؛ یعنی همه با هم:</p><ol>'+
     '<li>امتیاز '+faN(RD_MIN)+' یا بیشتر</li><li><b>3 ستاره یا بیشتر</b></li><li>همان جهت (لانگ یا شورت) در کل زیان‌ده نیست</li>'+
     '<li>خلاف روند بیت‌کوین نیست (لانگ وقتی بیت‌کوین بیش از 2٪ ریخته)، مگر همان دسته در همین حال بازار 3 ستاره داشته باشد</li>'+
-    '<li>در آن جهت کمتر از '+faN(RD_CAP)+' معامله‌ی باز داری (تست یا واقعی)</li></ol>'+
+    '<li>در آن جهت کمتر از '+faN(RD_CAP)+' پوزیشن واقعیِ باز از رادار داری (تست‌ها سقف جدای خودشان را دارند و این‌جا شمرده نمی‌شوند)</li></ol>'+
     '<p>اگر یکی نباشد، کارت در «بی اعتبار کافی» است و دلیلش با برچسب قرمز روی خودش.</p>')+
   sec('روال عملی: کارت بالای صفحه','<ul>'+
     '<li><b class="win">سبز «N فرصت قابل گرفتن»:</b> همان‌ها را با «ایزوله» بگیر (اندازه با ریسک ثابت حساب شده). برای ورود بهتر «جزئیات» ← «تأیید 5 دقیقه‌ای». بعد کاری لازم نیست: خروج با نقشه و حداکثر '+faN(AS_HOLD)+' ساعت.</li>'+
@@ -10811,7 +10817,7 @@ let RDMKOPEN=(()=>{try{return localStorage.getItem('signaldesk.rdmk')==='1';}cat
 /* کارت «وضعیت امروز»: یک حکم روشن، چند برچسب، هشدارها و دکمه‌های اصلی */
 function rdHeroHtml(L){
   const H=rdHealth(), ok=L.filter(x=>x.ok), n=rdListOf().length;
-  const opn={long:rdOpenDir('long'),short:rdOpenDir('short')};
+  const opn={long:rdOpenDir('long','real'),short:rdOpenDir('short','real')},opt={long:rdOpenDir('long','test'),short:rdOpenDir('short','test')};
   let st,title,sub;
   if(!RD.at&&!RDQ.on){st='wait';title='هنوز بررسی نشده';sub='همین الان '+faN(RD_STEP)+' ارز اول بررسی می‌شود (بار اول هر ارز ~125 روز تاریخچه می‌گیرد؛ چند ثانیه برای هر ارز).';}
   else if(H.neg){st='stop';title='امروز معامله نکن';sub='مدل در هر دو جهت زیان‌ده است: لانگ <b dir="ltr">'+(H.d.long.n?fmtR(H.d.long.avg):'—')+'</b>، شورت <b dir="ltr">'+(H.d.short.n?fmtR(H.d.short.avg):'—')+'</b> میانگین هر معامله‌ی گذشته (بیرون از یادگیری). فقط «تست» بزن.';}
@@ -10826,7 +10832,8 @@ function rdHeroHtml(L){
   if(RD.reg)chips.push('<span class="rdchip '+(RD.reg==='bull'?'u':RD.reg==='bear'?'d':'')+'" title="روند بیت‌کوین (همان که مدل و ستاره‌ها با آن سنجیده می‌شوند)">روند بیت‌کوین '+RDREG_FA[RD.reg]+(MKT&&MKT.btc!=null?' · <bdi dir="ltr">'+fmtPct(MKT.btc)+'</bdi> در 24h':'')+'</span>');
   if(RD.mt0)chips.push('<span class="rdchip">مدل '+ageTxt(RD.mt0)+' · '+faN(RD.ncoin||n)+' ارز</span>');
   if(RD.ex)chips.push('<span class="rdchip">خروج: '+esc(rdExPlans()[rbExEff()].n)+'</span>');
-  if(opn.long||opn.short)chips.push('<span class="rdchip'+(opn.long>=RD_CAP||opn.short>=RD_CAP?' w':'')+'" title="تست‌ها و پوزیشن‌های رادار">باز: '+faN(opn.long)+' لانگ · '+faN(opn.short)+' شورت (سقف '+faN(RD_CAP)+')</span>');
+  if(opn.long||opn.short)chips.push('<span class="rdchip'+(opn.long>=RD_CAP||opn.short>=RD_CAP?' w':'')+'" title="پوزیشن‌های واقعیِ رادار">باز واقعی: '+faN(opn.long)+' لانگ · '+faN(opn.short)+' شورت (سقف '+faN(RD_CAP)+')</span>');
+  if(opt.long||opt.short)chips.push('<span class="rdchip" title="معامله‌های آزمایشی؛ سقف خودشان را دارند و جلوی سیگنال واقعی را نمی‌گیرند">تست باز: '+faN(opt.long)+' لانگ · '+faN(opt.short)+' شورت</span>');
   let h='<div class="rdhero '+st+'"><div class="rdht"><i>'+(st==='go'?'✓':st==='stop'?'✕':'…')+'</i><div><b>'+title+'</b><span>'+sub+'</span></div></div>'+
     (chips.length?'<div class="rdchips">'+chips.join('')+'</div>':'');
   // یک جهت زیان‌ده: فقط همان جهت بسته است
@@ -11055,8 +11062,8 @@ function rbFromPosAll(L){
 /* «تست» از کارت رادار: اگر سقف هم‌جهت پر است، اول با پنجره‌ی خودمان می‌پرسد */
 async function rbAddAsk(x){
   if(!x)return null;
-  const n=rdOpenDir(x.dir),dn=x.dir==='long'?'لانگ':'شورت';
-  if(n>=RD_CAP&&!(await askConfirm({title:faN(n)+' معامله‌ی '+dn+' باز داری',msg:'سقف '+faN(RD_CAP)+' معامله‌ی هم‌جهت است. ارزها با هم بالا و پایین می‌روند و این‌ها عملاً یک شرط بزرگ‌اند؛ یک ریزش همه را با هم استاپ می‌زند.',
+  const n=rdOpenDir(x.dir,'test'),dn=x.dir==='long'?'لانگ':'شورت';
+  if(n>=RD_CAP&&!(await askConfirm({title:faN(n)+' تست '+dn+' باز داری',msg:'سقف '+faN(RD_CAP)+' معامله‌ی هم‌جهت است. ارزها با هم بالا و پایین می‌روند و این‌ها عملاً یک شرط بزرگ‌اند؛ یک ریزش همه را با هم استاپ می‌زند.',
     ok:'باز هم ثبت کن',cancel:'نه، صبر می‌کنم'})))return null;
   return rbAdd('test',x);
 }
@@ -11164,8 +11171,8 @@ function rbHtml(kind){
     {const P=rbRadarAsk(),po=P.filter(p=>p.status==='open').length;
       if(P.length)h+='<div class="rdwarn rbfp"><span><b>'+faN(P.length)+' پوزیشن رادار</b> در «پوزیشن‌ها» ثبت شده'+(po?' ('+faN(po)+' باز)':'')+'. اگر این‌ها را در صرافی <b>نگرفته‌ای</b> و فقط برای امتحان بودند، بیاورشان این‌جا تا کارنامه‌ی واقعی‌ات قاطی نشود؛ دنبال کردنشان از لحظه‌ی ورود ادامه پیدا می‌کند.</span>'+
         '<button class="btn sm" data-rb="frompos">'+ic('undo')+'<span>انتقال به آزمایشی</span></button></div>';}
-    if(L.length)h+='<div class="srow rbtop"><button class="btn sm ok" data-rbl="dl" title="همه‌ی تست‌ها با مسیر واقعی قیمت، عامل‌های لحظه‌ی ورود و خلاصه‌ی مدل">'+ic('down')+'<span>خروجی برای بررسی</span></button>'+
-      '<button class="btn sm side" data-rbl="copy">'+ic('share')+'<span>کپی</span></button></div>';
+    if(L.length)h+='<div class="srow rbtop"><button class="btn sm ok'+(RBL.on?' busy':'')+'" data-rbl="dl" title="همه‌ی تست‌ها با مسیر واقعی قیمت، عامل‌های لحظه‌ی ورود و خلاصه‌ی مدل">'+ic('down')+
+      '<span>'+(RBL.on?'آماده‌سازی خروجی '+faN(RBL.done)+' از '+faN(RBL.n)+'…':'خروجی برای بررسی')+'</span></button></div>';
     h+='<details class="sec sub2 rbexw"><summary>نقشه‌ی خروج: '+esc(rdExPlans()[rbExEff()].n)+(RBEX==='auto'?' (خودکار)':'')+'</summary>'+rbExPicker()+'</details>';
     h+=rbLabHtml();
     if(open.length)h+='<div class="sechd">باز ('+faN(open.length)+')</div>'+open.map(it=>rbRowHtml(it,true)).join('');
@@ -11273,10 +11280,10 @@ async function rbLabRun(){
   try{
     for(const it of L){
       try{const C=await rbPath(it);if(C.length)res.push({it,C,st:rbPathStats(it,C)});}catch(e){}
-      RBL.done++;if(RBL.done%3===0)rbRepaint();
+      RBL.done++;rbRepaint();
     }
   }finally{RBL.on=false;}
-  RBL.res=res;RBL.at=Date.now();rbRepaint();
+  RBL.res=res;RBL.at=Date.now();RBL.sig=rbLabSig();rbRepaint();
   if(!res.length)toast('مسیر قیمت هیچ معامله‌ای نیامد (اینترنت/فیلترشکن؟)','err');
 }
 /* جدول آستانه‌ها: سود روی مارجین (با اهرم ایزوله‌ی هر معامله) و R */
@@ -11332,16 +11339,51 @@ function rbLabExport(){
           stopMin:st.stopAt?Math.round((st.stopAt-it.t)/6e4):null,touchMin:Object.fromEntries(Object.entries(st.touch).map(([k,v])=>[k,Math.round((v-it.t)/6e4)])),full:st.full},
         path:{t0:new Date(t0).toISOString(),stepMin:5,unit:'1e-4 of entry',hlc:C.map(k=>[Math.round((k.h/it.E-1)*1e4),Math.round((k.l/it.E-1)*1e4),Math.round((k.c/it.E-1)*1e4)])}};})});
 }
+/* ---- خروجی برای بررسی ----
+   روی گوشی، دانلود و کپی فقط وقتی کار می‌کنند که مستقیم از زدن خودِ کاربر باشند؛ قبلاً دکمه اول مسیر قیمت همه‌ی
+   تست‌ها را می‌گرفت (چند ثانیه تا یک دقیقه، بی نشانه) و بعد دانلود می‌کرد، که مرورگر گوشی بی‌صدا جلویش را می‌گرفت.
+   حالا: یک زدن ← آماده‌سازی با پیشرفت روی خود دکمه ← ورقی با «دانلود فایل»، «اشتراک» و «کپی متن» که هر کدام زدن تازه‌اند. */
+const rbLabSig=()=>RB.items.filter(it=>(it.k==='test'||(RBL.auto&&it.k==='auto'))&&it.E>0&&it.sd>0).map(it=>it.id+':'+it.st).join(',');
+const rbExpName=()=>'signaldesk-tests-'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')+'.json';
+async function rbExportStart(){
+  if(RBL.on){toast('خروجی در حال آماده شدن است ('+faN(RBL.done)+' از '+faN(RBL.n)+')…','info');return;}
+  if(!(RBL.res&&RBL.sig===rbLabSig())){
+    const n=RB.items.filter(it=>(it.k==='test'||(RBL.auto&&it.k==='auto'))&&it.E>0&&it.sd>0).length;
+    if(!n){toast('هنوز معامله‌ی آزمایشی نداری','err');return;}
+    toast('آماده‌سازی خروجی: مسیر قیمت '+faN(n)+' معامله گرفته می‌شود…','info');
+    await rbLabRun();if(!RBL.res)return;
+  }
+  sheetExport();
+}
+function sheetExport(){
+  let txt='';try{txt=rbLabExport();}catch(e){toast('ساختن خروجی نشد: '+e.message,'err');return;}
+  const name=rbExpName(), n=(RBL.res||[]).length, kb=Math.max(1,Math.round(txt.length/1024));
+  let file=null;try{file=new File([txt],name,{type:'application/json'});}catch(e){}
+  const canShare=!!(file&&navigator.canShare&&navigator.canShare({files:[file]}));
+  openSheet('<h3>'+ic('down')+'خروجی برای بررسی آماده است</h3>'+
+    '<div class="hint">'+faN(n)+' معامله با مسیر واقعی قیمت، عامل‌های لحظه‌ی ورود و خلاصه‌ی مدل · '+faN(kb)+' کیلوبایت. یکی را بزن و فایل (یا متن) را برایم بفرست.</div>'+
+    '<div class="exacts">'+(canShare?'<button class="btn ok" id="exSh">'+ic('share')+'<span>اشتراک (تلگرام، …)</span></button>':'')+
+      '<button class="btn'+(canShare?'':' ok')+'" id="exDl">'+ic('down')+'<span>دانلود فایل</span></button>'+
+      '<button class="btn" id="exCp">'+ic('book')+'<span>کپی متن</span></button></div>'+
+    '<textarea class="cptxt extx" id="exTx" readonly aria-label="متن خروجی"></textarea>'+
+    '<div class="srow"><button class="btn" id="cx">بستن</button></div>',
+  sh=>{const ta=sh.querySelector('#exTx');ta.value=txt;
+    sh.querySelector('#cx').onclick=closeSheet;
+    sh.querySelector('#exDl').onclick=()=>{try{dl(name,txt);toast('فایل ساخته شد: '+name,'ok');}catch(e){toast('دانلود نشد؛ «کپی متن» را بزن','err');}};
+    const sb=sh.querySelector('#exSh');if(sb)sb.onclick=async()=>{try{await navigator.share({files:[file],title:name,text:'خروجی تست‌های میز سیگنال'});}
+      catch(e){if(e&&e.name!=='AbortError')toast('اشتراک نشد؛ «دانلود فایل» یا «کپی متن» را بزن','err');}};
+    sh.querySelector('#exCp').onclick=async()=>{let ok=false;
+      try{await navigator.clipboard.writeText(txt);ok=true;}catch(e){}
+      if(!ok){try{ta.focus();ta.select();ta.setSelectionRange(0,txt.length);ok=document.execCommand('copy');}catch(e){}}
+      toast(ok?'کپی شد ('+faN(kb)+' کیلوبایت)':'کپی نشد؛ متن پایین را نگه دار و «انتخاب همه» بزن',ok?'ok':'err');};});
+}
 function rbLabBind(g){
   const w=g.querySelector('.rblabw');if(w)w.ontoggle=()=>{RBLOPEN=w.open;};
   g.querySelectorAll('[data-rbl]').forEach(b=>{const a=b.dataset.rbl;
     if(a==='auto'){b.onchange=()=>{RBL.auto=b.checked;};return;}
     b.onclick=async()=>{
       if(a==='run'){RBLOPEN=true;rbLabRun();return;}
-      if(!RBL.res){await rbLabRun();if(!RBL.res)return;}
-      const txt=rbLabExport();
-      if(a==='dl'){dl('signaldesk-tests-'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')+'.json',txt);toast('فایل ساخته شد','ok');}
-      else{try{await navigator.clipboard.writeText(txt);toast('کپی شد ('+faN(Math.round(txt.length/1024))+' کیلوبایت)','ok');}catch(e){toast('کپی نشد؛ «دانلود فایل» را بزن','err');}}
+      rbExportStart();
     };});
 }
 /* ==================== اجرای خودکار استاپ و نقشه ==================== */

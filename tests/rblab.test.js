@@ -26,7 +26,10 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(r.s1.how==='th'&&r.s1.R>0.8&&r.s2.how==='sl','خروج سریع در +1R ← برد؛ آستانه‌ی +2R ← استاپ');
  ok(/اگر خارج می‌شدیم در/.test(r.lab)&&/5٪ سود روی مارجین/.test(r.lab)&&/نقشه‌ی فعلی/.test(r.lab)&&/بیشترین سود پیش از استاپ/.test(r.lab),'جدول آستانه‌ها و فهرست معامله‌ها');
  ok(r.J.n===1&&r.J.hlc>=280&&r.J.max===300&&r.J.stats.mfe===1.5&&r.J.settings,'خروجی JSON: مسیر کامل (ده‌هزارم ورود؛ اوج +3٪) و آمار');
- const [d]=await Promise.all([p.waitForEvent('download'),p.evaluate(()=>document.querySelector('#rdView [data-rbl="dl"]').click())]);
+ await p.evaluate(()=>document.querySelector('#rdView [data-rbl="dl"]').click());await p.waitForSelector('#sheet #exDl',{timeout:5000});
+ const sht=await p.evaluate(()=>({t:document.getElementById('sheet').textContent,v:document.getElementById('exTx').value.length}));
+ ok(/خروجی برای بررسی آماده است/.test(sht.t)&&/کپی متن/.test(sht.t)&&sht.v>1000,'«خروجی برای بررسی» ← ورق آماده با دانلود، کپی و متن کامل ('+sht.v+' نویسه)');
+ const [d]=await Promise.all([p.waitForEvent('download'),p.evaluate(()=>document.querySelector('#sheet #exDl').click())]);
  ok(/signaldesk-tests-.*\.json$/.test(d.suggestedFilename()),'دکمه‌ی «دانلود فایل»: '+d.suggestedFilename());
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');})();
