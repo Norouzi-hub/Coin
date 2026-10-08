@@ -92,7 +92,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    'ستاره‌ی 5 → 2: روی کارت «قبلاً 5★ → الان 2★» و دلیل‌ها (دسته‌ی امتیاز، روند بیت‌کوین، یادگیری دوباره)');
  const gd=await p.evaluate(async()=>{document.querySelector('#rdView [data-rdhelp]').click();await new Promise(r=>setTimeout(r,300));
    const t=document.getElementById('sheet').textContent;closeSheet();return t;});
- ok(/امتیاز چیست/.test(gd)&&/احتمال برد نیست/.test(gd)&&/فرق 2 و 3 ستاره/.test(gd)&&/چرا ستاره‌ی یک ارز عوض می‌شود/.test(gd)&&/کِی مجاز به ورودیم/.test(gd)&&/تا کی صبر/.test(gd),'دکمه‌ی «راهنما»: امتیاز، ستاره، تغییر ستاره، کِی ورود و تا کی صبر');
+ ok(/امتیاز چیست/.test(gd)&&/چرا عوض می‌شود/.test(gd)&&/جایش در این صف/.test(gd)&&/احتمال برد نیست/.test(gd)&&/فرق 2 و 3 ستاره/.test(gd)&&/چرا ستاره‌ی یک ارز عوض می‌شود/.test(gd)&&/کِی مجاز به ورودیم/.test(gd)&&/تا کی صبر/.test(gd),'دکمه‌ی «راهنما»: امتیاز، ستاره، تغییر ستاره، کِی ورود و تا کی صبر');
  await p.waitForTimeout(400);
 
  console.log('=== چیدمان ===');
