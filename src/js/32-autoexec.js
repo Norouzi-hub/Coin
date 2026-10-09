@@ -176,7 +176,9 @@ const AUD_SRC=[
 ];
 // v: حجم (برای VWAP و حجم نسبی)
 const audParse=(src,d)=>src.p?src.p(d):d.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]||0}));
-async function audCandles(sym,iv,start,limit,quiet){
+/* ref: قیمتی که کندل اول باید نزدیکش باشد (مثلاً ورود معامله). صرافی‌ها گاهی زیر یک نماد ارز دیگری دارند
+   (هم‌نام، قیمت چند برابر)؛ آن منبع کنار می‌رود و سراغ بعدی می‌رویم */
+async function audCandles(sym,iv,start,limit,quiet,ref){
   /* اول منبعی که برای همین نماد جواب داده، بعد منبعی که آخرین بار برای هر نمادی جواب داده
      (اگر بایننس از مسیرِ تو بسته است، برای هر سیگنال از نو امتحانش نکنیم) */
   const order=AUD_SRC.map((_,i)=>i);
@@ -198,6 +200,7 @@ async function audCandles(sym,iv,start,limit,quiet){
         .filter(k=>isFinite(k.t)&&isFinite(k.h)&&isFinite(k.l)&&k.h>0&&k.t>=start-1)
         .sort((a,b)=>a.t-b.t);
       if(!rows.length)continue;                      // این منبع این نماد را ندارد
+      if(ref>0&&Math.abs(rows[0].c/ref-1)>0.3){AUDQ.err=src.n+': '+sym+' این صرافی ارز دیگری است (قیمت '+fmtPrice(rows[0].c)+')';continue;}
       AUDQ.err='';                                   // خطای منبع‌های قبلی دیگر مهم نیست
       if(AUDSRC[sym]!==i||AUDSRC.$!==i){AUDSRC[sym]=i;AUDSRC.$=i;lsSet(AUDSRCKEY,AUDSRC);}
       return rows;

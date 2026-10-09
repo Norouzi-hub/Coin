@@ -245,8 +245,9 @@ const rdExPlans=()=>{const rr=+(S.rMul&&S.rMul[0])||1.5;return {
   q05:{n:'خروج سریع +0.5R',d:'همه در +0.5R',t:[0.5],f:[1],st:[0]},
   q075:{n:'همه در +0.75R',d:'همه در +0.75R',t:[0.75],f:[1],st:[0]},
   q1:{n:'همه در +1R',d:'همه در +1R (1:1)',t:[1],f:[1],st:[0]},
-  // استاپ با بسته شدن کندل یک‌ساعته (نه با لمس): سایه‌ی شکار استاپ نمی‌زندش؛ استاپ اضطراری در −2R
-  q05c:{n:'+0.5R، استاپ با بسته شدن کندل',d:'همه در +0.5R؛ استاپ فقط وقتی کندل یک‌ساعته آن طرفش بسته شود (اضطراری در −2R)',t:[0.5],f:[1],st:[0],cs:2},
+  // استاپ با بسته شدن کندل یک‌ساعته (نه با لمس): سایه‌ی شکار استاپ نمی‌زندش؛ استاپ اضطراری در −1.5R
+  // (در −2R، تست‌های واقعی −2.07R و −2.05R دادند؛ یک باخت چهار برد را می‌برد)
+  q05c:{n:'+0.5R، استاپ با بسته شدن کندل',d:'همه در +0.5R؛ استاپ فقط وقتی کندل یک‌ساعته آن طرفش بسته شود (اضطراری در −1.5R)',t:[0.5],f:[1],st:[0],cs:1.5},
   h05:{n:'نصف در +0.5R',d:'نصف در +0.5R و استاپ به ورود؛ باقی در +1.5R',t:[0.5,1.5],f:[.5,.5],st:[0,0]},
   t1h:{n:'خروج بعد از 1 ساعت',d:'بعد از یک ساعت با قیمت همان لحظه (استاپ سر جایش)',t:[],f:[],st:[],tmax:1}};};
 const exNew=()=>({rem:1,acc:0,stop:-1,k:0,peak:0,be:false,tpf:0});
@@ -486,8 +487,8 @@ async function rdCapLoad(){
   const u=pg=>'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page='+pg;
   const o={json:true,timeout:15000,kind:'px',quiet:true,label:'ارزش بازار (CoinGecko)',validate:d=>Array.isArray(d)&&d.length>=10};
   try{const a=await fetchVia(u(1),o);let b=null;try{b=await fetchVia(u(2),o);}catch(e){}
-    const list=[];for(const x of a.data.concat(b?b.data:[])){const t=String(x.symbol||'').toUpperCase();if(t&&!list.includes(t))list.push(t);}
-    RDCAP={at:Date.now(),list,deep:true};lsSet(RDCAP_KEY,RDCAP);}catch(e){}
+    const list=[],px={};for(const x of a.data.concat(b?b.data:[])){const t=String(x.symbol||'').toUpperCase();if(t&&!list.includes(t)){list.push(t);if(+x.current_price>0)px[t]=+x.current_price;}}
+    RDCAP={at:Date.now(),list,px,deep:true};lsSet(RDCAP_KEY,RDCAP);}catch(e){}
   return RDCAP;
 }
 /* فهرست رتبه‌ای ارزها (بی استیبل، توکن بسته‌بندی‌شده و اهرمی): رتبه‌ی i = U[i-1] */
@@ -647,7 +648,7 @@ async function rdScan(mode,add){
     // روش هزینه یا کارمزدها عوض شده: نمونه‌ها با هزینه‌ی تازه از نو ساخته و مدل دوباره یاد گرفته می‌شود
     if(RD.cs!==rdCostSig())RDS.clear();
     const fit=RD.cs!==rdCostSig()||mode==='learn'||((mode==='more'||mode==='add')&&extra.length>0)||!RD.M||!RD.M.long||RD.M.long.w.length!==RD_FEAT.length+1||Date.now()-(RD.mt0||0)>24*36e5;
-    RDQ.fail=[];
+    RDQ.fail=[];RDQ.alias=[];
     RDQ.n=U.filter(tk=>fresh(tk)||!RDS.has(tk)).length;RDQ.msg='گرفتن تاریخچه‌ی بیت‌کوین (برای روند و حال بازار)…';rdPaintProg();
     let B=null;try{B=await rdCandles('BTC',true);}catch(e){}
     if(B){RDQ.msg='بازسازی تاریخچه‌ی TOTAL و دامیننس‌ها…';rdPaintProg();try{await rdMktBuild(B);}catch(e){}}
@@ -659,7 +660,10 @@ async function rdScan(mode,add){
       RDQ.cur.set(tk,1);rdPaintProg();
       try{const [C,FL,FU]=await Promise.all([tk==='BTC'&&B?B:rdCandles(tk,fresh(tk)),rdFlow(tk,fresh(tk)),rdFundH(tk,fresh(tk))]);
         RDQ.cur.set(tk,2);rdPaintProg();await rdYield();
-        if(C&&C.length>300){const P=rdPrep(C,B||C,FL,FU),s=rdSamples(P,tk);s.live=rdLiveOf(P);RDS.set(tk,s);}
+        // ارز هم‌نام: صرافی زیر همین نماد ارز دیگری دارد (آخرین قیمت بیش از 30٪ با CoinGecko فرق دارد)
+        const cg=RDCAP&&RDCAP.px&&RDCAP.px[tk],lc=C&&C.length?C[C.length-1].c:0;
+        if(cg>0&&lc>0&&Math.abs(lc/cg-1)>0.3){RDQ.fail.push(tk);RDQ.alias=(RDQ.alias||[]).concat(tk);delete RD.coins[tk];RDS.delete(tk);}
+        else if(C&&C.length>300){const P=rdPrep(C,B||C,FL,FU),s=rdSamples(P,tk);s.live=rdLiveOf(P);RDS.set(tk,s);}
         else if(!RD.coins[tk])RDQ.fail.push(tk);}
       catch(e){if(!RD.coins[tk])RDQ.fail.push(tk);}
       RDQ.cur.delete(tk);return true;
@@ -682,7 +686,8 @@ async function rdScan(mode,add){
     if(RDQ.n)RD.ct=Math.round((Date.now()-RDQ.tc)/RDQ.n);
     // نمادی که هیچ صرافی کندلش را نداد از فهرست بیرون می‌رود
     if(RDQ.fail.length){RD.list=RD.list.filter(t=>!RDQ.fail.includes(t));
-      toast('کندل نیامد، از فهرست بیرون رفت: '+RDQ.fail.join('، '),'err');}
+      const al=RDQ.alias||[],nc=RDQ.fail.filter(t=>!al.includes(t));
+      toast((nc.length?'کندل نیامد، از فهرست بیرون رفت: '+nc.join('، '):'')+(al.length?(nc.length?' · ':'')+'صرافی زیر این نماد ارز دیگری دارد (قیمت با CoinGecko نمی‌خواند)، بیرون رفت: '+al.join('، '):''),'err');}
     if(RDQ.over)toast('سقف فهرست '+faN(RD_MAX)+' ارز است؛ '+faN(RDQ.over)+' ارز اضافه نشد','err');
     rdLive(RD.list);RD.at=Date.now();rdSave();
     try{rbLogAuto();}catch(e){}

@@ -1801,6 +1801,12 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .jbt{flex:none;display:grid;place-items:center;width:34px;height:34px;background:none;border:0;border-inline-start:1px solid var(--line);color:var(--tx2);cursor:pointer}
 .jbt .ic{width:15px;height:15px}
 .jbar{position:absolute;inset-inline-start:0;bottom:0;height:2px;background:var(--gold);transition:width .4s}
+/* همه‌ی نقشه‌ها روی هر تست */
+.rbpl{margin-top:4px}.rbpl>summary{cursor:pointer;color:var(--tx2);font-size:12px}
+.rbplw{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.rbplc{font-size:11.5px;padding:3px 8px;border-radius:999px;background:var(--inset);border:1px solid var(--line);color:var(--tx2)}
+.rbplc.u{color:var(--up)}.rbplc.d{color:var(--dn)}
+.rbpls td:first-child{white-space:normal;min-width:120px}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -10115,8 +10121,9 @@ const rdExPlans=()=>{const rr=+(S.rMul&&S.rMul[0])||1.5;return {
   q05:{n:'خروج سریع +0.5R',d:'همه در +0.5R',t:[0.5],f:[1],st:[0]},
   q075:{n:'همه در +0.75R',d:'همه در +0.75R',t:[0.75],f:[1],st:[0]},
   q1:{n:'همه در +1R',d:'همه در +1R (1:1)',t:[1],f:[1],st:[0]},
-  // استاپ با بسته شدن کندل یک‌ساعته (نه با لمس): سایه‌ی شکار استاپ نمی‌زندش؛ استاپ اضطراری در −2R
-  q05c:{n:'+0.5R، استاپ با بسته شدن کندل',d:'همه در +0.5R؛ استاپ فقط وقتی کندل یک‌ساعته آن طرفش بسته شود (اضطراری در −2R)',t:[0.5],f:[1],st:[0],cs:2},
+  // استاپ با بسته شدن کندل یک‌ساعته (نه با لمس): سایه‌ی شکار استاپ نمی‌زندش؛ استاپ اضطراری در −1.5R
+  // (در −2R، تست‌های واقعی −2.07R و −2.05R دادند؛ یک باخت چهار برد را می‌برد)
+  q05c:{n:'+0.5R، استاپ با بسته شدن کندل',d:'همه در +0.5R؛ استاپ فقط وقتی کندل یک‌ساعته آن طرفش بسته شود (اضطراری در −1.5R)',t:[0.5],f:[1],st:[0],cs:1.5},
   h05:{n:'نصف در +0.5R',d:'نصف در +0.5R و استاپ به ورود؛ باقی در +1.5R',t:[0.5,1.5],f:[.5,.5],st:[0,0]},
   t1h:{n:'خروج بعد از 1 ساعت',d:'بعد از یک ساعت با قیمت همان لحظه (استاپ سر جایش)',t:[],f:[],st:[],tmax:1}};};
 const exNew=()=>({rem:1,acc:0,stop:-1,k:0,peak:0,be:false,tpf:0});
@@ -10356,8 +10363,8 @@ async function rdCapLoad(){
   const u=pg=>'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page='+pg;
   const o={json:true,timeout:15000,kind:'px',quiet:true,label:'ارزش بازار (CoinGecko)',validate:d=>Array.isArray(d)&&d.length>=10};
   try{const a=await fetchVia(u(1),o);let b=null;try{b=await fetchVia(u(2),o);}catch(e){}
-    const list=[];for(const x of a.data.concat(b?b.data:[])){const t=String(x.symbol||'').toUpperCase();if(t&&!list.includes(t))list.push(t);}
-    RDCAP={at:Date.now(),list,deep:true};lsSet(RDCAP_KEY,RDCAP);}catch(e){}
+    const list=[],px={};for(const x of a.data.concat(b?b.data:[])){const t=String(x.symbol||'').toUpperCase();if(t&&!list.includes(t)){list.push(t);if(+x.current_price>0)px[t]=+x.current_price;}}
+    RDCAP={at:Date.now(),list,px,deep:true};lsSet(RDCAP_KEY,RDCAP);}catch(e){}
   return RDCAP;
 }
 /* فهرست رتبه‌ای ارزها (بی استیبل، توکن بسته‌بندی‌شده و اهرمی): رتبه‌ی i = U[i-1] */
@@ -10517,7 +10524,7 @@ async function rdScan(mode,add){
     // روش هزینه یا کارمزدها عوض شده: نمونه‌ها با هزینه‌ی تازه از نو ساخته و مدل دوباره یاد گرفته می‌شود
     if(RD.cs!==rdCostSig())RDS.clear();
     const fit=RD.cs!==rdCostSig()||mode==='learn'||((mode==='more'||mode==='add')&&extra.length>0)||!RD.M||!RD.M.long||RD.M.long.w.length!==RD_FEAT.length+1||Date.now()-(RD.mt0||0)>24*36e5;
-    RDQ.fail=[];
+    RDQ.fail=[];RDQ.alias=[];
     RDQ.n=U.filter(tk=>fresh(tk)||!RDS.has(tk)).length;RDQ.msg='گرفتن تاریخچه‌ی بیت‌کوین (برای روند و حال بازار)…';rdPaintProg();
     let B=null;try{B=await rdCandles('BTC',true);}catch(e){}
     if(B){RDQ.msg='بازسازی تاریخچه‌ی TOTAL و دامیننس‌ها…';rdPaintProg();try{await rdMktBuild(B);}catch(e){}}
@@ -10529,7 +10536,10 @@ async function rdScan(mode,add){
       RDQ.cur.set(tk,1);rdPaintProg();
       try{const [C,FL,FU]=await Promise.all([tk==='BTC'&&B?B:rdCandles(tk,fresh(tk)),rdFlow(tk,fresh(tk)),rdFundH(tk,fresh(tk))]);
         RDQ.cur.set(tk,2);rdPaintProg();await rdYield();
-        if(C&&C.length>300){const P=rdPrep(C,B||C,FL,FU),s=rdSamples(P,tk);s.live=rdLiveOf(P);RDS.set(tk,s);}
+        // ارز هم‌نام: صرافی زیر همین نماد ارز دیگری دارد (آخرین قیمت بیش از 30٪ با CoinGecko فرق دارد)
+        const cg=RDCAP&&RDCAP.px&&RDCAP.px[tk],lc=C&&C.length?C[C.length-1].c:0;
+        if(cg>0&&lc>0&&Math.abs(lc/cg-1)>0.3){RDQ.fail.push(tk);RDQ.alias=(RDQ.alias||[]).concat(tk);delete RD.coins[tk];RDS.delete(tk);}
+        else if(C&&C.length>300){const P=rdPrep(C,B||C,FL,FU),s=rdSamples(P,tk);s.live=rdLiveOf(P);RDS.set(tk,s);}
         else if(!RD.coins[tk])RDQ.fail.push(tk);}
       catch(e){if(!RD.coins[tk])RDQ.fail.push(tk);}
       RDQ.cur.delete(tk);return true;
@@ -10552,7 +10562,8 @@ async function rdScan(mode,add){
     if(RDQ.n)RD.ct=Math.round((Date.now()-RDQ.tc)/RDQ.n);
     // نمادی که هیچ صرافی کندلش را نداد از فهرست بیرون می‌رود
     if(RDQ.fail.length){RD.list=RD.list.filter(t=>!RDQ.fail.includes(t));
-      toast('کندل نیامد، از فهرست بیرون رفت: '+RDQ.fail.join('، '),'err');}
+      const al=RDQ.alias||[],nc=RDQ.fail.filter(t=>!al.includes(t));
+      toast((nc.length?'کندل نیامد، از فهرست بیرون رفت: '+nc.join('، '):'')+(al.length?(nc.length?' · ':'')+'صرافی زیر این نماد ارز دیگری دارد (قیمت با CoinGecko نمی‌خواند)، بیرون رفت: '+al.join('، '):''),'err');}
     if(RDQ.over)toast('سقف فهرست '+faN(RD_MAX)+' ارز است؛ '+faN(RDQ.over)+' ارز اضافه نشد','err');
     rdLive(RD.list);RD.at=Date.now();rdSave();
     try{rbLogAuto();}catch(e){}
@@ -11259,7 +11270,7 @@ async function rbCatchUp(force){
     for(const it of todo){
       if(!(await jobGate('rbcu')))break;nd++;
       const M5=3e5, from=it.chk||Math.floor(it.t/M5)*M5+M5, end=it.t+AS_HOLD*36e5;
-      let C;try{C=await audCandles(it.tk,'5m',from,300,true);}catch(e){continue;}
+      let C;try{C=await audCandles(it.tk,'5m',from,300,true,it.E);}catch(e){continue;}
       let last=null;
       for(const k of C){if(k.t<from)continue;if(k.t>=end)break;last=k;if(rbStep(it,k.h,k.l,k.t+M5,k.c))break;}
       if(it.st!=='open'&&it.k==='test')away.push(it);
@@ -11413,11 +11424,45 @@ const RBL_ROE=[5,10,15,20,30,50], RBL_R=[0.5,1,1.5,2,3];
 /* کندل‌های 5 دقیقه‌ای از ورود تا 24 ساعت بعد (یا تا الان)؛ مسیرِ کامل‌شده در IndexedDB می‌ماند */
 async function rbPath(it){
   const M5=3e5, from=Math.floor(it.t/M5)*M5, end=it.t+AS_HOLD*36e5, key='rbp:'+it.id;
-  const st=await idbGet(key);if(st&&st.full)return st.C;
-  const C=(await audCandles(it.tk,'5m',from,Math.min(300,Math.ceil((Math.min(Date.now(),end)-from)/M5)+1),true)).filter(k=>k.t>=from&&k.t<end);
+  // مسیر ذخیره‌شده‌ای که از ارز هم‌نامِ دیگری آمده بود (کندل اول دور از ورود) دور ریخته می‌شود
+  const st=await idbGet(key);if(st&&st.full&&!(st.C.length&&Math.abs(st.C[0].c/it.E-1)>0.3))return st.C;
+  const C=(await audCandles(it.tk,'5m',from,Math.min(300,Math.ceil((Math.min(Date.now(),end)-from)/M5)+1),true,it.E)).filter(k=>k.t>=from&&k.t<end);
   const full=Date.now()>=end+M5&&C.length&&C[C.length-1].t>=end-2*M5;
   await idbSet(key,{C:C.map(k=>({t:k.t,o:k.o,h:k.h,l:k.l,c:k.c})),full});
   return C;
+}
+/* همه‌ی نقشه‌های خروج روی مسیر واقعی یک تست: همان موتور دفتر تست (rbStep) روی یک کپی از معامله.
+   باز مانده: اگر 24 ساعت کامل شده با قیمت آخر (خروج زمانی)، وگرنه «باز» با سود/ضرر الان */
+function rbAllPlans(it,C){
+  const M5=3e5,t1=Math.floor(it.t/M5)*M5+M5,end=it.t+AS_HOLD*36e5,out={};
+  const full=C.length>0&&C[C.length-1].t>=end-2*M5;
+  for(const n of RD_EXN){
+    const y={id:it.id,k:it.k,tk:it.tk,dir:it.dir,t:it.t,E:it.E,SL:it.SL,TP:it.TP,sd:it.sd,rr:it.rr,st:'open',ex:n,x:exNew(),be:false};
+    let last=null;
+    for(const k of C){if(k.t<t1)continue;if(k.t>=end)break;last=k;if(rbStep(y,k.h,k.l,k.t+M5,k.c))break;}
+    if(y.st!=='open')out[n]={R:y.R,st:y.st};
+    else if(last)out[n]={R:+rbLiveR(y,last.c).toFixed(3),st:full?'time':'open'};
+  }
+  return out;
+}
+/* جدول: هر نقشه روی همین تست‌های واقعی (بسته‌ها؛ بازها جدا شمرده می‌شوند) */
+function rbPlansTable(res){
+  const PL=rdExPlans(),av=(a,b)=>b?a/b:null;
+  const rows=RD_EXN.map(n=>{const o={n,c:0,w:0,r:0,u:0,op:0,L:[0,0],S:[0,0]};
+    for(const x of res){const v=x.pl&&x.pl[n];if(!v)continue;if(v.st==='open'){o.op++;continue;}
+      o.c++;o.r+=v.R;o.u+=v.R*rbUsdR(x.it);if(v.R>0)o.w++;const d=x.it.dir==='long'?o.L:o.S;d[0]+=v.R;d[1]++;}
+    return o;}).filter(o=>o.c);
+  if(!rows.length)return '';
+  const best=rows.filter(o=>o.c>=5).sort((a,b)=>b.r/b.c-a.r/a.c)[0];
+  const cur={long:rbExEff('long'),short:rbExEff('short')};
+  const cell=v=>v==null?'<td class="num">—</td>':'<td class="num '+cls(v)+'"><bdi>'+fmtR(v)+'</bdi></td>';
+  return '<div class="sechd">همه‌ی نقشه‌های خروج روی همین تست‌ها</div><div class="tscroll"><table class="tp xtab rbpls"><thead><tr><th>نقشه</th><th>تعداد</th><th>برد</th><th>میانگین</th><th>لانگ</th><th>شورت</th><th>جمع</th><th>دلار</th></tr></thead><tbody>'+
+    rows.map(o=>'<tr class="'+(best&&o.n===best.n?'on':'')+'"><td>'+esc(PL[o.n].n)+(best&&o.n===best.n?' ✓':'')+
+      (cur.long===o.n||cur.short===o.n?' <small>(الان '+[cur.long===o.n?'لانگ':'',cur.short===o.n?'شورت':''].filter(Boolean).join('، ')+')</small>':'')+'</td>'+
+      '<td class="num">'+faN(o.c)+(o.op?' <small>(+'+faN(o.op)+' باز)</small>':'')+'</td><td class="num">'+faN(Math.round(o.w/o.c*100))+'٪</td>'+
+      cell(av(o.r,o.c))+cell(av(o.L[0],o.L[1]))+cell(av(o.S[0],o.S[1]))+cell(o.r)+'<td class="num '+cls(o.u)+'"><bdi>'+fmtUsd(o.u)+'</bdi></td></tr>').join('')+'</tbody></table></div>'+
+    '<div class="hint">هر ردیف: اگر همه‌ی همین تست‌ها با آن نقشه خارج می‌شدند، روی مسیر واقعی قیمت (کندل 5 دقیقه‌ای، بعد از کارمزد). ✓ بهترین میانگین (دست‌کم 5 معامله). '+
+    'این روی تست‌های خودت است؛ «کارنامه» همین را روی 4 ماه گذشته می‌سنجد. وقتی دو تا با هم نمی‌خوانند، یعنی بازار این روزها با میانگین آن 4 ماه فرق دارد.</div>';
 }
 /* آمار مسیر: کندلِ خودِ ورود حساب نمی‌شود (مثل دنبال کردن معامله) */
 function rbPathStats(it,C){
@@ -11456,7 +11501,7 @@ async function rbLabRun(){
   try{
     for(const it of L){
       if(!(await jobGate('rblab'))){stop=true;break;}
-      try{const C=await rbPath(it);if(C.length)res.push({it,C,st:rbPathStats(it,C)});}catch(e){}
+      try{const C=await rbPath(it);if(C.length)res.push({it,C,st:rbPathStats(it,C),pl:rbAllPlans(it,C)});}catch(e){}
       RBL.done++;rbRepaint();
     }
   }finally{RBL.on=false;jobEnd('rblab');}
@@ -11487,19 +11532,27 @@ function rbLabHtml(){
     const tot=res.length, hit1=res.filter(x=>x.st.touch[1]!=null).length, hitH=res.filter(x=>x.st.touch[0.5]!=null).length;
     const avgM=res.reduce((a,x)=>a+x.st.mfe,0)/tot, avgRoe=res.reduce((a,x)=>a+x.st.mfe*x.it.sd*x.st.lev*100,0)/tot;
     h+='<div class="rbsum"><b>'+faN(tot)+' معامله</b><span>به +0.5R رسید: '+faN(hitH)+' · به +1R: '+faN(hit1)+'</span><span>میانگین بیشترین سود پیش از استاپ: <b dir="ltr">'+fmtR(avgM)+'</b> (حدود '+faN(Math.round(avgRoe))+'٪ روی مارجین)</span></div>';
+    h+=rbPlansTable(res);
     h+=rbLabTable(res);
     h+='<div class="sechd">هر معامله</div>'+res.slice().sort((a,b)=>b.it.t-a.it.t).slice(0,40).map(x=>{const it=x.it,s=x.st,roe=s.mfe*it.sd*s.lev*100,
       dt=s.tMfe?Math.round((s.tMfe-it.t)/6e4):null;
       return '<div class="glnum rblabr"><b dir="ltr">'+esc(it.tk)+'</b> <span class="pill '+it.dir+'">'+(it.dir==='long'?'لانگ':'شورت')+'</span> '+
         (it.st==='open'?'<span class="pill mut">باز</span>':'<span class="pill '+(it.R>0?'win':'lose')+'">'+RB_ST[it.st]+' <bdi dir="ltr">'+fmtR(it.R)+'</bdi></span>')+
         ' · بیشترین سود پیش از استاپ <b class="'+(s.mfe>0.005?'u':'m')+'" dir="ltr">'+fmtR0(s.mfe)+'</b> ('+faN(Math.round(roe))+'٪ روی مارجین '+faN(s.lev)+'x'+(dt!=null?'، '+faN(Math.floor(dt/60))+':'+String(dt%60).padStart(2,'0')+' بعد از ورود':'')+')'+
-        (s.stopAt?' · <span class="d">استاپ '+faN(Math.round((s.stopAt-it.t)/6e4))+' دقیقه بعد</span>':'')+(s.full?'':' · <small>هنوز 24 ساعت نشده</small>')+'</div>';}).join('');
+        (s.stopAt?' · <span class="d">استاپ '+faN(Math.round((s.stopAt-it.t)/6e4))+' دقیقه بعد</span>':'')+(s.full?'':' · <small>هنوز 24 ساعت نشده</small>')+rbPlRow(x)+'</div>';}).join('');
     h+='<div class="srow"><button class="btn sm" data-rbl="dl">'+ic('down')+'<span>دانلود فایل</span></button><button class="btn sm" data-rbl="copy">'+ic('share')+'<span>کپی متن</span></button></div>'+
       '<div class="hint">فایل همه‌ی عددها و مسیر کامل قیمت هر معامله را دارد؛ برای بررسی دقیق‌تر بفرست.</div>';
   }else if(res)h+='<div class="hint">مسیر قیمت نیامد.</div>';
   return h+'</details>';
 }
 let RBLOPEN=false;
+/* زیر هر معامله: بهترین و بدترین نقشه، و همه با یک زدن */
+function rbPlRow(x){
+  const P=x.pl;if(!P)return '';const PL=rdExPlans(),L=RD_EXN.filter(n=>P[n]).map(n=>[n,P[n]]);if(!L.length)return '';
+  const srt=L.slice().sort((a,b)=>b[1].R-a[1].R),b=srt[0],w=srt[srt.length-1],chip=([n,v])=>'<span class="rbplc '+cls(v.R)+'">'+esc(PL[n].n)+' <bdi dir="ltr">'+fmtR(v.R)+'</bdi>'+(v.st==='open'?' <small>باز</small>':'')+'</span>';
+  return '<details class="rbpl"><summary>در '+faN(L.length)+' نقشه: بهترین '+esc(PL[b[0]].n)+' <bdi dir="ltr" class="'+cls(b[1].R)+'">'+fmtR(b[1].R)+'</bdi> · بدترین '+esc(PL[w[0]].n)+' <bdi dir="ltr" class="'+cls(w[1].R)+'">'+fmtR(w[1].R)+'</bdi></summary>'+
+    '<div class="rbplw">'+srt.map(chip).join('')+'</div></details>';
+}
 /* خروجی: تنظیمات، هر معامله، آمار مسیر و خودِ مسیر (h/l/c نسبت به ورود، ده‌هزارم؛ هر 5 دقیقه) */
 function rbLabExport(){
   const res=RBL.res||[];
@@ -11510,10 +11563,10 @@ function rbLabExport(){
       span:RD.span?RD.span.map(t=>new Date(t).toISOString()):null,health:H,cap:RD_CAP,capN:RD.capN??null,divs:RD.divs||null,
       calib:Object.fromEntries(Object.entries(RD.calib||{}).filter(([k])=>!/\|/.test(k)||/^base\|/.test(k)||/^(long|short)\|[0-9]/.test(k))),
       weights:{long:W('long'),short:W('short')},drop:{long:M.long&&M.long.drop||null,short:M.short&&M.short.drop||null}},
-    trades:res.map(({it,C,st})=>{const t0=C.length?C[0].t:it.t;
+    trades:res.map(x=>{const {it,C,st}=x,t0=C.length?C[0].t:it.t;
       return {id:it.id,kind:it.k,tk:it.tk,dir:it.dir,t:new Date(it.t).toISOString(),E:it.E,SL:it.SL,sd:+it.sd.toFixed(5),rr:it.rr,ex:it.ex||null,sc:it.sc,stars:it.stars,p:it.p,exp:it.exp,reg:it.reg,
         why:it.why||null,pv:it.pv||null,st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
-        lev:st.lev,usdPerR:+rbUsdR(it).toFixed(3),usd:it.R!=null?+(it.R*rbUsdR(it)).toFixed(2):null,stats:{mfe:+st.mfe.toFixed(3),tMfeMin:st.tMfe?Math.round((st.tMfe-it.t)/6e4):null,mfe24:+st.mfe24.toFixed(3),mae:+st.mae.toFixed(3),
+        lev:st.lev,plans:x.pl?Object.fromEntries(Object.entries(x.pl).map(([n,v])=>[n,v.st==='open'?{R:v.R,open:true}:v.R])):null,usdPerR:+rbUsdR(it).toFixed(3),usd:it.R!=null?+(it.R*rbUsdR(it)).toFixed(2):null,stats:{mfe:+st.mfe.toFixed(3),tMfeMin:st.tMfe?Math.round((st.tMfe-it.t)/6e4):null,mfe24:+st.mfe24.toFixed(3),mae:+st.mae.toFixed(3),
           stopMin:st.stopAt?Math.round((st.stopAt-it.t)/6e4):null,touchMin:Object.fromEntries(Object.entries(st.touch).map(([k,v])=>[k,Math.round((v-it.t)/6e4)])),full:st.full},
         path:{t0:new Date(t0).toISOString(),stepMin:5,unit:'1e-4 of entry',hlc:C.map(k=>[Math.round((k.h/it.E-1)*1e4),Math.round((k.l/it.E-1)*1e4),Math.round((k.c/it.E-1)*1e4)])}};})});
 }
@@ -11742,7 +11795,9 @@ const AUD_SRC=[
 ];
 // v: حجم (برای VWAP و حجم نسبی)
 const audParse=(src,d)=>src.p?src.p(d):d.map(k=>({t:+k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]||0}));
-async function audCandles(sym,iv,start,limit,quiet){
+/* ref: قیمتی که کندل اول باید نزدیکش باشد (مثلاً ورود معامله). صرافی‌ها گاهی زیر یک نماد ارز دیگری دارند
+   (هم‌نام، قیمت چند برابر)؛ آن منبع کنار می‌رود و سراغ بعدی می‌رویم */
+async function audCandles(sym,iv,start,limit,quiet,ref){
   /* اول منبعی که برای همین نماد جواب داده، بعد منبعی که آخرین بار برای هر نمادی جواب داده
      (اگر بایننس از مسیرِ تو بسته است، برای هر سیگنال از نو امتحانش نکنیم) */
   const order=AUD_SRC.map((_,i)=>i);
@@ -11764,6 +11819,7 @@ async function audCandles(sym,iv,start,limit,quiet){
         .filter(k=>isFinite(k.t)&&isFinite(k.h)&&isFinite(k.l)&&k.h>0&&k.t>=start-1)
         .sort((a,b)=>a.t-b.t);
       if(!rows.length)continue;                      // این منبع این نماد را ندارد
+      if(ref>0&&Math.abs(rows[0].c/ref-1)>0.3){AUDQ.err=src.n+': '+sym+' این صرافی ارز دیگری است (قیمت '+fmtPrice(rows[0].c)+')';continue;}
       AUDQ.err='';                                   // خطای منبع‌های قبلی دیگر مهم نیست
       if(AUDSRC[sym]!==i||AUDSRC.$!==i){AUDSRC[sym]=i;AUDSRC.$=i;lsSet(AUDSRCKEY,AUDSRC);}
       return rows;

@@ -172,7 +172,7 @@ async function rbCatchUp(force){
     for(const it of todo){
       if(!(await jobGate('rbcu')))break;nd++;
       const M5=3e5, from=it.chk||Math.floor(it.t/M5)*M5+M5, end=it.t+AS_HOLD*36e5;
-      let C;try{C=await audCandles(it.tk,'5m',from,300,true);}catch(e){continue;}
+      let C;try{C=await audCandles(it.tk,'5m',from,300,true,it.E);}catch(e){continue;}
       let last=null;
       for(const k of C){if(k.t<from)continue;if(k.t>=end)break;last=k;if(rbStep(it,k.h,k.l,k.t+M5,k.c))break;}
       if(it.st!=='open'&&it.k==='test')away.push(it);

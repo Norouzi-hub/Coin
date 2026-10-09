@@ -11,11 +11,45 @@ const RBL_ROE=[5,10,15,20,30,50], RBL_R=[0.5,1,1.5,2,3];
 /* کندل‌های 5 دقیقه‌ای از ورود تا 24 ساعت بعد (یا تا الان)؛ مسیرِ کامل‌شده در IndexedDB می‌ماند */
 async function rbPath(it){
   const M5=3e5, from=Math.floor(it.t/M5)*M5, end=it.t+AS_HOLD*36e5, key='rbp:'+it.id;
-  const st=await idbGet(key);if(st&&st.full)return st.C;
-  const C=(await audCandles(it.tk,'5m',from,Math.min(300,Math.ceil((Math.min(Date.now(),end)-from)/M5)+1),true)).filter(k=>k.t>=from&&k.t<end);
+  // مسیر ذخیره‌شده‌ای که از ارز هم‌نامِ دیگری آمده بود (کندل اول دور از ورود) دور ریخته می‌شود
+  const st=await idbGet(key);if(st&&st.full&&!(st.C.length&&Math.abs(st.C[0].c/it.E-1)>0.3))return st.C;
+  const C=(await audCandles(it.tk,'5m',from,Math.min(300,Math.ceil((Math.min(Date.now(),end)-from)/M5)+1),true,it.E)).filter(k=>k.t>=from&&k.t<end);
   const full=Date.now()>=end+M5&&C.length&&C[C.length-1].t>=end-2*M5;
   await idbSet(key,{C:C.map(k=>({t:k.t,o:k.o,h:k.h,l:k.l,c:k.c})),full});
   return C;
+}
+/* همه‌ی نقشه‌های خروج روی مسیر واقعی یک تست: همان موتور دفتر تست (rbStep) روی یک کپی از معامله.
+   باز مانده: اگر 24 ساعت کامل شده با قیمت آخر (خروج زمانی)، وگرنه «باز» با سود/ضرر الان */
+function rbAllPlans(it,C){
+  const M5=3e5,t1=Math.floor(it.t/M5)*M5+M5,end=it.t+AS_HOLD*36e5,out={};
+  const full=C.length>0&&C[C.length-1].t>=end-2*M5;
+  for(const n of RD_EXN){
+    const y={id:it.id,k:it.k,tk:it.tk,dir:it.dir,t:it.t,E:it.E,SL:it.SL,TP:it.TP,sd:it.sd,rr:it.rr,st:'open',ex:n,x:exNew(),be:false};
+    let last=null;
+    for(const k of C){if(k.t<t1)continue;if(k.t>=end)break;last=k;if(rbStep(y,k.h,k.l,k.t+M5,k.c))break;}
+    if(y.st!=='open')out[n]={R:y.R,st:y.st};
+    else if(last)out[n]={R:+rbLiveR(y,last.c).toFixed(3),st:full?'time':'open'};
+  }
+  return out;
+}
+/* جدول: هر نقشه روی همین تست‌های واقعی (بسته‌ها؛ بازها جدا شمرده می‌شوند) */
+function rbPlansTable(res){
+  const PL=rdExPlans(),av=(a,b)=>b?a/b:null;
+  const rows=RD_EXN.map(n=>{const o={n,c:0,w:0,r:0,u:0,op:0,L:[0,0],S:[0,0]};
+    for(const x of res){const v=x.pl&&x.pl[n];if(!v)continue;if(v.st==='open'){o.op++;continue;}
+      o.c++;o.r+=v.R;o.u+=v.R*rbUsdR(x.it);if(v.R>0)o.w++;const d=x.it.dir==='long'?o.L:o.S;d[0]+=v.R;d[1]++;}
+    return o;}).filter(o=>o.c);
+  if(!rows.length)return '';
+  const best=rows.filter(o=>o.c>=5).sort((a,b)=>b.r/b.c-a.r/a.c)[0];
+  const cur={long:rbExEff('long'),short:rbExEff('short')};
+  const cell=v=>v==null?'<td class="num">—</td>':'<td class="num '+cls(v)+'"><bdi>'+fmtR(v)+'</bdi></td>';
+  return '<div class="sechd">همه‌ی نقشه‌های خروج روی همین تست‌ها</div><div class="tscroll"><table class="tp xtab rbpls"><thead><tr><th>نقشه</th><th>تعداد</th><th>برد</th><th>میانگین</th><th>لانگ</th><th>شورت</th><th>جمع</th><th>دلار</th></tr></thead><tbody>'+
+    rows.map(o=>'<tr class="'+(best&&o.n===best.n?'on':'')+'"><td>'+esc(PL[o.n].n)+(best&&o.n===best.n?' ✓':'')+
+      (cur.long===o.n||cur.short===o.n?' <small>(الان '+[cur.long===o.n?'لانگ':'',cur.short===o.n?'شورت':''].filter(Boolean).join('، ')+')</small>':'')+'</td>'+
+      '<td class="num">'+faN(o.c)+(o.op?' <small>(+'+faN(o.op)+' باز)</small>':'')+'</td><td class="num">'+faN(Math.round(o.w/o.c*100))+'٪</td>'+
+      cell(av(o.r,o.c))+cell(av(o.L[0],o.L[1]))+cell(av(o.S[0],o.S[1]))+cell(o.r)+'<td class="num '+cls(o.u)+'"><bdi>'+fmtUsd(o.u)+'</bdi></td></tr>').join('')+'</tbody></table></div>'+
+    '<div class="hint">هر ردیف: اگر همه‌ی همین تست‌ها با آن نقشه خارج می‌شدند، روی مسیر واقعی قیمت (کندل 5 دقیقه‌ای، بعد از کارمزد). ✓ بهترین میانگین (دست‌کم 5 معامله). '+
+    'این روی تست‌های خودت است؛ «کارنامه» همین را روی 4 ماه گذشته می‌سنجد. وقتی دو تا با هم نمی‌خوانند، یعنی بازار این روزها با میانگین آن 4 ماه فرق دارد.</div>';
 }
 /* آمار مسیر: کندلِ خودِ ورود حساب نمی‌شود (مثل دنبال کردن معامله) */
 function rbPathStats(it,C){
@@ -54,7 +88,7 @@ async function rbLabRun(){
   try{
     for(const it of L){
       if(!(await jobGate('rblab'))){stop=true;break;}
-      try{const C=await rbPath(it);if(C.length)res.push({it,C,st:rbPathStats(it,C)});}catch(e){}
+      try{const C=await rbPath(it);if(C.length)res.push({it,C,st:rbPathStats(it,C),pl:rbAllPlans(it,C)});}catch(e){}
       RBL.done++;rbRepaint();
     }
   }finally{RBL.on=false;jobEnd('rblab');}
@@ -85,19 +119,27 @@ function rbLabHtml(){
     const tot=res.length, hit1=res.filter(x=>x.st.touch[1]!=null).length, hitH=res.filter(x=>x.st.touch[0.5]!=null).length;
     const avgM=res.reduce((a,x)=>a+x.st.mfe,0)/tot, avgRoe=res.reduce((a,x)=>a+x.st.mfe*x.it.sd*x.st.lev*100,0)/tot;
     h+='<div class="rbsum"><b>'+faN(tot)+' معامله</b><span>به +0.5R رسید: '+faN(hitH)+' · به +1R: '+faN(hit1)+'</span><span>میانگین بیشترین سود پیش از استاپ: <b dir="ltr">'+fmtR(avgM)+'</b> (حدود '+faN(Math.round(avgRoe))+'٪ روی مارجین)</span></div>';
+    h+=rbPlansTable(res);
     h+=rbLabTable(res);
     h+='<div class="sechd">هر معامله</div>'+res.slice().sort((a,b)=>b.it.t-a.it.t).slice(0,40).map(x=>{const it=x.it,s=x.st,roe=s.mfe*it.sd*s.lev*100,
       dt=s.tMfe?Math.round((s.tMfe-it.t)/6e4):null;
       return '<div class="glnum rblabr"><b dir="ltr">'+esc(it.tk)+'</b> <span class="pill '+it.dir+'">'+(it.dir==='long'?'لانگ':'شورت')+'</span> '+
         (it.st==='open'?'<span class="pill mut">باز</span>':'<span class="pill '+(it.R>0?'win':'lose')+'">'+RB_ST[it.st]+' <bdi dir="ltr">'+fmtR(it.R)+'</bdi></span>')+
         ' · بیشترین سود پیش از استاپ <b class="'+(s.mfe>0.005?'u':'m')+'" dir="ltr">'+fmtR0(s.mfe)+'</b> ('+faN(Math.round(roe))+'٪ روی مارجین '+faN(s.lev)+'x'+(dt!=null?'، '+faN(Math.floor(dt/60))+':'+String(dt%60).padStart(2,'0')+' بعد از ورود':'')+')'+
-        (s.stopAt?' · <span class="d">استاپ '+faN(Math.round((s.stopAt-it.t)/6e4))+' دقیقه بعد</span>':'')+(s.full?'':' · <small>هنوز 24 ساعت نشده</small>')+'</div>';}).join('');
+        (s.stopAt?' · <span class="d">استاپ '+faN(Math.round((s.stopAt-it.t)/6e4))+' دقیقه بعد</span>':'')+(s.full?'':' · <small>هنوز 24 ساعت نشده</small>')+rbPlRow(x)+'</div>';}).join('');
     h+='<div class="srow"><button class="btn sm" data-rbl="dl">'+ic('down')+'<span>دانلود فایل</span></button><button class="btn sm" data-rbl="copy">'+ic('share')+'<span>کپی متن</span></button></div>'+
       '<div class="hint">فایل همه‌ی عددها و مسیر کامل قیمت هر معامله را دارد؛ برای بررسی دقیق‌تر بفرست.</div>';
   }else if(res)h+='<div class="hint">مسیر قیمت نیامد.</div>';
   return h+'</details>';
 }
 let RBLOPEN=false;
+/* زیر هر معامله: بهترین و بدترین نقشه، و همه با یک زدن */
+function rbPlRow(x){
+  const P=x.pl;if(!P)return '';const PL=rdExPlans(),L=RD_EXN.filter(n=>P[n]).map(n=>[n,P[n]]);if(!L.length)return '';
+  const srt=L.slice().sort((a,b)=>b[1].R-a[1].R),b=srt[0],w=srt[srt.length-1],chip=([n,v])=>'<span class="rbplc '+cls(v.R)+'">'+esc(PL[n].n)+' <bdi dir="ltr">'+fmtR(v.R)+'</bdi>'+(v.st==='open'?' <small>باز</small>':'')+'</span>';
+  return '<details class="rbpl"><summary>در '+faN(L.length)+' نقشه: بهترین '+esc(PL[b[0]].n)+' <bdi dir="ltr" class="'+cls(b[1].R)+'">'+fmtR(b[1].R)+'</bdi> · بدترین '+esc(PL[w[0]].n)+' <bdi dir="ltr" class="'+cls(w[1].R)+'">'+fmtR(w[1].R)+'</bdi></summary>'+
+    '<div class="rbplw">'+srt.map(chip).join('')+'</div></details>';
+}
 /* خروجی: تنظیمات، هر معامله، آمار مسیر و خودِ مسیر (h/l/c نسبت به ورود، ده‌هزارم؛ هر 5 دقیقه) */
 function rbLabExport(){
   const res=RBL.res||[];
@@ -108,10 +150,10 @@ function rbLabExport(){
       span:RD.span?RD.span.map(t=>new Date(t).toISOString()):null,health:H,cap:RD_CAP,capN:RD.capN??null,divs:RD.divs||null,
       calib:Object.fromEntries(Object.entries(RD.calib||{}).filter(([k])=>!/\|/.test(k)||/^base\|/.test(k)||/^(long|short)\|[0-9]/.test(k))),
       weights:{long:W('long'),short:W('short')},drop:{long:M.long&&M.long.drop||null,short:M.short&&M.short.drop||null}},
-    trades:res.map(({it,C,st})=>{const t0=C.length?C[0].t:it.t;
+    trades:res.map(x=>{const {it,C,st}=x,t0=C.length?C[0].t:it.t;
       return {id:it.id,kind:it.k,tk:it.tk,dir:it.dir,t:new Date(it.t).toISOString(),E:it.E,SL:it.SL,sd:+it.sd.toFixed(5),rr:it.rr,ex:it.ex||null,sc:it.sc,stars:it.stars,p:it.p,exp:it.exp,reg:it.reg,
         why:it.why||null,pv:it.pv||null,st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
-        lev:st.lev,usdPerR:+rbUsdR(it).toFixed(3),usd:it.R!=null?+(it.R*rbUsdR(it)).toFixed(2):null,stats:{mfe:+st.mfe.toFixed(3),tMfeMin:st.tMfe?Math.round((st.tMfe-it.t)/6e4):null,mfe24:+st.mfe24.toFixed(3),mae:+st.mae.toFixed(3),
+        lev:st.lev,plans:x.pl?Object.fromEntries(Object.entries(x.pl).map(([n,v])=>[n,v.st==='open'?{R:v.R,open:true}:v.R])):null,usdPerR:+rbUsdR(it).toFixed(3),usd:it.R!=null?+(it.R*rbUsdR(it)).toFixed(2):null,stats:{mfe:+st.mfe.toFixed(3),tMfeMin:st.tMfe?Math.round((st.tMfe-it.t)/6e4):null,mfe24:+st.mfe24.toFixed(3),mae:+st.mae.toFixed(3),
           stopMin:st.stopAt?Math.round((st.stopAt-it.t)/6e4):null,touchMin:Object.fromEntries(Object.entries(st.touch).map(([k,v])=>[k,Math.round((v-it.t)/6e4)])),full:st.full},
         path:{t0:new Date(t0).toISOString(),stepMin:5,unit:'1e-4 of entry',hlc:C.map(k=>[Math.round((k.h/it.E-1)*1e4),Math.round((k.l/it.E-1)*1e4),Math.round((k.c/it.E-1)*1e4)])}};})});
 }

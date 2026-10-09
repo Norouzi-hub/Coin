@@ -12,20 +12,26 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
  await p.addInitScript(seed);await p.goto('http://localhost:8899/index.html');await p.waitForTimeout(2500);
  const r=await p.evaluate(async T0=>{
-   RB.items=[{id:'L1',k:'test',tk:'LAB',dir:'long',t:T0,E:100,SL:98,TP:103,sd:0.02,rr:1.5,st:'sl',R:-1.1,xt:T0+3*36e5,ex:'tp'}];
-   await rbLabRun();const x=RBL.res[0],st=x.st,it=x.it;
+   // L9: ورود 30 ولی کندل‌های LAB حدود 100 = ارز هم‌نامِ دیگر؛ مسیرش پذیرفته نمی‌شود
+   RB.items=[{id:'L1',k:'test',tk:'LAB',dir:'long',t:T0,E:100,SL:98,TP:103,sd:0.02,rr:1.5,st:'sl',R:-1.1,xt:T0+3*36e5,ex:'tp'},
+     {id:'L9',k:'test',tk:'LAB',dir:'long',t:T0,E:30,SL:29.4,TP:30.9,sd:0.02,rr:1.5,st:'sl',R:-1.1,xt:T0+3*36e5,ex:'tp'}];
+   await rbLabRun();const x=RBL.res[0],st=x.st,it=x.it,nres=RBL.res.length,pl=x.pl;
    const s1=rbThSim(it,x.C,1),s2=rbThSim(it,x.C,2);
    RDV='test';RBLOPEN=true;go('radar',true);renderAll();
    const G=document.getElementById('rdView'),lab=(G.querySelector('.rblabw')||{}).textContent||'';
    const J=JSON.parse(rbLabExport());
-   return {mfe:st.mfe,t:Math.round((st.tMfe-T0)/6e4),stop:Math.round((st.stopAt-T0)/6e4),t1:st.touch[1]!=null,t2:st.touch[2]!=null,full:st.full,lev:st.lev,
-     s1,s2,lab,J:{n:J.trades.length,hlc:J.trades[0].path.hlc.length,max:Math.max(...J.trades[0].path.hlc.map(a=>a[0])),stats:J.trades[0].stats,settings:!!J.settings}};},T0);
+   const plt=(G.querySelector('.rbpls')||{}).textContent||'',plr=(G.querySelector('.rbpl summary')||{}).textContent||'';
+   return {nres,pl,plt,plr,mfe:st.mfe,t:Math.round((st.tMfe-T0)/6e4),stop:Math.round((st.stopAt-T0)/6e4),t1:st.touch[1]!=null,t2:st.touch[2]!=null,full:st.full,lev:st.lev,
+     s1,s2,lab,J:{pl:!!(J.trades[0].plans&&J.trades[0].plans.q05!=null),n:J.trades.length,hlc:J.trades[0].path.hlc.length,max:Math.max(...J.trades[0].path.hlc.map(a=>a[0])),stats:J.trades[0].stats,settings:!!J.settings}};},T0);
  console.log('   ',JSON.stringify(Object.assign({},r,{lab:r.lab.slice(0,300)})));
+ ok(r.nres===1,'تستی که کندلش از ارز هم‌نامِ دیگری است (قیمت سه برابر) کنار رفت');
+ ok(r.pl&&r.pl.q05.R>0.4&&r.pl.q1.R>0.9&&r.pl.tp.R>1.4&&r.pl.q03.R>0.2&&r.pl.lad.st==='be'&&r.pl.t1h.st==='time','همه‌ی نقشه‌ها روی مسیر واقعی همین تست: +0.3R، +0.5R، +1R و +1.5R خوردند؛ پله‌ای بعد از نصف در +1R روی ورود بسته شد؛ «بعد از 1 ساعت» خروج زمانی');
+ ok(/همه‌ی نقشه‌های خروج روی همین تست‌ها/.test(r.lab)&&/لانگ/.test(r.plt)&&/بهترین/.test(r.plr)&&/بدترین/.test(r.plr),'جدول «همه‌ی نقشه‌ها» و بهترین/بدترین زیر هر معامله');
  ok(Math.abs(r.mfe-1.5)<0.01&&Math.abs(r.t-60)<=5&&r.stop>=150&&r.stop<=160,'بیشترین سود پیش از استاپ +1.5R در دقیقه‌ی ~60؛ استاپ ~دقیقه‌ی 155');
  ok(r.t1&&!r.t2&&r.full,'به +1R رسید، به +2R نه؛ 24 ساعت کامل');
  ok(r.s1.how==='th'&&r.s1.R>0.8&&r.s2.how==='sl','خروج سریع در +1R ← برد؛ آستانه‌ی +2R ← استاپ');
  ok(/اگر خارج می‌شدیم در/.test(r.lab)&&/5٪ سود روی مارجین/.test(r.lab)&&/نقشه‌ی فعلی/.test(r.lab)&&/بیشترین سود پیش از استاپ/.test(r.lab),'جدول آستانه‌ها و فهرست معامله‌ها');
- ok(r.J.n===1&&r.J.hlc>=280&&r.J.max===300&&r.J.stats.mfe===1.5&&r.J.settings,'خروجی JSON: مسیر کامل (ده‌هزارم ورود؛ اوج +3٪) و آمار');
+ ok(r.J.pl&&r.J.n===1&&r.J.hlc>=280&&r.J.max===300&&r.J.stats.mfe===1.5&&r.J.settings,'خروجی JSON: مسیر کامل (ده‌هزارم ورود؛ اوج +3٪) و آمار');
  await p.evaluate(()=>document.querySelector('#rdView [data-rbl="dl"]').click());await p.waitForSelector('#sheet #exDl',{timeout:5000});
  const sht=await p.evaluate(()=>({t:document.getElementById('sheet').textContent,v:document.getElementById('exTx').value.length}));
  ok(/خروجی برای بررسی آماده است/.test(sht.t)&&/کپی متن/.test(sht.t)&&sht.v>1000,'«خروجی برای بررسی» ← ورق آماده با دانلود، کپی و متن کامل ('+sht.v+' نویسه)');
