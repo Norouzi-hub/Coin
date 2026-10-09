@@ -109,6 +109,13 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(t.more&&/^4 ارز/.test(t.cnt)&&t.tabs==='سیگنال‌ها,آزمایشی,کارنامه,دفتر','دکمه‌ی «10 ارز بعدی» و چهار زیرتب (سیگنال‌ها، آزمایشی، کارنامه، دفتر)');
  await p.evaluate(()=>document.querySelector('#rdView .rdit[data-rd="RDB"] [data-a="iso"]').click());await p.waitForTimeout(600);
  ok(await p.evaluate(()=>/RDB/.test(document.querySelector('#sheet').textContent)&&+document.querySelector('#f_e').value===11),'«ایزوله» فرم ورود RDB را باز کرد');
+ // سبک‌های خروج در فرم ورود: سه تارگت (اولی همان نقشه‌ی رادار)، هر سبک عدد خودش
+ const pbx=await p.evaluate(()=>{const out=[];const labs=[...document.querySelectorAll('#sheet #pbBox .pbc')].map(b=>b.textContent);
+   for(const lab of labs){const b=[...document.querySelectorAll('#sheet #pbBox .pbc')].find(x=>x.textContent===lab);if(!b)continue;b.click();
+     const box=document.querySelector('#sheet #pbBox');out.push(lab+'='+box.querySelectorAll('.pbsteps li').length+':'+((box.querySelector('.hint')||{}).textContent||'').replace(/[^0-9.R$+]/g,''));}
+   return {out,tg:[...document.querySelectorAll('#sheet #pbBox .pbsteps li b')].length};});
+ console.log('   ',JSON.stringify(pbx));
+ ok(pbx.out.length>=5&&new Set(pbx.out.map(x=>x.split('=')[1])).size>=4,'فرم ورود: هر سبک خروج نقشه و سود خودش را دارد ('+pbx.out.length+' سبک، '+new Set(pbx.out.map(x=>x.split('=')[1])).size+' نتیجه‌ی جدا)');
  await p.evaluate(()=>closeSheet());await p.waitForTimeout(400);
  const u=await p.evaluate(()=>{RDCAP={at:Date.now(),list:['BTC','USDT','ETH','USDC','STETH','XRP','WBTC','SOL','BNB','FDUSD','DOGE']};return rdUniverse(5).join(',');});
  ok(u==='BTC,ETH,XRP,SOL,BNB','فهرست ارزها بی استیبل و توکن‌های بسته‌بندی‌شده: '+u);

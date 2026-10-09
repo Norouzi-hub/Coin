@@ -1205,7 +1205,11 @@ function paintRadar(g){
       if(b.dataset.a==='iso'){const z=isoSize(x.pl.E,x.pl.SL),ex=rbExEff(x.dir),sg=asSig(k);
         // نقشه‌ی خروج رادار روی پوزیشن واقعی: تارگت‌ها به واحد R و سبک خروج هم‌ارز
         // (lad/trl: پله‌های +1R/+2R/+3R با سیو سود؛ q05: همه در +0.5R؛ h05: نصف در +0.5R و باقی در +1.5R؛ t1h: بستن خودکار بعد از 1 ساعت)
-        const sn=x.dir==='long'?1:-1,tR=r=>+(x.pl.E*(1+sn*x.pl.sd*r)).toPrecision(8),M={lad:[[1,2,3],'rd'],trl:[[1,2,3],'rd'],q03:[[0.3],'s1'],q05:[[0.5],'s1'],q075:[[0.75],'s1'],q1:[[1],'s1'],q05c:[[0.5],'s1'],sar:[[0.5,1.5],'bal'],h05:[[0.5,1.5],'bal']}[ex];
+        // همیشه سه تارگت: تارگت اول همان نقشه‌ی رادار است و سبک انتخاب‌شده همان را اجرا می‌کند؛ دو تارگت بعدی
+        // برای سبک‌های دیگر («همه در تارگت 2»، «متعادل»، «پله‌ای») است تا هر کدام عدد خودش را بدهد (با یک تارگت همه یکی می‌شدند)
+        const sn=x.dir==='long'?1:-1,tR=r=>+(x.pl.E*(1+sn*x.pl.sd*r)).toPrecision(8),
+          M={tp:[[1.5,3,5],'s1'],lad:[[1,2,3],'rd'],trl:[[1,2,3],'rd'],q03:[[0.3,0.6,1],'s1'],q05:[[0.5,1,1.5],'s1'],q075:[[0.75,1.5,2.25],'s1'],q1:[[1,2,3],'s1'],
+            q05c:[[0.5,1,1.5],'s1'],sar:[[0.5,1.5,2.5],'bal'],h05:[[0.5,1.5,2.5],'bal'],t1h:[[0.5,1,1.5],'s1']}[ex];
         if(M)sg.targets=M[0].map(tR);
         sheetEnter(p,sg,{stop:x.pl.SL,lev:z?z.lev:null,amt:z?z.margin:null,market:'futures'},PRICES.get(x.tk)||x.pl.E,
           {iso:true,untilAuto:true,pb:M?M[1]:'s1',note:(rdFees().lm?'ورود Limit · ':'')+'رادار بازار · امتیاز '+x.sc+(x.stars?' · '+x.stars+'★':'')+(ex!=='tp'?' · خروج: '+rdExPlans()[ex].n:''),until:Date.now()+(ex==='t1h'?1:AS_HOLD)*36e5});}
