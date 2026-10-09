@@ -196,6 +196,14 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(cst.c&&cst.c.n>0&&cst.c.avg>0&&cst.c.avg<cst.c.mkt&&cst.c.mkt<cst.c.old&&cst.cs&&/هزینه‌ی هر معامله/.test(cst.t)&&/Limit/.test(cst.t),'«کارنامه»: هزینه‌ی میانگین هر معامله با Limit کمتر از Market و هر دو کمتر از روش قبلی');
  ok(RD_EXN_OK(full),'سه نقشه‌ی خروج بیرون از یادگیری سنجیده شد؛ بهترین: '+full.exP);
  ok(full.exD&&full.exDok,'نقشه‌ی خروج برای هر جهت جدا: بهترینِ همان جهت (لانگ '+(full.exD&&full.exD.long)+'، شورت '+(full.exD&&full.exD.short)+')');
+ // ثبات نقشه‌ی خروج: نقشه‌ی قبلی می‌ماند مگر تازه دست‌کم RD_EXSW بهتر (و کران پایین نه بدتر) باشد
+ const hy=await p.evaluate(async()=>{const d='long',E=RD.exs,av=n=>E[n][d].r/E[n][d].n;
+   const L=RD_EXN.filter(n=>E[n][d]&&E[n][d].n>=30).sort((a,b)=>av(b)-av(a)),best=L[0],sh=RD.exD.short;
+   const rule=pv=>(av(best)-av(pv)>=RD_EXSW&&E[best][d].lb>=E[pv][d].lb)?best:pv,out=[];
+   for(const pv of [L[1],L[L.length-1]]){RD.exD={long:pv,short:sh};await rdModel();out.push({pv,got:RD.exD.long,want:rule(pv),hold:!!(RD.exHold&&RD.exHold.long)});}
+   return {best,out};});
+ console.log('   ',JSON.stringify(hy));
+ ok(hy.out.every(o=>o.got===o.want&&o.hold===(o.got!==hy.best)),'ثبات نقشه‌ی خروج: نقشه‌ی قبلی ماند مگر تازه دست‌کم +0.03R بهتر بود ('+hy.out.map(o=>o.pv+'→'+o.got).join('، ')+')');
  ok(full.M&&full.cal>0&&full.rel&&full.pan,'مدل لانگ و شورت، کارنامه، صداقت مدل و پنل ساخته شد');
  ok(full.eth&&full.eth.fund!=null&&full.solfund==null,'تاریخچه‌ی فاندینگ: ETH دارد، SOL (بی فیوچرز) ندارد');
  ok(full.eth&&full.eth.flow&&full.eth.wl>50&&full.sol===false&&full.nflow===2,'ETH با داده‌ی نهنگ/مردم؛ SOL بی فیوچرز');
@@ -208,7 +216,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(mk2.r&&Math.abs(mk2.r.t3[0]-3.2e12*(1-0.575-0.121))<1e6&&mk2.r.bd[1]>0.3&&mk2.r.ud[1]>0.1&&mk2.r.t3[1]<mk2.r.tot[1],'TOTAL3 = بی BTC و ETH؛ دامیننس بیت‌کوین و تتر بالا رفت، آلت‌ها ضعیف‌تر');
  ok(mk2.tiles.length===6&&/TOTAL3/.test(mk2.tiles.join())&&/USDT\.D/.test(mk2.tiles.join())&&/\$3\.20T/.test(mk2.tiles[0])&&/57\.50%/.test(mk2.tiles[3])&&mk2.now,'شش کارت جدا: TOTAL، TOTAL2، TOTAL3، BTC.D، USDT.D، ETH.D (در «بازار» و «الان چه کنم؟»)');
  ok(mk2.flags.some(x=>/پول به تتر فرار/.test(x))&&mk2.flags.some(x=>/روز آلت‌کوین نیست/.test(x)),'خوانش: فرار به تتر و ضعف آلت‌ها');
- ok(mk2.mf>2000&&mk2.w===mk2.nF+1&&mk2.last&&Math.abs(mk2.last.tot/3.2e12-1)<0.001&&Math.abs(mk2.last.bd-57.5)<0.01&&mk2.last.n>40&&mk2.mrow.length===7,'تاریخچه‌ی ساعتی کل بازار بازسازی شد ('+mk2.mf+' ساعت)، ساعت آخر = CoinGecko؛ 7 عامل بازار (با پهنای RSI و MACD) در مدل');
+ ok(mk2.mf>2000&&mk2.w===mk2.nF+1&&mk2.last&&Math.abs(mk2.last.tot/3.2e12-1)<0.001&&Math.abs(mk2.last.bd-57.5)<0.01&&mk2.last.n>40&&mk2.mrow.length===6,'تاریخچه‌ی ساعتی کل بازار بازسازی شد ('+mk2.mf+' ساعت)، ساعت آخر = CoinGecko؛ 6 عامل بازار (با پهنای MACD) در مدل');
  // واگرایی 1 ساعته: کف پایین‌تر با RSI بالاتر = مثبت؛ شکسته شدن کف یا RSI پایین‌تر = هیچ
  const dv=await p.evaluate(()=>{const mk=(brk)=>Array.from({length:60},(_,q)=>{const l=Math.min(10+0.1*Math.abs(q-30),9.5+0.1*Math.abs(q-50))-(brk&&q===54?1:0);return {t:q*36e5,o:l+0.5,h:l+1,l,c:l+0.5};});
    const o=Array.from({length:60},()=>50);o[30]=25;o[50]=35;const o2=o.slice();o2[50]=20;
