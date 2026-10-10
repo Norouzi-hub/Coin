@@ -13,7 +13,8 @@ function dataCounts(d){
   return [['پوزیشن',n(d.positions)+n(d.spot)],['تصمیم',n(d.decisions)],['آموزش',n(d.lessons)],
           ['از این‌ها اسپات',spots],['منتظر',n(d.pending)],
           ['آرشیو',n(d.archived)],['نتایج',n(d.results)],['اصلاح دستی',n(d.overrides)],
-          ['ویرایشِ کانال',n(d.edits)],['حذفِ کانال',n(d.gone)],['برگشته از قدیمی',n(d.revived)]];
+          ['ویرایشِ کانال',n(d.edits)],['حذفِ کانال',n(d.gone)],['برگشته از قدیمی',n(d.revived)],
+          ['تست بازار',d.rdbook&&Array.isArray(d.rdbook.items)?d.rdbook.items.filter(x=>x&&x.k==='test').length:0]];
 }
 function applyBackup(d){
   DB.positions=(d.positions||[]).map(ensureBase);
@@ -21,12 +22,15 @@ function applyBackup(d){
   fillDB(d);repairBase();
   OVERRIDE=DB.overrides; PCACHE.clear();
   if(d.settings&&typeof d.settings==='object'){Object.assign(S,d.settings);fixFeat();}
+  // تست‌های بازار: پشتیبان‌های قدیمی ندارندشان؛ آن وقت تست‌های همین دستگاه می‌مانند
+  if(d.rdbook&&Array.isArray(d.rdbook.items)){RB={items:d.rdbook.items.filter(x=>x&&x.id&&x.tk)};RBLC.clear();rbSave();}
   applySettingsToForm();readSettings();
   save();renderAll();
   migrateSpot();
 }
 function sheetRestore(d,name){
-  const mine=dataCounts(dbBlob()), file=dataCounts(d);
+  const mine=dataCounts(Object.assign({},dbBlob(),{rdbook:RB})), file=dataCounts(d);
+  if(!d.rdbook)file[file.length-1][1]=mine[mine.length-1][1];   // فایل قدیمی تست ندارد: تست‌های این دستگاه می‌مانند
   const when=d.exportedAt?jStampFa(new Date(d.exportedAt)):'نامعلوم';
   const rows=file.map(([l,v],i)=>{
     const m=mine[i][1], diff=v!==m;
@@ -68,7 +72,7 @@ function wireIO(){
     const now=new Date(), hh=String(now.getHours()).padStart(2,'0'),
           mm=String(now.getMinutes()).padStart(2,'0');
     dl('signal-desk-'+jKey(now)+'-'+hh+mm+'.json',
-      JSON.stringify(Object.assign({v:5,exportedAt:Date.now()},dbBlob(),{settings:S}),null,2));
+      JSON.stringify(Object.assign({v:5,exportedAt:Date.now()},dbBlob(),{settings:S,rdbook:RB}),null,2));
     bkMark();
     toast('پشتیبان گرفته شد','ok');
   };

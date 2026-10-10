@@ -1790,3 +1790,20 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .rbplc{font-size:11.5px;padding:3px 8px;border-radius:999px;background:var(--inset);border:1px solid var(--line);color:var(--tx2)}
 .rbplc.u{color:var(--up)}.rbplc.d{color:var(--dn)}
 .rbpls td:first-child{white-space:normal;min-width:120px}
+/* آزمایشی: تازه‌ها، آرشیو روزانه، «اگر نگه داشته بودیم» */
+.pill.nw{background:color-mix(in srgb,var(--acc) 22%,transparent);color:var(--acc);border-color:color-mix(in srgb,var(--acc) 45%,transparent);font-weight:800}
+.rbrow.nw{border-color:color-mix(in srgb,var(--acc) 55%,transparent);border-inline-start:3px solid var(--acc)}
+.rbrow.flash{animation:flashc 1.6s var(--ease)}
+.rbnew{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;padding:8px 10px;border-radius:12px;background:color-mix(in srgb,var(--acc) 10%,var(--inset));border:1px solid color-mix(in srgb,var(--acc) 35%,transparent)}
+.rbnew svg{flex:none;width:16px;height:16px;color:var(--acc);margin-top:2px}
+.rbday{border:1px solid var(--line);border-radius:12px;background:var(--card);margin:6px 0}
+.rbday>summary{display:flex;flex-wrap:wrap;gap:2px 10px;justify-content:space-between;padding:8px 10px;cursor:pointer;font-size:12.5px}
+.rbday>summary small{color:var(--tx3)}.rbday[open]>summary{border-bottom:1px solid var(--line)}
+.rbday>.rbrow{margin:6px 8px}
+.rbhold{display:flex;flex-direction:column;gap:2px;font-size:12.5px;padding:6px 8px;border-radius:10px;border:1px dashed var(--line);background:var(--card)}
+.rbhold small{color:var(--tx3)}
+.rbdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--acc);margin-inline-start:4px;vertical-align:middle}
+.rdit.nw{border-inline-start:3px solid var(--acc)}
+.rdit.taken{border-inline-start:3px solid var(--gold)}
+.rdage{color:var(--tx3);font-size:11px}
+.rdtk1 svg{width:12px;height:12px;vertical-align:-2px}

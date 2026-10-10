@@ -458,8 +458,9 @@ function shTextsWire(paint,d){
   const t=$('#t_title');if(t&&d){t.value=d.titleOv||'';t.oninput=()=>{d.titleOv=t.value;paint();};}
   const dt=$('#o_dt');if(dt){dt.checked=shareOpt.dates!==false;dt.onchange=()=>{shareOpt.dates=dt.checked;shareSave();paint();};}
 }
-function sheetShare(p){
-  const d=shareDataOf(p);
+/* dIn: داده‌ی آماده (مثلاً تست بازار) به جای پوزیشن */
+function sheetShare(p,dIn){
+  const d=dIn||shareDataOf(p);
   openSheet(
    '<h3>تصویر نتیجه · '+esc(d.ticker||'')+'</h3>'+
    '<div class="sub">یک تصویر آماده برای فرستادن. فقط همین اعداد رویش می‌رود — '+

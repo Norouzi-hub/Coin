@@ -190,6 +190,60 @@ async function rbCatchUp(force){
     try{advise('rbaway:'+Date.now(),{cat:'pos',pri:'mid',title:msg})||toast(msg,'info');}catch(e){toast(msg,'info');}}
 }
 const RB_ST={tp:'هدف',sl:'استاپ',be:'ریسک‌فری',trail:'استاپ متحرک',time:'24 ساعت',man:'دستی',open:'باز'};
+/* سر زدن به «آزمایشی»: تستی که از آخرین بار تازه باز یا بسته شده، نشان «تازه» می‌گیرد.
+   زمان آخرین سر زدن موقع رفتن از این صفحه (یا پنهان شدن برنامه) ذخیره می‌شود؛ تا وقتی این‌جایی، نشان‌ها می‌مانند. */
+const RBSEEN_KEY='signaldesk.rbseen', RBVIS={on:false,prev:0};
+const rbSeen=()=>{try{return +localStorage.getItem(RBSEEN_KEY)||0;}catch(e){return 0;}};
+const rbSeenSet=()=>{try{localStorage.setItem(RBSEEN_KEY,String(Date.now()));}catch(e){}};
+function rbEnter(){if(RBVIS.on||view!=='radar')return;RBVIS.on=true;RBVIS.prev=rbSeen();rbSeenSet();}
+function rbLeave(){if(!RBVIS.on)return;RBVIS.on=false;rbSeenSet();}
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&RBVIS.on)rbSeenSet();});
+/* 'closed' = از آخرین سر زدن بسته شده؛ 'opened' = از آخرین سر زدن باز شده؛ بار اول هیچ‌کدام تازه نیست */
+const rbNewOf=it=>{const s=RBVIS.on?RBVIS.prev:rbSeen();if(!(s>0))return null;
+  return it.st!=='open'?(it.xt>s?'closed':null):(it.t>s?'opened':null);};
+const rbNewN=()=>{const s=rbSeen();return s>0?RB.items.filter(it=>it.k==='test'&&(it.st!=='open'?it.xt>s:it.t>s)).length:0;};
+/* «اگر نگه داشته بودیم»: از لحظه‌ی ورود تا الان با کندل یک‌ساعته، بی هدف و بی سیو سود.
+   الان، بهترین و بدترین جا، و این‌که استاپ اول کِی می‌خورد. فقط با درخواست؛ نتیجه تا بستن برنامه می‌ماند. */
+const RBHOLD=new Map();
+async function rbHoldCalc(it){
+  const H=36e5, h0=Math.floor(it.t/H)*H, hrs=Math.ceil((Date.now()-h0)/H)+1;
+  // بیش از 40 روز: کندل 4 ساعته نداریم، پس فقط 1000 ساعت آخر (بهترین/بدترین از همان)
+  const from=hrs>1000?Math.floor((Date.now()-999*H)/H)*H:h0;
+  const C=await audCandles(it.tk,'1h',from,1000,true,hrs>1000?null:it.E);
+  const L=C.filter(k=>k.t>=h0+H);           // کندلِ ساعتِ ورود بخشی از قبل از ورود را دارد
+  const px=PRICES.get(it.tk)>0?PRICES.get(it.tk):(C.length?C[C.length-1].c:null);if(!(px>0))throw new Error('nopx');
+  const s=it.dir==='long'?1:-1;let best=-Infinity,worst=Infinity,bt=null,wt=null,stopAt=null;
+  for(const k of L){const f=rbRof(it,s>0?k.h:k.l),a=rbRof(it,s>0?k.l:k.h);
+    if(f>best){best=f;bt=k.t;}if(a<worst){worst=a;wt=k.t;}
+    if(stopAt==null&&a<=-1)stopAt=k.t;}
+  const c=exCost({tpf:0},it.sd);
+  const o={at:Date.now(),px,r:+(rbRof(it,px)-c).toFixed(3),best:isFinite(best)?+(best-c).toFixed(3):null,worst:isFinite(worst)?+(worst-c).toFixed(3):null,bt,wt,stopAt,part:hrs>1000};
+  RBHOLD.set(it.id,o);return o;
+}
+function rbHoldHtml(it){const o=RBHOLD.get(it.id);if(!o)return '';
+  const act=it.st!=='open'?it.R:null, d=act!=null?o.r-act:null, hrs=t=>faN(Math.max(0,Math.round((t-it.t)/36e5)))+' ساعت بعد از ورود';
+  return '<div class="rbhold"><div><b>اگر نگه داشته بودیم</b> <small>(بی هدف و بی سیو سود، قیمت الان <b dir="ltr">'+fmtPrice(o.px)+'</b>، '+ageTxt(o.at)+')</small></div>'+
+    '<div>الان: '+rbMoney(o.r,it)+(d!=null?' · نسبت به نتیجه‌ی واقعی <b class="'+cls(d)+'" dir="ltr">'+fmtR(d)+'</b> <small>('+(d>0.05?'نگه داشتن بهتر بود':d<-0.05?'بستن بهتر بود':'فرقی نکرد')+')</small>':'')+'</div>'+
+    (o.best!=null?'<div class="glnum">بهترین جا <b class="'+cls(o.best)+'" dir="ltr">'+fmtR(o.best)+'</b> <small dir="ltr">'+fmtUsd(o.best*rbUsdR(it))+'</small> ('+hrs(o.bt)+') · بدترین <b class="'+cls(o.worst)+'" dir="ltr">'+fmtR(o.worst)+'</b> <small dir="ltr">'+fmtUsd(o.worst*rbUsdR(it))+'</small> ('+hrs(o.wt)+')</div>':'')+
+    '<div class="glnum">'+(o.stopAt?'با همان استاپ اول، '+hrs(o.stopAt)+' استاپ می‌خورد (−1R).':'استاپ اول تا الان نخورده.')+(o.part?' <small>(فقط 1000 ساعت آخر دیده شد)</small>':'')+'</div></div>';}
+/* داده‌ی کارت تصویری (همان کارت پوزیشن‌های واقعی) برای یک تست */
+function rbShareData(it){
+  const open=it.st==='open',px=PRICES.get(it.tk), R=open?(px>0?rbLiveR(it,px):0):it.R||0;
+  return {ticker:it.tk,spot:false,dir:it.dir,lev:rbLev(it),open,roi:rbRoe(it,R),pnl:R*rbUsdR(it),r:R,entry:it.E,exit:open?(px>0?px:null):it.xp,stop:it.SL,
+    since:open?Date.now():it.xt,openedAt:it.t,closedAt:open?null:it.xt,title:open?'تست باز':'تست بسته شد · '+RB_ST[it.st]};
+}
+/* آرشیو روزانه‌ی بسته‌ها: هر روز یک بخش تاشو با جمع همان روز؛ روز آخر و روزهایی که تست تازه دارند باز */
+const RBDAY=new Map();
+function rbArchHtml(done){
+  const G=new Map();for(const it of done){const k=dayNo(new Date(it.xt));if(!G.has(k))G.set(k,[]);G.get(k).push(it);}
+  let h='<div class="sechd">آرشیو بسته‌ها ('+faN(done.length)+' تست در '+faN(G.size)+' روز)</div>',first=true;
+  for(const [k,L] of G){const dl=dayLabel(new Date(L[0].xt)),o=rbSumOf(L),nw=L.filter(rbNewOf).length,
+      op=RBDAY.has(k)?RBDAY.get(k):(first||nw>0);first=false;
+    h+='<details class="rbday"'+(op?' open':'')+' data-day="'+k+'"><summary><span class="rbdl"><b>'+esc(dl.rel)+'</b> <small>'+esc(dl.wd+' '+dl.date)+'</small>'+(nw?' <span class="pill nw">'+faN(nw)+' تازه</span>':'')+'</span>'+
+      '<span class="rbds">'+faN(o.n)+' تست · '+faN(o.w)+' برد ('+faN(Math.round(o.w/o.n*100))+'٪) · <b class="'+cls(o.r)+'" dir="ltr">'+fmtR(o.r)+'</b> · <b class="'+cls(o.r)+'" dir="ltr">'+fmtUsd(rbUsd(L))+'</b></span></summary>'+
+      (op?L.map(it=>rbRowHtml(it,true)).join(''):'')+'</details>';}
+  return h;
+}
 function rbSumOf(L){const n=L.length,w=L.filter(x=>x.R>0).length,r=L.reduce((s,x)=>s+x.R,0);return {n,w,r};}
 function rbSumHtml(L,label){const o=rbSumOf(L);if(!o.n)return '';
   return '<div class="rbsum"><b>'+label+'</b><span>'+faN(o.n)+' بسته · '+faN(o.w)+' برد ('+faN(Math.round(o.w/o.n*100))+'٪)</span><span>جمع <b class="'+cls(o.r)+'" dir="ltr">'+fmtR(o.r)+'</b> · میانگین <b class="'+cls(o.r/o.n)+'" dir="ltr">'+fmtR(o.r/o.n)+'</b>'+
@@ -223,25 +277,40 @@ function rbSizeHtml(){
     'مارجین خالی یعنی روش قبلی: هر معامله ریسک ثابت '+fmtUsd(riskUsd())+'.</div></details>';
 }
 let RBSZOPEN=false;
+/* کِی باز و بسته شد و چقدر طول کشید: «ساعت 14:20 تا 18:05 (3 ساعت و 45 دقیقه)» */
+function rbTimeTxt(it){const hm=t=>{const d=new Date(t);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+  const m=Math.max(0,Math.round((it.xt-it.t)/60000)),dur=m<60?faN(m)+' دقیقه':faN(Math.floor(m/60))+' ساعت'+(m%60?' و '+faN(m%60)+' دقیقه':'');
+  return '<span dir="ltr">'+hm(it.t)+'</span> تا <span dir="ltr">'+hm(it.xt)+'</span> ('+dur+')';}
 function rbRowHtml(it,live){
   const px=PRICES.get(it.tk), lr=it.st==='open'&&px>0?rbLiveR(it,px):null, x=it.x;
   const left=it.st==='open'?Math.max(0,it.t+AS_HOLD*36e5-Date.now()):0;
   const stopNow=it.st==='open'&&x&&x.stop>-1?(x.stop===0?'ورود (ریسک‌فری)':'<b dir="ltr">'+fmtPrice(rbPx(it,x.stop))+'</b> <small dir="ltr">(+'+fmtNum(x.stop)+'R)</small>'):null;
-  return '<div class="rbrow" data-id="'+esc(it.id)+'"><div class="rbh"><b dir="ltr">'+esc(it.tk)+'</b><span class="pill '+it.dir+'">'+(it.dir==='long'?'لانگ':'شورت')+'</span>'+
+  const nw=it.k==='test'&&rbNewOf(it);
+  return '<div class="rbrow'+(nw?' nw':'')+'" data-id="'+esc(it.id)+'"><div class="rbh">'+(nw?'<span class="pill nw" title="'+(nw==='closed'?'از آخرین سر زدن بسته شده':'از آخرین سر زدن باز شده')+'">'+(nw==='closed'?'تازه بسته شد':'تازه')+'</span>':'')+
+    '<b dir="ltr">'+esc(it.tk)+'</b><span class="pill '+it.dir+'">'+(it.dir==='long'?'لانگ':'شورت')+'</span>'+
     (it.sc!=null?'<small>امتیاز '+faN(it.sc)+(it.stars?' · '+faN(it.stars)+'★':'')+'</small>':'')+
     (it.st==='open'?'<span class="pill '+(x&&x.k?'win':'mut')+'">'+(x&&x.k?'سیو شد '+faN(Math.round((1-x.rem)*100))+'٪':it.be?'ریسک‌فری':'باز')+'</span>'+(lr!=null?rbMoney(lr,it):''):
       '<span class="pill '+(it.R>0?'win':'lose')+'">'+RB_ST[it.st]+'</span>'+rbMoney(it.R,it))+'</div>'+
     (it.st==='open'&&x&&x.k?'<div class="glnum">سیو شده: <b class="u" dir="ltr">'+fmtR(x.acc)+'</b> · <b class="u" dir="ltr">'+fmtUsd(x.acc*rbUsdR(it))+'</b> (روی '+faN(Math.round((1-x.rem)*100))+'٪ حجم)</div>':'')+
     '<div class="glnum">ورود <b dir="ltr">'+fmtPrice(it.E)+'</b> · استاپ اول <b dir="ltr">'+fmtPrice(it.SL)+'</b>'+(stopNow&&x.stop>-1?' · استاپ الان '+stopNow:'')+
-      (it.st==='open'?(px>0?' · الان <b dir="ltr">'+fmtPrice(px)+'</b>':'')+' · '+faN(Math.ceil(left/36e5))+' ساعت مانده':' · '+ageTxt(it.xt))+'</div>'+
+      (it.st==='open'?(px>0?' · الان <b dir="ltr">'+fmtPrice(px)+'</b>':'')+' · '+faN(Math.ceil(left/36e5))+' ساعت مانده':' · خروج <b dir="ltr">'+fmtPrice(it.xp)+'</b> · '+rbTimeTxt(it))+'</div>'+
     (x?'<div class="glnum rbplan">'+rbPlanTxt(it)+'</div>':'<div class="glnum">هدف <b dir="ltr">'+fmtPrice(it.TP)+'</b></div>')+
-    (live?'<div class="glact">'+(it.st==='open'?'<button class="btn sm" data-rb="close">'+ic('x')+'<span>بستن با قیمت الان</span></button>':'')+
+    (it.st!=='open'?rbHoldHtml(it):'')+
+    (live?'<div class="glact">'+(it.st==='open'?'<button class="btn sm" data-rb="close">'+ic('x')+'<span>بستن با قیمت الان</span></button>':
+        '<button class="btn sm" data-rb="hold" title="از لحظه‌ی ورود تا الان، اگر نمی‌بستیم">'+ic('clock')+'<span>'+(RBHOLD.has(it.id)?'تازه کن «اگر نگه داشته بودیم»':'اگر نگه داشته بودیم؟')+'</span></button>')+
+      '<button class="btn sm" data-rb="share" title="تصویر نتیجه برای فرستادن">'+ic('share')+'<span>تصویر</span></button>'+
       '<button class="btn sm side" data-rb="del" title="حذف از دفتر">'+ic('trash')+'</button></div>':'')+'</div>';
 }
 function rbHtml(kind){
   const k=kind==='test'?'test':'auto', L=RB.items.filter(it=>it.k===k), open=L.filter(it=>it.st==='open'), done=L.filter(it=>it.st!=='open').sort((a,b)=>b.xt-a.xt);
   let h='';
   if(k==='test'){
+    rbEnter();
+    {const nO=open.filter(rbNewOf),nC=done.filter(rbNewOf);
+      if(nO.length||nC.length){const r=nC.reduce((a,it)=>a+(it.R||0),0);
+        h+='<div class="rbnew">'+ic('bell')+'<span>از آخرین سر زدن ('+ageTxt(RBVIS.prev)+'): '+
+          [nC.length?faN(nC.length)+' تست بسته شد · جمع <b class="'+cls(r)+'" dir="ltr">'+fmtR(r)+'</b> <b class="'+cls(r)+'" dir="ltr">'+fmtUsd(rbUsd(nC))+'</b>':'',nO.length?faN(nO.length)+' تست تازه باز شد':''].filter(Boolean).join(' · ')+
+          '. همه با نشان <span class="pill nw">تازه</span>.</span></div>';}}
     h+=rbSumHtml(done,'نتیجه');
     if(open.length){const px=it=>PRICES.get(it.tk),liv=open.filter(it=>px(it)>0),sum=liv.reduce((a,it)=>a+rbLiveR(it,px(it)),0),usd=rbUsd(liv,it=>rbLiveR(it,px(it))),worst=rbUsd(open,rbStopR);
       h+='<div class="rbsum"><b>بازها الان</b><span>'+faN(open.length)+' معامله · جمع <b class="'+cls(sum)+'" dir="ltr">'+fmtR(sum)+'</b> · به دلار <b class="'+cls(sum)+'" dir="ltr">'+fmtUsd(usd)+'</b></span>'+
@@ -256,11 +325,10 @@ function rbHtml(kind){
     h+='<details class="sec sub2 rbexw"><summary>نقشه‌ی خروج: '+rbExTxt()+(RBEX==='auto'?' (خودکار)':'')+'</summary>'+rbExPicker()+'</details>';
     h+=rbLabHtml();
     if(open.length)h+='<div class="sechd">باز ('+faN(open.length)+')</div>'+open.map(it=>rbRowHtml(it,true)).join('');
-    if(done.length)h+='<div class="sechd">بسته</div>'+done.slice(0,40).map(it=>rbRowHtml(it,true)).join('');
+    if(done.length)h+=rbArchHtml(done);
     if(!L.length)h+='<div class="empty">هنوز معامله‌ی آزمایشی نداری. در «سیگنال‌ها» روی <b>تست</b> هر سیگنال بزن.</div>';
     h+='<div class="hint">معامله‌ی آزمایشی مثل واقعی دنبال می‌شود (پله‌های سیو سود، استاپ، حداکثر 24 ساعت، بعد از کارمزد) ولی پولی در کار نیست و در پوزیشن‌ها و کارنامه‌ی اصلی نمی‌آید؛ حتی وقتی برنامه بسته است با کندل 5 دقیقه‌ای دنبال می‌شود. '+
-      (rbFix()?'دلار با مارجین '+fmtUsd(+S.tMg)+' برای هر تست حساب می‌شود (جعبه‌ی «مبلغ هر تست»). ':'دلار با ریسک هر معامله‌ی تنظیمات ('+fmtUsd(riskUsd())+') حساب می‌شود. ')+'حداکثر '+faN(RD_CAP)+' تست هم‌جهت باز (بیشترش را می‌پرسد).</div>';
-    if(done.length)h+='<div class="glact"><button class="btn sm side" data-rb="clear">'+ic('trash')+'<span>پاک کردن همه‌ی بسته‌ها</span></button></div>';
+      (rbFix()?'دلار با مارجین '+fmtUsd(+S.tMg)+' برای هر تست حساب می‌شود (جعبه‌ی «مبلغ هر تست»). ':'دلار با ریسک هر معامله‌ی تنظیمات ('+fmtUsd(riskUsd())+') حساب می‌شود. ')+'حداکثر '+faN(RD_CAP)+' تست هم‌جهت باز (بیشترش را می‌پرسد). بسته‌ها هیچ‌وقت خودشان پاک نمی‌شوند و در پشتیبان هم می‌آیند.</div>';
     return h;
   }
   h+='<div class="hint">هر پیشنهاد رادار (امتیاز '+faN(RD_MIN)+'+) از لحظه‌ای که نشان داده شد خودش ثبت و دنبال می‌شود؛ برای هر ارز یکی در هر لحظه. این آزمون واقعیِ <b>آینده</b> است: '+
@@ -283,6 +351,8 @@ function rbBind(g){
   g.querySelectorAll('[data-rbex]').forEach(b=>b.onclick=()=>{RBEX=b.dataset.rbex;try{localStorage.setItem('signaldesk.rdex',RBEX);}catch(e){}
     const n=rbReplan(RBEX==='auto'?null:RBEX);paintRadar(g);toast('نقشه‌ی خروج: '+rbExTxt()+(n?' · '+faN(n)+' معامله‌ی باز دوباره حساب می‌شود':''),'ok');});
   {const d=g.querySelector('.rbszw');if(d)d.ontoggle=()=>{RBSZOPEN=d.open;};}
+  // روز بسته‌ای که باز می‌شود تازه ساخته می‌شود (صدها ردیف یک‌جا ساخته نشوند)
+  g.querySelectorAll('.rbday').forEach(d=>d.ontoggle=()=>{const k=+d.dataset.day;RBDAY.set(k,d.open);if(d.open&&!d.querySelector('.rbrow'))paintRadar(g);});
   g.querySelectorAll('[data-rbsz]').forEach(b=>b.onclick=()=>{
     const m=parseFloat(normDig(($('#rbMg')||{}).value||'')),l=parseFloat(normDig(($('#rbLv')||{}).value||''));
     S.tMg=m>0?Math.min(1e6,m):null;S.tLev=l>=1?Math.min(125,Math.round(l)):null;DB.settings=Object.assign({},S);save();
@@ -294,8 +364,9 @@ function rbBind(g){
       askConfirm({title:'بستن همه‌ی تست‌های باز',tone:'info',msg:faN(L.length)+' معامله‌ی آزمایشیِ باز با قیمت الان بسته می‌شود.',ok:'همه را ببند',cancel:'انصراف'}).then(y=>{if(!y)return;
         for(const it of L)rbClose(it,'man',PRICES.get(it.tk));rbSave();paintRadar(g);toast(faN(L.length)+' معامله بسته شد','ok');});return;}
     if(a==='frompos'){sheetRadarToTest(()=>paintRadar(g));return;}
-    if(a==='clear'){const keep=RB.items;RB.items=RB.items.filter(it=>it.k!=='test'||it.st==='open');rbSave();paintRadar(g);toastUndo('بسته‌های آزمایشی پاک شد',()=>{RB.items=keep;rbSave();paintRadar(g);});return;}
     const row=b.closest('[data-id]'), it=row&&RB.items.find(x=>x.id===row.dataset.id);if(!it)return;
+    if(a==='share'){sheetShare(null,rbShareData(it));return;}
+    if(a==='hold'){busyRun(()=>rbHoldCalc(it)).then(()=>paintRadar(g)).catch(()=>toast('کندل‌های '+it.tk+' نیامد؛ کمی بعد دوباره بزن','err'));return;}
     if(a==='close'){const px=PRICES.get(it.tk);if(!(px>0)){toast('قیمت الان معلوم نیست','err');return;}rbClose(it,'man',px);}
     if(a==='del'){const keep=RB.items.slice();RB.items=RB.items.filter(x=>x!==it);rbSave();paintRadar(g);toastUndo('حذف شد',()=>{RB.items=keep;rbSave();paintRadar(g);});return;}
     rbSave();paintRadar(g);});

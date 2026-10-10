@@ -7,6 +7,7 @@ const VIEWS=[['vSignals','signals'],['vRadar','radar'],['vPositions','positions'
 const TAB_OF={report:'more',learn:'more',audit:'more'};
 function go(v,noScroll){
   if(view===v&&noScroll)return;
+  if(v!=='radar')try{rbLeave();}catch(e){}
   view=v;
   document.documentElement.classList.remove('navhide');   // با عوض کردن تب، منو همیشه پیداست
   const tab=TAB_OF[v]||v;

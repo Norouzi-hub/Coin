@@ -135,6 +135,8 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    const H=36e5;
    const i3={id:'tx',k:'test',tk:'XRP',dir:'long',t:t0,E:2,SL:1.95,TP:2.1,sd:0.025,rr:2,be:false,st:'open'};RB.items.push(i3);
    await rbCatchUp(true);
+   // آرشیو روزانه: روزهای قبل بسته‌اند؛ برای شمردن همه باز می‌شوند
+   for(const it of RB.items)if(it.st!=='open')RBDAY.set(dayNo(new Date(it.xt)),true);
    RDV='test';renderRadar();const G=document.getElementById('rdView');
    return {r1,i2:{st:i2.st,R:i2.R},i3:{st:i3.st,R:i3.R,xt:i3.xt-t0},dup,tab,txt:G.textContent,rows:G.querySelectorAll('.rbrow').length};},T30);
  console.log('   ',JSON.stringify(Object.assign({},bk,{txt:bk.txt.slice(0,300)})));

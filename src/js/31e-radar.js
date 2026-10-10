@@ -40,7 +40,9 @@ const RD_FA={t4:'روند 4 ساعته',t1:'روند 1 ساعته',macd:'MACD',r
   mss:'تغییر ساختار (1 ساعته)',cprw:'باریکی CPR',
   mtot:'کل بازار (TOTAL)',mt2:'TOTAL2',mt3:'TOTAL3 (آلت‌ها)',mbd:'دامیننس بیت‌کوین',mud:'دامیننس تتر',mmc:'پهنای بازار: MACD همه‌ی ارزها'};
 const RD_B=['70-85','85-95','95+'];
-const RD_SKIP=/^(USDT|USDC|FDUSD|TUSD|DAI|BUSD|USDP|USDD|USDE|SUSDE|USDS|PYUSD|USD0|USD1|RLUSD|EURC|EURT|PAXG|XAUT|WBTC|WETH|WBETH|STETH|WSTETH|WEETH|CBBTC|BTCB|RETH|METH|LEO|BSC-USD|BFUSD|USDF)$/;
+const RD_SKIP=/^(USDT|USDC|FDUSD|TUSD|DAI|BUSD|USDP|USDD|USDE|SUSDE|USDS|PYUSD|USD0|USD1|RLUSD|EURC|EURT|PAXG|XAUT|WBTC|WETH|WBETH|STETH|WSTETH|WEETH|CBBTC|BTCB|RETH|METH|LEO|BSC-USD|BFUSD|USDF|USDG|USDGO|USDTB|USDX|FRAX|LUSD|GHO|CRVUSD|USR|DEUSD|SUSDS|AUSD|USDA|EURS|BUIDL|USYC|USTB|OUSG)$|^USD[A-Z0-9]{1,3}$|^[A-Z]{1,3}USD$/;
+/* قیمت میخ‌شده: دامنه‌ی 720 بسته‌ی آخر (30 روز ساعتی) زیر 2٪ میانگین */
+const rdPegged=C=>{const L=C.slice(-720).map(k=>k.c).filter(v=>v>0);if(L.length<200)return false;const mx=Math.max(...L),mn=Math.min(...L),m=L.reduce((a,b)=>a+b,0)/L.length;return (mx-mn)/m<0.02;};
 const rdEmpty=()=>({v:5,at:0,n:0,coins:{},calib:{},rel:null,M:null,fund:{},rank:[],reg:null,nflow:0,ns:0});
 let RD=(()=>{const a=lsGet(RD_KEY);return a&&a.v===5?a:rdEmpty();})();
 const RDQ={on:false,done:0,n:0,msg:'',t0:0,tc:0,cur:new Map(),pm:0,fin:false,iv:null};
@@ -489,7 +491,7 @@ const rdFavSave=()=>{try{localStorage.setItem('signaldesk.rdfav',JSON.stringify(
 const rdIsFav=tk=>RDFAV.includes(tk);
 function rdFavToggle(tk){RDFAV=rdIsFav(tk)?RDFAV.filter(x=>x!==tk):RDFAV.concat(tk);rdFavSave();return rdIsFav(tk);}
 /* فهرستِ ارزهایی که رادار دنبال می‌کند (به ترتیب افزودن)؛ نسخه‌ی قبل فقط «n ارز اول» داشت */
-const rdListOf=()=>Array.isArray(RD.list)&&RD.list.length?RD.list:rdUniverse(Math.max(RD.n||0,RD_STEP));
+const rdListOf=()=>Array.isArray(RD.list)&&RD.list.length?RD.list.filter(t=>!RD_SKIP.test(t)):rdUniverse(Math.max(RD.n||0,RD_STEP));
 /* «20-40»، «200 تا 231»، یا نمادها «ETH, SOL pepe» ← فهرست نمادها */
 function rdParsePick(txt){
   const t=normDig(String(txt||'')).trim();if(!t)return [];
@@ -634,7 +636,7 @@ async function rdScan(mode,add){
     // روش هزینه یا کارمزدها عوض شده: نمونه‌ها با هزینه‌ی تازه از نو ساخته و مدل دوباره یاد گرفته می‌شود
     if(RD.cs!==rdCostSig())RDS.clear();
     const fit=RD.cs!==rdCostSig()||mode==='learn'||((mode==='more'||mode==='add')&&extra.length>0)||!RD.M||!RD.M.long||RD.M.long.w.length!==RD_FEAT.length+1||Date.now()-(RD.mt0||0)>24*36e5;
-    RDQ.fail=[];RDQ.alias=[];
+    RDQ.fail=[];RDQ.alias=[];RDQ.peg=[];
     RDQ.n=U.filter(tk=>fresh(tk)||!RDS.has(tk)).length;RDQ.msg='گرفتن تاریخچه‌ی بیت‌کوین (برای روند و حال بازار)…';rdPaintProg();
     let B=null;try{B=await rdCandles('BTC',true);}catch(e){}
     if(B){RDQ.msg='بازسازی تاریخچه‌ی TOTAL و دامیننس‌ها…';rdPaintProg();try{await rdMktBuild(B);}catch(e){}}
@@ -649,6 +651,8 @@ async function rdScan(mode,add){
         // ارز هم‌نام: صرافی زیر همین نماد ارز دیگری دارد (آخرین قیمت بیش از 30٪ با CoinGecko فرق دارد)
         const cg=RDCAP&&RDCAP.px&&RDCAP.px[tk],lc=C&&C.length?C[C.length-1].c:0;
         if(cg>0&&lc>0&&Math.abs(lc/cg-1)>0.3){RDQ.fail.push(tk);RDQ.alias=(RDQ.alias||[]).concat(tk);delete RD.coins[tk];RDS.delete(tk);}
+        // استیبل‌کوینِ تازه که در فهرست بالا نیست: قیمتش در 30 روز اخیر کمتر از 2٪ تکان خورده
+        else if(C&&C.length>300&&rdPegged(C)){RDQ.fail.push(tk);RDQ.peg=(RDQ.peg||[]).concat(tk);delete RD.coins[tk];RDS.delete(tk);}
         else if(C&&C.length>300){const P=rdPrep(C,B||C,FL,FU),s=rdSamples(P,tk);s.live=rdLiveOf(P);RDS.set(tk,s);}
         else if(!RD.coins[tk])RDQ.fail.push(tk);}
       catch(e){if(!RD.coins[tk])RDQ.fail.push(tk);}
@@ -672,10 +676,12 @@ async function rdScan(mode,add){
     if(RDQ.n)RD.ct=Math.round((Date.now()-RDQ.tc)/RDQ.n);
     // نمادی که هیچ صرافی کندلش را نداد از فهرست بیرون می‌رود
     if(RDQ.fail.length){RD.list=RD.list.filter(t=>!RDQ.fail.includes(t));
-      const al=RDQ.alias||[],nc=RDQ.fail.filter(t=>!al.includes(t));
-      toast((nc.length?'کندل نیامد، از فهرست بیرون رفت: '+nc.join('، '):'')+(al.length?(nc.length?' · ':'')+'صرافی زیر این نماد ارز دیگری دارد (قیمت با CoinGecko نمی‌خواند)، بیرون رفت: '+al.join('، '):''),'err');}
+      const al=RDQ.alias||[],pg=RDQ.peg||[],nc=RDQ.fail.filter(t=>!al.includes(t)&&!pg.includes(t));
+      toast([nc.length?'کندل نیامد، از فهرست بیرون رفت: '+nc.join('، '):'',al.length?'صرافی زیر این نماد ارز دیگری دارد (قیمت با CoinGecko نمی‌خواند)، بیرون رفت: '+al.join('، '):'',
+        pg.length?'استیبل‌کوین است (قیمتش تکان نمی‌خورد)، بیرون رفت: '+pg.join('، '):''].filter(Boolean).join(' · '),'err');}
     if(RDQ.over)toast('سقف فهرست '+faN(RD_MAX)+' ارز است؛ '+faN(RDQ.over)+' ارز اضافه نشد','err');
     rdLive(RD.list);RD.at=Date.now();rdSave();
+    try{rdFirstSeen();}catch(e){}
     try{rbLogAuto();}catch(e){}
   }finally{RDQ.on=false;RDQ.msg='';RDQ.cur.clear();clearInterval(RDQ.iv);workEnd();if(jobStopped('radar'))RDQ.next=null;jobEnd('radar');}
   if(RDQ.next){const m=RDQ.next;RDQ.next=null;setTimeout(()=>rdScan(m),50);}
@@ -755,9 +761,29 @@ function rdRate(x){
 }
 /* RD_WHY: چرا سیگنالی «قابل گرفتن» نیست */
 const RD_WHY={cost:'استاپ خیلی نزدیک؛ کارمزد زیادی از سود می‌خورد',stars:'سابقه‌ی مطمئن (3 ستاره) ندارد',neg:'این جهت در کل زیان‌ده است',reg:'خلاف روند بیت‌کوین',cap:'سقف '+RD_CAP+' پوزیشن واقعیِ هم‌جهت پر است'};
+/* اولین باری که هر سیگنال (ارز + جهت) دیده شد: سیگنالی که در همین بررسی آخر پیدا شده «تازه» است،
+   بقیه «از N ساعت پیش». سیگنالی که رفت و برگشت، از نو تازه حساب می‌شود. بار اول همه بی‌تاریخ (0). */
+const RDFS_KEY='signaldesk.rdfs';
+let RDFS=(()=>{const o=lsGet(RDFS_KEY);return o&&typeof o==='object'?o:null;})();
+function rdFirstSeen(){const first=!RDFS,o=RDFS||{},now=RD.at||Date.now(),cur={};
+  for(const x of rdList())if(x.dir!=='wait'){const p=o[x.tk];cur[x.tk]=p&&p.d===x.dir?p:{d:x.dir,t:first?0:now};}
+  RDFS=cur;lsSet(RDFS_KEY,RDFS);}
+const rdNewSig=x=>{const p=RDFS&&RDFS[x.tk];return p&&p.d===x.dir&&p.t>0?{nw:p.t>=(RD.at||0)-6e4,t:p.t}:null;};
+/* این ارز را قبلاً گرفته‌ای؟ تست باز، تست بسته‌ی 3 روز اخیر، پوزیشن واقعیِ باز */
+function rdTaken(tk){
+  const T=RB.items.filter(it=>it.k==='test'&&it.tk===tk), ot=T.find(it=>it.st==='open');
+  const lt=T.filter(it=>it.st!=='open'&&Date.now()-it.xt<72*36e5).sort((a,b)=>b.xt-a.xt);
+  const nt=s=>String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/(USDT|USDC|USD|PERP)$/,'');
+  const rp=(DB.positions||[]).find(p=>p.status==='open'&&nt(p.ticker)===tk);
+  return {ot,lt,rp,n:T.length};}
+function rdTakenHtml(x,tk){const dn=d=>d==='long'?'لانگ':'شورت',out=[];
+  if(tk.ot)out.push('<span class="pill gold rdtk1" title="تست باز همین ارز">'+ic('flag')+' در تست: '+dn(tk.ot.dir)+(tk.ot.dir!==x.dir?' (خلاف این سیگنال)':'')+' از '+ageTxt(tk.ot.t)+'</span>');
+  else if(tk.lt.length){const r=tk.lt.reduce((a,it)=>a+(it.R||0),0);out.push('<span class="pill mut rdtk1">قبلاً تست شده: '+(tk.lt.length>1?faN(tk.lt.length)+' بار در 3 روز، آخری ':'')+ageTxt(tk.lt[0].xt)+' · <b class="'+cls(r)+'" dir="ltr">'+fmtR(r)+'</b></span>');}
+  if(tk.rp)out.push('<span class="pill gold rdtk1">پوزیشن واقعی باز: '+dn(tk.rp.dir)+'</span>');
+  return out.join('');}
 function rdList(){
   const H=rdHealth(),out=[];
-  for(const tk of RD.rank){const x=RD.coins[tk];if(!x)continue;
+  for(const tk of RD.rank){const x=RD.coins[tk];if(!x||RD_SKIP.test(tk))continue;
     const rt=rdRate(x), exp=rt?rt.exp:null, stars=rt?rt.stars:0;
     let why=null;
     if(x.dir!=='wait'){
@@ -983,23 +1009,26 @@ function rdGuide(){openSheet(rdGuideHtml(),sh=>{const c=sh.querySelector('#cx');
 /* کارت سیگنال: سربرگ (نماد، جهت، امتیاز، ستاره)، سه عدد اصلی، چند برچسب، دکمه‌ها؛ بقیه در «جزئیات» */
 function rdRowHtml(x,i){
   const z=x.pl?isoSize(x.pl.E,x.pl.SL):null, f=RD.fund&&RD.fund[x.tk], R=rdReasons(x), dn=x.dir==='long'?'لانگ':'شورت';
-  const rk=rdRankOf(x.tk), ex=rbExEff(x.dir), PL=rdExPlans()[ex], dv=rdDivOf(x);
+  const rk=rdRankOf(x.tk), ex=rbExEff(x.dir), PL=rdExPlans()[ex], dv=rdDivOf(x), tk=rdTaken(x.tk), ns=rdNewSig(x);
   const tags=[];
+  {const t=rdTakenHtml(x,tk);if(t)tags.push(t);}
   if(!x.ok&&x.why)tags.push('<span class="pill lose rdwhy0">'+esc(x.why==='neg'?(x.dir==='long'?'لانگ‌ها':'شورت‌ها')+'ی مدل در کل زیان‌ده‌اند':RD_WHY[x.why]+(x.why==='reg'?' ('+RDREG_FA[RD.reg]+')':''))+'</span>');
   {const c=rdStarChgHtml(x);if(c)tags.push(c);}
   if(dv)tags.push('<span class="pill '+(dv>0?'win':'lose')+' rddv">'+(dv>0?'✓ واگرایی هم‌جهت':'✗ واگرایی خلاف')+'</span>');
   R.slice(0,dv?2:3).forEach(r=>tags.push('<span class="pill '+(r.good==null?'mut':r.good?'win':'lose')+'">'+(r.good?'✓ ':r.good===false?'✗ ':'')+esc(r.t)+'</span>'));
   const kv=x.pl?'<div class="rdkv"><div><small>ورود</small><b dir="ltr">'+fmtPrice(x.pl.E)+'</b></div><div><small>استاپ</small><b dir="ltr">'+fmtPrice(x.pl.SL)+'</b><small dir="ltr">'+fmtNum(x.pl.sd*100)+'%</small></div>'+
     '<div><small>خروج</small><b>'+esc(PL?PL.n:'')+'</b></div></div>':'';
-  return '<div class="glsig rdit'+(x.ok?' ok':' weak')+'" data-rd="'+esc(x.tk)+'">'+
+  return '<div class="glsig rdit'+(x.ok?' ok':' weak')+(tk.ot||tk.rp?' taken':'')+(ns&&ns.nw?' nw':'')+'" data-rd="'+esc(x.tk)+'">'+
     '<div class="glit"><span class="rdrk">'+faN(i+1)+'</span>'+
       '<button class="rdfavb'+(rdIsFav(x.tk)?' on':'')+'" data-a="fav" title="واچ‌لیست" aria-label="واچ‌لیست">'+(rdIsFav(x.tk)?'★':'☆')+'</button><b dir="ltr" class="rdtk">'+esc(x.tk)+'</b>'+(rk?'<small class="rdcap" title="رتبه‌ی ارزش بازار">#'+rk+'</small>':'')+
       '<span class="pill '+x.dir+'">'+dn+'</span>'+
-      '<span class="rdsc '+(x.dir==='long'?'u':'d')+'">امتیاز '+faN(x.sc)+'</span>'+rdStarHtml(x.stars)+'</div>'+
+      '<span class="rdsc '+(x.dir==='long'?'u':'d')+'">امتیاز '+faN(x.sc)+'</span>'+rdStarHtml(x.stars)+
+      (ns?(ns.nw?'<span class="pill nw" title="در همین بررسی آخر پیدا شد">تازه</span>':'<small class="rdage" title="از کِی این سیگنال هست">'+ageTxt(ns.t)+'</small>'):'')+'</div>'+
     kv+
     (tags.length?'<div class="glnum rdwhy">'+tags.join('')+'</div>':'')+
     '<div class="glact">'+(z?'<button class="btn sm '+(x.ok?'ok':'')+'" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
-      (x.pl?'<button class="btn sm" data-a="test" title="معامله‌ی آزمایشی: مثل واقعی دنبال می‌شود، بی پول">'+ic('flag')+'<span>تست</span></button>':'')+'</div>'+
+      (x.pl?(tk.ot?'<button class="btn sm" data-a="gotest" title="تست همین ارز باز است؛ برو ببین">'+ic('flag')+'<span>در تست است</span></button>':
+      '<button class="btn sm" data-a="test" title="معامله‌ی آزمایشی: مثل واقعی دنبال می‌شود، بی پول">'+ic('flag')+'<span>'+(tk.n?'تست دوباره':'تست')+'</span></button>'):'')+'</div>'+
     '<details class="rdmore"><summary>جزئیات و دلیل‌ها</summary>'+rdStarChgHtml(x,true)+
       (x.cb?'<div class="glnum">سابقه‌ی '+dn+'‌های امتیاز '+rdBucket(x.sc)+(x.rt.reg?' در بازار '+RDREG_FA[RD.reg]:'')+': '+faN(x.cb.n)+' بار در '+faN(x.cb.g||0)+' روز، '+faN(Math.round(x.cb.w/x.cb.n*100))+'٪ برد، میانگین <b class="'+cls(x.cb.r/x.cb.n)+'" dir="ltr">'+fmtR(x.cb.r/x.cb.n)+'</b>'+
         (x.cb.lb!=null&&isFinite(x.cb.lb)?'، بدترین حالت محتمل <b class="'+cls(x.cb.lb)+'" dir="ltr">'+fmtR(x.cb.lb)+'</b>':'')+(x.rt&&x.rt.s0>x.stars?' (ستاره‌ی خامش '+faN(x.rt.s0)+'؛ با ارزهای کم حداکثر '+faN(x.stars)+')':'')+'</div>':'')+
@@ -1141,7 +1170,8 @@ function rdFbar(){
   const seg=el('div','fseg');seg.setAttribute('role','tablist');
   const ob=rbOpen();
   for(const [k,t,n,ti] of [['sig','سیگنال‌ها',rdCount(),'فرصت‌های قابل گرفتن'],['test','آزمایشی',ob.test,'معامله‌های آزمایشی باز'],['model','کارنامه',null,'مدل چقدر درست گفته'],['log','دفتر',null,'دفتر پیشنهادها: همه‌ی پیشنهادها و نتیجه‌شان']]){
-    const b=el('button','fb'+(RDV===k?' on':''),'<span>'+t+'</span>'+(n!=null?'<i>'+faN(n)+'</i>':''));b.title=ti;b.setAttribute('role','tab');b.setAttribute('aria-selected',RDV===k?'true':'false');
+    const nn=k==='test'&&RDV!=='test'?rbNewN():0;
+    const b=el('button','fb'+(RDV===k?' on':''),'<span>'+t+'</span>'+(n!=null?'<i>'+faN(n)+'</i>':'')+(nn?'<em class="rbdot" title="'+faN(nn)+' تست تازه باز یا بسته شده"></em>':''));b.title=ti;b.setAttribute('role','tab');b.setAttribute('aria-selected',RDV===k?'true':'false');
     b.onclick=()=>{RDV=k;try{localStorage.setItem('signaldesk.rdview',RDV);}catch(e){}renderRadar();window.scrollTo({top:0,behavior:'smooth'});};seg.appendChild(b);}
   bar.appendChild(seg);
   if(RDV!=='sig')return;
@@ -1178,6 +1208,7 @@ function paintRadar(g){
     const keep=new Set(rdUniverse(RD_STEP).concat(RDFAV));for(const t of rdListOf())if(!keep.has(t))rdRemove(t);
     RD.list=[...keep];rdSave();rdScan('add',[]);paintRadar(g);};
   g.querySelectorAll('[data-favtk]').forEach(b=>b.onclick=()=>{rdFavToggle(b.dataset.favtk);paintRadar(g);});
+  if(RDV!=='test')rbLeave();
   if(RDV!=='sig'){rbBind(g);return;}
   // تأیید ورود 5 دقیقه‌ای برای چند سیگنال بالای فهرست (پنج دقیقه در حافظه)
   try{rdConfPump(rdList().filter(x=>x.dir!=='wait').slice(0,6));}catch(e){}
@@ -1188,6 +1219,7 @@ function paintRadar(g){
     const k={tk:x.tk,k:'radar',t:RD.at,pl:x.pl,dir:x.dir};
     w.querySelectorAll('[data-a]:not([data-a="fav"]):not([data-a="rm"])').forEach(b=>b.onclick=()=>{
       const p={id:'radar/'+x.tk+'/'+RD.at,num:0,text:'رادار بازار: '+x.tk+' '+(x.dir==='long'?'لانگ':'شورت')+' · امتیاز '+x.sc,date:new Date(),link:null,img:null,auto:true};
+      if(b.dataset.a==='gotest'){RDV='test';try{localStorage.setItem('signaldesk.rdview',RDV);}catch(e){}renderRadar();const t=rdTaken(x.tk).ot;setTimeout(()=>{const r=t&&document.querySelector('.rbrow[data-id="'+t.id+'"]');if(r){r.scrollIntoView({block:'center',behavior:'smooth'});r.classList.add('flash');}},80);return;}
       if(b.dataset.a==='test'){const r=rbAddAsk(x);paintRadar(g);r.then(v=>{if(v)paintRadar(g);});return;}
       if(b.dataset.a==='iso'){const z=isoSize(x.pl.E,x.pl.SL),ex=rbExEff(x.dir),sg=asSig(k);
         // نقشه‌ی خروج رادار روی پوزیشن واقعی: تارگت‌ها به واحد R و سبک خروج هم‌ارز

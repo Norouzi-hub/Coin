@@ -1807,6 +1807,23 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .rbplc{font-size:11.5px;padding:3px 8px;border-radius:999px;background:var(--inset);border:1px solid var(--line);color:var(--tx2)}
 .rbplc.u{color:var(--up)}.rbplc.d{color:var(--dn)}
 .rbpls td:first-child{white-space:normal;min-width:120px}
+/* آزمایشی: تازه‌ها، آرشیو روزانه، «اگر نگه داشته بودیم» */
+.pill.nw{background:color-mix(in srgb,var(--acc) 22%,transparent);color:var(--acc);border-color:color-mix(in srgb,var(--acc) 45%,transparent);font-weight:800}
+.rbrow.nw{border-color:color-mix(in srgb,var(--acc) 55%,transparent);border-inline-start:3px solid var(--acc)}
+.rbrow.flash{animation:flashc 1.6s var(--ease)}
+.rbnew{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;padding:8px 10px;border-radius:12px;background:color-mix(in srgb,var(--acc) 10%,var(--inset));border:1px solid color-mix(in srgb,var(--acc) 35%,transparent)}
+.rbnew svg{flex:none;width:16px;height:16px;color:var(--acc);margin-top:2px}
+.rbday{border:1px solid var(--line);border-radius:12px;background:var(--card);margin:6px 0}
+.rbday>summary{display:flex;flex-wrap:wrap;gap:2px 10px;justify-content:space-between;padding:8px 10px;cursor:pointer;font-size:12.5px}
+.rbday>summary small{color:var(--tx3)}.rbday[open]>summary{border-bottom:1px solid var(--line)}
+.rbday>.rbrow{margin:6px 8px}
+.rbhold{display:flex;flex-direction:column;gap:2px;font-size:12.5px;padding:6px 8px;border-radius:10px;border:1px dashed var(--line);background:var(--card)}
+.rbhold small{color:var(--tx3)}
+.rbdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--acc);margin-inline-start:4px;vertical-align:middle}
+.rdit.nw{border-inline-start:3px solid var(--acc)}
+.rdit.taken{border-inline-start:3px solid var(--gold)}
+.rdage{color:var(--tx3);font-size:11px}
+.rdtk1 svg{width:12px;height:12px;vertical-align:-2px}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -7960,8 +7977,9 @@ function shTextsWire(paint,d){
   const t=$('#t_title');if(t&&d){t.value=d.titleOv||'';t.oninput=()=>{d.titleOv=t.value;paint();};}
   const dt=$('#o_dt');if(dt){dt.checked=shareOpt.dates!==false;dt.onchange=()=>{shareOpt.dates=dt.checked;shareSave();paint();};}
 }
-function sheetShare(p){
-  const d=shareDataOf(p);
+/* dIn: داده‌ی آماده (مثلاً تست بازار) به جای پوزیشن */
+function sheetShare(p,dIn){
+  const d=dIn||shareDataOf(p);
   openSheet(
    '<h3>تصویر نتیجه · '+esc(d.ticker||'')+'</h3>'+
    '<div class="sub">یک تصویر آماده برای فرستادن. فقط همین اعداد رویش می‌رود — '+
@@ -9916,7 +9934,9 @@ const RD_FA={t4:'روند 4 ساعته',t1:'روند 1 ساعته',macd:'MACD',r
   mss:'تغییر ساختار (1 ساعته)',cprw:'باریکی CPR',
   mtot:'کل بازار (TOTAL)',mt2:'TOTAL2',mt3:'TOTAL3 (آلت‌ها)',mbd:'دامیننس بیت‌کوین',mud:'دامیننس تتر',mmc:'پهنای بازار: MACD همه‌ی ارزها'};
 const RD_B=['70-85','85-95','95+'];
-const RD_SKIP=/^(USDT|USDC|FDUSD|TUSD|DAI|BUSD|USDP|USDD|USDE|SUSDE|USDS|PYUSD|USD0|USD1|RLUSD|EURC|EURT|PAXG|XAUT|WBTC|WETH|WBETH|STETH|WSTETH|WEETH|CBBTC|BTCB|RETH|METH|LEO|BSC-USD|BFUSD|USDF)$/;
+const RD_SKIP=/^(USDT|USDC|FDUSD|TUSD|DAI|BUSD|USDP|USDD|USDE|SUSDE|USDS|PYUSD|USD0|USD1|RLUSD|EURC|EURT|PAXG|XAUT|WBTC|WETH|WBETH|STETH|WSTETH|WEETH|CBBTC|BTCB|RETH|METH|LEO|BSC-USD|BFUSD|USDF|USDG|USDGO|USDTB|USDX|FRAX|LUSD|GHO|CRVUSD|USR|DEUSD|SUSDS|AUSD|USDA|EURS|BUIDL|USYC|USTB|OUSG)$|^USD[A-Z0-9]{1,3}$|^[A-Z]{1,3}USD$/;
+/* قیمت میخ‌شده: دامنه‌ی 720 بسته‌ی آخر (30 روز ساعتی) زیر 2٪ میانگین */
+const rdPegged=C=>{const L=C.slice(-720).map(k=>k.c).filter(v=>v>0);if(L.length<200)return false;const mx=Math.max(...L),mn=Math.min(...L),m=L.reduce((a,b)=>a+b,0)/L.length;return (mx-mn)/m<0.02;};
 const rdEmpty=()=>({v:5,at:0,n:0,coins:{},calib:{},rel:null,M:null,fund:{},rank:[],reg:null,nflow:0,ns:0});
 let RD=(()=>{const a=lsGet(RD_KEY);return a&&a.v===5?a:rdEmpty();})();
 const RDQ={on:false,done:0,n:0,msg:'',t0:0,tc:0,cur:new Map(),pm:0,fin:false,iv:null};
@@ -10365,7 +10385,7 @@ const rdFavSave=()=>{try{localStorage.setItem('signaldesk.rdfav',JSON.stringify(
 const rdIsFav=tk=>RDFAV.includes(tk);
 function rdFavToggle(tk){RDFAV=rdIsFav(tk)?RDFAV.filter(x=>x!==tk):RDFAV.concat(tk);rdFavSave();return rdIsFav(tk);}
 /* فهرستِ ارزهایی که رادار دنبال می‌کند (به ترتیب افزودن)؛ نسخه‌ی قبل فقط «n ارز اول» داشت */
-const rdListOf=()=>Array.isArray(RD.list)&&RD.list.length?RD.list:rdUniverse(Math.max(RD.n||0,RD_STEP));
+const rdListOf=()=>Array.isArray(RD.list)&&RD.list.length?RD.list.filter(t=>!RD_SKIP.test(t)):rdUniverse(Math.max(RD.n||0,RD_STEP));
 /* «20-40»، «200 تا 231»، یا نمادها «ETH, SOL pepe» ← فهرست نمادها */
 function rdParsePick(txt){
   const t=normDig(String(txt||'')).trim();if(!t)return [];
@@ -10510,7 +10530,7 @@ async function rdScan(mode,add){
     // روش هزینه یا کارمزدها عوض شده: نمونه‌ها با هزینه‌ی تازه از نو ساخته و مدل دوباره یاد گرفته می‌شود
     if(RD.cs!==rdCostSig())RDS.clear();
     const fit=RD.cs!==rdCostSig()||mode==='learn'||((mode==='more'||mode==='add')&&extra.length>0)||!RD.M||!RD.M.long||RD.M.long.w.length!==RD_FEAT.length+1||Date.now()-(RD.mt0||0)>24*36e5;
-    RDQ.fail=[];RDQ.alias=[];
+    RDQ.fail=[];RDQ.alias=[];RDQ.peg=[];
     RDQ.n=U.filter(tk=>fresh(tk)||!RDS.has(tk)).length;RDQ.msg='گرفتن تاریخچه‌ی بیت‌کوین (برای روند و حال بازار)…';rdPaintProg();
     let B=null;try{B=await rdCandles('BTC',true);}catch(e){}
     if(B){RDQ.msg='بازسازی تاریخچه‌ی TOTAL و دامیننس‌ها…';rdPaintProg();try{await rdMktBuild(B);}catch(e){}}
@@ -10525,6 +10545,8 @@ async function rdScan(mode,add){
         // ارز هم‌نام: صرافی زیر همین نماد ارز دیگری دارد (آخرین قیمت بیش از 30٪ با CoinGecko فرق دارد)
         const cg=RDCAP&&RDCAP.px&&RDCAP.px[tk],lc=C&&C.length?C[C.length-1].c:0;
         if(cg>0&&lc>0&&Math.abs(lc/cg-1)>0.3){RDQ.fail.push(tk);RDQ.alias=(RDQ.alias||[]).concat(tk);delete RD.coins[tk];RDS.delete(tk);}
+        // استیبل‌کوینِ تازه که در فهرست بالا نیست: قیمتش در 30 روز اخیر کمتر از 2٪ تکان خورده
+        else if(C&&C.length>300&&rdPegged(C)){RDQ.fail.push(tk);RDQ.peg=(RDQ.peg||[]).concat(tk);delete RD.coins[tk];RDS.delete(tk);}
         else if(C&&C.length>300){const P=rdPrep(C,B||C,FL,FU),s=rdSamples(P,tk);s.live=rdLiveOf(P);RDS.set(tk,s);}
         else if(!RD.coins[tk])RDQ.fail.push(tk);}
       catch(e){if(!RD.coins[tk])RDQ.fail.push(tk);}
@@ -10548,10 +10570,12 @@ async function rdScan(mode,add){
     if(RDQ.n)RD.ct=Math.round((Date.now()-RDQ.tc)/RDQ.n);
     // نمادی که هیچ صرافی کندلش را نداد از فهرست بیرون می‌رود
     if(RDQ.fail.length){RD.list=RD.list.filter(t=>!RDQ.fail.includes(t));
-      const al=RDQ.alias||[],nc=RDQ.fail.filter(t=>!al.includes(t));
-      toast((nc.length?'کندل نیامد، از فهرست بیرون رفت: '+nc.join('، '):'')+(al.length?(nc.length?' · ':'')+'صرافی زیر این نماد ارز دیگری دارد (قیمت با CoinGecko نمی‌خواند)، بیرون رفت: '+al.join('، '):''),'err');}
+      const al=RDQ.alias||[],pg=RDQ.peg||[],nc=RDQ.fail.filter(t=>!al.includes(t)&&!pg.includes(t));
+      toast([nc.length?'کندل نیامد، از فهرست بیرون رفت: '+nc.join('، '):'',al.length?'صرافی زیر این نماد ارز دیگری دارد (قیمت با CoinGecko نمی‌خواند)، بیرون رفت: '+al.join('، '):'',
+        pg.length?'استیبل‌کوین است (قیمتش تکان نمی‌خورد)، بیرون رفت: '+pg.join('، '):''].filter(Boolean).join(' · '),'err');}
     if(RDQ.over)toast('سقف فهرست '+faN(RD_MAX)+' ارز است؛ '+faN(RDQ.over)+' ارز اضافه نشد','err');
     rdLive(RD.list);RD.at=Date.now();rdSave();
+    try{rdFirstSeen();}catch(e){}
     try{rbLogAuto();}catch(e){}
   }finally{RDQ.on=false;RDQ.msg='';RDQ.cur.clear();clearInterval(RDQ.iv);workEnd();if(jobStopped('radar'))RDQ.next=null;jobEnd('radar');}
   if(RDQ.next){const m=RDQ.next;RDQ.next=null;setTimeout(()=>rdScan(m),50);}
@@ -10631,9 +10655,29 @@ function rdRate(x){
 }
 /* RD_WHY: چرا سیگنالی «قابل گرفتن» نیست */
 const RD_WHY={cost:'استاپ خیلی نزدیک؛ کارمزد زیادی از سود می‌خورد',stars:'سابقه‌ی مطمئن (3 ستاره) ندارد',neg:'این جهت در کل زیان‌ده است',reg:'خلاف روند بیت‌کوین',cap:'سقف '+RD_CAP+' پوزیشن واقعیِ هم‌جهت پر است'};
+/* اولین باری که هر سیگنال (ارز + جهت) دیده شد: سیگنالی که در همین بررسی آخر پیدا شده «تازه» است،
+   بقیه «از N ساعت پیش». سیگنالی که رفت و برگشت، از نو تازه حساب می‌شود. بار اول همه بی‌تاریخ (0). */
+const RDFS_KEY='signaldesk.rdfs';
+let RDFS=(()=>{const o=lsGet(RDFS_KEY);return o&&typeof o==='object'?o:null;})();
+function rdFirstSeen(){const first=!RDFS,o=RDFS||{},now=RD.at||Date.now(),cur={};
+  for(const x of rdList())if(x.dir!=='wait'){const p=o[x.tk];cur[x.tk]=p&&p.d===x.dir?p:{d:x.dir,t:first?0:now};}
+  RDFS=cur;lsSet(RDFS_KEY,RDFS);}
+const rdNewSig=x=>{const p=RDFS&&RDFS[x.tk];return p&&p.d===x.dir&&p.t>0?{nw:p.t>=(RD.at||0)-6e4,t:p.t}:null;};
+/* این ارز را قبلاً گرفته‌ای؟ تست باز، تست بسته‌ی 3 روز اخیر، پوزیشن واقعیِ باز */
+function rdTaken(tk){
+  const T=RB.items.filter(it=>it.k==='test'&&it.tk===tk), ot=T.find(it=>it.st==='open');
+  const lt=T.filter(it=>it.st!=='open'&&Date.now()-it.xt<72*36e5).sort((a,b)=>b.xt-a.xt);
+  const nt=s=>String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/(USDT|USDC|USD|PERP)$/,'');
+  const rp=(DB.positions||[]).find(p=>p.status==='open'&&nt(p.ticker)===tk);
+  return {ot,lt,rp,n:T.length};}
+function rdTakenHtml(x,tk){const dn=d=>d==='long'?'لانگ':'شورت',out=[];
+  if(tk.ot)out.push('<span class="pill gold rdtk1" title="تست باز همین ارز">'+ic('flag')+' در تست: '+dn(tk.ot.dir)+(tk.ot.dir!==x.dir?' (خلاف این سیگنال)':'')+' از '+ageTxt(tk.ot.t)+'</span>');
+  else if(tk.lt.length){const r=tk.lt.reduce((a,it)=>a+(it.R||0),0);out.push('<span class="pill mut rdtk1">قبلاً تست شده: '+(tk.lt.length>1?faN(tk.lt.length)+' بار در 3 روز، آخری ':'')+ageTxt(tk.lt[0].xt)+' · <b class="'+cls(r)+'" dir="ltr">'+fmtR(r)+'</b></span>');}
+  if(tk.rp)out.push('<span class="pill gold rdtk1">پوزیشن واقعی باز: '+dn(tk.rp.dir)+'</span>');
+  return out.join('');}
 function rdList(){
   const H=rdHealth(),out=[];
-  for(const tk of RD.rank){const x=RD.coins[tk];if(!x)continue;
+  for(const tk of RD.rank){const x=RD.coins[tk];if(!x||RD_SKIP.test(tk))continue;
     const rt=rdRate(x), exp=rt?rt.exp:null, stars=rt?rt.stars:0;
     let why=null;
     if(x.dir!=='wait'){
@@ -10859,23 +10903,26 @@ function rdGuide(){openSheet(rdGuideHtml(),sh=>{const c=sh.querySelector('#cx');
 /* کارت سیگنال: سربرگ (نماد، جهت، امتیاز، ستاره)، سه عدد اصلی، چند برچسب، دکمه‌ها؛ بقیه در «جزئیات» */
 function rdRowHtml(x,i){
   const z=x.pl?isoSize(x.pl.E,x.pl.SL):null, f=RD.fund&&RD.fund[x.tk], R=rdReasons(x), dn=x.dir==='long'?'لانگ':'شورت';
-  const rk=rdRankOf(x.tk), ex=rbExEff(x.dir), PL=rdExPlans()[ex], dv=rdDivOf(x);
+  const rk=rdRankOf(x.tk), ex=rbExEff(x.dir), PL=rdExPlans()[ex], dv=rdDivOf(x), tk=rdTaken(x.tk), ns=rdNewSig(x);
   const tags=[];
+  {const t=rdTakenHtml(x,tk);if(t)tags.push(t);}
   if(!x.ok&&x.why)tags.push('<span class="pill lose rdwhy0">'+esc(x.why==='neg'?(x.dir==='long'?'لانگ‌ها':'شورت‌ها')+'ی مدل در کل زیان‌ده‌اند':RD_WHY[x.why]+(x.why==='reg'?' ('+RDREG_FA[RD.reg]+')':''))+'</span>');
   {const c=rdStarChgHtml(x);if(c)tags.push(c);}
   if(dv)tags.push('<span class="pill '+(dv>0?'win':'lose')+' rddv">'+(dv>0?'✓ واگرایی هم‌جهت':'✗ واگرایی خلاف')+'</span>');
   R.slice(0,dv?2:3).forEach(r=>tags.push('<span class="pill '+(r.good==null?'mut':r.good?'win':'lose')+'">'+(r.good?'✓ ':r.good===false?'✗ ':'')+esc(r.t)+'</span>'));
   const kv=x.pl?'<div class="rdkv"><div><small>ورود</small><b dir="ltr">'+fmtPrice(x.pl.E)+'</b></div><div><small>استاپ</small><b dir="ltr">'+fmtPrice(x.pl.SL)+'</b><small dir="ltr">'+fmtNum(x.pl.sd*100)+'%</small></div>'+
     '<div><small>خروج</small><b>'+esc(PL?PL.n:'')+'</b></div></div>':'';
-  return '<div class="glsig rdit'+(x.ok?' ok':' weak')+'" data-rd="'+esc(x.tk)+'">'+
+  return '<div class="glsig rdit'+(x.ok?' ok':' weak')+(tk.ot||tk.rp?' taken':'')+(ns&&ns.nw?' nw':'')+'" data-rd="'+esc(x.tk)+'">'+
     '<div class="glit"><span class="rdrk">'+faN(i+1)+'</span>'+
       '<button class="rdfavb'+(rdIsFav(x.tk)?' on':'')+'" data-a="fav" title="واچ‌لیست" aria-label="واچ‌لیست">'+(rdIsFav(x.tk)?'★':'☆')+'</button><b dir="ltr" class="rdtk">'+esc(x.tk)+'</b>'+(rk?'<small class="rdcap" title="رتبه‌ی ارزش بازار">#'+rk+'</small>':'')+
       '<span class="pill '+x.dir+'">'+dn+'</span>'+
-      '<span class="rdsc '+(x.dir==='long'?'u':'d')+'">امتیاز '+faN(x.sc)+'</span>'+rdStarHtml(x.stars)+'</div>'+
+      '<span class="rdsc '+(x.dir==='long'?'u':'d')+'">امتیاز '+faN(x.sc)+'</span>'+rdStarHtml(x.stars)+
+      (ns?(ns.nw?'<span class="pill nw" title="در همین بررسی آخر پیدا شد">تازه</span>':'<small class="rdage" title="از کِی این سیگنال هست">'+ageTxt(ns.t)+'</small>'):'')+'</div>'+
     kv+
     (tags.length?'<div class="glnum rdwhy">'+tags.join('')+'</div>':'')+
     '<div class="glact">'+(z?'<button class="btn sm '+(x.ok?'ok':'')+'" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
-      (x.pl?'<button class="btn sm" data-a="test" title="معامله‌ی آزمایشی: مثل واقعی دنبال می‌شود، بی پول">'+ic('flag')+'<span>تست</span></button>':'')+'</div>'+
+      (x.pl?(tk.ot?'<button class="btn sm" data-a="gotest" title="تست همین ارز باز است؛ برو ببین">'+ic('flag')+'<span>در تست است</span></button>':
+      '<button class="btn sm" data-a="test" title="معامله‌ی آزمایشی: مثل واقعی دنبال می‌شود، بی پول">'+ic('flag')+'<span>'+(tk.n?'تست دوباره':'تست')+'</span></button>'):'')+'</div>'+
     '<details class="rdmore"><summary>جزئیات و دلیل‌ها</summary>'+rdStarChgHtml(x,true)+
       (x.cb?'<div class="glnum">سابقه‌ی '+dn+'‌های امتیاز '+rdBucket(x.sc)+(x.rt.reg?' در بازار '+RDREG_FA[RD.reg]:'')+': '+faN(x.cb.n)+' بار در '+faN(x.cb.g||0)+' روز، '+faN(Math.round(x.cb.w/x.cb.n*100))+'٪ برد، میانگین <b class="'+cls(x.cb.r/x.cb.n)+'" dir="ltr">'+fmtR(x.cb.r/x.cb.n)+'</b>'+
         (x.cb.lb!=null&&isFinite(x.cb.lb)?'، بدترین حالت محتمل <b class="'+cls(x.cb.lb)+'" dir="ltr">'+fmtR(x.cb.lb)+'</b>':'')+(x.rt&&x.rt.s0>x.stars?' (ستاره‌ی خامش '+faN(x.rt.s0)+'؛ با ارزهای کم حداکثر '+faN(x.stars)+')':'')+'</div>':'')+
@@ -11017,7 +11064,8 @@ function rdFbar(){
   const seg=el('div','fseg');seg.setAttribute('role','tablist');
   const ob=rbOpen();
   for(const [k,t,n,ti] of [['sig','سیگنال‌ها',rdCount(),'فرصت‌های قابل گرفتن'],['test','آزمایشی',ob.test,'معامله‌های آزمایشی باز'],['model','کارنامه',null,'مدل چقدر درست گفته'],['log','دفتر',null,'دفتر پیشنهادها: همه‌ی پیشنهادها و نتیجه‌شان']]){
-    const b=el('button','fb'+(RDV===k?' on':''),'<span>'+t+'</span>'+(n!=null?'<i>'+faN(n)+'</i>':''));b.title=ti;b.setAttribute('role','tab');b.setAttribute('aria-selected',RDV===k?'true':'false');
+    const nn=k==='test'&&RDV!=='test'?rbNewN():0;
+    const b=el('button','fb'+(RDV===k?' on':''),'<span>'+t+'</span>'+(n!=null?'<i>'+faN(n)+'</i>':'')+(nn?'<em class="rbdot" title="'+faN(nn)+' تست تازه باز یا بسته شده"></em>':''));b.title=ti;b.setAttribute('role','tab');b.setAttribute('aria-selected',RDV===k?'true':'false');
     b.onclick=()=>{RDV=k;try{localStorage.setItem('signaldesk.rdview',RDV);}catch(e){}renderRadar();window.scrollTo({top:0,behavior:'smooth'});};seg.appendChild(b);}
   bar.appendChild(seg);
   if(RDV!=='sig')return;
@@ -11054,6 +11102,7 @@ function paintRadar(g){
     const keep=new Set(rdUniverse(RD_STEP).concat(RDFAV));for(const t of rdListOf())if(!keep.has(t))rdRemove(t);
     RD.list=[...keep];rdSave();rdScan('add',[]);paintRadar(g);};
   g.querySelectorAll('[data-favtk]').forEach(b=>b.onclick=()=>{rdFavToggle(b.dataset.favtk);paintRadar(g);});
+  if(RDV!=='test')rbLeave();
   if(RDV!=='sig'){rbBind(g);return;}
   // تأیید ورود 5 دقیقه‌ای برای چند سیگنال بالای فهرست (پنج دقیقه در حافظه)
   try{rdConfPump(rdList().filter(x=>x.dir!=='wait').slice(0,6));}catch(e){}
@@ -11064,6 +11113,7 @@ function paintRadar(g){
     const k={tk:x.tk,k:'radar',t:RD.at,pl:x.pl,dir:x.dir};
     w.querySelectorAll('[data-a]:not([data-a="fav"]):not([data-a="rm"])').forEach(b=>b.onclick=()=>{
       const p={id:'radar/'+x.tk+'/'+RD.at,num:0,text:'رادار بازار: '+x.tk+' '+(x.dir==='long'?'لانگ':'شورت')+' · امتیاز '+x.sc,date:new Date(),link:null,img:null,auto:true};
+      if(b.dataset.a==='gotest'){RDV='test';try{localStorage.setItem('signaldesk.rdview',RDV);}catch(e){}renderRadar();const t=rdTaken(x.tk).ot;setTimeout(()=>{const r=t&&document.querySelector('.rbrow[data-id="'+t.id+'"]');if(r){r.scrollIntoView({block:'center',behavior:'smooth'});r.classList.add('flash');}},80);return;}
       if(b.dataset.a==='test'){const r=rbAddAsk(x);paintRadar(g);r.then(v=>{if(v)paintRadar(g);});return;}
       if(b.dataset.a==='iso'){const z=isoSize(x.pl.E,x.pl.SL),ex=rbExEff(x.dir),sg=asSig(k);
         // نقشه‌ی خروج رادار روی پوزیشن واقعی: تارگت‌ها به واحد R و سبک خروج هم‌ارز
@@ -11270,6 +11320,60 @@ async function rbCatchUp(force){
     try{advise('rbaway:'+Date.now(),{cat:'pos',pri:'mid',title:msg})||toast(msg,'info');}catch(e){toast(msg,'info');}}
 }
 const RB_ST={tp:'هدف',sl:'استاپ',be:'ریسک‌فری',trail:'استاپ متحرک',time:'24 ساعت',man:'دستی',open:'باز'};
+/* سر زدن به «آزمایشی»: تستی که از آخرین بار تازه باز یا بسته شده، نشان «تازه» می‌گیرد.
+   زمان آخرین سر زدن موقع رفتن از این صفحه (یا پنهان شدن برنامه) ذخیره می‌شود؛ تا وقتی این‌جایی، نشان‌ها می‌مانند. */
+const RBSEEN_KEY='signaldesk.rbseen', RBVIS={on:false,prev:0};
+const rbSeen=()=>{try{return +localStorage.getItem(RBSEEN_KEY)||0;}catch(e){return 0;}};
+const rbSeenSet=()=>{try{localStorage.setItem(RBSEEN_KEY,String(Date.now()));}catch(e){}};
+function rbEnter(){if(RBVIS.on||view!=='radar')return;RBVIS.on=true;RBVIS.prev=rbSeen();rbSeenSet();}
+function rbLeave(){if(!RBVIS.on)return;RBVIS.on=false;rbSeenSet();}
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&RBVIS.on)rbSeenSet();});
+/* 'closed' = از آخرین سر زدن بسته شده؛ 'opened' = از آخرین سر زدن باز شده؛ بار اول هیچ‌کدام تازه نیست */
+const rbNewOf=it=>{const s=RBVIS.on?RBVIS.prev:rbSeen();if(!(s>0))return null;
+  return it.st!=='open'?(it.xt>s?'closed':null):(it.t>s?'opened':null);};
+const rbNewN=()=>{const s=rbSeen();return s>0?RB.items.filter(it=>it.k==='test'&&(it.st!=='open'?it.xt>s:it.t>s)).length:0;};
+/* «اگر نگه داشته بودیم»: از لحظه‌ی ورود تا الان با کندل یک‌ساعته، بی هدف و بی سیو سود.
+   الان، بهترین و بدترین جا، و این‌که استاپ اول کِی می‌خورد. فقط با درخواست؛ نتیجه تا بستن برنامه می‌ماند. */
+const RBHOLD=new Map();
+async function rbHoldCalc(it){
+  const H=36e5, h0=Math.floor(it.t/H)*H, hrs=Math.ceil((Date.now()-h0)/H)+1;
+  // بیش از 40 روز: کندل 4 ساعته نداریم، پس فقط 1000 ساعت آخر (بهترین/بدترین از همان)
+  const from=hrs>1000?Math.floor((Date.now()-999*H)/H)*H:h0;
+  const C=await audCandles(it.tk,'1h',from,1000,true,hrs>1000?null:it.E);
+  const L=C.filter(k=>k.t>=h0+H);           // کندلِ ساعتِ ورود بخشی از قبل از ورود را دارد
+  const px=PRICES.get(it.tk)>0?PRICES.get(it.tk):(C.length?C[C.length-1].c:null);if(!(px>0))throw new Error('nopx');
+  const s=it.dir==='long'?1:-1;let best=-Infinity,worst=Infinity,bt=null,wt=null,stopAt=null;
+  for(const k of L){const f=rbRof(it,s>0?k.h:k.l),a=rbRof(it,s>0?k.l:k.h);
+    if(f>best){best=f;bt=k.t;}if(a<worst){worst=a;wt=k.t;}
+    if(stopAt==null&&a<=-1)stopAt=k.t;}
+  const c=exCost({tpf:0},it.sd);
+  const o={at:Date.now(),px,r:+(rbRof(it,px)-c).toFixed(3),best:isFinite(best)?+(best-c).toFixed(3):null,worst:isFinite(worst)?+(worst-c).toFixed(3):null,bt,wt,stopAt,part:hrs>1000};
+  RBHOLD.set(it.id,o);return o;
+}
+function rbHoldHtml(it){const o=RBHOLD.get(it.id);if(!o)return '';
+  const act=it.st!=='open'?it.R:null, d=act!=null?o.r-act:null, hrs=t=>faN(Math.max(0,Math.round((t-it.t)/36e5)))+' ساعت بعد از ورود';
+  return '<div class="rbhold"><div><b>اگر نگه داشته بودیم</b> <small>(بی هدف و بی سیو سود، قیمت الان <b dir="ltr">'+fmtPrice(o.px)+'</b>، '+ageTxt(o.at)+')</small></div>'+
+    '<div>الان: '+rbMoney(o.r,it)+(d!=null?' · نسبت به نتیجه‌ی واقعی <b class="'+cls(d)+'" dir="ltr">'+fmtR(d)+'</b> <small>('+(d>0.05?'نگه داشتن بهتر بود':d<-0.05?'بستن بهتر بود':'فرقی نکرد')+')</small>':'')+'</div>'+
+    (o.best!=null?'<div class="glnum">بهترین جا <b class="'+cls(o.best)+'" dir="ltr">'+fmtR(o.best)+'</b> <small dir="ltr">'+fmtUsd(o.best*rbUsdR(it))+'</small> ('+hrs(o.bt)+') · بدترین <b class="'+cls(o.worst)+'" dir="ltr">'+fmtR(o.worst)+'</b> <small dir="ltr">'+fmtUsd(o.worst*rbUsdR(it))+'</small> ('+hrs(o.wt)+')</div>':'')+
+    '<div class="glnum">'+(o.stopAt?'با همان استاپ اول، '+hrs(o.stopAt)+' استاپ می‌خورد (−1R).':'استاپ اول تا الان نخورده.')+(o.part?' <small>(فقط 1000 ساعت آخر دیده شد)</small>':'')+'</div></div>';}
+/* داده‌ی کارت تصویری (همان کارت پوزیشن‌های واقعی) برای یک تست */
+function rbShareData(it){
+  const open=it.st==='open',px=PRICES.get(it.tk), R=open?(px>0?rbLiveR(it,px):0):it.R||0;
+  return {ticker:it.tk,spot:false,dir:it.dir,lev:rbLev(it),open,roi:rbRoe(it,R),pnl:R*rbUsdR(it),r:R,entry:it.E,exit:open?(px>0?px:null):it.xp,stop:it.SL,
+    since:open?Date.now():it.xt,openedAt:it.t,closedAt:open?null:it.xt,title:open?'تست باز':'تست بسته شد · '+RB_ST[it.st]};
+}
+/* آرشیو روزانه‌ی بسته‌ها: هر روز یک بخش تاشو با جمع همان روز؛ روز آخر و روزهایی که تست تازه دارند باز */
+const RBDAY=new Map();
+function rbArchHtml(done){
+  const G=new Map();for(const it of done){const k=dayNo(new Date(it.xt));if(!G.has(k))G.set(k,[]);G.get(k).push(it);}
+  let h='<div class="sechd">آرشیو بسته‌ها ('+faN(done.length)+' تست در '+faN(G.size)+' روز)</div>',first=true;
+  for(const [k,L] of G){const dl=dayLabel(new Date(L[0].xt)),o=rbSumOf(L),nw=L.filter(rbNewOf).length,
+      op=RBDAY.has(k)?RBDAY.get(k):(first||nw>0);first=false;
+    h+='<details class="rbday"'+(op?' open':'')+' data-day="'+k+'"><summary><span class="rbdl"><b>'+esc(dl.rel)+'</b> <small>'+esc(dl.wd+' '+dl.date)+'</small>'+(nw?' <span class="pill nw">'+faN(nw)+' تازه</span>':'')+'</span>'+
+      '<span class="rbds">'+faN(o.n)+' تست · '+faN(o.w)+' برد ('+faN(Math.round(o.w/o.n*100))+'٪) · <b class="'+cls(o.r)+'" dir="ltr">'+fmtR(o.r)+'</b> · <b class="'+cls(o.r)+'" dir="ltr">'+fmtUsd(rbUsd(L))+'</b></span></summary>'+
+      (op?L.map(it=>rbRowHtml(it,true)).join(''):'')+'</details>';}
+  return h;
+}
 function rbSumOf(L){const n=L.length,w=L.filter(x=>x.R>0).length,r=L.reduce((s,x)=>s+x.R,0);return {n,w,r};}
 function rbSumHtml(L,label){const o=rbSumOf(L);if(!o.n)return '';
   return '<div class="rbsum"><b>'+label+'</b><span>'+faN(o.n)+' بسته · '+faN(o.w)+' برد ('+faN(Math.round(o.w/o.n*100))+'٪)</span><span>جمع <b class="'+cls(o.r)+'" dir="ltr">'+fmtR(o.r)+'</b> · میانگین <b class="'+cls(o.r/o.n)+'" dir="ltr">'+fmtR(o.r/o.n)+'</b>'+
@@ -11303,25 +11407,40 @@ function rbSizeHtml(){
     'مارجین خالی یعنی روش قبلی: هر معامله ریسک ثابت '+fmtUsd(riskUsd())+'.</div></details>';
 }
 let RBSZOPEN=false;
+/* کِی باز و بسته شد و چقدر طول کشید: «ساعت 14:20 تا 18:05 (3 ساعت و 45 دقیقه)» */
+function rbTimeTxt(it){const hm=t=>{const d=new Date(t);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+  const m=Math.max(0,Math.round((it.xt-it.t)/60000)),dur=m<60?faN(m)+' دقیقه':faN(Math.floor(m/60))+' ساعت'+(m%60?' و '+faN(m%60)+' دقیقه':'');
+  return '<span dir="ltr">'+hm(it.t)+'</span> تا <span dir="ltr">'+hm(it.xt)+'</span> ('+dur+')';}
 function rbRowHtml(it,live){
   const px=PRICES.get(it.tk), lr=it.st==='open'&&px>0?rbLiveR(it,px):null, x=it.x;
   const left=it.st==='open'?Math.max(0,it.t+AS_HOLD*36e5-Date.now()):0;
   const stopNow=it.st==='open'&&x&&x.stop>-1?(x.stop===0?'ورود (ریسک‌فری)':'<b dir="ltr">'+fmtPrice(rbPx(it,x.stop))+'</b> <small dir="ltr">(+'+fmtNum(x.stop)+'R)</small>'):null;
-  return '<div class="rbrow" data-id="'+esc(it.id)+'"><div class="rbh"><b dir="ltr">'+esc(it.tk)+'</b><span class="pill '+it.dir+'">'+(it.dir==='long'?'لانگ':'شورت')+'</span>'+
+  const nw=it.k==='test'&&rbNewOf(it);
+  return '<div class="rbrow'+(nw?' nw':'')+'" data-id="'+esc(it.id)+'"><div class="rbh">'+(nw?'<span class="pill nw" title="'+(nw==='closed'?'از آخرین سر زدن بسته شده':'از آخرین سر زدن باز شده')+'">'+(nw==='closed'?'تازه بسته شد':'تازه')+'</span>':'')+
+    '<b dir="ltr">'+esc(it.tk)+'</b><span class="pill '+it.dir+'">'+(it.dir==='long'?'لانگ':'شورت')+'</span>'+
     (it.sc!=null?'<small>امتیاز '+faN(it.sc)+(it.stars?' · '+faN(it.stars)+'★':'')+'</small>':'')+
     (it.st==='open'?'<span class="pill '+(x&&x.k?'win':'mut')+'">'+(x&&x.k?'سیو شد '+faN(Math.round((1-x.rem)*100))+'٪':it.be?'ریسک‌فری':'باز')+'</span>'+(lr!=null?rbMoney(lr,it):''):
       '<span class="pill '+(it.R>0?'win':'lose')+'">'+RB_ST[it.st]+'</span>'+rbMoney(it.R,it))+'</div>'+
     (it.st==='open'&&x&&x.k?'<div class="glnum">سیو شده: <b class="u" dir="ltr">'+fmtR(x.acc)+'</b> · <b class="u" dir="ltr">'+fmtUsd(x.acc*rbUsdR(it))+'</b> (روی '+faN(Math.round((1-x.rem)*100))+'٪ حجم)</div>':'')+
     '<div class="glnum">ورود <b dir="ltr">'+fmtPrice(it.E)+'</b> · استاپ اول <b dir="ltr">'+fmtPrice(it.SL)+'</b>'+(stopNow&&x.stop>-1?' · استاپ الان '+stopNow:'')+
-      (it.st==='open'?(px>0?' · الان <b dir="ltr">'+fmtPrice(px)+'</b>':'')+' · '+faN(Math.ceil(left/36e5))+' ساعت مانده':' · '+ageTxt(it.xt))+'</div>'+
+      (it.st==='open'?(px>0?' · الان <b dir="ltr">'+fmtPrice(px)+'</b>':'')+' · '+faN(Math.ceil(left/36e5))+' ساعت مانده':' · خروج <b dir="ltr">'+fmtPrice(it.xp)+'</b> · '+rbTimeTxt(it))+'</div>'+
     (x?'<div class="glnum rbplan">'+rbPlanTxt(it)+'</div>':'<div class="glnum">هدف <b dir="ltr">'+fmtPrice(it.TP)+'</b></div>')+
-    (live?'<div class="glact">'+(it.st==='open'?'<button class="btn sm" data-rb="close">'+ic('x')+'<span>بستن با قیمت الان</span></button>':'')+
+    (it.st!=='open'?rbHoldHtml(it):'')+
+    (live?'<div class="glact">'+(it.st==='open'?'<button class="btn sm" data-rb="close">'+ic('x')+'<span>بستن با قیمت الان</span></button>':
+        '<button class="btn sm" data-rb="hold" title="از لحظه‌ی ورود تا الان، اگر نمی‌بستیم">'+ic('clock')+'<span>'+(RBHOLD.has(it.id)?'تازه کن «اگر نگه داشته بودیم»':'اگر نگه داشته بودیم؟')+'</span></button>')+
+      '<button class="btn sm" data-rb="share" title="تصویر نتیجه برای فرستادن">'+ic('share')+'<span>تصویر</span></button>'+
       '<button class="btn sm side" data-rb="del" title="حذف از دفتر">'+ic('trash')+'</button></div>':'')+'</div>';
 }
 function rbHtml(kind){
   const k=kind==='test'?'test':'auto', L=RB.items.filter(it=>it.k===k), open=L.filter(it=>it.st==='open'), done=L.filter(it=>it.st!=='open').sort((a,b)=>b.xt-a.xt);
   let h='';
   if(k==='test'){
+    rbEnter();
+    {const nO=open.filter(rbNewOf),nC=done.filter(rbNewOf);
+      if(nO.length||nC.length){const r=nC.reduce((a,it)=>a+(it.R||0),0);
+        h+='<div class="rbnew">'+ic('bell')+'<span>از آخرین سر زدن ('+ageTxt(RBVIS.prev)+'): '+
+          [nC.length?faN(nC.length)+' تست بسته شد · جمع <b class="'+cls(r)+'" dir="ltr">'+fmtR(r)+'</b> <b class="'+cls(r)+'" dir="ltr">'+fmtUsd(rbUsd(nC))+'</b>':'',nO.length?faN(nO.length)+' تست تازه باز شد':''].filter(Boolean).join(' · ')+
+          '. همه با نشان <span class="pill nw">تازه</span>.</span></div>';}}
     h+=rbSumHtml(done,'نتیجه');
     if(open.length){const px=it=>PRICES.get(it.tk),liv=open.filter(it=>px(it)>0),sum=liv.reduce((a,it)=>a+rbLiveR(it,px(it)),0),usd=rbUsd(liv,it=>rbLiveR(it,px(it))),worst=rbUsd(open,rbStopR);
       h+='<div class="rbsum"><b>بازها الان</b><span>'+faN(open.length)+' معامله · جمع <b class="'+cls(sum)+'" dir="ltr">'+fmtR(sum)+'</b> · به دلار <b class="'+cls(sum)+'" dir="ltr">'+fmtUsd(usd)+'</b></span>'+
@@ -11336,11 +11455,10 @@ function rbHtml(kind){
     h+='<details class="sec sub2 rbexw"><summary>نقشه‌ی خروج: '+rbExTxt()+(RBEX==='auto'?' (خودکار)':'')+'</summary>'+rbExPicker()+'</details>';
     h+=rbLabHtml();
     if(open.length)h+='<div class="sechd">باز ('+faN(open.length)+')</div>'+open.map(it=>rbRowHtml(it,true)).join('');
-    if(done.length)h+='<div class="sechd">بسته</div>'+done.slice(0,40).map(it=>rbRowHtml(it,true)).join('');
+    if(done.length)h+=rbArchHtml(done);
     if(!L.length)h+='<div class="empty">هنوز معامله‌ی آزمایشی نداری. در «سیگنال‌ها» روی <b>تست</b> هر سیگنال بزن.</div>';
     h+='<div class="hint">معامله‌ی آزمایشی مثل واقعی دنبال می‌شود (پله‌های سیو سود، استاپ، حداکثر 24 ساعت، بعد از کارمزد) ولی پولی در کار نیست و در پوزیشن‌ها و کارنامه‌ی اصلی نمی‌آید؛ حتی وقتی برنامه بسته است با کندل 5 دقیقه‌ای دنبال می‌شود. '+
-      (rbFix()?'دلار با مارجین '+fmtUsd(+S.tMg)+' برای هر تست حساب می‌شود (جعبه‌ی «مبلغ هر تست»). ':'دلار با ریسک هر معامله‌ی تنظیمات ('+fmtUsd(riskUsd())+') حساب می‌شود. ')+'حداکثر '+faN(RD_CAP)+' تست هم‌جهت باز (بیشترش را می‌پرسد).</div>';
-    if(done.length)h+='<div class="glact"><button class="btn sm side" data-rb="clear">'+ic('trash')+'<span>پاک کردن همه‌ی بسته‌ها</span></button></div>';
+      (rbFix()?'دلار با مارجین '+fmtUsd(+S.tMg)+' برای هر تست حساب می‌شود (جعبه‌ی «مبلغ هر تست»). ':'دلار با ریسک هر معامله‌ی تنظیمات ('+fmtUsd(riskUsd())+') حساب می‌شود. ')+'حداکثر '+faN(RD_CAP)+' تست هم‌جهت باز (بیشترش را می‌پرسد). بسته‌ها هیچ‌وقت خودشان پاک نمی‌شوند و در پشتیبان هم می‌آیند.</div>';
     return h;
   }
   h+='<div class="hint">هر پیشنهاد رادار (امتیاز '+faN(RD_MIN)+'+) از لحظه‌ای که نشان داده شد خودش ثبت و دنبال می‌شود؛ برای هر ارز یکی در هر لحظه. این آزمون واقعیِ <b>آینده</b> است: '+
@@ -11363,6 +11481,8 @@ function rbBind(g){
   g.querySelectorAll('[data-rbex]').forEach(b=>b.onclick=()=>{RBEX=b.dataset.rbex;try{localStorage.setItem('signaldesk.rdex',RBEX);}catch(e){}
     const n=rbReplan(RBEX==='auto'?null:RBEX);paintRadar(g);toast('نقشه‌ی خروج: '+rbExTxt()+(n?' · '+faN(n)+' معامله‌ی باز دوباره حساب می‌شود':''),'ok');});
   {const d=g.querySelector('.rbszw');if(d)d.ontoggle=()=>{RBSZOPEN=d.open;};}
+  // روز بسته‌ای که باز می‌شود تازه ساخته می‌شود (صدها ردیف یک‌جا ساخته نشوند)
+  g.querySelectorAll('.rbday').forEach(d=>d.ontoggle=()=>{const k=+d.dataset.day;RBDAY.set(k,d.open);if(d.open&&!d.querySelector('.rbrow'))paintRadar(g);});
   g.querySelectorAll('[data-rbsz]').forEach(b=>b.onclick=()=>{
     const m=parseFloat(normDig(($('#rbMg')||{}).value||'')),l=parseFloat(normDig(($('#rbLv')||{}).value||''));
     S.tMg=m>0?Math.min(1e6,m):null;S.tLev=l>=1?Math.min(125,Math.round(l)):null;DB.settings=Object.assign({},S);save();
@@ -11374,8 +11494,9 @@ function rbBind(g){
       askConfirm({title:'بستن همه‌ی تست‌های باز',tone:'info',msg:faN(L.length)+' معامله‌ی آزمایشیِ باز با قیمت الان بسته می‌شود.',ok:'همه را ببند',cancel:'انصراف'}).then(y=>{if(!y)return;
         for(const it of L)rbClose(it,'man',PRICES.get(it.tk));rbSave();paintRadar(g);toast(faN(L.length)+' معامله بسته شد','ok');});return;}
     if(a==='frompos'){sheetRadarToTest(()=>paintRadar(g));return;}
-    if(a==='clear'){const keep=RB.items;RB.items=RB.items.filter(it=>it.k!=='test'||it.st==='open');rbSave();paintRadar(g);toastUndo('بسته‌های آزمایشی پاک شد',()=>{RB.items=keep;rbSave();paintRadar(g);});return;}
     const row=b.closest('[data-id]'), it=row&&RB.items.find(x=>x.id===row.dataset.id);if(!it)return;
+    if(a==='share'){sheetShare(null,rbShareData(it));return;}
+    if(a==='hold'){busyRun(()=>rbHoldCalc(it)).then(()=>paintRadar(g)).catch(()=>toast('کندل‌های '+it.tk+' نیامد؛ کمی بعد دوباره بزن','err'));return;}
     if(a==='close'){const px=PRICES.get(it.tk);if(!(px>0)){toast('قیمت الان معلوم نیست','err');return;}rbClose(it,'man',px);}
     if(a==='del'){const keep=RB.items.slice();RB.items=RB.items.filter(x=>x!==it);rbSave();paintRadar(g);toastUndo('حذف شد',()=>{RB.items=keep;rbSave();paintRadar(g);});return;}
     rbSave();paintRadar(g);});
@@ -14055,7 +14176,8 @@ function dataCounts(d){
   return [['پوزیشن',n(d.positions)+n(d.spot)],['تصمیم',n(d.decisions)],['آموزش',n(d.lessons)],
           ['از این‌ها اسپات',spots],['منتظر',n(d.pending)],
           ['آرشیو',n(d.archived)],['نتایج',n(d.results)],['اصلاح دستی',n(d.overrides)],
-          ['ویرایشِ کانال',n(d.edits)],['حذفِ کانال',n(d.gone)],['برگشته از قدیمی',n(d.revived)]];
+          ['ویرایشِ کانال',n(d.edits)],['حذفِ کانال',n(d.gone)],['برگشته از قدیمی',n(d.revived)],
+          ['تست بازار',d.rdbook&&Array.isArray(d.rdbook.items)?d.rdbook.items.filter(x=>x&&x.k==='test').length:0]];
 }
 function applyBackup(d){
   DB.positions=(d.positions||[]).map(ensureBase);
@@ -14063,12 +14185,15 @@ function applyBackup(d){
   fillDB(d);repairBase();
   OVERRIDE=DB.overrides; PCACHE.clear();
   if(d.settings&&typeof d.settings==='object'){Object.assign(S,d.settings);fixFeat();}
+  // تست‌های بازار: پشتیبان‌های قدیمی ندارندشان؛ آن وقت تست‌های همین دستگاه می‌مانند
+  if(d.rdbook&&Array.isArray(d.rdbook.items)){RB={items:d.rdbook.items.filter(x=>x&&x.id&&x.tk)};RBLC.clear();rbSave();}
   applySettingsToForm();readSettings();
   save();renderAll();
   migrateSpot();
 }
 function sheetRestore(d,name){
-  const mine=dataCounts(dbBlob()), file=dataCounts(d);
+  const mine=dataCounts(Object.assign({},dbBlob(),{rdbook:RB})), file=dataCounts(d);
+  if(!d.rdbook)file[file.length-1][1]=mine[mine.length-1][1];   // فایل قدیمی تست ندارد: تست‌های این دستگاه می‌مانند
   const when=d.exportedAt?jStampFa(new Date(d.exportedAt)):'نامعلوم';
   const rows=file.map(([l,v],i)=>{
     const m=mine[i][1], diff=v!==m;
@@ -14110,7 +14235,7 @@ function wireIO(){
     const now=new Date(), hh=String(now.getHours()).padStart(2,'0'),
           mm=String(now.getMinutes()).padStart(2,'0');
     dl('signal-desk-'+jKey(now)+'-'+hh+mm+'.json',
-      JSON.stringify(Object.assign({v:5,exportedAt:Date.now()},dbBlob(),{settings:S}),null,2));
+      JSON.stringify(Object.assign({v:5,exportedAt:Date.now()},dbBlob(),{settings:S,rdbook:RB}),null,2));
     bkMark();
     toast('پشتیبان گرفته شد','ok');
   };
@@ -14210,6 +14335,7 @@ const VIEWS=[['vSignals','signals'],['vRadar','radar'],['vPositions','positions'
 const TAB_OF={report:'more',learn:'more',audit:'more'};
 function go(v,noScroll){
   if(view===v&&noScroll)return;
+  if(v!=='radar')try{rbLeave();}catch(e){}
   view=v;
   document.documentElement.classList.remove('navhide');   // با عوض کردن تب، منو همیشه پیداست
   const tab=TAB_OF[v]||v;
