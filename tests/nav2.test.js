@@ -6,9 +6,9 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
  await p.addInitScript(seed);await p.addInitScript(()=>{window.__startView='radar';});await p.goto('http://localhost:8899/index.html');await p.waitForTimeout(2500);
  const r=await p.evaluate(async()=>{const W=ms=>new Promise(r=>setTimeout(r,ms));
-   const tabs=[...document.querySelectorAll('#tabs .tab')].map(t=>t.dataset.v).join(','),start=view,startSel=document.querySelector('.tab[aria-selected="true"]').dataset.v,radVis=!document.getElementById('vRadar').classList.contains('hide')&&document.getElementById('vSignals').classList.contains('hide');
+   const tabs=[...document.querySelectorAll('#tabs .tab:not(.hide)')].map(t=>t.dataset.v).join(','),start=view,startSel=document.querySelector('.tab[aria-selected="true"]').dataset.v,radVis=!document.getElementById('vRadar').classList.contains('hide')&&document.getElementById('vSignals').classList.contains('hide');
    document.querySelector('.tab[data-v="more"]').click();await W(200);
-   const items=[...document.querySelectorAll('#vMore .moreit')].map(x=>x.dataset.go).join(',');
+   const items=[...document.querySelectorAll('#vMore .moreit[data-go]:not(.hide)')].map(x=>x.dataset.go).join(',');
    const at0=AUDQ.at,jobs=audJobs().length;
    document.querySelector('.moreit[data-go="audit"]').click();await W(1500);
    const on=AUDQ.on,at1=AUDQ.at,sel=document.querySelector('.tab[aria-selected="true"]').dataset.v,vis=!document.getElementById('vAudit').classList.contains('hide');

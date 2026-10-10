@@ -8,6 +8,12 @@ const RB_KEY='signaldesk.rdbook.v1';
 let RB=(()=>{const o=lsGet(RB_KEY);return o&&Array.isArray(o.items)?o:{items:[]};})();
 const RBLC=new Map();let RBCU=0,RBCUON=false,RBT=null;
 const rbSave=()=>lsSet(RB_KEY,RB);
+/* حداکثر نگه‌داری هر تست (ساعت): همان افقی که رادار با آن سیگنال داده (تست‌های قدیمی 24 ساعت) */
+const rbHoldH=it=>it&&it.hold>0?it.hold:AS_HOLD;
+/* سفارش‌های Limitِ منتظر (RB.pend) و باطل‌شده‌ها (RB.voids): ورود مثل سنجش رادار، با Limit در قیمت بسته شدن
+   کندل سیگنال؛ اگر تا 2 ساعت بعد از بسته شدن آن کندل قیمت نرسید، باطل. جدا از RB.items تا جمع‌ها دست نخورند. */
+const rbPend=()=>RB.pend||(RB.pend=[]);
+const RB_LIMH=2;
 /* هزینه‌ی معامله‌ی آزمایشی (به R): همان مدل سنجش — ورود و هدف‌ها با Limit (میکر)، بقیه با مارکت و لغزش */
 const rbCost=(it,st)=>exCost(it.x||{tpf:st==='tp'?1:0},it.sd);
 /* نقشه‌ی خروج: «خودکار» = همان که رادار در آزمون بیرون از یادگیری بهتر دیده؛ یا انتخاب خودت */
@@ -25,22 +31,28 @@ function rbReplan(ex,onlyMissing){let n=0;
     it.ex=it.k==='test'?(ex||rbExEff(it.dir)):(RD.exD&&RD.exD[it.dir]||RD.ex||'tp');it.x=exNew();delete it.chk;it.be=false;RBLC.delete(it.id);n++;}
   if(n){rbSave();setTimeout(()=>rbCatchUp(true),50);}
   return n;}
-const rbOpen=()=>{const o={test:0,auto:0};for(const it of RB.items)if(it.st==='open')o[it.k]++;return o;};
+const rbOpen=()=>{const o={test:0,auto:0};for(const it of RB.items)if(it.st==='open')o[it.k]++;for(const it of rbPend())o[it.k]++;return o;};
 function rbRepaint(){clearTimeout(RBT);RBT=setTimeout(()=>{try{if(view==='radar')renderRadar();}catch(e){}},400);}
 function rbAdd(kind,x,quiet){
   if(!x||!x.pl)return null;
   // برای هر ارز فقط یک معامله‌ی باز (مثل سنجش رادار)؛ لانگ و شورتِ هم‌زمانِ یک ارز همدیگر را خنثی می‌کنند
-  {const o=RB.items.find(it=>it.k===kind&&it.st==='open'&&it.tk===x.tk);
-    if(o){if(!quiet)toast(o.dir===x.dir?'همین معامله‌ی آزمایشی باز است':'تست '+(o.dir==='long'?'لانگ':'شورت')+'ِ '+x.tk+' باز است؛ برای هر ارز یک تست باز. اول آن را ببند','err');return null;}}
+  {const o=RB.items.find(it=>it.k===kind&&it.st==='open'&&it.tk===x.tk)||rbPend().find(it=>it.k===kind&&it.tk===x.tk);
+    if(o){if(!quiet)toast(o.st==='wait'?'سفارش Limitِ '+x.tk+' منتظر ورود است':o.dir===x.dir?'همین معامله‌ی آزمایشی باز است':'تست '+(o.dir==='long'?'لانگ':'شورت')+'ِ '+x.tk+' باز است؛ برای هر ارز یک تست باز. اول آن را ببند','err');return null;}}
   // سقف هم‌جهت: دفتر پیشنهادها همان قانون سنجش را دارد؛ تست با پرسیدن
-  if(kind==='auto'&&RB.items.filter(it=>it.k==='auto'&&it.st==='open'&&it.dir===x.dir).length>=RD_CAP)return null;
+  if(kind==='auto'&&RB.items.filter(it=>it.k==='auto'&&it.st==='open'&&it.dir===x.dir).length+rbPend().filter(it=>it.k==='auto'&&it.dir===x.dir).length>=RD_CAP)return null;
   if(kind==='auto'&&x.why==='cost')return null;
-  const pl=rdPlanAt(x.pl,PRICES.get(x.tk)||x.pl.E), now=Date.now();
+  // ورود مثل سنجش: Limit در قیمت سیگنال (بسته شدن کندل) تا 2 ساعت بعد؛ قیمت الان اگر به آن رسیده یا بهتر است، همین الان پر می‌شود
+  const now=Date.now(), H=36e5, sig=x.t?x.t+H:null, dl=sig?sig+RB_LIMH*H:null, E0=x.pl.E, sn=x.dir==='long'?1:-1, px=PRICES.get(x.tk);
+  if(dl&&now>dl){if(!quiet)toast('این سیگنال مال کندل ساعت '+rdHH(sig)+' است و مهلت ورود Limit ('+faN(RB_LIMH)+' ساعت بعدش) گذشته؛ «تازه کن» بزن','err');return null;}
+  const fill=px>0&&(px-E0)*sn<=0, pl=rdPlanAt(x.pl,fill?px:E0);
   const it={id:kind[0]+now.toString(36)+Math.random().toString(36).slice(2,5),k:kind,tk:x.tk,dir:x.dir,t:now,E:pl.E,SL:pl.SL,TP:pl.TP,sd:pl.sd,rr:pl.rr,
     sc:x.sc,stars:x.stars||0,p:x.p!=null?+x.p.toFixed(3):null,exp:x.exp!=null?+x.exp.toFixed(3):null,reg:RD.reg||null,be:false,st:'open',why:x.why||null,
     // عکس عامل‌ها در لحظه‌ی ورود (برای بررسی بعدی در خروجی)
     pv:x.parts?Object.fromEntries(RD_FEAT.filter(k=>x.parts[k]!=null&&x.parts[k]!==0).map(k=>[k,+(+x.parts[k]).toFixed(2)])):null,
-    ex:kind==='test'?rbExEff(x.dir):(RD.exD&&RD.exD[x.dir]||RD.ex||'tp'),x:exNew()};
+    ex:kind==='test'?rbExEff(x.dir):(RD.exD&&RD.exD[x.dir]||RD.ex||'tp'),x:exNew(),hold:rdHz().hold,lim:E0,sig};
+  if(!fill&&dl){Object.assign(it,{st:'wait',ct:now,dl});rbPend().push(it);RBLC.set(it.id,now);rbSave();
+    if(!quiet)toast('سفارش Limit ثبت شد: '+x.tk+' '+(x.dir==='long'?'لانگ':'شورت')+' در '+fmtPrice(E0)+' تا ساعت '+rbHM(dl)+'؛ اگر قیمت نرسید باطل می‌شود','ok');
+    return it;}
   RB.items.push(it);RBLC.set(it.id,now);
   // اندازه‌ی حافظه: قدیمی‌ترین بسته‌های خودکار اول می‌روند
   const auto=RB.items.filter(i=>i.k==='auto'&&i.st!=='open');
@@ -148,15 +160,33 @@ function rbStep(it,hi,lo,t,c){
   if(it.x.k>k0)it.x.at=t;                     // زمان آخرین سیو سود
   return false;
 }
+const rbHM=t=>{const d=new Date(t);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+/* پر شدن سفارش Limit در لحظه‌ی t (با همان قیمت Limit) ← معامله‌ی باز معمولی */
+function rbFill(it,t,live){
+  RB.pend=rbPend().filter(x=>x!==it);
+  Object.assign(it,{st:'open',t,ft:t,x:exNew(),be:false});delete it.dl;delete it.ct;delete it.chk;
+  RB.items.push(it);RBLC.set(it.id,live?Date.now():0);
+}
+function rbVoid(it,t){
+  RB.pend=rbPend().filter(x=>x!==it);
+  Object.assign(it,{st:'void',xt:t||it.dl});delete it.chk;
+  const V=RB.voids||(RB.voids=[]);V.push(it);if(V.length>300)RB.voids=V.slice(-300);
+}
 /* قیمت زنده (از applyPrices): فقط برای معامله‌هایی که تا همین چند دقیقه پیش دنبال شده‌اند؛ بقیه با کندل */
 function rbCheck(){
   const now=Date.now();let ch=false,gap=false;
+  for(const it of rbPend().slice()){
+    if(now-(RBLC.get(it.id)||0)>10*60000){gap=true;continue;}
+    const px=PRICES.get(it.tk);
+    if(px>0&&(px-it.E)*(it.dir==='long'?1:-1)<=0){rbFill(it,now,true);ch=true;continue;}
+    if(now>it.dl){rbVoid(it,it.dl);ch=true;continue;}
+    RBLC.set(it.id,now);}
   for(const it of RB.items){if(it.st!=='open')continue;
     if(now-(RBLC.get(it.id)||0)>10*60000){gap=true;continue;}
     const px=PRICES.get(it.tk);if(!(px>0))continue;
     const sig=JSON.stringify(it.x||{});
     if(rbStep(it,px,px,now))ch=true;else if(JSON.stringify(it.x)!==sig)ch=true;
-    if(it.st==='open'&&now-it.t>=AS_HOLD*36e5){rbClose(it,'time',px,now);ch=true;}
+    if(it.st==='open'&&now-it.t>=rbHoldH(it)*36e5){rbClose(it,'time',px,now);ch=true;}
     RBLC.set(it.id,now);}
   if(ch){rbSave();rbRepaint();}
   if(gap)rbCatchUp();
@@ -164,14 +194,24 @@ function rbCheck(){
 /* وقتی برنامه بسته بود: کندل‌های 5 دقیقه‌ایِ بعد از ورود (کندلِ خودِ ورود حساب نمی‌شود) */
 async function rbCatchUp(force){
   const now=Date.now();if(RBCUON||(!force&&now-RBCU<3*60000))return;
-  const todo=RB.items.filter(it=>it.st==='open'&&now-(RBLC.get(it.id)||0)>10*60000);if(!todo.length)return;
+  const todo=rbPend().filter(it=>now-(RBLC.get(it.id)||0)>10*60000).concat(RB.items.filter(it=>it.st==='open'&&now-(RBLC.get(it.id)||0)>10*60000));if(!todo.length)return;
+  let filled=false;
   RBCU=now;RBCUON=true;let ch=false,nd=0;const away=[];
   jobSet('rbcu',{title:'دنبال کردن تست‌ها با کندل 5 دقیقه‌ای',pause:true,cancel:true,pct:()=>nd/todo.length*100,msg:()=>faN(nd)+' از '+faN(todo.length),
     go:()=>{RDV='test';if(view==='radar')renderRadar();else go('radar');}});
   try{
     for(const it of todo){
       if(!(await jobGate('rbcu')))break;nd++;
-      const M5=3e5, from=it.chk||Math.floor(it.t/M5)*M5+M5, end=it.t+AS_HOLD*36e5;
+      const M5=3e5;
+      // سفارش منتظر: اولین کندل 5 دقیقه‌ای بعد از ثبت که به قیمت Limit رسید؛ تا مهلت نرسید ← باطل
+      if(it.st==='wait'){const f0=it.chk||Math.floor(it.ct/M5)*M5+M5;let C;try{C=await audCandles(it.tk,'5m',f0,300,true,it.E);}catch(e){if(now>it.dl+36e5){rbVoid(it,it.dl);ch=true;}continue;}
+        let hit=null,last=null;const sn=it.dir==='long'?1:-1;
+        for(const k of C){if(k.t<f0)continue;if(k.t>=it.dl)break;last=k;if(((sn>0?k.l:k.h)-it.E)*sn<=0){hit=k;break;}}
+        if(hit){rbFill(it,hit.t,false);filled=true;}
+        else if(now>=it.dl&&(!last||last.t+M5>=it.dl-M5||!C.length))rbVoid(it,it.dl);
+        else{if(last)it.chk=last.t+M5;RBLC.set(it.id,Date.now());}
+        ch=true;continue;}
+      const from=it.chk||Math.floor(it.t/M5)*M5+M5, end=it.t+rbHoldH(it)*36e5;
       let C;try{C=await audCandles(it.tk,'5m',from,300,true,it.E);}catch(e){continue;}
       let last=null;
       for(const k of C){if(k.t<from)continue;if(k.t>=end)break;last=k;if(rbStep(it,k.h,k.l,k.t+M5,k.c))break;}
@@ -184,12 +224,13 @@ async function rbCatchUp(force){
     }
   }finally{RBCUON=false;jobEnd('rbcu');}
   if(ch){rbSave();rbRepaint();}
+  if(filled)setTimeout(()=>rbCatchUp(true),200);   // پرشده‌ها از همان لحظه با کندل دنبال شوند
   // خلاصه‌ی آنچه در نبودِ برنامه بسته شد
   if(away.length){const r=away.reduce((a,it)=>a+(it.R||0),0);
     const msg='وقتی برنامه بسته بود '+faN(away.length)+' معامله‌ی آزمایشی بسته شد: '+away.map(it=>it.tk+' '+RB_ST[it.st]).join('، ')+' · جمع '+fmtR(r)+' ('+fmtUsd(rbUsd(away))+')';
     try{advise('rbaway:'+Date.now(),{cat:'pos',pri:'mid',title:msg})||toast(msg,'info');}catch(e){toast(msg,'info');}}
 }
-const RB_ST={tp:'هدف',sl:'استاپ',be:'ریسک‌فری',trail:'استاپ متحرک',time:'24 ساعت',man:'دستی',open:'باز'};
+const RB_ST={tp:'هدف',sl:'استاپ',be:'ریسک‌فری',trail:'استاپ متحرک',time:'سقف زمان',man:'دستی',open:'باز',wait:'منتظر Limit',void:'باطل'};
 /* سر زدن به «آزمایشی»: تستی که از آخرین بار تازه باز یا بسته شده، نشان «تازه» می‌گیرد.
    زمان آخرین سر زدن موقع رفتن از این صفحه (یا پنهان شدن برنامه) ذخیره می‌شود؛ تا وقتی این‌جایی، نشان‌ها می‌مانند. */
 const RBSEEN_KEY='signaldesk.rbseen', RBVIS={on:false,prev:0};
@@ -283,7 +324,7 @@ function rbTimeTxt(it){const hm=t=>{const d=new Date(t);return String(d.getHours
   return '<span dir="ltr">'+hm(it.t)+'</span> تا <span dir="ltr">'+hm(it.xt)+'</span> ('+dur+')';}
 function rbRowHtml(it,live){
   const px=PRICES.get(it.tk), lr=it.st==='open'&&px>0?rbLiveR(it,px):null, x=it.x;
-  const left=it.st==='open'?Math.max(0,it.t+AS_HOLD*36e5-Date.now()):0;
+  const left=it.st==='open'?Math.max(0,it.t+rbHoldH(it)*36e5-Date.now()):0;
   const stopNow=it.st==='open'&&x&&x.stop>-1?(x.stop===0?'ورود (ریسک‌فری)':'<b dir="ltr">'+fmtPrice(rbPx(it,x.stop))+'</b> <small dir="ltr">(+'+fmtNum(x.stop)+'R)</small>'):null;
   const nw=it.k==='test'&&rbNewOf(it);
   return '<div class="rbrow'+(nw?' nw':'')+'" data-id="'+esc(it.id)+'"><div class="rbh">'+(nw?'<span class="pill nw" title="'+(nw==='closed'?'از آخرین سر زدن بسته شده':'از آخرین سر زدن باز شده')+'">'+(nw==='closed'?'تازه بسته شد':'تازه')+'</span>':'')+
@@ -300,6 +341,15 @@ function rbRowHtml(it,live){
         '<button class="btn sm" data-rb="hold" title="از لحظه‌ی ورود تا الان، اگر نمی‌بستیم">'+ic('clock')+'<span>'+(RBHOLD.has(it.id)?'تازه کن «اگر نگه داشته بودیم»':'اگر نگه داشته بودیم؟')+'</span></button>')+
       '<button class="btn sm" data-rb="share" title="تصویر نتیجه برای فرستادن">'+ic('share')+'<span>تصویر</span></button>'+
       '<button class="btn sm side" data-rb="del" title="حذف از دفتر">'+ic('trash')+'</button></div>':'')+'</div>';
+}
+/* سفارش Limit منتظر: قیمت Limit، فاصله‌ی قیمت الان، و مهلت */
+function rbPendRowHtml(it,live=true){
+  const px=PRICES.get(it.tk),sn=it.dir==='long'?1:-1,far=px>0?(px-it.E)/it.E*100*sn:null,left=it.dl-Date.now();
+  return '<div class="rbrow rbpend" data-pid="'+esc(it.id)+'"><div class="rbh"><span class="pill gold">منتظر Limit</span><b dir="ltr">'+esc(it.tk)+'</b><span class="pill '+it.dir+'">'+(it.dir==='long'?'لانگ':'شورت')+'</span>'+
+    (it.sc!=null?'<small>امتیاز '+faN(it.sc)+'</small>':'')+'</div>'+
+    '<div class="glnum">ورود Limit <b dir="ltr">'+fmtPrice(it.E)+'</b>'+(px>0?' · الان <b dir="ltr">'+fmtPrice(px)+'</b> <small>('+fmtNum(Math.abs(far))+'٪ '+(far>0?'مانده تا ورود':'رسید')+')</small>':'')+
+      ' · استاپ <b dir="ltr">'+fmtPrice(it.SL)+'</b> · '+(left>0?'تا ساعت <b dir="ltr">'+rbHM(it.dl)+'</b> ('+fmtLeft(left)+')':'مهلت گذشت')+'</div>'+
+    (live?'<div class="glact"><button class="btn sm side" data-rb="pcancel">'+ic('x')+'<span>لغو سفارش</span></button></div>':'')+'</div>';
 }
 function rbHtml(kind){
   const k=kind==='test'?'test':'auto', L=RB.items.filter(it=>it.k===k), open=L.filter(it=>it.st==='open'), done=L.filter(it=>it.st!=='open').sort((a,b)=>b.xt-a.xt);
@@ -324,10 +374,15 @@ function rbHtml(kind){
     h+=rbSizeHtml();
     h+='<details class="sec sub2 rbexw"><summary>نقشه‌ی خروج: '+rbExTxt()+(RBEX==='auto'?' (خودکار)':'')+'</summary>'+rbExPicker()+'</details>';
     h+=rbLabHtml();
+    {const P=rbPend().filter(it=>it.k==='test');if(P.length)h+='<div class="sechd">منتظر ورود Limit ('+faN(P.length)+')</div>'+P.map(it=>rbPendRowHtml(it)).join('');}
     if(open.length)h+='<div class="sechd">باز ('+faN(open.length)+')</div>'+open.map(it=>rbRowHtml(it,true)).join('');
     if(done.length)h+=rbArchHtml(done);
-    if(!L.length)h+='<div class="empty">هنوز معامله‌ی آزمایشی نداری. در «سیگنال‌ها» روی <b>تست</b> هر سیگنال بزن.</div>';
-    h+='<div class="hint">معامله‌ی آزمایشی مثل واقعی دنبال می‌شود (پله‌های سیو سود، استاپ، حداکثر 24 ساعت، بعد از کارمزد) ولی پولی در کار نیست و در پوزیشن‌ها و کارنامه‌ی اصلی نمی‌آید؛ حتی وقتی برنامه بسته است با کندل 5 دقیقه‌ای دنبال می‌شود. '+
+    {const V=(RB.voids||[]).filter(it=>it.k==='test'&&Date.now()-it.xt<7*864e5).sort((a,b)=>b.xt-a.xt);
+      if(V.length)h+='<details class="sec sub2 rbvoid"><summary>'+faN(V.length)+' سیگنال در 7 روز اخیر باطل شد (قیمت تا '+faN(RB_LIMH)+' ساعت به ورود Limit نرسید)</summary><div class="rdwl">'+
+        V.map(it=>'<span class="pill mut"><b dir="ltr">'+esc(it.tk)+'</b> '+(it.dir==='long'?'L':'S')+' <small dir="ltr">'+fmtPrice(it.E)+' · '+rbHM(it.xt)+'</small></span>').join('')+'</div>'+
+        '<div class="hint">در سنجش گذشته هم همین‌ها «معامله‌ای نشد» حساب می‌شوند؛ پس جا ماندنشان ضرر نیست، همان قاعده است.</div></details>';}
+    if(!L.length&&!rbPend().some(it=>it.k==='test'))h+='<div class="empty">هنوز معامله‌ی آزمایشی نداری. در «سیگنال‌ها» روی <b>تست</b> هر سیگنال بزن.</div>';
+    h+='<div class="hint">ورود مثل سنجش رادار: Limit در قیمت بسته شدن کندل سیگنال؛ اگر تا '+faN(RB_LIMH)+' ساعت بعدش قیمت نرسید، باطل. معامله‌ی آزمایشی مثل واقعی دنبال می‌شود (پله‌های سیو سود، استاپ، حداکثر '+faN(rdHz().hold)+' ساعت، بعد از کارمزد) ولی پولی در کار نیست و در پوزیشن‌ها و کارنامه‌ی اصلی نمی‌آید؛ حتی وقتی برنامه بسته است با کندل 5 دقیقه‌ای دنبال می‌شود. '+
       (rbFix()?'دلار با مارجین '+fmtUsd(+S.tMg)+' برای هر تست حساب می‌شود (جعبه‌ی «مبلغ هر تست»). ':'دلار با ریسک هر معامله‌ی تنظیمات ('+fmtUsd(riskUsd())+') حساب می‌شود. ')+'حداکثر '+faN(RD_CAP)+' تست هم‌جهت باز (بیشترش را می‌پرسد). بسته‌ها هیچ‌وقت خودشان پاک نمی‌شوند و در پشتیبان هم می‌آیند.</div>';
     return h;
   }
@@ -342,7 +397,8 @@ function rbHtml(kind){
         (e!=null?'<b class="'+cls(e)+'" dir="ltr">'+fmtR(e)+'</b>':'<small>—</small>')+'</td></tr>';}).join('')+'</tbody></table>';
     for(const d of ['long','short']){const G=done.filter(x=>x.dir===d);if(G.length)h+=rbSumHtml(G,d==='long'?'لانگ‌ها':'شورت‌ها');}
   }
-  if(open.length)h+='<details class="sec sub2"><summary>باز ('+faN(open.length)+')</summary>'+open.map(it=>rbRowHtml(it,false)).join('')+'</details>';
+  {const P=rbPend().filter(it=>it.k===k);
+    if(open.length||P.length)h+='<details class="sec sub2"><summary>باز ('+faN(open.length)+')'+(P.length?' · منتظر Limit ('+faN(P.length)+')':'')+'</summary>'+P.map(it=>rbPendRowHtml(it,false)).join('')+open.map(it=>rbRowHtml(it,false)).join('')+'</details>';}
   if(done.length)h+='<details class="sec sub2"><summary>آخرین بسته‌ها</summary>'+done.slice(0,30).map(it=>rbRowHtml(it,false)).join('')+'</details>';
   return h;
 }
@@ -364,6 +420,8 @@ function rbBind(g){
       askConfirm({title:'بستن همه‌ی تست‌های باز',tone:'info',msg:faN(L.length)+' معامله‌ی آزمایشیِ باز با قیمت الان بسته می‌شود.',ok:'همه را ببند',cancel:'انصراف'}).then(y=>{if(!y)return;
         for(const it of L)rbClose(it,'man',PRICES.get(it.tk));rbSave();paintRadar(g);toast(faN(L.length)+' معامله بسته شد','ok');});return;}
     if(a==='frompos'){sheetRadarToTest(()=>paintRadar(g));return;}
+    if(a==='pcancel'){const r=b.closest('[data-pid]'),it=r&&rbPend().find(x=>x.id===r.dataset.pid);if(!it)return;
+      RB.pend=rbPend().filter(x=>x!==it);rbSave();paintRadar(g);toastUndo('سفارش '+it.tk+' لغو شد',()=>{rbPend().push(it);rbSave();paintRadar(g);});return;}
     const row=b.closest('[data-id]'), it=row&&RB.items.find(x=>x.id===row.dataset.id);if(!it)return;
     if(a==='share'){sheetShare(null,rbShareData(it));return;}
     if(a==='hold'){busyRun(()=>rbHoldCalc(it)).then(()=>paintRadar(g)).catch(()=>toast('کندل‌های '+it.tk+' نیامد؛ کمی بعد دوباره بزن','err'));return;}

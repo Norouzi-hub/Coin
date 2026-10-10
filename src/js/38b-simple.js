@@ -55,7 +55,7 @@ function glSigHtml(x,i){
     (now?'<div class="glnum">'+now+'</div>':'')+
     (pl?'<div class="glnum">قاعده‌ی من: '+esc(xRuleName(pl.r))+' · هدف <b dir="ltr">'+fmtPrice(pl.tp)+'</b></div>':'')+
     (hl?'<div class="glnum glh2">سابقه: '+hl+'</div>':'')+
-    (()=>{const e=mkEvPills(x.tk,x.dir);return e?'<div class="glnum">'+e+'</div>':'';})()+
+    (()=>{const e=mkEvPills(x.tk,x.dir),w=rdWxDir(x.dir)==='no'?'<span class="pill lose" title="روند بیت‌کوین، TOTAL و بیشتر ارزها خلاف این جهت‌اند">✗ خلاف هوای بازار</span>':'';return e||w?'<div class="glnum">'+w+e+'</div>':'';})()+
     '<div class="glact">'+
       (z?'<button class="btn sm ok" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
       '<button class="btn sm'+(z?'':' ok')+'" data-a="form">'+(z?'فرم کامل':'بررسی و ورود')+'</button>'+
@@ -83,7 +83,7 @@ function paintGlance(){
     h+='<div class="glb">';
     if(d.lock)h+='<div class="flag d"><i>!</i><span>'+faN(d.lock.n)+' باخت پیاپی — تا فردا ورود تازه نه.</span></div>';
     // بازار کل: یک خط تاشو؛ هشدارِ «بازار خلاف سیگنال‌هایت» بیرون از آن، جلوی چشم
-    {const dirs={long:0,short:0};for(const x of take)dirs[x.dir]++;h+=mkStripHtml()+mktFlagsHtml(MKT,dirs);}
+    {const dirs={long:0,short:0};for(const x of take)dirs[x.dir]++;h+=rdWxHtml(false)+mkStripHtml()+mktFlagsHtml(MKT,dirs);}
     if(d.nL+d.nS)h+='<div class="hint gldir">کانال در 30 روز اخیر: <b class="u">'+faN(d.nL)+' لانگ</b> · <b class="d">'+faN(d.nS)+' شورت</b>'+
       (d.nS<d.nL*0.15?' — کانال تقریباً فقط لانگ می‌دهد؛ شورت را در تب «بازار» (رادار) پیدا کن.':'')+'</div>';
     const list=GLALL?take:take.slice(0,GLMAX);

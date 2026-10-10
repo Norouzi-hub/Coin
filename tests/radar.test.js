@@ -182,13 +182,13 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    await pr;const ms=Math.round(performance.now()-t0);renderAll();
    const st=await idbGet('rdc:ETH'),fl=await idbGet('rdf:ETH');
    const L=rdList().filter(x=>x.dir!=='wait'),capd=['long','short'].reduce((a,d)=>a+Math.min(RD_CAP,L.filter(x=>x.dir===d).length),0),
-     aopen=['long','short'].map(d=>RB.items.filter(i=>i.k==='auto'&&i.dir===d).length);
+     aopen=['long','short'].map(d=>RB.items.concat(rbPend()).filter(i=>i.k==='auto'&&i.dir===d).length);
    RDV='model';renderRadar();const pan=!!document.querySelector('#rdView .rdpan'),extab=!!document.querySelector('#rdView .rdex');RDV='sig';renderRadar();
    return {ms,n:RD.n,rank:RD.rank.length,nflow:RD.nflow,M:!!(RD.M&&RD.M.long&&RD.M.short),cal:Object.keys(RD.calib).length,rel:!!RD.rel,
      eth:RD.coins.ETH&&{wl:RD.coins.ETH.wl,flow:RD.coins.ETH.flow,sc:RD.coins.ETH.sc,fund:RD.coins.ETH.parts.fund},solfund:RD.coins.SOL&&RD.coins.SOL.parts.fund,sol:RD.coins.SOL&&RD.coins.SOL.flow,
      rows:st&&st.rows.length,flow:fl&&fl.top&&fl.top.length,pan,capd,aopen,
      exP:RD.ex,exs:!!(RD.exs&&RD.exs.lad&&RD.exs.lad.all),extab,exD:RD.exD,exDok:['long','short'].every(d=>{const av=n=>{const o=RD.exs[n][d];return o&&o.n>=30?o.r/o.n:null;},b=RD.exD[d],ab=av(b);
-       return RD_EXN.includes(b)&&(ab==null?b===RD.ex:RD_EXN.every(n=>av(n)==null||av(n)<=ab+0.005));}),auto:RB.items.filter(i=>i.k==='auto').length,sig:rdList().filter(x=>x.dir!=='wait').length,seen:seen.filter((x,i)=>i%5===0),gone:!document.getElementById('rdProgBox')};});
+       return RD_EXN.includes(b)&&(ab==null?b===RD.ex:RD_EXN.every(n=>av(n)==null||av(n)<=ab+0.005));}),auto:RB.items.concat(rbPend()).filter(i=>i.k==='auto').length,sig:rdList().filter(x=>x.dir!=='wait').length,seen:seen.filter((x,i)=>i%5===0),gone:!document.getElementById('rdProgBox')};});
  console.log('   ',JSON.stringify(full),JSON.stringify(REQ));
  ok(full.seen.length>2&&full.seen.every(x=>/\d+٪/.test(x)&&/\d:\d\d/.test(x))&&full.seen.some(x=>/ارز \d+ از 10/.test(x))&&full.gone,'نوار پیشرفت: درصد، کار الان و تایمر؛ آخر کار برداشته شد');
  ok(full.n===10&&full.rank===10,'بار اول فقط 10 ارز اول ('+full.rank+')، در '+full.ms+'ms');
@@ -233,8 +233,8 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const pr=await p.evaluate(()=>{const N=3000,F0=RD_F0,X=new Float32Array(N*F0),R={long:[],short:[]},J={long:[],short:[]},t=[];let sd=7;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647;
    for(let q=0;q<N;q++){let z=0;for(let k=0;k<6;k++){const v=rnd()<0.5?-1:1;X[q*F0+k]=v;z+=v*(k+1)*0.25;}X[q*F0+6]=X[q*F0];
      const y=rnd()<1/(1+Math.exp(-z))?1:-1;R.long.push(y);R.short.push(-y);J.long.push(q);J.short.push(q);t.push(q*36e5);}
-   const M=rdFitP([{tk:'Z',t,X,R,J}],'long',Infinity),D=M.drop||{},k6=RD_FEAT[6],k0=RD_FEAT[0];
-   return {dup:D[k6]==='d:'+k0||D[k0]==='d:'+k6,w0:M.w[D[k6]?0:6],weak:Object.values(D).filter(x=>x==='w').length,kept:[1,2,3,4,5].every(k=>!D[RD_FEAT[k]]),zero:Object.keys(D).every(k=>M.w[RD_FEAT.indexOf(k)]===0),nF:RD_FEAT.length};});
+   const fs0=S.rdFs;S.rdFs='all';const M=rdFitP([{tk:'Z',t,X,R,J}],'long',Infinity),D=M.drop||{},k6=RD_FEAT[6],k0=RD_FEAT[0];S.rdFs=fs0;
+   return {dup:D[k6]==='d:'+k0||D[k0]==='d:'+k6,w0:M.w[D[k6]?0:6],weak:Object.values(D).filter(x=>x==='w').length+Object.keys(M.off||{}).length,kept:[1,2,3,4,5].every(k=>!D[RD_FEAT[k]]),zero:Object.keys(D).every(k=>M.w[RD_FEAT.indexOf(k)]===0),nF:RD_FEAT.length};});
  console.log('   ',JSON.stringify(pr));
  ok(pr.dup&&pr.kept&&pr.zero&&pr.weak>=pr.nF-8&&Math.abs(pr.w0)>0.1,'هرس خودکار: کپیِ یک عامل «تکراری» و عامل‌های بی‌اثر «کم‌اثر» کنار رفتند؛ عامل‌های مفید ماندند');
  // خروج سریع: همه در +0.5R، نصف در +0.5R، و خروج بعد از 1 ساعت با قیمت همان لحظه

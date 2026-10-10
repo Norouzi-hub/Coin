@@ -1807,3 +1807,29 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .rdit.taken{border-inline-start:3px solid var(--gold)}
 .rdage{color:var(--tx3);font-size:11px}
 .rdtk1 svg{width:12px;height:12px;vertical-align:-2px}
+/* هوای بازار */
+.rdwx{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:14px;background:var(--card);border:1px solid var(--line);border-inline-start:4px solid var(--warn);margin:8px 0}
+.rdwx.go{border-inline-start-color:var(--up);background:color-mix(in srgb,var(--up) 6%,var(--card))}
+.rdwx.stop{border-inline-start-color:var(--dn);background:color-mix(in srgb,var(--dn) 7%,var(--card))}
+.rdwx.wait{border-inline-start-color:var(--line)}
+.rdwxh{display:flex;gap:10px;align-items:flex-start}
+.rdwxh>i{flex:none;font-style:normal;font-size:22px;line-height:1}
+.rdwxh>div{display:flex;flex-direction:column;gap:2px;min-width:0}.rdwxh b{font-weight:900}.rdwxh span{font-size:12.5px;color:var(--tx2)}
+.rdwx.go .rdwxh b{color:var(--up)}.rdwx.stop .rdwxh b{color:var(--dn)}
+.rdwxc{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.rdwxc small{color:var(--tx3)}
+.rdwxb{display:grid;grid-template-columns:minmax(0,1.3fr) 1fr auto;gap:8px;align-items:center;font-size:12px}
+.rdwxt{position:relative;height:8px;border-radius:4px;background:var(--inset);direction:ltr;overflow:hidden}
+.rdwxt::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line)}
+.rdwxt i{position:absolute;top:0;bottom:0;border-radius:4px}.rdwxt i.u{background:var(--up)}.rdwxt i.d{background:var(--dn)}
+/* روش رادار و تمرکز */
+.rdmeth{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.rdmr{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.rdmr>small{color:var(--tx3);min-width:72px}
+.rdmr .pbpick{flex-wrap:wrap}
+.hint.w{color:var(--warn)}
+.rbpend{border-style:dashed}
+.focus{display:flex;flex-direction:column;gap:8px}
+.fcpos{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fcfoot{margin-top:10px}
+.moreit .sw{margin-inline-start:auto;flex:none;width:38px;height:22px;border-radius:11px;background:var(--inset);border:1px solid var(--line);position:relative}
+.moreit .sw::after{content:'';position:absolute;top:2px;inset-inline-start:2px;width:16px;height:16px;border-radius:50%;background:var(--tx3);transition:inset-inline-start .2s}
+.moreit .sw.on{background:color-mix(in srgb,var(--up) 35%,var(--inset))}.moreit .sw.on::after{inset-inline-start:18px;background:var(--up)}

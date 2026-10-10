@@ -56,6 +56,7 @@
     </div>
     <nav class="tabs" role="tablist" id="tabs">
       <span class="ind" id="tabInd"></span>
+      <button class="tab hide" data-v="focus" role="tab" aria-selected="false" data-ic="bolt"><span>امروز</span><span class="cnt g z" id="cFoc">0</span></button>
       <button class="tab" data-v="radar" role="tab" aria-selected="true" data-ic="bars"><span>بازار</span><span class="cnt g z" id="cRad">0</span></button>
       <button class="tab" data-v="positions" role="tab" aria-selected="false" data-ic="wallet"><span>پوزیشن‌ها</span><span class="cnt z" id="cPos">0</span></button>
       <button class="tab" data-v="signals" role="tab" aria-selected="false" data-ic="trend"><span>سیگنال‌ها</span><span class="cnt g z" id="cSig">0</span></button>
@@ -123,12 +124,16 @@
   </section>
 
   <!-- سایر: کانال‌سنج، کارنامه، آموزش، تنظیمات -->
+  <section id="vFocus" class="view hide"><div id="focusBody"></div></section>
+
   <section id="vMore" class="view hide">
     <div class="morelist">
+      <button class="moreit hide" data-go="radar" id="moreRadar"><i data-ic="bars"></i><span><b>بازار (رادار)</b><small>سیگنال‌های رادار، تست‌ها، کارنامه‌ی مدل</small></span></button>
       <button class="moreit" data-go="audit"><i data-ic="shield"></i><span><b>کانال‌سنج</b><small>کانال چقدر راست می‌گوید؛ سنجش فقط وقتی خودت بزنی</small></span><span class="cnt z" id="cAud">0</span></button>
       <button class="moreit" data-go="report"><i data-ic="bars"></i><span><b>کارنامه</b><small>نتیجه‌ی معامله‌های خودت، روزانه و ماهانه</small></span></button>
       <button class="moreit" data-go="learn"><i data-ic="book"></i><span><b>آموزش</b><small>آموزش‌ها و دستورالعمل‌های کانال</small></span><span class="cnt g z" id="cLearn">0</span></button>
       <button class="moreit" data-go="settings"><i data-ic="sliders"></i><span><b>تنظیمات</b><small>اتصال، سرمایه و ریسک، همگام‌سازی، پشتیبان</small></span></button>
+      <button class="moreit" id="focusTgl"><i data-ic="bolt"></i><span><b>حالت تمرکز</b><small id="focusTglS">یک صفحه‌ی «امروز»: هوای بازار، سیگنال‌های قابل گرفتن، پوزیشن‌های باز، نتیجه‌ی هفته</small></span><span class="sw" id="focusSw"></span></button>
     </div>
   </section>
 

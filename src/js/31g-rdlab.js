@@ -10,10 +10,13 @@ const RBL={on:false,done:0,n:0,res:null,at:0,auto:false};
 const RBL_ROE=[5,10,15,20,30,50], RBL_R=[0.5,1,1.5,2,3];
 /* کندل‌های 5 دقیقه‌ای از ورود تا 24 ساعت بعد (یا تا الان)؛ مسیرِ کامل‌شده در IndexedDB می‌ماند */
 async function rbPath(it){
-  const M5=3e5, from=Math.floor(it.t/M5)*M5, end=it.t+AS_HOLD*36e5, key='rbp:'+it.id;
+  const M5=3e5, from=Math.floor(it.t/M5)*M5, end=it.t+rbHoldH(it)*36e5, key='rbp:'+it.id;
   // مسیر ذخیره‌شده‌ای که از ارز هم‌نامِ دیگری آمده بود (کندل اول دور از ورود) دور ریخته می‌شود
   const st=await idbGet(key);if(st&&st.full&&!(st.C.length&&Math.abs(st.C[0].c/it.E-1)>0.3))return st.C;
-  const C=(await audCandles(it.tk,'5m',from,Math.min(300,Math.ceil((Math.min(Date.now(),end)-from)/M5)+1),true,it.E)).filter(k=>k.t>=from&&k.t<end);
+  // تا 300 کندل در هر درخواست (بیشتر منبع‌ها)؛ افق 3 روزه چند تکه می‌شود
+  const C=[],stop=Math.min(Date.now(),end);let a=from;
+  for(let n=0;a<stop&&n<12;n++){const got=(await audCandles(it.tk,'5m',a,Math.min(300,Math.ceil((stop-a)/M5)+1),true,n?null:it.E)).filter(k=>k.t>=a&&k.t<end);
+    if(!got.length)break;C.push(...got);a=got[got.length-1].t+M5;if(got.length<250)break;}
   const full=Date.now()>=end+M5&&C.length&&C[C.length-1].t>=end-2*M5;
   await idbSet(key,{C:C.map(k=>({t:k.t,o:k.o,h:k.h,l:k.l,c:k.c})),full});
   return C;
@@ -21,7 +24,7 @@ async function rbPath(it){
 /* همه‌ی نقشه‌های خروج روی مسیر واقعی یک تست: همان موتور دفتر تست (rbStep) روی یک کپی از معامله.
    باز مانده: اگر 24 ساعت کامل شده با قیمت آخر (خروج زمانی)، وگرنه «باز» با سود/ضرر الان */
 function rbAllPlans(it,C){
-  const M5=3e5,t1=Math.floor(it.t/M5)*M5+M5,end=it.t+AS_HOLD*36e5,out={};
+  const M5=3e5,t1=Math.floor(it.t/M5)*M5+M5,end=it.t+rbHoldH(it)*36e5,out={};
   const full=C.length>0&&C[C.length-1].t>=end-2*M5;
   for(const n of RD_EXN){
     const y={id:it.id,k:it.k,tk:it.tk,dir:it.dir,t:it.t,E:it.E,SL:it.SL,TP:it.TP,sd:it.sd,rr:it.rr,st:'open',ex:n,x:exNew(),be:false};
@@ -62,7 +65,7 @@ function rbPathStats(it,C){
     mfe24=Math.max(mfe24,fav);if(stopAt==null)mae=Math.min(mae,adv);
     for(const r of [0.5,1,1.5,2,3])if(touch[r]==null&&fav>=r&&stopAt==null)touch[r]=k.t;
     lastR=(k.c-it.E)*s/u;lastT=k.t;}
-  const end=it.t+AS_HOLD*36e5, full=lastT!=null&&lastT>=end-2*M5;
+  const end=it.t+rbHoldH(it)*36e5, full=lastT!=null&&lastT>=end-2*M5;
   return {lev,mfe,tMfe,mfe24,mae,stopAt,touch,lastR,full,n:C.length};
 }
 /* یک آستانه‌ی خروج روی مسیر: اولین لمسِ آستانه پیش از استاپ ← برد؛ استاپ اول ← −1R؛ هیچ ← قیمت پایان 24 ساعت */
@@ -74,12 +77,12 @@ function rbThSim(it,C,thR){
     if(fav>=thR)return {R:thR-cT,how:'th'};       // خروج در آستانه با Limit
     last=k;}
   if(!last)return null;
-  const done=last.t>=it.t+AS_HOLD*36e5-2*M5;
+  const done=last.t>=it.t+rbHoldH(it)*36e5-2*M5;
   return {R:(last.c-it.E)*s/u-c,how:done?'time':'open'};
 }
 async function rbLabRun(){
   if(RBL.on)return;
-  const L=RB.items.filter(it=>it.k==='test'||(RBL.auto&&it.k==='auto')).filter(it=>it.E>0&&it.sd>0);
+  const L=RB.items.filter(it=>it.k==='test'||(RBL.auto&&it.k==='auto')).filter(it=>it.E>0&&it.sd>0&&it.st!=='void');
   if(!L.length){toast('هنوز معامله‌ی آزمایشی نداری','err');return;}
   Object.assign(RBL,{on:true,done:0,n:L.length,res:null});rbRepaint();
   jobSet('rblab',{title:'آماده‌سازی خروجی تست‌ها',pause:true,cancel:true,pct:()=>RBL.done/Math.max(1,RBL.n)*100,msg:()=>faN(RBL.done)+' از '+faN(RBL.n)+' تست',
@@ -145,14 +148,16 @@ function rbLabExport(){
   const res=RBL.res||[];
   const H=rdHealth(),M=RD.M||{},W=d=>M[d]&&M[d].w?Object.fromEntries(RD_FEAT.map((k,i)=>[k,M[d].w[i]]).filter(([,v])=>v)):null;
   return JSON.stringify({v:2,app:'signaldesk',kind:'radar-test-paths',at:new Date().toISOString(),
-    settings:{fee:+S.fee||0,slip:+S.slip||0,riskUsd:riskUsd(),testMargin:rbFix()?+S.tMg:null,testLev:+S.tLev>0?+S.tLev:null,rMul:S.rMul,maxLev:+S.maxLev||null,isoMaxSd:isoMaxSd(),exit:{long:rbExEff('long'),short:rbExEff('short')},hold:AS_HOLD},
+    settings:{fee:+S.fee||0,slip:+S.slip||0,riskUsd:riskUsd(),testMargin:rbFix()?+S.tMg:null,testLev:+S.tLev>0?+S.tLev:null,rMul:S.rMul,maxLev:+S.maxLev||null,isoMaxSd:isoMaxSd(),exit:{long:rbExEff('long'),short:rbExEff('short')},hold:rdHz().hold,hz:rdHzK(),fs:rdFsK(),wxFilter:S.rdWx!==false,limH:RB_LIMH},
     model:{ex:RD.ex||null,exD:RD.exD||null,exs:RD.exs||null,reg:RD.reg||null,mt0:RD.mt0||null,ncoin:RD.ncoin||null,ns:RD.ns||null,
       span:RD.span?RD.span.map(t=>new Date(t).toISOString()):null,health:H,cap:RD_CAP,capN:RD.capN??null,divs:RD.divs||null,
+      hz:RD.hz||null,fs:RD.fs||null,wx:RD.wxs||null,hold:RD.hold||null,xs:RD.xs||null,wxNow:rdWxNow(),
+      voids:(RB.voids||[]).filter(it=>it.k==='test').length,
       calib:Object.fromEntries(Object.entries(RD.calib||{}).filter(([k])=>!/\|/.test(k)||/^base\|/.test(k)||/^(long|short)\|[0-9]/.test(k))),
       weights:{long:W('long'),short:W('short')},drop:{long:M.long&&M.long.drop||null,short:M.short&&M.short.drop||null}},
     trades:res.map(x=>{const {it,C,st}=x,t0=C.length?C[0].t:it.t;
       return {id:it.id,kind:it.k,tk:it.tk,dir:it.dir,t:new Date(it.t).toISOString(),E:it.E,SL:it.SL,sd:+it.sd.toFixed(5),rr:it.rr,ex:it.ex||null,sc:it.sc,stars:it.stars,p:it.p,exp:it.exp,reg:it.reg,
-        why:it.why||null,pv:it.pv||null,st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
+        why:it.why||null,pv:it.pv||null,hold:rbHoldH(it),lim:it.lim??null,sigT:it.sig?new Date(it.sig).toISOString():null,st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
         lev:st.lev,plans:x.pl?Object.fromEntries(Object.entries(x.pl).map(([n,v])=>[n,v.st==='open'?{R:v.R,open:true}:v.R])):null,usdPerR:+rbUsdR(it).toFixed(3),usd:it.R!=null?+(it.R*rbUsdR(it)).toFixed(2):null,stats:{mfe:+st.mfe.toFixed(3),tMfeMin:st.tMfe?Math.round((st.tMfe-it.t)/6e4):null,mfe24:+st.mfe24.toFixed(3),mae:+st.mae.toFixed(3),
           stopMin:st.stopAt?Math.round((st.stopAt-it.t)/6e4):null,touchMin:Object.fromEntries(Object.entries(st.touch).map(([k,v])=>[k,Math.round((v-it.t)/6e4)])),full:st.full},
         path:{t0:new Date(t0).toISOString(),stepMin:5,unit:'1e-4 of entry',hlc:C.map(k=>[Math.round((k.h/it.E-1)*1e4),Math.round((k.l/it.E-1)*1e4),Math.round((k.c/it.E-1)*1e4)])}};})});

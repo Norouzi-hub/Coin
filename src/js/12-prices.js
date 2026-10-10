@@ -57,7 +57,7 @@ function pxNeed(){
   const s=new Set();
   try{for(const p of DB.positions)if(p.status==='open'&&p.ticker)s.add(p.ticker);}catch(e){}
   try{for(const w of DB.pending)if(w.ticker)s.add(w.ticker);}catch(e){}
-  try{for(const it of RB.items)if(it.st==='open')s.add(it.tk);for(const t of RD.rank)s.add(t);}catch(e){}
+  try{for(const it of RB.items)if(it.st==='open')s.add(it.tk);for(const it of rbPend())s.add(it.tk);for(const t of RD.rank)s.add(t);}catch(e){}
   try{const cut=Date.now()-3*864e5;for(const p of POSTS)if(p.date&&+p.date>=cut){const g=sigOf(p);if(g&&g.ticker)s.add(g.ticker);}}catch(e){}
   return s;
 }
