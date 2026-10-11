@@ -27,6 +27,10 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    // افق بلند: استاپ پهن‌تر و نمونه هر 4 ساعت
    const C=Array.from({length:400},(_,i)=>{const c=100+Math.sin(i/5)*2;return {t:i*H,o:c,h:c+0.5,l:c-0.5,c};});
    const a=asPlan(C,300,'long',0,RD_HZ.s),l=asPlan(C,300,'long',0,RD_HZ.l);o.hz={s:a.sd,l:l.sd,hold:[RD_HZ.s.hold,RD_HZ.l.hold]};
+   // نقشه‌ی «ریسک‌فری در +1R، بقیه تا سقف زمان»، افق هفتگی، تاریخچه‌ی بلندتر
+   {const P=rdExPlans().be1,x=exNew();const a1=exStep(x,P,0.6,-0.2),s1=x.stop,a2=exStep(x,P,1.2,0.3),s2=x.stop,a3=exStep(x,P,4,0.5),a4=exStep(x,P,4,-0.1);
+     const k0=S.rdHistD;S.rdHistD=365;const hh=rdHistH(),sig=rdCostSig();S.rdHistD=k0;
+     o.be1={n:RD_EXN.includes('be1'),steps:[a1,s1,a2,s2,a3,a4],how:x.how,acc:x.acc,hh,sig:/\|365$/.test(sig),w:RD_HZ.w.hold};}
    // بررسی خودکار
    const a0=RD.at;RD.at=NOW-H;S.rdAuto='2h';o.auto=[rdAutoDue()];S.rdAuto='off';RD.at=NOW-5*H;o.auto.push(rdAutoDue());
    S.rdAuto='fav';RDFAV=['ETH'];RD.at=NOW-H;o.auto.push(rdAutoDue());S.rdAuto='2h';RD.at=NOW-3*H;o.auto.push(rdAutoDue());RD.at=a0;
@@ -73,6 +77,8 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(/هوا برای لانگ نامناسب است/.test(r.card),'کارت هوای بازار در «بازار»');
  ok(r.xs.ic>0.3&&r.xs.icT>2&&r.xs.sp>0&&Math.abs(r.xr.ic)<0.1&&Math.abs(r.xr.icT)<2.5,'سنجش رتبه‌بندی: امتیاز درست IC '+r.xs.ic+' (t='+r.xs.icT+')، تصادفی '+r.xr.ic);
  ok(r.hz.l>r.hz.s*1.5&&r.hz.hold.join()==='24,72','افق بلند: استاپ 2.5×ATR چهارساعته ('+(r.hz.l*100).toFixed(2)+'٪ در برابر '+(r.hz.s*100).toFixed(2)+'٪)، 72 ساعت');
+ ok(r.be1.n&&r.be1.steps.join()==='false,-1,false,0,false,true'&&r.be1.how==='be'&&Math.abs(r.be1.acc)<1e-9,'نقشه‌ی «ریسک‌فری در +1R، بقیه تا سقف زمان»: هدفی نمی‌بندد، بعد از +1R استاپ روی ورود');
+ ok(r.be1.w===168&&r.be1.hh===365*24&&r.be1.sig,'افق هفتگی (7 روز) و تاریخچه‌ی یادگیری 365 روزه (مدل از نو یاد می‌گیرد)');
  ok(r.auto.join()===',,fav,refresh','بررسی خودکار: هر 2 ساعت، فقط با زدن، واچ‌لیست هر 30 دقیقه');
  ok(r.nw[0]===true&&r.nw[1]===false&&r.nw[2]===null,'«تازه» از خودِ بررسی (rdLive)، بی حافظه‌ی جدا');
  ok(r.pend.st==='wait'&&r.pend.n===1&&r.pend.items===0&&r.pend.dl===2&&r.dup,'تست با Limit: منتظر می‌ماند (مهلت 2 ساعت بعد از کندل)، تکراری ثبت نمی‌شود');

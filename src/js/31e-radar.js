@@ -14,7 +14,7 @@
    کارنامه‌ی صادق: آزمون پیش‌رونده (یادگیری روی گذشته، سنجش روی دوره‌ی بعد، سه بار)، برای هر ارز در هر
    لحظه فقط یک معامله‌ی باز، و ستاره از «بدترین حالت محتمل» (کران پایین 90٪، با خوشه‌بندی روزانه چون
    ارزها با هم بالا و پایین می‌روند). */
-const RD_KEY='signaldesk.radar.v5', RD_HIST=3000, RD_STEP=10, RD_MAX=150, RD_MIN=70;
+const RD_KEY='signaldesk.radar.v5', RD_STEP=10, RD_MAX=150, RD_MIN=70;
 /* RD_CAP: حداکثر معامله‌ی باز هم‌جهت (ارزها با هم بالا و پایین می‌روند؛ 20 لانگ هم‌زمان یعنی یک شرط بزرگ).
    RD_NC_OK: کمترین تعداد ارز برای اعتماد به ستاره‌ها؛ زیر RD_NC_MIN ستاره حداکثر 3 است. */
 const RD_CAP=3, RD_NC_OK=50, RD_NC_MIN=30;
@@ -43,7 +43,11 @@ const RD_FA={t4:'روند 4 ساعته',t1:'روند 1 ساعته',macd:'MACD',r
 const RD_B=['70-85','85-95','95+'];
 /* افق معامله‌ی رادار: «کوتاه» = حداکثر 24 ساعت با استاپ 1.5×ATR یک‌ساعته (نمونه هر 2 ساعت)؛
    «بلند» = حداکثر 3 روز با استاپ 2.5×ATR چهارساعته (نمونه هر 4 ساعت): حرکت‌ها بزرگ‌تر، سهم نویز و کارمزد کمتر */
-const RD_HZ={s:{n:'کوتاه (تا 24 ساعت)',hold:24,atrH:1,atrM:1.5,step:2},l:{n:'بلند (تا 3 روز)',hold:72,atrH:4,atrM:2.5,step:4}};
+const RD_HZ={s:{n:'کوتاه (تا 24 ساعت)',hold:24,atrH:1,atrM:1.5,step:2},l:{n:'بلند (تا 3 روز)',hold:72,atrH:4,atrM:2.5,step:4},
+  w:{n:'هفتگی (تا 7 روز)',hold:168,atrH:24,atrM:2,step:12}};
+/* طول تاریخچه‌ی یادگیری (روز): بیشتر = حال‌های بازارِ بیشتر در یادگیری و سنجش؛ بار اول هر ارز چند درخواست بیشتر */
+const RD_HISTD=[125,250,365];
+const rdHistD=()=>RD_HISTD.includes(+S.rdHistD)?+S.rdHistD:125, rdHistH=()=>rdHistD()*24;
 const rdHzK=()=>RD_HZ[S.rdHz]?S.rdHz:'s', rdHz=()=>RD_HZ[rdHzK()];
 /* عامل‌های اصلی (پیش‌فرض): کم و شناخته‌شده؛ «همه» یعنی همه‌ی عامل‌ها با هرس خودکار */
 const RD_CORE=['t4','t1','rsi','ext','rs','d50','volc','btc','ma200','adx','mom','r24','hl30','fund','mtot','mmc','mbd'];
@@ -227,7 +231,7 @@ const rdBucket=s=>s>=95?'95+':s>=85?'85-95':'70-85';
    t: پله‌های هدف، f: سهمی که در هر پله بسته می‌شود، st: استاپ بعد از هر پله، be: ریسک‌فری بی بستن،
    trail: استاپ متحرک به فاصله‌ی چند R پشت بیشترین سود (بعد از پله‌ی اول). */
 const RD_EXSW=0.03;   // کمترین برتری (R) برای عوض شدن نقشه‌ی خروج «خودکار» یک جهت
-const RD_EXN=['tp','lad','trl','sar','q03','q05','q075','q1','q05c','h05','t1h'];
+const RD_EXN=['tp','lad','trl','sar','q03','q05','q075','q1','q05c','h05','t1h','be1'];
 const rdExPlans=()=>{const rr=+(S.rMul&&S.rMul[0])||1.5;return {
   tp:{n:'هدف ثابت',d:'همه در +'+rr+'R؛ در +1R استاپ به ورود',t:[rr],f:[1],st:[0],be:1},
   lad:{n:'سیو سود پله‌ای',d:'نصف در +1R و استاپ به ورود؛ یک‌چهارم در +2R و استاپ به +1R؛ باقی در +3R',t:[1,2,3],f:[.5,.25,.25],st:[0,1,2]},
@@ -243,7 +247,9 @@ const rdExPlans=()=>{const rr=+(S.rMul&&S.rMul[0])||1.5;return {
   // (در −2R، تست‌های واقعی −2.07R و −2.05R دادند؛ یک باخت چهار برد را می‌برد)
   q05c:{n:'+0.5R، استاپ با بسته شدن کندل',d:'همه در +0.5R؛ استاپ فقط وقتی کندل یک‌ساعته آن طرفش بسته شود (اضطراری در −1.5R)',t:[0.5],f:[1],st:[0],cs:1.5},
   h05:{n:'نصف در +0.5R',d:'نصف در +0.5R و استاپ به ورود؛ باقی در +1.5R',t:[0.5,1.5],f:[.5,.5],st:[0,0]},
-  t1h:{n:'خروج بعد از 1 ساعت',d:'بعد از یک ساعت با قیمت همان لحظه (استاپ سر جایش)',t:[],f:[],st:[],tmax:1}};};
+  t1h:{n:'خروج بعد از 1 ساعت',d:'بعد از یک ساعت با قیمت همان لحظه (استاپ سر جایش)',t:[],f:[],st:[],tmax:1},
+  // روی مسیر واقعی 206 تست (مهر 1405) بهترین خروج لانگ بود: برنده‌ها بریده نمی‌شوند، بازنده‌ای که +1R رفته بی‌ضرر بسته می‌شود
+  be1:{n:'ریسک‌فری در +1R، بقیه تا سقف زمان',d:'هدفی نیست؛ در +1R استاپ به ورود می‌رود و معامله تا سقف زمان (یا استاپ) می‌ماند',t:[],f:[],st:[],be:1}};};
 const exNew=()=>({rem:1,acc:0,stop:-1,k:0,peak:0,be:false,tpf:0});
 /* ---- هزینه‌ی هر معامله ----
    «کارمزد رفت‌وبرگشت» تنظیمات (تیکر/مارکت) و «کارمزد میکر رفت‌وبرگشت» (Limit) هر کدام نصف‌نصف برای ورود و خروج.
@@ -251,7 +257,7 @@ const exNew=()=>({rem:1,acc:0,stop:-1,k:0,peak:0,be:false,tpf:0});
    قبلاً کارمزد رفت‌وبرگشت دو بار شمرده می‌شد و لغزش روی همه‌ی خروج‌ها. tpf: سهمی از حجم که در هدف‌ها بسته شده. */
 function rdFees(){const tk=Math.max(0,+S.fee||0)/2, mk=S.feeMk!=null&&S.feeMk!==''?Math.max(0,+S.feeMk||0)/2:Math.min(tk,0.02), lm=S.rdOrd!=='mkt';
   return {tk,mk,slip:Math.max(0,+S.slip||0),lm,inF:lm?mk:tk,tpF:lm?mk:tk};}
-const rdCostSig=()=>{const f=rdFees();return [f.tk,f.mk,f.slip,f.lm?1:0,'v2',rdHzK()].join('|');};
+const rdCostSig=()=>{const f=rdFees();return [f.tk,f.mk,f.slip,f.lm?1:0,'v2',rdHzK(),rdHistD()].join('|');};
 /* هزینه به R: ورود + سهم هدف‌ها با کارمزد هدف + بقیه با مارکت و لغزش */
 const exCost=(x,sd,F)=>{F=F||rdFees();const t=Math.min(1,Math.max(0,(x&&x.tpf)||0));return (F.inF+t*F.tpF+(1-t)*(F.tk+F.slip))/100/sd;};
 /* بدترین حالت (خروج با استاپ): برای کنار گذاشتن معامله‌ای که استاپش آن‌قدر نزدیک است که کارمزد آن را می‌خورد */
@@ -531,7 +537,7 @@ async function rdModel(){
     cost={avg:+(a/C.length).toFixed(4),mkt:+(m/C.length).toFixed(4),old:+(o/C.length).toFixed(4),n:C.length,skip:recs.costN||0,lm:Fe.lm};}}
   for(const d of ['long','short'])if(cal['base|'+exD[d]+'|'+d])cal['base|'+d]=cal['base|'+exD[d]+'|'+d];
   const C2={};for(const k in cal)if(!/^base\|[a-z0-9]+\|/.test(k))C2[k]=rdSum(cal[k]);
-  Object.assign(RD,{ex,exD,exHold,exs,divs,wxs,hold,xs:xsum,hz:rdHzK(),fs:rdFsK(),cost,cs:rdCostSig(),capN,cap:RD_CAP,mt0:Date.now(),M:{long:ML,short:MS},calib:C2,rel,ns:SS.reduce((s,x)=>s+x.t.length,0),span:[t0,t1],ncoin:SS.length});
+  Object.assign(RD,{ex,exD,exHold,exs,divs,wxs,hold,xs:xsum,hz:rdHzK(),fs:rdFsK(),hist:rdHistD(),cost,cs:rdCostSig(),capN,cap:RD_CAP,mt0:Date.now(),M:{long:ML,short:MS},calib:C2,rel,ns:SS.reduce((s,x)=>s+x.t.length,0),span:[t0,t1],ncoin:SS.length});
   return true;
 }
 /* ستاره از کارنامه‌ی بیرون از یادگیری: 0 = نمونه‌ی کم، 1 = زیان، 2 = سود ولی شاید شانس، 3+ = حتی در بدترین حالت محتمل سود */
@@ -580,7 +586,7 @@ async function rdFundLoad(){
 }
 /* کندل یک‌ساعته‌ی ~125 روز در IndexedDB؛ fresh=false یعنی بی شبکه، فقط اگر چیزی ذخیره نیست */
 async function rdCandles(tk,fresh){
-  const H=36e5,key='rdc:'+tk,now=Date.now(),from=Math.floor((now-RD_HIST*H)/H)*H;
+  const H=36e5,key='rdc:'+tk,now=Date.now(),from=Math.floor((now-rdHistH()*H)/H)*H;
   const st=await idbGet(key);let rows=st&&Array.isArray(st.rows)?st.rows:[];
   const needOld=!(st&&st.noOld)&&(!rows.length||rows[0][0]>from+48*H);
   if(rows.length&&!fresh&&!needOld)return rows.map(r=>({t:r[0],o:r[1],h:r[2],l:r[3],c:r[4],v:r[5]}));
@@ -625,7 +631,7 @@ async function rdFlow(tk,fresh){
 const RD_STB=/^(USDC|FDUSD|TUSD|DAI|BUSD|USDP|USDD|USDE|SUSDE|USDS|PYUSD|USD0|USD1|RLUSD|EURC|BFUSD|USDF|USDT0|USDX|GHO|FRAX|LUSD|CRVUSD|USDG|USDB|USYC|BUIDL)$/;
 async function rdUsdtHist(){
   const st=await idbGet('rdusdt');if(st&&Date.now()-st.at<864e5)return st.c;
-  try{const got=await fetchVia('https://api.coingecko.com/api/v3/coins/tether/market_chart?vs_currency=usd&days=130&interval=daily',
+  try{const got=await fetchVia('https://api.coingecko.com/api/v3/coins/tether/market_chart?vs_currency=usd&days='+(rdHistD()+5)+'&interval=daily',
       {json:true,timeout:12000,kind:'px',quiet:true,label:'عرضه‌ی تتر (CoinGecko)',validate:d=>d&&Array.isArray(d.market_caps)});
     const c=got.data.market_caps.filter(x=>x[1]>0);if(c.length>10){await idbSet('rdusdt',{at:Date.now(),c});return c;}}catch(e){}
   return st?st.c:null;
@@ -676,11 +682,11 @@ async function rdMktBuild(B){
 async function rdFundH(tk,fresh){
   const H=36e5,key='rdfu:'+tk,now=Date.now(),st=await idbGet(key)||{};
   if(st.at&&(!fresh||(st.none&&now-st.at<864e5)||now-st.at<4*H))return st.a||null;
-  const last=st.a&&st.a.length?st.a[st.a.length-1][0]:0, from=last?last+1:now-130*864e5;
+  const last=st.a&&st.a.length?st.a[st.a.length-1][0]:0, from=last?last+1:now-(rdHistD()+5)*864e5;
   try{const got=await fetchVia('https://fapi.binance.com/fapi/v1/fundingRate?symbol='+tk+'USDT&startTime='+from+'&limit=1000',
       {json:true,timeout:12000,kind:'px',quiet:true,minLen:2,label:'فاندینگ '+tk,validate:d=>Array.isArray(d)});
     const m=new Map(st.a||[]);for(const x of got.data){const r=+x.fundingRate;if(isFinite(r))m.set(+x.fundingTime,r*100);}
-    const a=[...m].filter(x=>x[0]>=now-180*864e5).sort((x,y)=>x[0]-y[0]);
+    const a=[...m].filter(x=>x[0]>=now-Math.max(180,rdHistD()+10)*864e5).sort((x,y)=>x[0]-y[0]);
     const o={at:now,a,none:!a.length};await idbSet(key,o);return a.length?a:null;}
   catch(e){return st.a||null;}
 }
@@ -1012,11 +1018,13 @@ function rdPanelHtml(){
 /* روش (افق، عامل‌ها) و سه سنجش سخت‌گیرانه: ماه قفل، رتبه‌بندی ارزها، هوای بازار */
 function rdMethodHtml(){
   const pick=(attr,cur,opts)=>'<div class="pbpick">'+opts.map(([k,t])=>'<button class="pbc'+(cur===k?' on':'')+'" '+attr+'="'+k+'">'+t+'</button>').join('')+'</div>';
-  const learned=RD.hz===rdHzK()&&RD.fs===rdFsK();
+  const learned=RD.hz===rdHzK()&&RD.fs===rdFsK()&&(RD.hist||125)===rdHistD();
   let h='<div class="rdmeth"><div class="rdmr"><small>افق معامله</small>'+pick('data-rdhz',rdHzK(),Object.entries(RD_HZ).map(([k,o])=>[k,o.n]))+'</div>'+
+    '<div class="rdmr"><small>تاریخچه‌ی یادگیری</small>'+pick('data-rdhist',String(rdHistD()),RD_HISTD.map(d=>[String(d),faN(d)+' روز']))+'</div>'+
     '<div class="rdmr"><small>عامل‌ها</small>'+pick('data-rdfs',rdFsK(),[['core','اصلی ('+faN(RD_CORE.length)+')'],['all','همه ('+faN(RD_FEAT.length)+')']])+'</div>'+
     (learned?'':'<div class="hint w">این انتخاب هنوز یاد گرفته نشده؛ عددهای پایین مال روش قبلی‌اند. «یادگیری دوباره» را بزن.</div>')+
-    '<div class="hint">«بلند»: حداکثر 3 روز، استاپ 2.5 برابر ATR چهارساعته؛ حرکت‌ها بزرگ‌تر و سهم نویز و کارمزد کمتر. «اصلی»: فقط عامل‌های شناخته‌شده (روندها، RSI، فاصله از میانگین، قدرت نسبی، نوسان، مومنتوم، فاندینگ، بیت‌کوین و کل بازار). '+
+    '<div class="hint">«بلند»: حداکثر 3 روز، استاپ 2.5 برابر ATR چهارساعته؛ «هفتگی»: حداکثر 7 روز، استاپ 2 برابر ATR روزانه؛ حرکت‌ها بزرگ‌تر و سهم نویز و کارمزد کمتر. '+
+    'تاریخچه‌ی بلندتر یعنی بازار صعودی، نزولی و خنثیِ بیشتری در یادگیری و سنجش؛ بار اول برای هر ارز چند درخواست بیشتر و چند دقیقه طول می‌کشد (بعد در گوشی می‌ماند). «اصلی»: فقط عامل‌های شناخته‌شده (روندها، RSI، فاصله از میانگین، قدرت نسبی، نوسان، مومنتوم، فاندینگ، بیت‌کوین و کل بازار). '+
     'مدل «R نقشه‌ی خروج همان جهت» را یاد می‌گیرد (برد و باخت بزرگ وزن بیشتری دارند)، نه فقط برد یا باخت.'+
     (RD.M&&RD.M.long&&RD.M.long.fcov!=null?' داده‌ی جریان پول (نهنگ‌ها، OI، …) در '+faN(Math.round(RD.M.long.fcov*100))+'٪ نمونه‌ها بود'+(RD.M.long.off&&Object.keys(RD.M.long.off).length?'؛ کمتر از 60٪ است، پس کنار ماند تا گذشته و الان یکی باشند':'')+'.':'')+'</div></div>';
   const av=x=>x&&x.n?x.r/x.n:null, cell=x=>x&&x.n?rdCell(x):'<small>—</small>';
@@ -1049,10 +1057,11 @@ function rdMethodHtml(){
   return h;
 }
 function rdMethodBind(g){
-  g.querySelectorAll('[data-rdhz],[data-rdfs]').forEach(b=>b.onclick=()=>{
-    if(b.dataset.rdhz){if(rdHzK()===b.dataset.rdhz)return;S.rdHz=b.dataset.rdhz;}else{if(rdFsK()===b.dataset.rdfs)return;S.rdFs=b.dataset.rdfs;}
+  g.querySelectorAll('[data-rdhz],[data-rdfs],[data-rdhist]').forEach(b=>b.onclick=()=>{
+    const D=b.dataset;
+    if(D.rdhz){if(rdHzK()===D.rdhz)return;S.rdHz=D.rdhz;}else if(D.rdhist){if(rdHistD()===+D.rdhist)return;S.rdHistD=+D.rdhist;}else{if(rdFsK()===D.rdfs)return;S.rdFs=D.rdfs;}
     DB.settings=Object.assign({},S);save();
-    toast((b.dataset.rdhz?'افق: '+rdHz().n:'عامل‌ها: '+(rdFsK()==='core'?'اصلی':'همه'))+' · مدل از نو یاد می‌گیرد','info');
+    toast((D.rdhz?'افق: '+rdHz().n:D.rdhist?'تاریخچه‌ی یادگیری: '+faN(rdHistD())+' روز (بار اول داده‌ی قدیمی‌تر گرفته می‌شود)':'عامل‌ها: '+(rdFsK()==='core'?'اصلی':'همه'))+' · مدل از نو یاد می‌گیرد','info');
     if(RDQ.on)RDQ.next='learn';else rdScan('learn');paintRadar(g);});
 }
 /* زیرتب «کارنامه»: خلاصه‌ی مدل در چند عدد، بعد جدول‌ها (تاشو) */
@@ -1395,7 +1404,7 @@ function paintRadar(g){
         // برای سبک‌های دیگر («همه در تارگت 2»، «متعادل»، «پله‌ای») است تا هر کدام عدد خودش را بدهد (با یک تارگت همه یکی می‌شدند)
         const sn=x.dir==='long'?1:-1,tR=r=>+(x.pl.E*(1+sn*x.pl.sd*r)).toPrecision(8),
           M={tp:[[1.5,3,5],'s1'],lad:[[1,2,3],'rd'],trl:[[1,2,3],'rd'],q03:[[0.3,0.6,1],'s1'],q05:[[0.5,1,1.5],'s1'],q075:[[0.75,1.5,2.25],'s1'],q1:[[1,2,3],'s1'],
-            q05c:[[0.5,1,1.5],'s1'],sar:[[0.5,1.5,2.5],'bal'],h05:[[0.5,1.5,2.5],'bal'],t1h:[[0.5,1,1.5],'s1']}[ex];
+            q05c:[[0.5,1,1.5],'s1'],sar:[[0.5,1.5,2.5],'bal'],h05:[[0.5,1.5,2.5],'bal'],t1h:[[0.5,1,1.5],'s1'],be1:[[1,5,8],'s2']}[ex];
         if(M)sg.targets=M[0].map(tR);
         sheetEnter(p,sg,{stop:x.pl.SL,lev:z?z.lev:null,amt:z?z.margin:null,market:'futures'},PRICES.get(x.tk)||x.pl.E,
           {iso:true,untilAuto:true,pb:M?M[1]:'s1',note:'ورود Limit در '+fmtPrice(x.pl.E)+(x.t?' تا '+rbHM(x.t+(1+RB_LIMH)*36e5):'')+' · رادار بازار · امتیاز '+x.sc+(x.stars?' · '+x.stars+'★':'')+(ex!=='tp'?' · خروج: '+rdExPlans()[ex].n:''),until:Date.now()+(ex==='t1h'?1:rdHz().hold)*36e5});}

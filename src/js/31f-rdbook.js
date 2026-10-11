@@ -293,7 +293,7 @@ function rbSumHtml(L,label){const o=rbSumOf(L);if(!o.n)return '';
 function rbPlanTxt(it){
   const P=rdExPlans()[it.ex||'tp'];if(!P)return '';
   const st=P.t.map((r,i)=>(P.f[i]>=0.999?'همه':faN(Math.round(P.f[i]*100))+'٪')+' در <b dir="ltr">'+fmtPrice(rbPx(it,r))+'</b> <small dir="ltr">(+'+r+'R)</small>'+(it.x&&it.x.k>i?' ✓':''));
-  return esc(P.n)+': '+(P.tmax?esc(P.d):st.join(' · ')+(P.trail?' · باقی با استاپ متحرک':''));
+  return esc(P.n)+': '+(P.tmax||!P.t.length?esc(P.d):st.join(' · ')+(P.trail?' · باقی با استاپ متحرک':''));
 }
 /* سود به R و دلار. پیش‌فرض: هر تست با مبلغ ثابت (مارجین S.tMg، مثلاً 10 دلار) و اهرم ایزوله‌ی پیشنهادی
    (یا اهرم ثابت S.tLev)؛ پس 1R = مارجین × اهرم × فاصله‌ی استاپ. بی مبلغ: 1R = ریسک هر معامله‌ی تنظیمات.
