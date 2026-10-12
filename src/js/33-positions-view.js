@@ -138,17 +138,35 @@ function renderPositions0(){
   const todayKey=jKey(new Date());
   const todayPnl=all.filter(p=>p.status==='closed'&&p.closedAt&&jKey(new Date(p.closedAt))===todayKey)
     .reduce((s,p)=>s+(posMetrics(p).pnl||0),0);
+  /* آمار بالا مخصوص همان تب: «باز» فقط شناور، «بسته» فقط تحقق‌یافته، «همه» جمع هر دو */
   if(all.length){
     const st=el('div','stats');
     let h='';
     const add=(l,v,c,sub)=>h+='<div class="st"><b>'+l+'</b><span class="'+(c||'')+'">'+v+'</span>'+(sub?'<small>'+sub+'</small>':'')+'</div>';
-    add('پوزیشن باز',faN(open.length),open.length?'':'m');
-    add('سود/ضرر باز',hasLive?fmtUsd(unreal):'—',hasLive?cls(unreal):'m','شناور');
-    add('امروز',fmtUsd(todayPnl),cls(todayPnl),'بسته‌شده');
-    const totalClosed=all.filter(p=>p.status==='closed').reduce((s,p)=>s+(posMetrics(p).pnl||0),0);
-    add('مجموع خالص',fmtUsd(totalClosed),cls(totalClosed));
+    const closed=all.filter(p=>p.status==='closed'), cm=closed.map(p=>posMetrics(p)),
+      totalClosed=cm.reduce((s,m)=>s+(m.pnl||0),0);
+    if(posFilter==='open'){
+      let nUp=0,rSum=0,nR=0;
+      for(const p of open){const l=pxOf(p);if(!l)continue;const m=posMetrics(p,l);if(m.pnl>0)nUp++;if(m.r!=null&&isFinite(m.r)){rSum+=m.r;nR++;}}
+      add('پوزیشن باز',faN(open.length),open.length?'':'m');
+      add('سود/ضرر باز',hasLive?fmtUsd(unreal):'—',hasLive?cls(unreal):'m','شناور');
+      add('در سود',hasLive?faN(nUp)+' از '+faN(open.length):'—',hasLive?'':'m');
+      add('R باز',nR?fmtR(rSum):'—',nR?cls(rSum):'m','جمع');
+    }else if(posFilter==='closed'){
+      const win=cm.filter(m=>(m.pnl||0)>0).length, rs=cm.filter(m=>m.r!=null&&isFinite(m.r)), rAvg=rs.length?rs.reduce((s,m)=>s+m.r,0)/rs.length:null;
+      add('بسته‌شده',faN(closed.length),closed.length?'':'m');
+      add('مجموع خالص',fmtUsd(totalClosed),cls(totalClosed),'تحقق‌یافته');
+      add('امروز',fmtUsd(todayPnl),cls(todayPnl),'بسته‌شده');
+      add('برد',closed.length?faN(Math.round(win/closed.length*100))+'٪':'—',closed.length?'':'m',rAvg!=null?'میانگین '+fmtR(rAvg):'');
+    }else{
+      add('پوزیشن',faN(all.length),'',faN(open.length)+' باز · '+faN(closed.length)+' بسته');
+      add('سود/ضرر باز',hasLive?fmtUsd(unreal):'—',hasLive?cls(unreal):'m','شناور');
+      add('بسته‌شده',fmtUsd(totalClosed),cls(totalClosed),'تحقق‌یافته');
+      const net=totalClosed+(hasLive?unreal:0);
+      add('جمع کل',fmtUsd(net),cls(net),'بسته + باز');
+    }
     st.innerHTML=h;sum.appendChild(st);
-    if(POSSRC==='all'){const cmp=srcCompareHtml(every.filter(p=>p.status==='closed'),true);if(cmp){const d=el('details','sec sub2 srcwrap','<summary>کانال در برابر خودم (بسته‌شده‌ها)</summary>'+cmp);sum.appendChild(d);}}
+    if(POSSRC==='all'&&posFilter!=='open'){const cmp=srcCompareHtml(every.filter(p=>p.status==='closed'),true);if(cmp){const d=el('details','sec sub2 srcwrap','<summary>کانال در برابر خودم (بسته‌شده‌ها)</summary>'+cmp);sum.appendChild(d);}}
     const limit=S.acct*(S.daily/100);
     if(todayPnl<0&&Math.abs(todayPnl)>=limit){
       sum.appendChild(el('div','status bad','امروز '+fmtUsd(todayPnl)+' ضرر کرده‌ای و این از حد روزانه‌ات ('+
