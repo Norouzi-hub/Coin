@@ -1850,6 +1850,9 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .moreit .sw{margin-inline-start:auto;flex:none;width:38px;height:22px;border-radius:11px;background:var(--inset);border:1px solid var(--line);position:relative}
 .moreit .sw::after{content:'';position:absolute;top:2px;inset-inline-start:2px;width:16px;height:16px;border-radius:50%;background:var(--tx3);transition:inset-inline-start .2s}
 .moreit .sw.on{background:color-mix(in srgb,var(--up) 35%,var(--inset))}.moreit .sw.on::after{inset-inline-start:18px;background:var(--up)}
+.rdck{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.rdck>b{font-size:12px;margin-inline-end:4px}
+.rdck .pill{font-size:11px;padding:2px 7px}
+.rbckn{color:var(--tx3);font-size:11px}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -10797,6 +10800,33 @@ function rdWxHtml(full){
   return h+'</div>';
 }
 function rdWxBind(g,re){const b=g.querySelector('[data-rdwxf]');if(b)b.onclick=()=>{S.rdWx=S.rdWx===false?true:false;DB.settings=Object.assign({},S);save();toast(S.rdWx!==false?'فیلتر هوای بازار روشن شد':'فیلتر هوای بازار خاموش شد','ok');re();};}
+/* ---- چک‌لیست ورود: شش بند از تحلیل 206 تست واقعی (مهر 1405) ----
+   بستر (هوا، جریان پول به آلت‌ها)، مکان (هنوز نرفته)، ازدحام (OI همراه قیمت بالا نرفته)، ماشه (بالای VWAP روزانه و
+   نیمه‌ی بالای بولینگر یک‌ساعته)، ریسک (استاپ دست‌کم 2٪). برای شورت همه برعکس. فعلاً فقط نشان داده و با هر تست ثبت
+   می‌شود تا روی تست‌های آینده سنجیده شود؛ فیلتر «قابل گرفتن» نیست.
+   p: عامل‌های یک لحظه (parts زنده، یا pv تست که صفرها را ندارد: missing=false یعنی نبودن = صفر) */
+const RD_CK=[['wx','هوا','هوای بازار برای همین جهت مناسب است'],['flow','جریان پول','پول به آلت‌ها می‌رود (TOTAL3 بالا، دامیننس تتر پایین؛ شورت برعکس)'],
+  ['fresh','هنوز نرفته','در 14 روز اخیر رالی نزده و در 7 روز از بیت‌کوین جلو نیفتاده (شورت: هنوز نریخته)'],['crowd','بی ازدحام','OI همراه قیمت بالا نرفته؛ اهرم‌ها هنوز جمع نشده‌اند'],
+  ['trig','ماشه','بالای VWAP روزانه و در نیمه‌ی بالای بولینگر یک‌ساعته (شورت: زیر و نیمه‌ی پایین)'],['stop','استاپ ≥2٪','استاپ دست‌کم 2٪ دور است؛ با تکان معمولی نمی‌خورد']];
+function rdChkOf(p,dir,sd,missing){
+  const s=dir==='short'?-1:1,g=k=>p&&p[k]!=null&&isFinite(+p[k])?+p[k]:(missing?null:0);
+  const all=(ks,f)=>{const v=ks.map(g);return v.some(x=>x==null)?null:f(...v.map(x=>s*x));};
+  const some=(ks,f)=>{const v=ks.map(g).filter(x=>x!=null);return v.length?v.every(x=>f(s*x)):null;};
+  const w=rdWxOf(g('btc'),g('mtot'),g('mmc'));
+  const it=[w==null?null:s*w>=RD_WXT, all(['mt3','mud'],(a,b)=>a>0&&b>0), some(['mom','rs'],x=>x<=0), all(['oi'],x=>x<=0),
+    all(['vwap','bbp'],(a,b)=>a>0&&b>0), sd>0?sd>=0.02:null];
+  return {it,n:it.filter(x=>x===true).length,k:it.filter(x=>x!=null).length};
+}
+/* برای سیگنال کانال: عامل‌های همان ارز اگر در رادار هست؛ وگرنه فقط بندهای کل بازار */
+function rdChkFor(tk,dir,sd){
+  const x=RD.coins[tk],m=rdWxNow()?RD.coins.BTC||RD.coins[RD.rank[0]]:null;
+  if(x&&x.parts)return rdChkOf(x.parts,dir,sd,true);
+  if(!m||!m.parts)return null;const q=m.parts;
+  return rdChkOf({btc:q.btc,mtot:q.mtot,mmc:q.mmc,mt3:q.mt3,mud:q.mud},dir,sd,true);
+}
+function rdChkHtml(c){if(!c)return '';
+  return '<div class="glnum rdck" title="چک‌لیست ورود: هنوز فقط برای سنجش است، نه فیلتر"><b>چک‌لیست ورود <bdi dir="ltr">'+c.n+'/6</bdi></b>'+
+    RD_CK.map(([,t,d],i)=>{const v=c.it[i];return '<span class="pill '+(v===true?'win':v===false?'lose':'mut')+'" title="'+esc(d)+'">'+(v===true?'✓ ':v===false?'✗ ':'? ')+t+'</span>';}).join('')+'</div>';}
 /* خلاف حال بازار: لانگ در بازار نزولی یا شورت در بازار صعودی */
 const rdAgainst=d=>(RD.reg==='bear'&&d==='long')||(RD.reg==='bull'&&d==='short');
 /* معامله‌های باز هم‌جهت، هر دفتر جدا: 'real' پوزیشن‌های واقعیِ رادار (برای «قابل گرفتن»)، 'test' معامله‌های آزمایشی
@@ -11129,6 +11159,7 @@ function rdRowHtml(x,i){
       (ns?(ns.nw?'<span class="pill nw" title="در همین بررسی آخر پیدا شد">تازه</span>':'<small class="rdage" title="از کِی این سیگنال هست">'+ageTxt(ns.t)+'</small>'):'')+'</div>'+
     kv+
     (tags.length?'<div class="glnum rdwhy">'+tags.join('')+'</div>':'')+
+    (x.dir!=='wait'&&x.pl?rdChkHtml(rdChkOf(x.parts,x.dir,x.pl.sd,true)):'')+
     '<div class="glact">'+(z?'<button class="btn sm '+(x.ok?'ok':'')+'" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
       (x.pl?(tk.ot?'<button class="btn sm" data-a="gotest" title="تست همین ارز باز است؛ برو ببین">'+ic('flag')+'<span>در تست است</span></button>':
       '<button class="btn sm" data-a="test" title="معامله‌ی آزمایشی: مثل واقعی دنبال می‌شود، بی پول">'+ic('flag')+'<span>'+(tk.n?'تست دوباره':'تست')+'</span></button>'):'')+'</div>'+
@@ -11393,6 +11424,7 @@ function rbAdd(kind,x,quiet){
     // عکس عامل‌ها در لحظه‌ی ورود (برای بررسی بعدی در خروجی)
     pv:x.parts?Object.fromEntries(RD_FEAT.filter(k=>x.parts[k]!=null&&x.parts[k]!==0).map(k=>[k,+(+x.parts[k]).toFixed(2)])):null,
     ex:kind==='test'?rbExEff(x.dir):(RD.exD&&RD.exD[x.dir]||RD.ex||'tp'),x:exNew(),hold:rdHz().hold,lim:E0,sig};
+  if(x.parts){const c=rdChkOf(x.parts,x.dir,pl.sd,true);it.ck={n:c.n,k:c.k,it:c.it.map(v=>v==null?null:v?1:0)};}
   if(!fill&&dl){Object.assign(it,{st:'wait',ct:now,dl});rbPend().push(it);RBLC.set(it.id,now);rbSave();
     if(!quiet)toast('سفارش Limit ثبت شد: '+x.tk+' '+(x.dir==='long'?'لانگ':'شورت')+' در '+fmtPrice(E0)+' تا ساعت '+rbHM(dl)+'؛ اگر قیمت نرسید باطل می‌شود','ok');
     return it;}
@@ -11673,6 +11705,7 @@ function rbRowHtml(it,live){
   return '<div class="rbrow'+(nw?' nw':'')+'" data-id="'+esc(it.id)+'"><div class="rbh">'+(nw?'<span class="pill nw" title="'+(nw==='closed'?'از آخرین سر زدن بسته شده':'از آخرین سر زدن باز شده')+'">'+(nw==='closed'?'تازه بسته شد':'تازه')+'</span>':'')+
     '<b dir="ltr">'+esc(it.tk)+'</b><span class="pill '+it.dir+'">'+(it.dir==='long'?'لانگ':'شورت')+'</span>'+
     (it.sc!=null?'<small>امتیاز '+faN(it.sc)+(it.stars?' · '+faN(it.stars)+'★':'')+'</small>':'')+
+    (()=>{const c=it.k==='test'&&rbCk(it);return c?'<small class="rbckn" title="چک‌لیست ورود">✓'+c.n+'/6</small>':'';})()+
     (it.st==='open'?'<span class="pill '+(x&&x.k?'win':'mut')+'">'+(x&&x.k?'سیو شد '+faN(Math.round((1-x.rem)*100))+'٪':it.be?'ریسک‌فری':'باز')+'</span>'+(lr!=null?rbMoney(lr,it):''):
       '<span class="pill '+(it.R>0?'win':'lose')+'">'+RB_ST[it.st]+'</span>'+rbMoney(it.R,it))+'</div>'+
     (it.st==='open'&&x&&x.k?'<div class="glnum">سیو شده: <b class="u" dir="ltr">'+fmtR(x.acc)+'</b> · <b class="u" dir="ltr">'+fmtUsd(x.acc*rbUsdR(it))+'</b> (روی '+faN(Math.round((1-x.rem)*100))+'٪ حجم)</div>':'')+
@@ -11684,6 +11717,18 @@ function rbRowHtml(it,live){
         '<button class="btn sm" data-rb="hold" title="از لحظه‌ی ورود تا الان، اگر نمی‌بستیم">'+ic('clock')+'<span>'+(RBHOLD.has(it.id)?'تازه کن «اگر نگه داشته بودیم»':'اگر نگه داشته بودیم؟')+'</span></button>')+
       '<button class="btn sm" data-rb="share" title="تصویر نتیجه برای فرستادن">'+ic('share')+'<span>تصویر</span></button>'+
       '<button class="btn sm side" data-rb="del" title="حذف از دفتر">'+ic('trash')+'</button></div>':'')+'</div>';
+}
+/* چک‌لیست ورود هر تست: ثبت‌شده در لحظه‌ی ورود، یا برای تست‌های قدیمی از عامل‌های ثبت‌شده (pv) */
+const rbCk=it=>it.ck&&it.ck.it?{n:it.ck.n,k:it.ck.k,it:it.ck.it.map(v=>v==null?null:!!v)}:it.pv?rdChkOf(it.pv,it.dir,it.sd,false):null;
+function rbCkHtml(done){
+  const L=done.filter(it=>it.R!=null&&rbCk(it));if(L.length<5)return '';
+  const G=[['0-2',n=>n<=2],['3-4',n=>n>=3&&n<=4],['5-6',n=>n>=5]];
+  const cell=A=>{if(!A.length)return '<td class="num">—</td>';const r=A.reduce((a,it)=>a+it.R,0),w=A.filter(it=>it.R>0).length;
+    return '<td class="num"><b class="'+cls(r/A.length)+'" dir="ltr">'+fmtR(r/A.length)+'</b><small> '+faN(Math.round(w/A.length*100))+'٪ · '+faN(A.length)+'</small></td>';};
+  return '<details class="sec sub2 rbckw"><summary>نتیجه به تفکیک چک‌لیست ورود</summary><div class="tscroll"><table class="tp xtab"><thead><tr><th>بندهای درست</th><th>لانگ</th><th>شورت</th><th>همه</th></tr></thead><tbody>'+
+    G.map(([t,f])=>{const A=L.filter(it=>f(rbCk(it).n));return '<tr><td>'+faN(t)+' از 6</td>'+cell(A.filter(it=>it.dir==='long'))+cell(A.filter(it=>it.dir==='short'))+cell(A)+'</tr>';}).join('')+
+    '</tbody></table></div><div class="hint">هر خانه: میانگین R، درصد برد و تعداد. بندها: '+RD_CK.map(([,t,d])=>'<b>'+t+'</b> ('+esc(d)+')').join('؛ ')+'. '+
+    'این چک‌لیست از تحلیل همین تست‌های قبلی ساخته شده، پس روی آن‌ها طبیعتاً خوب درمی‌آید؛ حکم واقعی را تست‌های بعد از این می‌دهند. تست‌های قدیمی از عامل‌های ثبت‌شده‌ی لحظه‌ی ورود حساب شده‌اند.</div></details>';
 }
 /* سفارش Limit منتظر: قیمت Limit، فاصله‌ی قیمت الان، و مهلت */
 function rbPendRowHtml(it,live=true){
@@ -11705,6 +11750,7 @@ function rbHtml(kind){
           [nC.length?faN(nC.length)+' تست بسته شد · جمع <b class="'+cls(r)+'" dir="ltr">'+fmtR(r)+'</b> <b class="'+cls(r)+'" dir="ltr">'+fmtUsd(rbUsd(nC))+'</b>':'',nO.length?faN(nO.length)+' تست تازه باز شد':''].filter(Boolean).join(' · ')+
           '. همه با نشان <span class="pill nw">تازه</span>.</span></div>';}}
     h+=rbSumHtml(done,'نتیجه');
+    h+=rbCkHtml(done);
     if(open.length){const px=it=>PRICES.get(it.tk),liv=open.filter(it=>px(it)>0),sum=liv.reduce((a,it)=>a+rbLiveR(it,px(it)),0),usd=rbUsd(liv,it=>rbLiveR(it,px(it))),worst=rbUsd(open,rbStopR);
       h+='<div class="rbsum"><b>بازها الان</b><span>'+faN(open.length)+' معامله · جمع <b class="'+cls(sum)+'" dir="ltr">'+fmtR(sum)+'</b> · به دلار <b class="'+cls(sum)+'" dir="ltr">'+fmtUsd(usd)+'</b></span>'+
         '<span class="rbworst">اگر همه‌ی بازها به استاپِ الانشان بخورند: <b class="'+cls(worst)+'" dir="ltr">'+fmtUsd(worst)+'</b>'+(rbFix()?' · مارجین درگیر <b dir="ltr">'+fmtUsd(open.length*S.tMg)+'</b>':'')+'</span>'+
@@ -11944,7 +11990,7 @@ function rbLabExport(){
       weights:{long:W('long'),short:W('short')},drop:{long:M.long&&M.long.drop||null,short:M.short&&M.short.drop||null}},
     trades:res.map(x=>{const {it,C,st}=x,t0=C.length?C[0].t:it.t;
       return {id:it.id,kind:it.k,tk:it.tk,dir:it.dir,t:new Date(it.t).toISOString(),E:it.E,SL:it.SL,sd:+it.sd.toFixed(5),rr:it.rr,ex:it.ex||null,sc:it.sc,stars:it.stars,p:it.p,exp:it.exp,reg:it.reg,
-        why:it.why||null,pv:it.pv||null,hold:rbHoldH(it),lim:it.lim??null,sigT:it.sig?new Date(it.sig).toISOString():null,st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
+        why:it.why||null,pv:it.pv||null,ck:(()=>{const c=rbCk(it);return c?{n:c.n,k:c.k,it:c.it}:null;})(),hold:rbHoldH(it),lim:it.lim??null,sigT:it.sig?new Date(it.sig).toISOString():null,st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
         lev:st.lev,plans:x.pl?Object.fromEntries(Object.entries(x.pl).map(([n,v])=>[n,v.st==='open'?{R:v.R,open:true}:v.R])):null,usdPerR:+rbUsdR(it).toFixed(3),usd:it.R!=null?+(it.R*rbUsdR(it)).toFixed(2):null,stats:{mfe:+st.mfe.toFixed(3),tMfeMin:st.tMfe?Math.round((st.tMfe-it.t)/6e4):null,mfe24:+st.mfe24.toFixed(3),mae:+st.mae.toFixed(3),
           stopMin:st.stopAt?Math.round((st.stopAt-it.t)/6e4):null,touchMin:Object.fromEntries(Object.entries(st.touch).map(([k,v])=>[k,Math.round((v-it.t)/6e4)])),full:st.full},
         path:{t0:new Date(t0).toISOString(),stepMin:5,unit:'1e-4 of entry',hlc:C.map(k=>[Math.round((k.h/it.E-1)*1e4),Math.round((k.l/it.E-1)*1e4),Math.round((k.c/it.E-1)*1e4)])}};})});
@@ -14733,6 +14779,7 @@ function glSigHtml(x,i){
       (z?'<span class="glz">ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span>':'')+'<small>'+relTime(p.date)+'</small></button>'+
     kv+
     (now?'<div class="glnum">'+now+'</div>':'')+
+    (()=>{try{return rdChkHtml(rdChkFor(x.tk,x.dir,sd!=null?sd/100:null));}catch(e){return '';}})()+
     (pl?'<div class="glnum">قاعده‌ی من: '+esc(xRuleName(pl.r))+' · هدف <b dir="ltr">'+fmtPrice(pl.tp)+'</b></div>':'')+
     (hl?'<div class="glnum glh2">سابقه: '+hl+'</div>':'')+
     (()=>{const e=mkEvPills(x.tk,x.dir),w=rdWxDir(x.dir)==='no'?'<span class="pill lose" title="روند بیت‌کوین، TOTAL و بیشتر ارزها خلاف این جهت‌اند">✗ خلاف هوای بازار</span>':'';return e||w?'<div class="glnum">'+w+e+'</div>':'';})()+

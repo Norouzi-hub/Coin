@@ -866,6 +866,33 @@ function rdWxHtml(full){
   return h+'</div>';
 }
 function rdWxBind(g,re){const b=g.querySelector('[data-rdwxf]');if(b)b.onclick=()=>{S.rdWx=S.rdWx===false?true:false;DB.settings=Object.assign({},S);save();toast(S.rdWx!==false?'فیلتر هوای بازار روشن شد':'فیلتر هوای بازار خاموش شد','ok');re();};}
+/* ---- چک‌لیست ورود: شش بند از تحلیل 206 تست واقعی (مهر 1405) ----
+   بستر (هوا، جریان پول به آلت‌ها)، مکان (هنوز نرفته)، ازدحام (OI همراه قیمت بالا نرفته)، ماشه (بالای VWAP روزانه و
+   نیمه‌ی بالای بولینگر یک‌ساعته)، ریسک (استاپ دست‌کم 2٪). برای شورت همه برعکس. فعلاً فقط نشان داده و با هر تست ثبت
+   می‌شود تا روی تست‌های آینده سنجیده شود؛ فیلتر «قابل گرفتن» نیست.
+   p: عامل‌های یک لحظه (parts زنده، یا pv تست که صفرها را ندارد: missing=false یعنی نبودن = صفر) */
+const RD_CK=[['wx','هوا','هوای بازار برای همین جهت مناسب است'],['flow','جریان پول','پول به آلت‌ها می‌رود (TOTAL3 بالا، دامیننس تتر پایین؛ شورت برعکس)'],
+  ['fresh','هنوز نرفته','در 14 روز اخیر رالی نزده و در 7 روز از بیت‌کوین جلو نیفتاده (شورت: هنوز نریخته)'],['crowd','بی ازدحام','OI همراه قیمت بالا نرفته؛ اهرم‌ها هنوز جمع نشده‌اند'],
+  ['trig','ماشه','بالای VWAP روزانه و در نیمه‌ی بالای بولینگر یک‌ساعته (شورت: زیر و نیمه‌ی پایین)'],['stop','استاپ ≥2٪','استاپ دست‌کم 2٪ دور است؛ با تکان معمولی نمی‌خورد']];
+function rdChkOf(p,dir,sd,missing){
+  const s=dir==='short'?-1:1,g=k=>p&&p[k]!=null&&isFinite(+p[k])?+p[k]:(missing?null:0);
+  const all=(ks,f)=>{const v=ks.map(g);return v.some(x=>x==null)?null:f(...v.map(x=>s*x));};
+  const some=(ks,f)=>{const v=ks.map(g).filter(x=>x!=null);return v.length?v.every(x=>f(s*x)):null;};
+  const w=rdWxOf(g('btc'),g('mtot'),g('mmc'));
+  const it=[w==null?null:s*w>=RD_WXT, all(['mt3','mud'],(a,b)=>a>0&&b>0), some(['mom','rs'],x=>x<=0), all(['oi'],x=>x<=0),
+    all(['vwap','bbp'],(a,b)=>a>0&&b>0), sd>0?sd>=0.02:null];
+  return {it,n:it.filter(x=>x===true).length,k:it.filter(x=>x!=null).length};
+}
+/* برای سیگنال کانال: عامل‌های همان ارز اگر در رادار هست؛ وگرنه فقط بندهای کل بازار */
+function rdChkFor(tk,dir,sd){
+  const x=RD.coins[tk],m=rdWxNow()?RD.coins.BTC||RD.coins[RD.rank[0]]:null;
+  if(x&&x.parts)return rdChkOf(x.parts,dir,sd,true);
+  if(!m||!m.parts)return null;const q=m.parts;
+  return rdChkOf({btc:q.btc,mtot:q.mtot,mmc:q.mmc,mt3:q.mt3,mud:q.mud},dir,sd,true);
+}
+function rdChkHtml(c){if(!c)return '';
+  return '<div class="glnum rdck" title="چک‌لیست ورود: هنوز فقط برای سنجش است، نه فیلتر"><b>چک‌لیست ورود <bdi dir="ltr">'+c.n+'/6</bdi></b>'+
+    RD_CK.map(([,t,d],i)=>{const v=c.it[i];return '<span class="pill '+(v===true?'win':v===false?'lose':'mut')+'" title="'+esc(d)+'">'+(v===true?'✓ ':v===false?'✗ ':'? ')+t+'</span>';}).join('')+'</div>';}
 /* خلاف حال بازار: لانگ در بازار نزولی یا شورت در بازار صعودی */
 const rdAgainst=d=>(RD.reg==='bear'&&d==='long')||(RD.reg==='bull'&&d==='short');
 /* معامله‌های باز هم‌جهت، هر دفتر جدا: 'real' پوزیشن‌های واقعیِ رادار (برای «قابل گرفتن»)، 'test' معامله‌های آزمایشی
@@ -1198,6 +1225,7 @@ function rdRowHtml(x,i){
       (ns?(ns.nw?'<span class="pill nw" title="در همین بررسی آخر پیدا شد">تازه</span>':'<small class="rdage" title="از کِی این سیگنال هست">'+ageTxt(ns.t)+'</small>'):'')+'</div>'+
     kv+
     (tags.length?'<div class="glnum rdwhy">'+tags.join('')+'</div>':'')+
+    (x.dir!=='wait'&&x.pl?rdChkHtml(rdChkOf(x.parts,x.dir,x.pl.sd,true)):'')+
     '<div class="glact">'+(z?'<button class="btn sm '+(x.ok?'ok':'')+'" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
       (x.pl?(tk.ot?'<button class="btn sm" data-a="gotest" title="تست همین ارز باز است؛ برو ببین">'+ic('flag')+'<span>در تست است</span></button>':
       '<button class="btn sm" data-a="test" title="معامله‌ی آزمایشی: مثل واقعی دنبال می‌شود، بی پول">'+ic('flag')+'<span>'+(tk.n?'تست دوباره':'تست')+'</span></button>'):'')+'</div>'+

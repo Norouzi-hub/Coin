@@ -50,6 +50,7 @@ function rbAdd(kind,x,quiet){
     // عکس عامل‌ها در لحظه‌ی ورود (برای بررسی بعدی در خروجی)
     pv:x.parts?Object.fromEntries(RD_FEAT.filter(k=>x.parts[k]!=null&&x.parts[k]!==0).map(k=>[k,+(+x.parts[k]).toFixed(2)])):null,
     ex:kind==='test'?rbExEff(x.dir):(RD.exD&&RD.exD[x.dir]||RD.ex||'tp'),x:exNew(),hold:rdHz().hold,lim:E0,sig};
+  if(x.parts){const c=rdChkOf(x.parts,x.dir,pl.sd,true);it.ck={n:c.n,k:c.k,it:c.it.map(v=>v==null?null:v?1:0)};}
   if(!fill&&dl){Object.assign(it,{st:'wait',ct:now,dl});rbPend().push(it);RBLC.set(it.id,now);rbSave();
     if(!quiet)toast('سفارش Limit ثبت شد: '+x.tk+' '+(x.dir==='long'?'لانگ':'شورت')+' در '+fmtPrice(E0)+' تا ساعت '+rbHM(dl)+'؛ اگر قیمت نرسید باطل می‌شود','ok');
     return it;}
@@ -330,6 +331,7 @@ function rbRowHtml(it,live){
   return '<div class="rbrow'+(nw?' nw':'')+'" data-id="'+esc(it.id)+'"><div class="rbh">'+(nw?'<span class="pill nw" title="'+(nw==='closed'?'از آخرین سر زدن بسته شده':'از آخرین سر زدن باز شده')+'">'+(nw==='closed'?'تازه بسته شد':'تازه')+'</span>':'')+
     '<b dir="ltr">'+esc(it.tk)+'</b><span class="pill '+it.dir+'">'+(it.dir==='long'?'لانگ':'شورت')+'</span>'+
     (it.sc!=null?'<small>امتیاز '+faN(it.sc)+(it.stars?' · '+faN(it.stars)+'★':'')+'</small>':'')+
+    (()=>{const c=it.k==='test'&&rbCk(it);return c?'<small class="rbckn" title="چک‌لیست ورود">✓'+c.n+'/6</small>':'';})()+
     (it.st==='open'?'<span class="pill '+(x&&x.k?'win':'mut')+'">'+(x&&x.k?'سیو شد '+faN(Math.round((1-x.rem)*100))+'٪':it.be?'ریسک‌فری':'باز')+'</span>'+(lr!=null?rbMoney(lr,it):''):
       '<span class="pill '+(it.R>0?'win':'lose')+'">'+RB_ST[it.st]+'</span>'+rbMoney(it.R,it))+'</div>'+
     (it.st==='open'&&x&&x.k?'<div class="glnum">سیو شده: <b class="u" dir="ltr">'+fmtR(x.acc)+'</b> · <b class="u" dir="ltr">'+fmtUsd(x.acc*rbUsdR(it))+'</b> (روی '+faN(Math.round((1-x.rem)*100))+'٪ حجم)</div>':'')+
@@ -341,6 +343,18 @@ function rbRowHtml(it,live){
         '<button class="btn sm" data-rb="hold" title="از لحظه‌ی ورود تا الان، اگر نمی‌بستیم">'+ic('clock')+'<span>'+(RBHOLD.has(it.id)?'تازه کن «اگر نگه داشته بودیم»':'اگر نگه داشته بودیم؟')+'</span></button>')+
       '<button class="btn sm" data-rb="share" title="تصویر نتیجه برای فرستادن">'+ic('share')+'<span>تصویر</span></button>'+
       '<button class="btn sm side" data-rb="del" title="حذف از دفتر">'+ic('trash')+'</button></div>':'')+'</div>';
+}
+/* چک‌لیست ورود هر تست: ثبت‌شده در لحظه‌ی ورود، یا برای تست‌های قدیمی از عامل‌های ثبت‌شده (pv) */
+const rbCk=it=>it.ck&&it.ck.it?{n:it.ck.n,k:it.ck.k,it:it.ck.it.map(v=>v==null?null:!!v)}:it.pv?rdChkOf(it.pv,it.dir,it.sd,false):null;
+function rbCkHtml(done){
+  const L=done.filter(it=>it.R!=null&&rbCk(it));if(L.length<5)return '';
+  const G=[['0-2',n=>n<=2],['3-4',n=>n>=3&&n<=4],['5-6',n=>n>=5]];
+  const cell=A=>{if(!A.length)return '<td class="num">—</td>';const r=A.reduce((a,it)=>a+it.R,0),w=A.filter(it=>it.R>0).length;
+    return '<td class="num"><b class="'+cls(r/A.length)+'" dir="ltr">'+fmtR(r/A.length)+'</b><small> '+faN(Math.round(w/A.length*100))+'٪ · '+faN(A.length)+'</small></td>';};
+  return '<details class="sec sub2 rbckw"><summary>نتیجه به تفکیک چک‌لیست ورود</summary><div class="tscroll"><table class="tp xtab"><thead><tr><th>بندهای درست</th><th>لانگ</th><th>شورت</th><th>همه</th></tr></thead><tbody>'+
+    G.map(([t,f])=>{const A=L.filter(it=>f(rbCk(it).n));return '<tr><td>'+faN(t)+' از 6</td>'+cell(A.filter(it=>it.dir==='long'))+cell(A.filter(it=>it.dir==='short'))+cell(A)+'</tr>';}).join('')+
+    '</tbody></table></div><div class="hint">هر خانه: میانگین R، درصد برد و تعداد. بندها: '+RD_CK.map(([,t,d])=>'<b>'+t+'</b> ('+esc(d)+')').join('؛ ')+'. '+
+    'این چک‌لیست از تحلیل همین تست‌های قبلی ساخته شده، پس روی آن‌ها طبیعتاً خوب درمی‌آید؛ حکم واقعی را تست‌های بعد از این می‌دهند. تست‌های قدیمی از عامل‌های ثبت‌شده‌ی لحظه‌ی ورود حساب شده‌اند.</div></details>';
 }
 /* سفارش Limit منتظر: قیمت Limit، فاصله‌ی قیمت الان، و مهلت */
 function rbPendRowHtml(it,live=true){
@@ -362,6 +376,7 @@ function rbHtml(kind){
           [nC.length?faN(nC.length)+' تست بسته شد · جمع <b class="'+cls(r)+'" dir="ltr">'+fmtR(r)+'</b> <b class="'+cls(r)+'" dir="ltr">'+fmtUsd(rbUsd(nC))+'</b>':'',nO.length?faN(nO.length)+' تست تازه باز شد':''].filter(Boolean).join(' · ')+
           '. همه با نشان <span class="pill nw">تازه</span>.</span></div>';}}
     h+=rbSumHtml(done,'نتیجه');
+    h+=rbCkHtml(done);
     if(open.length){const px=it=>PRICES.get(it.tk),liv=open.filter(it=>px(it)>0),sum=liv.reduce((a,it)=>a+rbLiveR(it,px(it)),0),usd=rbUsd(liv,it=>rbLiveR(it,px(it))),worst=rbUsd(open,rbStopR);
       h+='<div class="rbsum"><b>بازها الان</b><span>'+faN(open.length)+' معامله · جمع <b class="'+cls(sum)+'" dir="ltr">'+fmtR(sum)+'</b> · به دلار <b class="'+cls(sum)+'" dir="ltr">'+fmtUsd(usd)+'</b></span>'+
         '<span class="rbworst">اگر همه‌ی بازها به استاپِ الانشان بخورند: <b class="'+cls(worst)+'" dir="ltr">'+fmtUsd(worst)+'</b>'+(rbFix()?' · مارجین درگیر <b dir="ltr">'+fmtUsd(open.length*S.tMg)+'</b>':'')+'</span>'+

@@ -53,6 +53,7 @@ function glSigHtml(x,i){
       (z?'<span class="glz">ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span>':'')+'<small>'+relTime(p.date)+'</small></button>'+
     kv+
     (now?'<div class="glnum">'+now+'</div>':'')+
+    (()=>{try{return rdChkHtml(rdChkFor(x.tk,x.dir,sd!=null?sd/100:null));}catch(e){return '';}})()+
     (pl?'<div class="glnum">قاعده‌ی من: '+esc(xRuleName(pl.r))+' · هدف <b dir="ltr">'+fmtPrice(pl.tp)+'</b></div>':'')+
     (hl?'<div class="glnum glh2">سابقه: '+hl+'</div>':'')+
     (()=>{const e=mkEvPills(x.tk,x.dir),w=rdWxDir(x.dir)==='no'?'<span class="pill lose" title="روند بیت‌کوین، TOTAL و بیشتر ارزها خلاف این جهت‌اند">✗ خلاف هوای بازار</span>':'';return e||w?'<div class="glnum">'+w+e+'</div>':'';})()+

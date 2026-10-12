@@ -31,6 +31,13 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    {const P=rdExPlans().be1,x=exNew();const a1=exStep(x,P,0.6,-0.2),s1=x.stop,a2=exStep(x,P,1.2,0.3),s2=x.stop,a3=exStep(x,P,4,0.5),a4=exStep(x,P,4,-0.1);
      const k0=S.rdHistD;S.rdHistD=365;const hh=rdHistH(),sig=rdCostSig();S.rdHistD=k0;
      o.be1={n:RD_EXN.includes('be1'),steps:[a1,s1,a2,s2,a3,a4],how:x.how,acc:x.acc,hh,sig:/\|365$/.test(sig),w:RD_HZ.w.hold};}
+   // چک‌لیست ورود
+   {const good={btc:0.5,mtot:0.4,mmc:0.6,mt3:0.3,mud:0.2,mom:-0.2,rs:-0.1,oi:-0.5,vwap:0.3,bbp:0.4},bad={btc:-0.5,mtot:-0.4,mmc:-0.6,mt3:-0.3,mud:-0.2,mom:0.6,rs:0.5,oi:1,vwap:-0.3,bbp:-0.4};
+     const a=rdChkOf(good,'long',0.025,true),b=rdChkOf(bad,'long',0.01,true),c=rdChkOf(bad,'short',0.03,true),u=rdChkOf({btc:0.5,mtot:0.5,mmc:0.5},'long',0.03,true);
+     o.ck={a:a.n,b:b.n,c:c.n,uk:u.k,un:u.n};
+     const T0b=Date.now()-5*864e5,mkT=(i,pv,R)=>({id:'k'+i,k:'test',tk:'C'+i,dir:'long',t:T0b+i*6e4,E:1,SL:0.97,sd:0.03,rr:1.5,st:R>0?'tp':'sl',R,xt:T0b+i*6e4+36e5,xp:1,pv});
+     const keep=RB.items;RB.items=[0,1,2,3,4,5].map(i=>mkT(i,i<3?good:bad,i<3?1:-1));RDV='test';go('radar',true);renderRadar();
+     const G=document.getElementById('rdView');o.ck.tbl=(G.querySelector('.rbckw')||{}).textContent||'';o.ck.row=!!G.querySelector('.rbckn');RB.items=keep;}
    // بررسی خودکار
    const a0=RD.at;RD.at=NOW-H;S.rdAuto='2h';o.auto=[rdAutoDue()];S.rdAuto='off';RD.at=NOW-5*H;o.auto.push(rdAutoDue());
    S.rdAuto='fav';RDFAV=['ETH'];RD.at=NOW-H;o.auto.push(rdAutoDue());S.rdAuto='2h';RD.at=NOW-3*H;o.auto.push(rdAutoDue());RD.at=a0;
@@ -79,6 +86,8 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(r.hz.l>r.hz.s*1.5&&r.hz.hold.join()==='24,72','افق بلند: استاپ 2.5×ATR چهارساعته ('+(r.hz.l*100).toFixed(2)+'٪ در برابر '+(r.hz.s*100).toFixed(2)+'٪)، 72 ساعت');
  ok(r.be1.n&&r.be1.steps.join()==='false,-1,false,0,false,true'&&r.be1.how==='be'&&Math.abs(r.be1.acc)<1e-9,'نقشه‌ی «ریسک‌فری در +1R، بقیه تا سقف زمان»: هدفی نمی‌بندد، بعد از +1R استاپ روی ورود');
  ok(r.be1.w===168&&r.be1.hh===365*24&&r.be1.sig,'افق هفتگی (7 روز) و تاریخچه‌ی یادگیری 365 روزه (مدل از نو یاد می‌گیرد)');
+ ok(r.ck.a===6&&r.ck.b===0&&r.ck.c===6&&r.ck.uk===2&&r.ck.un===2,'چک‌لیست ورود: 6 بند، برای شورت برعکس، بندهای نامعلوم جدا ('+JSON.stringify(r.ck).slice(0,80)+')');
+ ok(/نتیجه به تفکیک چک‌لیست ورود/.test(r.ck.tbl)&&/5-6 از 6/.test(r.ck.tbl)&&r.ck.row,'«آزمایشی»: جدول نتیجه به تفکیک چک‌لیست و شماره‌ی چک‌لیست روی هر تست');
  ok(r.auto.join()===',,fav,refresh','بررسی خودکار: هر 2 ساعت، فقط با زدن، واچ‌لیست هر 30 دقیقه');
  ok(r.nw[0]===true&&r.nw[1]===false&&r.nw[2]===null,'«تازه» از خودِ بررسی (rdLive)، بی حافظه‌ی جدا');
  ok(r.pend.st==='wait'&&r.pend.n===1&&r.pend.items===0&&r.pend.dl===2&&r.dup,'تست با Limit: منتظر می‌ماند (مهلت 2 ساعت بعد از کندل)، تکراری ثبت نمی‌شود');
