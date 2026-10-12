@@ -21,6 +21,51 @@ async function rbPath(it){
   await idbSet(key,{C:C.map(k=>({t:k.t,o:k.o,h:k.h,l:k.l,c:k.c})),full});
   return C;
 }
+/* کندل‌های یک‌ساعته‌ی 30 روزِ پیش از ورود (برای پروفایل حجم و استاپ ساختاری)؛ در IndexedDB می‌ماند */
+async function rbHist(it){
+  const H=36e5,key='rbh:'+it.id,st=await idbGet(key);if(st&&st.C)return st.C;
+  const end=Math.floor(it.t/H)*H,C=(await audCandles(it.tk,'1h',end-720*H,720,true)).filter(k=>k.t<end);
+  // ارز هم‌نام: آخرین کندل پیش از ورود باید نزدیک قیمت ورود باشد
+  if(!C.length||Math.abs(C[C.length-1].c/it.E-1)>0.3)return [];
+  const o=C.map(k=>({t:k.t,o:k.o,h:k.h,l:k.l,c:k.c,v:k.v||0}));await idbSet(key,{C:o});return o;
+}
+/* یک معامله روی مسیر 5 دقیقه‌ای با استاپ و تارگت دلخواه (R نسبت به ریسکِ همین استاپ، بعد از کارمزد):
+   be: در +1R استاپ به ورود؛ بی تارگت تا سقف زمان. اگر در یک کندل هم استاپ ممکن بوده هم تارگت، استاپ (بدبینانه). */
+function rbSimX(it,C,stop,tp,be){
+  const s=it.dir==='long'?1:-1,E=it.E,risk=(E-stop)*s;if(!(risk>0))return null;
+  const sd=risk/E,M5=3e5,t1=Math.floor(it.t/M5)*M5+M5,end=it.t+rbHoldH(it)*36e5,c=exCost({tpf:0},sd),cT=exCost({tpf:1},sd);let st=stop,last=null;
+  for(const k of C){if(k.t<t1)continue;if(k.t>=end)break;last=k;
+    const lo=s>0?k.l:k.h,hi=s>0?k.h:k.l;
+    if((lo-st)*s<=0)return {R:(st-E)*s/risk-c,how:st===E?'be':'sl'};
+    if(tp&&(hi-tp)*s>=0)return {R:(tp-E)*s/risk-cT,how:'tp'};
+    if(be&&(hi-E)*s>=risk)st=E;}
+  if(!last)return null;
+  return {R:(last.c-E)*s/risk-c,how:last.t>=end-2*M5?'time':'open'};
+}
+/* سه روش حجم روی هر تست: الف) استاپ همان، تارگت سطح پرحجم بعدی؛ ب) استاپ ساختاری و تارگت پرحجم؛
+   پ) استاپ ساختاری، ریسک‌فری در +1R و نگه داشتن تا سقف زمان */
+function rbVolSim(it,C,H){
+  const H1=36e5;let i=-1;for(let j=0;j<H.length;j++)if(H[j].t+H1<=it.t)i=j;if(i<48)return null;
+  const vp=volLevels(H,i),vs=volSignal(H,i),tg=volTarget(vp,it.E,it.dir,it.sd);let st=volStop(H,i,it.dir,vs);
+  if(st&&(it.E-st)*(it.dir==='long'?1:-1)<=0)st=null;
+  return {tg,st,bo:vs&&vs.bo&&vs.bo.d===(it.dir==='long'?1:-1),late:vs?vs.late*(it.dir==='long'?1:-1)>0:false,
+    A:tg?rbSimX(it,C,it.SL,tg,false):null,B:tg&&st?rbSimX(it,C,st,tg,false):null,C:st?rbSimX(it,C,st,null,true):null};
+}
+function rbVolTable(res){
+  const L=res.filter(x=>x.vol);if(L.length<5)return '';
+  const row=(lab,f)=>{const A=L.map(f).filter(o=>o&&o.how!=='open');if(!A.length)return '';const r=A.reduce((a,o)=>a+o.R,0),w=A.filter(o=>o.R>0).length;
+    return '<tr><td>'+lab+'</td><td class="num">'+faN(A.length)+'</td><td class="num">'+faN(Math.round(w/A.length*100))+'٪</td><td class="num '+cls(r/A.length)+'"><bdi>'+fmtR(r/A.length)+'</bdi></td><td class="num '+cls(r)+'"><bdi>'+fmtR(r)+'</bdi></td></tr>';};
+  const act=x=>x.it.st!=='open'&&x.it.R!=null?{R:x.it.R,how:x.it.st}:null, b1=x=>x.pl&&x.pl.be1&&x.pl.be1.st!=='open'?{R:x.pl.be1.R,how:x.pl.be1.st}:null;
+  const g=(k,f)=>row(k,f);
+  const bo=L.filter(x=>x.vol.bo).length,lt=L.filter(x=>x.vol.late).length;
+  return '<div class="sechd">حجم: تارگت سطح پرحجم و استاپ ساختاری</div><div class="tscroll"><table class="tp xtab rbvolt"><thead><tr><th>روش</th><th>تعداد</th><th>برد</th><th>میانگین</th><th>جمع R</th></tr></thead><tbody>'+
+    g('نقشه‌ی فعلی (همان که اجرا شد)',act)+g('ریسک‌فری در +1R، بقیه تا سقف زمان',b1)+
+    g('الف) استاپ همان، تارگت سطح پرحجم بعدی',x=>x.vol.A)+g('ب) استاپ ساختاری، تارگت سطح پرحجم',x=>x.vol.B)+g('پ) استاپ ساختاری، ریسک‌فری در +1R، تا سقف زمان',x=>x.vol.C)+
+    g('فقط شکست با حجم · نقشه‌ی فعلی',x=>x.vol.bo?act(x):null)+g('فقط حجم دیررس · نقشه‌ی فعلی',x=>x.vol.late?act(x):null)+
+    '</tbody></table></div><div class="hint">روی مسیر واقعی 5 دقیقه‌ای همین تست‌ها، بعد از کارمزد. سطح پرحجم: از پروفایل حجم 30 روزِ پیش از ورود (کندل یک‌ساعته). '+
+    'استاپ ساختاری: زیر کف کندل شکست اگر شکست با حجم بوده، وگرنه زیر کف 6 ساعت اخیر. R هر روش نسبت به ریسکِ همان استاپ است (با ریسک دلاری ثابت، حجم با استاپ عوض می‌شود). '+
+    faN(bo)+' تست شکست با حجم داشتند و '+faN(lt)+' تست حجم دیررس.</div>';
+}
 /* همه‌ی نقشه‌های خروج روی مسیر واقعی یک تست: همان موتور دفتر تست (rbStep) روی یک کپی از معامله.
    باز مانده: اگر 24 ساعت کامل شده با قیمت آخر (خروج زمانی)، وگرنه «باز» با سود/ضرر الان */
 function rbAllPlans(it,C){
@@ -91,7 +136,9 @@ async function rbLabRun(){
   try{
     for(const it of L){
       if(!(await jobGate('rblab'))){stop=true;break;}
-      try{const C=await rbPath(it);if(C.length)res.push({it,C,st:rbPathStats(it,C),pl:rbAllPlans(it,C)});}catch(e){}
+      try{const C=await rbPath(it);if(C.length){const x={it,C,st:rbPathStats(it,C),pl:rbAllPlans(it,C)};
+        try{const H=await rbHist(it);if(H.length)x.vol=rbVolSim(it,C,H);}catch(e){}
+        res.push(x);}}catch(e){}
       RBL.done++;rbRepaint();
     }
   }finally{RBL.on=false;jobEnd('rblab');}
@@ -124,6 +171,7 @@ function rbLabHtml(){
     h+='<div class="rbsum"><b>'+faN(tot)+' معامله</b><span>به +0.5R رسید: '+faN(hitH)+' · به +1R: '+faN(hit1)+'</span><span>میانگین بیشترین سود پیش از استاپ: <b dir="ltr">'+fmtR(avgM)+'</b> (حدود '+faN(Math.round(avgRoe))+'٪ روی مارجین)</span></div>';
     h+=rbPlansTable(res);
     h+=rbLabTable(res);
+    h+=rbVolTable(res);
     h+='<div class="sechd">هر معامله</div>'+res.slice().sort((a,b)=>b.it.t-a.it.t).slice(0,40).map(x=>{const it=x.it,s=x.st,roe=s.mfe*it.sd*s.lev*100,
       dt=s.tMfe?Math.round((s.tMfe-it.t)/6e4):null;
       return '<div class="glnum rblabr"><b dir="ltr">'+esc(it.tk)+'</b> <span class="pill '+it.dir+'">'+(it.dir==='long'?'لانگ':'شورت')+'</span> '+
@@ -158,6 +206,7 @@ function rbLabExport(){
     trades:res.map(x=>{const {it,C,st}=x,t0=C.length?C[0].t:it.t;
       return {id:it.id,kind:it.k,tk:it.tk,dir:it.dir,t:new Date(it.t).toISOString(),E:it.E,SL:it.SL,sd:+it.sd.toFixed(5),rr:it.rr,ex:it.ex||null,sc:it.sc,stars:it.stars,p:it.p,exp:it.exp,reg:it.reg,
         why:it.why||null,pv:it.pv||null,ck:(()=>{const c=rbCk(it);return c?{n:c.n,k:c.k,it:c.it}:null;})(),hold:rbHoldH(it),lim:it.lim??null,sigT:it.sig?new Date(it.sig).toISOString():null,st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
+        vol:x.vol?{tg:x.vol.tg,st:x.vol.st,bo:x.vol.bo,late:x.vol.late,A:x.vol.A,B:x.vol.B,C:x.vol.C}:null,
         lev:st.lev,plans:x.pl?Object.fromEntries(Object.entries(x.pl).map(([n,v])=>[n,v.st==='open'?{R:v.R,open:true}:v.R])):null,usdPerR:+rbUsdR(it).toFixed(3),usd:it.R!=null?+(it.R*rbUsdR(it)).toFixed(2):null,stats:{mfe:+st.mfe.toFixed(3),tMfeMin:st.tMfe?Math.round((st.tMfe-it.t)/6e4):null,mfe24:+st.mfe24.toFixed(3),mae:+st.mae.toFixed(3),
           stopMin:st.stopAt?Math.round((st.stopAt-it.t)/6e4):null,touchMin:Object.fromEntries(Object.entries(st.touch).map(([k,v])=>[k,Math.round((v-it.t)/6e4)])),full:st.full},
         path:{t0:new Date(t0).toISOString(),stepMin:5,unit:'1e-4 of entry',hlc:C.map(k=>[Math.round((k.h/it.E-1)*1e4),Math.round((k.l/it.E-1)*1e4),Math.round((k.c/it.E-1)*1e4)])}};})});

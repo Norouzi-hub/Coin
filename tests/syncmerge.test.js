@@ -26,7 +26,8 @@ const mk=(id,o)=>Object.assign({id,ticker:id.toUpperCase(),dir:'long',kind:'futu
  const b=await chromium.launch();
  const A=await dev(b), B=await dev(b);
  const ids=p=>p.evaluate(()=>DB.positions.map(x=>x.id).sort().join(','));
- const push=p=>p.evaluate(()=>syncPush(true));
+ // همگام‌سازیِ شروع برنامه شاید هنوز در کار باشد (زیر بار): صبر تا تمام شود، وگرنه syncPush همان لحظه false می‌دهد
+ const push=p=>p.evaluate(async()=>{for(let i=0;i<200&&syncing;i++)await new Promise(r=>setTimeout(r,50));return syncPush(true);});
  console.log('=== دو دستگاه، هر کدام پوزیشن تازه ===');
  await A.evaluate(x=>{DB.positions.push(x);save();},mk('a1'));
  ok(await push(A),'A فرستاد');

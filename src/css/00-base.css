@@ -1838,3 +1838,4 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .rbckn{color:var(--tx3);font-size:11px}
 .pbsteps li.skip>i{background:var(--inset);color:var(--tx3);border-color:var(--line)}
 .pbsteps li.skip b{color:var(--tx3);text-decoration:line-through}
+.rdvol{color:var(--tx2)}.rdvol svg{width:12px;height:12px;vertical-align:-2px}

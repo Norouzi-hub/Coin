@@ -329,7 +329,10 @@ function rdSamples(P,tk){
 function rdLiveOf(P){
   const C=P.C,H=36e5,i=C[C.length-1].t+H>Date.now()?C.length-2:C.length-1;
   const r=rdParts(P,i);if(!r)return null;
-  return {t:C[i].t,x:rdVec(r.p),parts:r.p,m:r.m,px:P.c[i],flow:!!P.FL,pl:{long:asPlan(C,i,'long',0,rdHz()),short:asPlan(C,i,'short',0,rdHz())}};
+  // حجم: سطح‌های پرحجم 30 روز، شکست از فشردگی با حجم، استاپ ساختاری (برای نمایش، چک‌لیست و سنجش؛ نه مدل)
+  let vl=null;try{const vp=volLevels(C,i),vs=volSignal(C,i);vl={vp,bo:vs&&vs.bo,late:vs?vs.late:0,st:{long:volStop(C,i,'long',vs),short:volStop(C,i,'short',vs)}};
+    r.p.vbo=vs&&vs.bo?vs.bo.d:0;r.p.vlt=vs?vs.late:0;}catch(e){}
+  return {t:C[i].t,x:rdVec(r.p),parts:r.p,m:r.m,px:P.c[i],flow:!!P.FL,vl,pl:{long:asPlan(C,i,'long',0,rdHz()),short:asPlan(C,i,'short',0,rdHz())}};
 }
 const rdPlanAt=(pl,E)=>{if(!pl)return null;E=E>0?E:pl.E;const s=pl.dir==='long'?1:-1;
   return {dir:pl.dir,E,SL:+(E*(1-s*pl.sd)).toPrecision(8),TP:+(E*(1+s*pl.sd*pl.rr)).toPrecision(8),sd:pl.sd,rr:pl.rr};};
@@ -785,7 +788,7 @@ function rdLive(U){
     const d=sL>=sS?'long':'short',sc=Math.max(sL,sS),dir=M&&sc>=RD_MIN?d:'wait';
     const was=RD.coins[tk], since=dir==='wait'?null:was&&was.dir===dir&&was.since?was.since:L.t+36e5;
     // ورود با Limit در قیمت بسته شدن کندل سیگنال (مثل سنجش)؛ «تازه» = در بررسی قبلی نبود (یا جهتش فرق داشت)
-    coins[tk]=Object.assign({dir,best:d,sc,sL,sS,since,nw:!first&&dir!=='wait'&&!(was&&was.dir===dir),p:d==='long'?pL:pS,parts:Object.assign({},L.parts,mp),px:L.px,t:L.t,flow:L.flow,
+    coins[tk]=Object.assign({dir,best:d,sc,sL,sS,since,nw:!first&&dir!=='wait'&&!(was&&was.dir===dir),p:d==='long'?pL:pS,parts:Object.assign({},L.parts,mp),px:L.px,t:L.t,flow:L.flow,vl:L.vl||null,
       pl:dir==='wait'?null:rdPlanAt(L.pl[d],L.px)},L.m);
     rank.push(tk);}
   RD.coins=coins;RD.rank=rank;RD.n=rank.length;
@@ -873,14 +876,16 @@ function rdWxBind(g,re){const b=g.querySelector('[data-rdwxf]');if(b)b.onclick=(
    p: عامل‌های یک لحظه (parts زنده، یا pv تست که صفرها را ندارد: missing=false یعنی نبودن = صفر) */
 const RD_CK=[['wx','هوا','هوای بازار برای همین جهت مناسب است'],['flow','جریان پول','پول به آلت‌ها می‌رود (TOTAL3 بالا، دامیننس تتر پایین؛ شورت برعکس)'],
   ['fresh','هنوز نرفته','در 14 روز اخیر رالی نزده و در 7 روز از بیت‌کوین جلو نیفتاده (شورت: هنوز نریخته)'],['crowd','بی ازدحام','OI همراه قیمت بالا نرفته؛ اهرم‌ها هنوز جمع نشده‌اند'],
-  ['trig','ماشه','بالای VWAP روزانه و در نیمه‌ی بالای بولینگر یک‌ساعته (شورت: زیر و نیمه‌ی پایین)'],['stop','استاپ ≥2٪','استاپ دست‌کم 2٪ دور است؛ با تکان معمولی نمی‌خورد']];
+  ['trig','ماشه','بالای VWAP روزانه و در نیمه‌ی بالای بولینگر یک‌ساعته (شورت: زیر و نیمه‌ی پایین)'],['stop','استاپ ≥2٪','استاپ دست‌کم 2٪ دور است؛ با تکان معمولی نمی‌خورد'],
+  ['vol','حجم','✓ شکست از فشردگی با حجم در 3 ساعت اخیر؛ ✗ حجم دیررس (چند کندل پرحجم و حرکتِ انجام‌شده)؛ · هیچ‌کدام']];
 function rdChkOf(p,dir,sd,missing){
   const s=dir==='short'?-1:1,g=k=>p&&p[k]!=null&&isFinite(+p[k])?+p[k]:(missing?null:0);
   const all=(ks,f)=>{const v=ks.map(g);return v.some(x=>x==null)?null:f(...v.map(x=>s*x));};
   const some=(ks,f)=>{const v=ks.map(g).filter(x=>x!=null);return v.length?v.every(x=>f(s*x)):null;};
   const w=rdWxOf(g('btc'),g('mtot'),g('mmc'));
   const it=[w==null?null:s*w>=RD_WXT, all(['mt3','mud'],(a,b)=>a>0&&b>0), some(['mom','rs'],x=>x<=0), all(['oi'],x=>x<=0),
-    all(['vwap','bbp'],(a,b)=>a>0&&b>0), sd>0?sd>=0.02:null];
+    all(['vwap','bbp'],(a,b)=>a>0&&b>0), sd>0?sd>=0.02:null,
+    p&&(p.vbo!=null||p.vlt!=null)?(s*(+p.vbo||0)>0?true:s*(+p.vlt||0)>0?false:null):null];
   return {it,n:it.filter(x=>x===true).length,k:it.filter(x=>x!=null).length};
 }
 /* برای سیگنال کانال: عامل‌های همان ارز اگر در رادار هست؛ وگرنه فقط بندهای کل بازار */
@@ -891,8 +896,19 @@ function rdChkFor(tk,dir,sd){
   return rdChkOf({btc:q.btc,mtot:q.mtot,mmc:q.mmc,mt3:q.mt3,mud:q.mud},dir,sd,true);
 }
 function rdChkHtml(c){if(!c)return '';
-  return '<div class="glnum rdck" title="چک‌لیست ورود: هنوز فقط برای سنجش است، نه فیلتر"><b>چک‌لیست ورود <bdi dir="ltr">'+c.n+'/6</bdi></b>'+
-    RD_CK.map(([,t,d],i)=>{const v=c.it[i];return '<span class="pill '+(v===true?'win':v===false?'lose':'mut')+'" title="'+esc(d)+'">'+(v===true?'✓ ':v===false?'✗ ':'? ')+t+'</span>';}).join('')+'</div>';}
+  return '<div class="glnum rdck" title="چک‌لیست ورود: هنوز فقط برای سنجش است، نه فیلتر"><b>چک‌لیست ورود <bdi dir="ltr">'+c.n+'/'+RD_CK.length+'</bdi></b>'+
+    RD_CK.map(([k,t,d],i)=>{const v=c.it[i];return '<span class="pill '+(v===true?'win':v===false?'lose':'mut')+'" title="'+esc(d)+'">'+(v===true?'✓ ':v===false?'✗ ':k==='vol'?'· ':'? ')+t+'</span>';}).join('')+'</div>';}
+/* پیشنهاد حجم روی کارت: تارگتِ سطح پرحجم بعدی و استاپ ساختاری، با فاصله به R و درصد (کنار عددهای فعلی، جایشان را نمی‌گیرد) */
+function rdVolHtml(x){
+  const v=x.vl;if(!v||!x.pl)return '';const E=x.pl.E,s=x.dir==='short'?-1:1,R=E*x.pl.sd;
+  const tg=volTarget(v.vp,E,x.dir,x.pl.sd),st=v.st&&v.st[x.dir],stOk=st&&(E-st)*s>0;
+  const bits=[];
+  if(tg)bits.push('تارگت (سطح پرحجم بعدی) <b dir="ltr">'+fmtPrice(tg)+'</b> <small dir="ltr">'+(((tg-E)*s/R)>0?'+':'')+fmtNum((tg-E)*s/R)+'R</small>');
+  if(stOk)bits.push('استاپ ساختاری ('+(v.bo&&v.bo.d===s?'زیر کندل شکست':'کف 6 ساعت')+') <b dir="ltr">'+fmtPrice(st)+'</b> <small dir="ltr">'+fmtNum(Math.abs(E-st)/E*100)+'%</small>');
+  if(v.bo&&v.bo.d===s)bits.push('<span class="u">شکست با حجم '+fmtNum(v.bo.rv)+' برابر</span>');
+  else if(v.late*s>0)bits.push('<span class="d">حجم دیررس: حرکت انجام شده</span>');
+  return bits.length?'<div class="glnum rdvol">'+ic('bars')+' حجم: '+bits.join(' · ')+'</div>':'';
+}
 /* خلاف حال بازار: لانگ در بازار نزولی یا شورت در بازار صعودی */
 const rdAgainst=d=>(RD.reg==='bear'&&d==='long')||(RD.reg==='bull'&&d==='short');
 /* معامله‌های باز هم‌جهت، هر دفتر جدا: 'real' پوزیشن‌های واقعیِ رادار (برای «قابل گرفتن»)، 'test' معامله‌های آزمایشی
@@ -1225,7 +1241,7 @@ function rdRowHtml(x,i){
       (ns?(ns.nw?'<span class="pill nw" title="در همین بررسی آخر پیدا شد">تازه</span>':'<small class="rdage" title="از کِی این سیگنال هست">'+ageTxt(ns.t)+'</small>'):'')+'</div>'+
     kv+
     (tags.length?'<div class="glnum rdwhy">'+tags.join('')+'</div>':'')+
-    (x.dir!=='wait'&&x.pl?rdChkHtml(rdChkOf(x.parts,x.dir,x.pl.sd,true)):'')+
+    (x.dir!=='wait'&&x.pl?rdChkHtml(rdChkOf(x.parts,x.dir,x.pl.sd,true))+rdVolHtml(x):'')+
     '<div class="glact">'+(z?'<button class="btn sm '+(x.ok?'ok':'')+'" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
       (x.pl?(tk.ot?'<button class="btn sm" data-a="gotest" title="تست همین ارز باز است؛ برو ببین">'+ic('flag')+'<span>در تست است</span></button>':
       '<button class="btn sm" data-a="test" title="معامله‌ی آزمایشی: مثل واقعی دنبال می‌شود، بی پول">'+ic('flag')+'<span>'+(tk.n?'تست دوباره':'تست')+'</span></button>'):'')+'</div>'+

@@ -51,6 +51,7 @@ function rbAdd(kind,x,quiet){
     pv:x.parts?Object.fromEntries(RD_FEAT.filter(k=>x.parts[k]!=null&&x.parts[k]!==0).map(k=>[k,+(+x.parts[k]).toFixed(2)])):null,
     ex:kind==='test'?rbExEff(x.dir):(RD.exD&&RD.exD[x.dir]||RD.ex||'tp'),x:exNew(),hold:rdHz().hold,lim:E0,sig};
   if(x.parts){const c=rdChkOf(x.parts,x.dir,pl.sd,true);it.ck={n:c.n,k:c.k,it:c.it.map(v=>v==null?null:v?1:0)};}
+  if(x.vl){const tg=volTarget(x.vl.vp,pl.E,x.dir,pl.sd),st=x.vl.st&&x.vl.st[x.dir];it.vl={tg:tg||null,st:st&&(pl.E-st)*(x.dir==='long'?1:-1)>0?st:null};}
   if(!fill&&dl){Object.assign(it,{st:'wait',ct:now,dl});rbPend().push(it);RBLC.set(it.id,now);rbSave();
     if(!quiet)toast('سفارش Limit ثبت شد: '+x.tk+' '+(x.dir==='long'?'لانگ':'شورت')+' در '+fmtPrice(E0)+' تا ساعت '+rbHM(dl)+'؛ اگر قیمت نرسید باطل می‌شود','ok');
     return it;}
@@ -331,7 +332,7 @@ function rbRowHtml(it,live){
   return '<div class="rbrow'+(nw?' nw':'')+'" data-id="'+esc(it.id)+'"><div class="rbh">'+(nw?'<span class="pill nw" title="'+(nw==='closed'?'از آخرین سر زدن بسته شده':'از آخرین سر زدن باز شده')+'">'+(nw==='closed'?'تازه بسته شد':'تازه')+'</span>':'')+
     '<b dir="ltr">'+esc(it.tk)+'</b><span class="pill '+it.dir+'">'+(it.dir==='long'?'لانگ':'شورت')+'</span>'+
     (it.sc!=null?'<small>امتیاز '+faN(it.sc)+(it.stars?' · '+faN(it.stars)+'★':'')+'</small>':'')+
-    (()=>{const c=it.k==='test'&&rbCk(it);return c?'<small class="rbckn" title="چک‌لیست ورود">✓'+c.n+'/6</small>':'';})()+
+    (()=>{const c=it.k==='test'&&rbCk(it);return c?'<small class="rbckn" title="چک‌لیست ورود">✓'+c.n+'/'+RD_CK.length+'</small>':'';})()+
     (it.st==='open'?'<span class="pill '+(x&&x.k?'win':'mut')+'">'+(x&&x.k?'سیو شد '+faN(Math.round((1-x.rem)*100))+'٪':it.be?'ریسک‌فری':'باز')+'</span>'+(lr!=null?rbMoney(lr,it):''):
       '<span class="pill '+(it.R>0?'win':'lose')+'">'+RB_ST[it.st]+'</span>'+rbMoney(it.R,it))+'</div>'+
     (it.st==='open'&&x&&x.k?'<div class="glnum">سیو شده: <b class="u" dir="ltr">'+fmtR(x.acc)+'</b> · <b class="u" dir="ltr">'+fmtUsd(x.acc*rbUsdR(it))+'</b> (روی '+faN(Math.round((1-x.rem)*100))+'٪ حجم)</div>':'')+
@@ -348,11 +349,11 @@ function rbRowHtml(it,live){
 const rbCk=it=>it.ck&&it.ck.it?{n:it.ck.n,k:it.ck.k,it:it.ck.it.map(v=>v==null?null:!!v)}:it.pv?rdChkOf(it.pv,it.dir,it.sd,false):null;
 function rbCkHtml(done){
   const L=done.filter(it=>it.R!=null&&rbCk(it));if(L.length<5)return '';
-  const G=[['0-2',n=>n<=2],['3-4',n=>n>=3&&n<=4],['5-6',n=>n>=5]];
+  const G=[['0-2',n=>n<=2],['3-4',n=>n>=3&&n<=4],['5-7',n=>n>=5]];
   const cell=A=>{if(!A.length)return '<td class="num">—</td>';const r=A.reduce((a,it)=>a+it.R,0),w=A.filter(it=>it.R>0).length;
     return '<td class="num"><b class="'+cls(r/A.length)+'" dir="ltr">'+fmtR(r/A.length)+'</b><small> '+faN(Math.round(w/A.length*100))+'٪ · '+faN(A.length)+'</small></td>';};
   return '<details class="sec sub2 rbckw"><summary>نتیجه به تفکیک چک‌لیست ورود</summary><div class="tscroll"><table class="tp xtab"><thead><tr><th>بندهای درست</th><th>لانگ</th><th>شورت</th><th>همه</th></tr></thead><tbody>'+
-    G.map(([t,f])=>{const A=L.filter(it=>f(rbCk(it).n));return '<tr><td>'+faN(t)+' از 6</td>'+cell(A.filter(it=>it.dir==='long'))+cell(A.filter(it=>it.dir==='short'))+cell(A)+'</tr>';}).join('')+
+    G.map(([t,f])=>{const A=L.filter(it=>f(rbCk(it).n));return '<tr><td>'+faN(t)+' از '+RD_CK.length+'</td>'+cell(A.filter(it=>it.dir==='long'))+cell(A.filter(it=>it.dir==='short'))+cell(A)+'</tr>';}).join('')+
     '</tbody></table></div><div class="hint">هر خانه: میانگین R، درصد برد و تعداد. بندها: '+RD_CK.map(([,t,d])=>'<b>'+t+'</b> ('+esc(d)+')').join('؛ ')+'. '+
     'این چک‌لیست از تحلیل همین تست‌های قبلی ساخته شده، پس روی آن‌ها طبیعتاً خوب درمی‌آید؛ حکم واقعی را تست‌های بعد از این می‌دهند. تست‌های قدیمی از عامل‌های ثبت‌شده‌ی لحظه‌ی ورود حساب شده‌اند.</div></details>';
 }
