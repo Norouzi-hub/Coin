@@ -490,22 +490,28 @@ function buildPbBox(p,live){
   }
   w.appendChild(hd);
   if(PBEDIT.has(p.id))w.appendChild(pbPicker(pb.id,id=>{if(pbAttach(p,id)){PBEDIT.delete(p.id);
-    logAdd(p,'plan','نقشه‌ی خروج عوض شد: '+pbDef(id).n);save();renderAll();}}));
+    // شمارنده‌ی پله‌ها مال نقشه‌ی قبلی بود؛ قبلاً می‌ماند و پله‌های نقشه‌ی تازه «انجام شد» دیده می‌شدند بی آنکه بسته شده باشند.
+    // تارگت‌هایی که قیمت از آن‌ها گذشته «رد شد» حساب می‌شوند (نه بسته‌شده)؛ اگر در صرافی بستی، «بستن بخشی» بزن.
+    let k=0;while(k<p.pb.tps.length&&pbReached(p,k,live))k++;
+    p.pbc=k;p.pbSkip=Array.from({length:k},(_,j)=>j);
+    logAdd(p,'plan','نقشه‌ی خروج عوض شد: '+pbDef(id).n+(k?' · '+faN(k)+' تارگتِ ردشده بسته نشده حساب شد':''));save();renderAll();}}));
   const ol=el('ol','pbsteps');
   for(let i=0;i<n;i++){
-    if(!(pb.parts[i]>0)&&pbStopPrice(p,i+1)===(i?pbStopPrice(p,i):null))continue;
+    // پله‌ی بی‌کار (نه بستن، نه جابه‌جایی استاپ) پنهان است، مگر پله‌ی جاری باشد (وگرنه دکمه‌هایش هیچ‌وقت دیده نمی‌شد)
+    if(i!==done&&!(pb.parts[i]>0)&&pbStopPrice(p,i+1)===(i?pbStopPrice(p,i):null))continue;
     const hit=i===done&&p.status==='open'&&pbReached(p,i,live);
-    const li=el('li',i<done?'done':hit?'hit':i===done?'next':'');
+    const sk0=i<done&&(p.pbSkip||[]).includes(i);      // «رد کن»: انجام نشده، فقط از آن گذشتیم
+    const li=el('li',sk0?'skip':i<done?'done':hit?'hit':i===done?'next':'');
     const dist=live!=null&&i>=done?((pb.tps[i]-live)/live*100*(p.dir==='long'?1:-1)):null;
-    li.innerHTML='<i>'+(i<done?ic('check'):faN(i+1))+'</i><div><b>تارگت '+faN(i+1)+' · <span dir="ltr">'+fmtPrice(pb.tps[i])+'</span></b>'+
-      '<span>'+pbStepText(p,i)+(i<done?' · انجام شد':hit?' · <em>رسید!</em>':(dist!=null&&dist>0&&i===done?' · '+dist.toFixed(1)+'٪ مانده':''))+'</span></div>';
+    li.innerHTML='<i>'+(sk0?ic('x'):i<done?ic('check'):faN(i+1))+'</i><div><b>تارگت '+faN(i+1)+' · <span dir="ltr">'+fmtPrice(pb.tps[i])+'</span></b>'+
+      '<span>'+pbStepText(p,i)+(sk0?' · رد شد (بسته نشد)':i<done?' · انجام شد':hit?' · <em>رسید!</em>':(dist!=null&&dist>0&&i===done?' · '+dist.toFixed(1)+'٪ مانده':''))+'</span></div>';
     if(i===done&&p.status==='open'){
       const acts=el('div','pbact');
       const ok=el('button','btn '+(hit?'pri':'')+' xs',ic('check')+'<span>انجام شد</span>');
       ok.title='همین پله را اجرا کن: بستن سهمش روی '+fmtPrice(pb.tps[i])+' و جابه‌جایی استاپ';
       ok.onclick=()=>pbDo(p,i);
       const sk=el('button','mark ghost','رد کن');sk.title='این پله را خودت جور دیگری انجام دادی';
-      sk.onclick=()=>{p.pbc=i+1;logAdd(p,'plan','پله‌ی '+faN(i+1)+' نقشه رد شد');save();renderAll();};
+      sk.onclick=()=>{p.pbc=i+1;p.pbSkip=(p.pbSkip||[]).concat(i);logAdd(p,'plan','پله‌ی '+faN(i+1)+' نقشه رد شد');save();renderAll();};
       acts.appendChild(ok);acts.appendChild(sk);li.appendChild(acts);
     }
     ol.appendChild(li);

@@ -1836,3 +1836,5 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .rdck{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.rdck>b{font-size:12px;margin-inline-end:4px}
 .rdck .pill{font-size:11px;padding:2px 7px}
 .rbckn{color:var(--tx3);font-size:11px}
+.pbsteps li.skip>i{background:var(--inset);color:var(--tx3);border-color:var(--line)}
+.pbsteps li.skip b{color:var(--tx3);text-decoration:line-through}

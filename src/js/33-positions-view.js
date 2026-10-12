@@ -218,7 +218,8 @@ function buildLadder(p,live,m,opts){
       '<div class="lb '+(top?'top':'bot')+'">'+fmtPrice(price)+(sub?'<small>'+sub+'</small>':'')+'</div></div>';
   };
   h+=mark('ent',p.entry,null,'ورود');
-  if(m&&m.liqPrice)h+=mark('liq',m.liqPrice,null,'لیکوئید');
+  // برچسب لیکوئیدِ نزدیک ورود روی هم نیفتد: می‌رود بالای خط
+  if(m&&m.liqPrice)h+=mark('liq',m.liqPrice,null,'لیکوئید',Math.abs(pctOf(d,m.liqPrice)-pctOf(d,p.entry))<16);
   for(const t of (p.targets||[]).slice(0,3)){
     if(!isFinite(t)||t<=0)continue;
     if(((t-p.entry)*sign)<=0)continue;
