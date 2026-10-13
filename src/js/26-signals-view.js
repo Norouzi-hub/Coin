@@ -58,14 +58,20 @@ function replyToSig(p){
 }
 // یادداشتی که شکلِ سیگنال دارد ولی نماد/عددش خوانده نشد («این ارز رو بگیرید حد ضرر ۱۴۰») در فهرست می‌ماند
 // تا با «افزودن به سیگنال‌ها» درستش کنی؛ پنهان کردنش یعنی گم شدن یک سیگنال
-const RX_SIGLIKE=/حد\s*ضرر|استاپ|ورود|تارگت|لانگ|شورت|اهرم|تریگر|\bentry\b|\bsl\b|\btp\b/i;
-const sigLike=p=>{const t=normDig(p.text||'');return /\d/.test(t)&&RX_SIGLIKE.test(t);};
+const RX_SIGLIKE=/حد\s*ضرر|استاپ|ورود|تارگت|لانگ|شورت|اهرم|تریگر|خرید|فروش|\bentry\b|\bsl\b|\btp\b|\blong\b|\bshort\b|\bstop\b|\btargets?\b|\bleverage\b|\bbuy\b|\bsell\b/i;
+// نماد ارز: BTCUSDT، BTC/USDT، #BTC، $BTC
+const RX_TKR=/\b[A-Z0-9]{2,12}\s*\/?\s*USDT?\b|[#$][A-Z][A-Z0-9]{1,11}\b/;
+const sigLike=p=>{const t=normDig(p.text||'');return (/\d/.test(t)&&RX_SIGLIKE.test(t))||RX_TKR.test(t);};
 const autoArch=p=>{
   if(DB.archived[p.id]===0||DB.results[p.id]===0)return false;
   if(DB.pcat&&DB.pcat[p.id])return true;
   const k=postKind(p);
-  return AUTOARCH.has(k)&&!replyToSig(p)&&!(k==='note'&&sigLike(p));
+  // عکس با متن کوتاه (کارت سود، چارت، سیگنال در عکس) یادداشت نیست؛ قبلاً خودکار به آرشیو می‌رفت و از «همه» گم می‌شد
+  const pic=(p.img||(p.imgs&&p.imgs.length)||p.video)&&normTxt(p.text).length<120;
+  return AUTOARCH.has(k)&&!replyToSig(p)&&!(k!=='ann'&&(sigLike(p)||pic));
 };
+/* پست‌های تازه (48 ساعت) که خودکار (نه با دست تو) به آرشیو رفته‌اند: بالای «همه» یک خط با دکمه‌ی دیدن */
+const autoArchFresh=()=>POSTS.filter(p=>!isArch(p.id)&&p.date&&Date.now()-p.date<48*36e5&&autoArch(p));
 function setArch(id,on){
   if(on)DB.archived[id]=Date.now(); else DB.archived[id]=0;
   save();renderAll();

@@ -1323,6 +1323,12 @@ function renderSignals(){
       list.appendChild(bar);
     }
   }
+  // پست تازه‌ای که خودکار به آرشیو رفت از چشم نیفتد
+  if(bucket==='live'&&sigFilter==='all'&&!q&&!coinFilter){const A=autoArchFresh();
+    if(A.length){const w=el('div','autoarch',ic('box')+'<span><b>'+faN(A.length)+' پست تازه‌ی کانال</b> خودکار به آرشیو رفت ('+
+        [...new Set(A.map(p=>KIND_FA[postKind(p)]||'یادداشت'))].join('، ')+'): '+A.slice(0,2).map(p=>'«'+esc(normTxt(p.text).slice(0,40)||'عکس')+'»').join('، ')+(A.length>2?' …':'')+'</span>');
+      const go=el('button','btn sm','<span>دیدن</span>');go.onclick=()=>{bucket='arch';setView({});window.scrollTo({top:0,behavior:'smooth'});};
+      w.appendChild(go);list.appendChild(w);}}
   if(!n&&!POSTS.length&&H.tg.err){/* خطا و راه‌حلش در نوار وضعیت بالاست؛ پیغام «هنوز پستی نیامده» اینجا تکرار نمی‌شود */}
   else if(!n){
     list.appendChild(el('div','empty',STAR+(POSTS.length
