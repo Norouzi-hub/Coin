@@ -895,6 +895,34 @@ function rdChkOf(p,dir,sd,missing){
     p&&(p.vbo!=null||p.vlt!=null)?(s*(+p.vbo||0)>0?true:s*(+p.vlt||0)>0?false:null):null];
   return {it,n:it.filter(x=>x===true).length,k:it.filter(x=>x!=null).length};
 }
+/* ---- قاعده‌ی پول واقعی (از تحلیل 212 تست، مهر 1405): فقط وقتی هر پنج شرط درست است ----
+   1) «قابل گرفتن» (سابقه‌ی 3 ستاره و بقیه‌ی قانون‌های رادار)؛ 2) لانگ (شورت‌ها در تست‌ها و بک‌تست زیان‌ده بودند)؛
+   3) هوای بازار برای لانگ «نامناسب» نیست؛ 4) چک‌لیست ورود دست‌کم 3 از 7؛ 5) استاپ بین 2٪ و 8٪.
+   بقیه فقط «تست». هنوز روی تست‌های تازه ثابت نشده؛ جدولش در «آزمایشی» است. */
+const RD_RULE=[['ok','قابل گرفتن'],['long','لانگ'],['wx','هوا برای لانگ نامناسب نیست'],['ck','چک‌لیست ≥3'],['sd','استاپ 2 تا 8٪']];
+const RD_RSD=[0.02,0.08];
+function rdRuleOf(ok,dir,wx,ckn,sd){
+  const it=[!!ok,dir==='long',wx!=null&&wx!=='no',ckn>=3,sd>=RD_RSD[0]&&sd<=RD_RSD[1]];
+  return {it,n:it.filter(Boolean).length,pass:it.every(Boolean)};
+}
+/* برای کارت زنده: هوا از بررسی آخر (کهنه یا نامعلوم = شرط سوم نه) */
+function rdRuleX(x,ck){
+  if(!x||x.dir==='wait'||!x.pl)return null;
+  const c=ck||rdChkOf(x.parts,x.dir,x.pl.sd,true),o=rdRuleOf(x.ok,x.dir,rdWxDir('long'),c.n,x.pl.sd);
+  const lab=['در گروه «قابل گرفتن» نیست','شورت است',rdWxDir('long')==null?'هوای بازار معلوم نیست':'هوا برای لانگ نامناسب است','چک‌لیست '+c.n+'/'+RD_CK.length,
+    'استاپ '+fmtNum(x.pl.sd*100)+'٪ ('+(x.pl.sd<RD_RSD[0]?'تنگ؛ با تکان معمولی می‌خورد':'پهن؛ اگر گرفتی حجم را کم کن')+')'];
+  o.fails=o.it.map((v,i)=>v?null:lab[i]).filter(Boolean);
+  // دو بند مهم چک‌لیست: «هنوز نرفته» و «بی ازدحام»
+  o.warn=[c.it[2]===false?'«هنوز نرفته» ✗: حرکت انجام شده، دیر رسیده‌ای':'',c.it[3]===false?'«بی ازدحام» ✗: اهرم‌ها جمع شده‌اند':''].filter(Boolean);
+  return o;
+}
+function rdRuleHtml(ru){
+  if(!ru)return '';
+  if(ru.pass)return '<div class="rdvd real">'+ic('check')+'<span>قاعده‌ی پول واقعی: هر 5 شرط درست</span></div>'+
+    (ru.warn.length?'<div class="rdrule w">'+ru.warn.map(t=>'<span>'+t+'</span>').join('')+'</div>':'');
+  return '<div class="rdrule"><b>پول واقعی <bdi dir="ltr">'+ru.n+'/5</bdi>: فقط تست</b>'+ru.fails.map(t=>'<span>✗ '+esc(t)+'</span>').join('')+'</div>';
+}
+const rdRuleTxt=()=>'<ol class="rdrl">'+RD_RULE.map(([,t])=>'<li>'+t+'</li>').join('')+'</ol>';
 /* برای سیگنال کانال: عامل‌های همان ارز اگر در رادار هست؛ وگرنه فقط بندهای کل بازار */
 function rdChkFor(tk,dir,sd){
   const x=RD.coins[tk],m=rdWxNow()?RD.coins.BTC||RD.coins[RD.rank[0]]:null;
@@ -1261,7 +1289,7 @@ function rdRowHtml(x,i){
       (ns&&ns.nw?'<span class="pill nw" title="در همین بررسی آخر پیدا شد">تازه</span>':'')+
       '<button class="rdfavb'+(rdIsFav(x.tk)?' on':'')+'" data-a="fav" title="واچ‌لیست" aria-label="واچ‌لیست">'+(rdIsFav(x.tk)?'★':'☆')+'</button></div>'+
     (meta.length?'<div class="rdmeta">'+meta.join('<i>·</i>')+'</div>':'')+
-    (verdict||tkn?'<div class="rdstat">'+verdict+(tkn?'<div class="rdtkn">'+tkn+'</div>':'')+'</div>':'')+
+    (verdict||tkn||ck?'<div class="rdstat">'+verdict+(ck?rdRuleHtml(rdRuleX(x,ck)):'')+(tkn?'<div class="rdtkn">'+tkn+'</div>':'')+'</div>':'')+
     kv+
     (ck?rdChkMini(ck):'')+
     '<div class="glact">'+(z?'<button class="btn sm '+(x.ok?'ok':'')+'" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
@@ -1350,9 +1378,14 @@ function rdHeroHtml(L){
   if(H.few&&RD.M){const need=Math.max(0,Math.min(RD_NC_OK,RD_MAX)-n);wk.push('ارز کم');
     warns.push('<div class="rdwarn"><span>ستاره‌ها روی '+faN(H.nc)+' ارز ساخته شده‌اند؛ برای اعتماد دست‌کم '+faN(RD_NC_OK)+' ارز لازم است'+(H.cap<5?' (فعلاً ستاره حداکثر 3)':'')+'.</span>'+
       (need?rdBtn('data-rd50="1"','plus','رساندن به '+faN(RD_NC_OK)+' ارز','add','در حال بررسی ارزها'):'')+'</div>');}
+  const rl=L.filter(x=>x.dir!=='wait').map(x=>[x,rdRuleX(x)]).filter(a=>a[1]&&a[1].pass).map(a=>a[0]),wxL=rdWxDir('long');
   const key=(n?'<span class="rdcnt">'+faN(n)+' ارز</span> · ':'')+'<small id="rdProg">'+(RDQ.on?'':RD.at?ageTxt(RD.at):'')+'</small>'+
+    (RD.at?' <span class="rdak '+(rl.length?'win':'mut')+'">💰 پول واقعی: '+(rl.length?faN(rl.length):wxL==='no'?'امروز نه (هوا)':'هیچ')+'</span>':'')+
     wk.map(t=>' <span class="rdak bad">⚠ '+t+'</span>').join('');
-  const body='<span class="rdhs">'+sub+'</span>'+(chips.length?'<div class="rdchips">'+chips.join('')+'</div>':'')+warns.join('')+
+  const rule='<div class="rdrulebox"><b>💰 قاعده‌ی پول واقعی</b><span>فقط سیگنالی که هر پنج شرط را دارد؛ بقیه فقط «تست»:</span>'+rdRuleTxt()+
+    '<span>'+(rl.length?'الان: '+rl.map(x=>'<b dir="ltr">'+esc(x.tk)+'</b>').join('، ')+'.':wxL==='no'?'الان هوا برای لانگ نامناسب است؛ امروز معامله‌ی واقعی نگیر.':'الان هیچ سیگنالی هر پنج شرط را ندارد.')+
+    ' مهم‌ترین بندهای چک‌لیست «هنوز نرفته» و «بی ازدحام»‌اند. این قاعده از تحلیل تست‌های قبلی آمده و هنوز روی تست‌های تازه ثابت نشده؛ حجم را کوچک نگه دار. نتیجه‌اش در «آزمایشی».</span></div>';
+  const body='<span class="rdhs">'+sub+'</span>'+rule+(chips.length?'<div class="rdchips">'+chips.join('')+'</div>':'')+warns.join('')+
     '<div class="rdbar">'+'<button class="btn sm rdhelpb" data-rdhelp="1" title="امتیاز، ستاره، کِی وارد شوم" aria-label="راهنما">'+ic('info')+'<span>راهنما</span></button>'+
     (n<RD_MAX?rdBtn('data-rdmore="1"','plus',faN(RD_STEP)+' ارز بعدی','more','در حال بررسی'):'')+'</div>';
   return rdAcc('hero','rdhero '+st,st==='go'?'✓':st==='stop'?'✕':'…',title,key,rdBtn('data-rdrun="1"','refresh','تازه کن','refresh','در حال تازه کردن','rdaq'),body)+
@@ -1413,7 +1446,7 @@ function rdHtml(){
   if(RDV==='test'||RDV==='log')return '<div class="glb">'+rbHtml(RDV)+'</div>';
   if(RDV==='model')return '<div class="glb">'+(RDQ.on?rdProgHtml():'')+rdModelHtml()+'</div>';
   const fv=x=>!VIEW.mktFav||rdIsFav(x.tk);
-  const fd=VIEW.mktDir||'all', sig=L.filter(x=>x.dir!=='wait'), act=sig.filter(x=>(fd==='all'||x.dir===fd)&&(!VIEW.mktOk||x.ok)&&(!VIEW.mktDiv||rdDivOf(x)>0)&&fv(x)),
+  const fd=VIEW.mktDir||'all', sig=L.filter(x=>x.dir!=='wait'), act=sig.filter(x=>(fd==='all'||x.dir===fd)&&(!VIEW.mktOk||x.ok)&&(!VIEW.mktDiv||rdDivOf(x)>0)&&(!VIEW.mktReal||(rdRuleX(x)||{}).pass)&&fv(x)),
     hid=sig.length-act.length, wait=L.filter(x=>x.dir==='wait').filter(fv);
   let h='<div class="glb">'+rdHeroHtml(L)+rdWxAccHtml();
   // انتخاب ارزها: بازه‌ی رتبه، نماد، واچ‌لیست
@@ -1461,17 +1494,19 @@ function rdFbar(){
   chip(row,'فقط قابل گرفتن',!!VIEW.mktOk,()=>set({mktOk:!VIEW.mktOk}));
   chip(row,'واگرایی هم‌جهت',!!VIEW.mktDiv,()=>set({mktDiv:!VIEW.mktDiv}));
   chip(row,'★ واچ‌لیست',!!VIEW.mktFav,()=>set({mktFav:!VIEW.mktFav}));
+  chip(row,'💰 قاعده‌ی پول واقعی',!!VIEW.mktReal,()=>set({mktReal:!VIEW.mktReal}));
   bar.appendChild(row);
 }
 /* مرتب‌سازی سیگنال‌ها (روی دستگاه می‌ماند). گروه‌های «قابل گرفتن» و «بی اعتبار کافی» سر جایشان می‌مانند؛ مرتب‌سازی داخل هر گروه است */
 const RD_SORTS=[['def','پیش‌فرض (اعتبار)'],['sc','امتیاز بیشتر'],['new','تازه‌ترین سیگنال'],['old','قدیمی‌ترین سیگنال'],['ck','چک‌لیست بیشتر'],
-  ['p','احتمال مدل بیشتر'],['sd','استاپ نزدیک‌تر'],['sdw','استاپ دورتر'],['tk','نماد (الفبا)']];
+  ['real','قاعده‌ی پول واقعی'],['p','احتمال مدل بیشتر'],['sd','استاپ نزدیک‌تر'],['sdw','استاپ دورتر'],['tk','نماد (الفبا)']];
 const rdSortK=()=>RD_SORTS.some(([k])=>k===VIEW.rdSort)?VIEW.rdSort:'def';
 function rdSortL(A){
   const k=rdSortK();if(k==='def')return A;
   const sn=x=>x.since||0, ck=x=>x.pl?rdChkOf(x.parts,x.dir,x.pl.sd,true).n:-1, sd=x=>x.pl?x.pl.sd:Infinity;
   const f={sc:(a,b)=>b.sc-a.sc,new:(a,b)=>sn(b)-sn(a)||b.sc-a.sc,old:(a,b)=>(sn(a)||Infinity)-(sn(b)||Infinity)||b.sc-a.sc,ck:(a,b)=>ck(b)-ck(a)||b.sc-a.sc,
-    p:(a,b)=>(b.p??-1)-(a.p??-1),sd:(a,b)=>sd(a)-sd(b),sdw:(a,b)=>(b.pl?b.pl.sd:-1)-(a.pl?a.pl.sd:-1),tk:(a,b)=>String(a.tk).localeCompare(String(b.tk))}[k];
+    p:(a,b)=>(b.p??-1)-(a.p??-1),sd:(a,b)=>sd(a)-sd(b),sdw:(a,b)=>(b.pl?b.pl.sd:-1)-(a.pl?a.pl.sd:-1),tk:(a,b)=>String(a.tk).localeCompare(String(b.tk)),
+    real:(a,b)=>((rdRuleX(b)||{n:-1}).n-(rdRuleX(a)||{n:-1}).n)||ck(b)-ck(a)||b.sc-a.sc}[k];
   return A.slice().sort(f);
 }
 function renderRadar(){const g=$('#rdView');if(!g)return;paintRadar(g);}
@@ -1515,7 +1550,10 @@ function paintRadar(g){
       const p={id:'radar/'+x.tk+'/'+RD.at,num:0,text:'رادار بازار: '+x.tk+' '+(x.dir==='long'?'لانگ':'شورت')+' · امتیاز '+x.sc,date:new Date(),link:null,img:null,auto:true};
       if(b.dataset.a==='gotest'){RDV='test';try{localStorage.setItem('signaldesk.rdview',RDV);}catch(e){}renderRadar();const t=rdTaken(x.tk).ot;setTimeout(()=>{const r=t&&document.querySelector('.rbrow[data-id="'+t.id+'"]');if(r){r.scrollIntoView({block:'center',behavior:'smooth'});r.classList.add('flash');}},80);return;}
       if(b.dataset.a==='test'){const r=rbAddAsk(x);paintRadar(g);r.then(v=>{if(v)paintRadar(g);});return;}
-      if(b.dataset.a==='iso'){const z=isoSize(x.pl.E,x.pl.SL),ex=rbExEff(x.dir),sg=asSig(k);
+      if(b.dataset.a==='iso'){const ru=rdRuleX(x);
+        if(ru&&!ru.pass&&!b.dataset.ruleOk){askConfirm({title:'این سیگنال قاعده‌ی پول واقعی را ندارد',tone:'danger',
+          msg:'شرط‌هایی که درست نیست: '+ru.fails.join('؛ ')+'. طبق قاعده فقط «تست» بزن.',ok:'باز هم ادامه',cancel:'نه، فقط تست'}).then(v=>{if(v){b.dataset.ruleOk='1';b.click();delete b.dataset.ruleOk;}});return;}
+        const z=isoSize(x.pl.E,x.pl.SL),ex=rbExEff(x.dir),sg=asSig(k);
         // نقشه‌ی خروج رادار روی پوزیشن واقعی: تارگت‌ها به واحد R و سبک خروج هم‌ارز
         // (lad/trl: پله‌های +1R/+2R/+3R با سیو سود؛ q05: همه در +0.5R؛ h05: نصف در +0.5R و باقی در +1.5R؛ t1h: بستن خودکار بعد از 1 ساعت)
         // همیشه سه تارگت: تارگت اول همان نقشه‌ی رادار است و سبک انتخاب‌شده همان را اجرا می‌کند؛ دو تارگت بعدی

@@ -374,6 +374,20 @@ function rbAgeHtml(done){
     '</tbody></table></div><div class="hint">هر خانه: میانگین R، درصد برد و تعداد. سن = از بسته شدن اولین کندلی که همین جهت را داد تا لحظه‌ی ثبت. ورود و استاپ همیشه از آخرین کندل است؛ سؤال این است که دیر رسیدن به یک سیگنال ضرر دارد یا نه.</div>';
   return h+'</details>';
 }
+/* قاعده‌ی پول واقعی برای هر تست از عکس لحظه‌ی ورود: قابل گرفتن (بی دلیلِ نه)، لانگ، هوا از عامل‌های ثبت‌شده، چک‌لیست، استاپ */
+function rbRule(it){
+  const pv=it.pv||{},g=k=>+pv[k]||0,c=rbCk(it);if(!c)return null;
+  return rdRuleOf(!it.why&&it.stars>=3,it.dir,rdWxCls(rdWxOf(g('btc'),g('mtot'),g('mmc'),g('mt3'),g('mud')),'long'),c.n,it.sd);
+}
+function rbRuleHtml(done){
+  const L=done.filter(it=>it.R!=null&&rbRule(it));if(L.length<5)return '';
+  const P=L.filter(it=>rbRule(it).pass),Q=L.filter(it=>!rbRule(it).pass);
+  const cell=A=>{if(!A.length)return '<td class="num">—</td><td class="num">—</td><td class="num">—</td>';const r=A.reduce((a,it)=>a+it.R,0),w=A.filter(it=>it.R>0).length;
+    return '<td class="num">'+faN(A.length)+'</td><td class="num">'+faN(Math.round(w/A.length*100))+'٪</td><td class="num"><b class="'+cls(r/A.length)+'" dir="ltr">'+fmtR(r/A.length)+'</b></td>';};
+  return '<details class="sec sub2 rbrulew"><summary>💰 قاعده‌ی پول واقعی: تست‌هایی که هر 5 شرط را داشتند</summary><div class="tscroll"><table class="tp xtab"><thead><tr><th></th><th>تعداد</th><th>برد</th><th>میانگین</th></tr></thead><tbody>'+
+    '<tr><td>هر 5 شرط</td>'+cell(P)+'</tr><tr><td>بقیه</td>'+cell(Q)+'</tr></tbody></table></div><div class="hint">شرط‌ها: '+RD_RULE.map(([,t])=>t).join('، ')+
+    '. از عکس عامل‌های لحظه‌ی ورود هر تست. قاعده از تحلیل همین تست‌های قبلی ساخته شده؛ حکم واقعی را تست‌های بعد از این می‌دهند.</div></details>';
+}
 /* سفارش Limit منتظر: قیمت Limit، فاصله‌ی قیمت الان، و مهلت */
 function rbPendRowHtml(it,live=true){
   const px=PRICES.get(it.tk),sn=it.dir==='long'?1:-1,far=px>0?(px-it.E)/it.E*100*sn:null,left=it.dl-Date.now();
@@ -394,7 +408,7 @@ function rbHtml(kind){
           [nC.length?faN(nC.length)+' تست بسته شد · جمع <b class="'+cls(r)+'" dir="ltr">'+fmtR(r)+'</b> <b class="'+cls(r)+'" dir="ltr">'+fmtUsd(rbUsd(nC))+'</b>':'',nO.length?faN(nO.length)+' تست تازه باز شد':''].filter(Boolean).join(' · ')+
           '. همه با نشان <span class="pill nw">تازه</span>.</span></div>';}}
     h+=rbSumHtml(done,'نتیجه');
-    h+=rbCkHtml(done)+rbAgeHtml(done);
+    h+=rbRuleHtml(done)+rbCkHtml(done)+rbAgeHtml(done);
     if(open.length){const px=it=>PRICES.get(it.tk),liv=open.filter(it=>px(it)>0),sum=liv.reduce((a,it)=>a+rbLiveR(it,px(it)),0),usd=rbUsd(liv,it=>rbLiveR(it,px(it))),worst=rbUsd(open,rbStopR);
       h+='<div class="rbsum"><b>بازها الان</b><span>'+faN(open.length)+' معامله · جمع <b class="'+cls(sum)+'" dir="ltr">'+fmtR(sum)+'</b> · به دلار <b class="'+cls(sum)+'" dir="ltr">'+fmtUsd(usd)+'</b></span>'+
         '<span class="rbworst">اگر همه‌ی بازها به استاپِ الانشان بخورند: <b class="'+cls(worst)+'" dir="ltr">'+fmtUsd(worst)+'</b>'+(rbFix()?' · مارجین درگیر <b dir="ltr">'+fmtUsd(open.length*S.tMg)+'</b>':'')+'</span>'+

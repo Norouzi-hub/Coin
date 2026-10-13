@@ -31,7 +31,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    if(/coins\/markets/.test(u))return J(CG.map(([s,c,ch])=>({symbol:s.toLowerCase(),market_cap:c,market_cap_change_percentage_24h:ch})));
    if(/tether\/market_chart/.test(u)){const D=864e5,n=Date.now();return J({market_caps:Array.from({length:131},(_,i)=>[n-(130-i)*D,1.5e11+i*1.25e8])});}
    return r.fallback();});
- const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
+ const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));const dlgs=[];p.on('dialog',d=>{dlgs.push(d.message());d.accept();});
  await p.addInitScript(seed);await p.goto('http://localhost:8899/index.html');await p.waitForTimeout(3000);
 
  console.log('=== عامل‌ها و نمونه‌ها ===');
@@ -108,6 +108,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(/صبر/.test(t.wait)&&/RDD/.test(t.wait)&&t.cards===0,'«صبر» جدا؛ کارت پستی در این تب نیست');
  ok(t.more&&/^4 ارز/.test(t.cnt)&&t.tabs==='سیگنال‌ها,آزمایشی,کارنامه,دفتر','دکمه‌ی «10 ارز بعدی» و چهار زیرتب (سیگنال‌ها، آزمایشی، کارنامه، دفتر)');
  await p.evaluate(()=>document.querySelector('#rdView .rdit[data-rd="RDB"] [data-a="iso"]').click());await p.waitForTimeout(600);
+ ok(dlgs.some(m=>/قاعده‌ی پول واقعی را ندارد/.test(m)),'«ایزوله» روی سیگنالی که قاعده‌ی پول واقعی را ندارد اول پرسید (و با «باز هم ادامه» فرم باز شد)');
  ok(await p.evaluate(()=>/RDB/.test(document.querySelector('#sheet').textContent)&&+document.querySelector('#f_e').value===11),'«ایزوله» فرم ورود RDB را باز کرد');
  // سبک‌های خروج در فرم ورود: سه تارگت (اولی همان نقشه‌ی رادار)، هر سبک عدد خودش
  const pbx=await p.evaluate(()=>{const out=[];const labs=[...document.querySelectorAll('#sheet #pbBox .pbc')].map(b=>b.textContent);

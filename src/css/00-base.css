@@ -1917,3 +1917,11 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .rdchev{border:0;border-right:2px solid var(--tx3);border-bottom:2px solid var(--tx3);transform:rotate(45deg)}
 .rdacc[open]>summary .rdchev{transform:rotate(-135deg)}
 .rdacc .rdwx .rdwxc .pill{display:none}
+/* قاعده‌ی پول واقعی */
+.rdvd.real{color:#fff;background:linear-gradient(90deg,color-mix(in srgb,var(--up) 85%,#000),color-mix(in srgb,var(--gold) 70%,var(--up)));font-weight:900}
+.rdrule{display:flex;flex-wrap:wrap;align-items:center;gap:3px 8px;font-size:11.5px;color:var(--tx3);padding:0 2px}
+.rdrule>b{color:var(--tx2);font-weight:800}.rdrule>span{color:var(--dn)}
+.rdrule.w>span{color:var(--gold)}
+.rdrulebox{display:flex;flex-direction:column;gap:4px;padding:9px 11px;border-radius:12px;background:var(--inset);border:1px solid color-mix(in srgb,var(--gold) 40%,var(--line));font-size:12.5px;color:var(--tx2);line-height:1.8}
+.rdrulebox>b{color:var(--gold);font-weight:900}.rdrulebox b[dir]{color:var(--tx)}
+.rdrl{margin:0;padding-inline-start:20px}.rdrl li{margin:0}

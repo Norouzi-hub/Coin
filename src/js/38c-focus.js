@@ -37,7 +37,8 @@ function renderFocus(){
   if(d.take.length>list.length)h+='<button class="btn sm glmore" data-fc="more">'+faN(d.take.length-list.length)+' سیگنال دیگر</button>';
   if(!d.take.length)h+='<div class="empty">الان سیگنال کانالیِ قابل گرفتنی نیست'+(d.wx.length?'؛ '+faN(d.wx.length)+' سیگنال خلاف هوای بازار کنار رفت':'')+'.</div>';
   else if(d.wx.length)h+='<div class="hint">'+faN(d.wx.length)+' سیگنال کانال خلاف هوای بازار است و این‌جا نیامد ('+d.wx.map(x=>esc(x.tk)+' '+(x.dir==='long'?'لانگ':'شورت')).slice(0,6).join('، ')+'). در «سیگنال‌ها › الان چه کنم؟» هست.</div>';
-  {const ok=rdList().filter(x=>x.ok);if(ok.length)h+='<button class="glit" data-fc="radar">'+ic('bars')+'<span>رادار: '+faN(ok.length)+' فرصت قابل گرفتن ('+ok.slice(0,3).map(x=>esc(x.tk)).join('، ')+')</span></button>';}
+  {const ok=rdList().filter(x=>x.ok),rl=ok.filter(x=>(rdRuleX(x)||{}).pass);if(ok.length)h+='<button class="glit" data-fc="radar">'+ic('bars')+'<span>رادار: '+faN(ok.length)+' فرصت قابل گرفتن ('+ok.slice(0,3).map(x=>esc(x.tk)).join('، ')+')'+
+    ' · 💰 پول واقعی: '+(rl.length?rl.map(x=>esc(x.tk)).join('، '):'هیچ')+'</span></button>';}
   // پوزیشن‌های باز
   const P=openPos();
   h+='<div class="sechd">پوزیشن‌های باز ('+faN(P.length)+')</div>';

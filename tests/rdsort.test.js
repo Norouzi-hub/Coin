@@ -28,7 +28,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  console.log('   ',JSON.stringify(r).slice(0,1400));
  ok(/سیگنال از/.test(r.age)&&/ساعت پیش/.test(r.age),'سرکارت: «سیگنال از … ساعت پیش» ('+r.age+')');
  ok(/ورود و استاپ از کندل ساعت/.test(r.time)&&/برقرار است/.test(r.time)&&!r.newTime,'خط «ورود و استاپ از کندل … ؛ خود سیگنال از …» فقط برای سیگنال قدیمی‌تر');
- ok(r.opts===9,'9 گزینه‌ی مرتب‌سازی');
+ ok(r.opts===10,'10 گزینه‌ی مرتب‌سازی');
  ok(r.sc==='BBB,CCC,AAA'&&r.nw==='BBB,CCC,AAA'&&r.old==='AAA,CCC,BBB'&&r.sd==='BBB,AAA,CCC'&&r.tk==='AAA,BBB,CCC','امتیاز، تازه‌ترین، قدیمی‌ترین، استاپ نزدیک‌تر، الفبا');
  ok(r.saved==='tk','انتخاب مرتب‌سازی می‌ماند');
  ok(r.sn&&r.ageH>=18&&r.ageH<=20,'تست: شروع سیگنال و سنش ثبت شد ('+r.ageH+' ساعت)');
