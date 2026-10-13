@@ -32,7 +32,7 @@ const RD_CF=['t4','t1','macd','rsi','brk','vol','btc','ext','rs','d50','volc','w
 /* عامل‌های کل بازار (برای همه‌ی ارزها در یک لحظه یکی): همه طوری که «+» یعنی به نفع بالا رفتن */
 const RD_MF=['mtot','mt2','mt3','mbd','mud','mmc'], RD_FEAT=RD_CF.concat(RD_MF), RD_F0=RD_CF.length;
 const RD_FLOW=['whale','crowd','taker','oi'], RD_NOSIGN=['volc','rbull','rbear','cprw'];
-const RD_IBTC=RD_CF.indexOf('btc'), RD_IMTOT=RD_MF.indexOf('mtot'), RD_IMMC=RD_MF.indexOf('mmc');
+const RD_IBTC=RD_CF.indexOf('btc'), RD_IMTOT=RD_MF.indexOf('mtot'), RD_IMMC=RD_MF.indexOf('mmc'), RD_IMT3=RD_MF.indexOf('mt3'), RD_IMUD=RD_MF.indexOf('mud');
 const RD_FA={t4:'روند 4 ساعته',t1:'روند 1 ساعته',macd:'MACD',rsi:'RSI',brk:'شکست 7 روزه',vol:'حجم',btc:'روند بیت‌کوین',ext:'فاصله از میانگین',
   rs:'قدرت نسبی به بیت‌کوین',d50:'روند روزانه',volc:'فشردگی نوسان',
   whale:'نهنگ‌ها در برابر مردم',crowd:'ازدحام مردم',taker:'خرید/فروش تهاجمی',oi:'Open Interest',rbull:'بازار صعودی',rbear:'بازار نزولی',
@@ -55,7 +55,11 @@ const rdFsK=()=>S.rdFs==='all'?'all':'core';
 /* «هوای بازار»: میانگین روند 4 ساعته‌ی بیت‌کوین، TOTAL و پهنای MACD همه‌ی ارزها (هر کدام −1 تا +1).
    برای لانگ: +0.2 به بالا «مناسب»، −0.2 به پایین «نامناسب»؛ برای شورت برعکس. همان تعریف در سنجش گذشته و الان. */
 const RD_WXT=0.2;
-const rdWxOf=(btc,mtot,mmc)=>{const v=[btc,mtot,mmc].filter(x=>x!=null&&isFinite(x));return v.length>=2?v.reduce((a,b)=>a+b,0)/v.length:null;};
+/* هوای بازار: میانگین چهار عدد (هر کدام −1 تا +1): روند 4 ساعته‌ی بیت‌کوین، کل بازار نسبت به میانگین 7 روزه، پهنای MACD همه‌ی ارزها،
+   و جریان پول آلت‌ها در 24 ساعت (TOTAL3 و دامیننس تتر). جریان آلت‌ها بعداً اضافه شد: روزی که آلت‌ها 11٪ ریختند و بیت‌کوین صاف ماند،
+   سه عدد روندی «خنثی» می‌گفتند. در تحلیل 206 تست هم ورود پول به آلت‌ها قوی‌ترین نشانه‌ی موفقیت لانگ بود (62–64٪ در برابر 30–37٪). */
+const rdFlowOf=(mt3,mud)=>{const v=[mt3,mud].filter(x=>x!=null&&isFinite(x));return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;};
+const rdWxOf=(btc,mtot,mmc,mt3,mud)=>{const v=[btc,mtot,mmc,rdFlowOf(mt3,mud)].filter(x=>x!=null&&isFinite(x));return v.length>=2?v.reduce((a,b)=>a+b,0)/v.length:null;};
 const rdWxCls=(w,d)=>{if(w==null)return null;const v=d==='short'?-w:w;return v>=RD_WXT?'go':v<=-RD_WXT?'no':'mid';};
 const RD_SKIP=/^(USDT|USDC|FDUSD|TUSD|DAI|BUSD|USDP|USDD|USDE|SUSDE|USDS|PYUSD|USD0|USD1|RLUSD|EURC|EURT|PAXG|XAUT|WBTC|WETH|WBETH|STETH|WSTETH|WEETH|CBBTC|BTCB|RETH|METH|LEO|BSC-USD|BFUSD|USDF|USDG|USDGO|USDTB|USDX|FRAX|LUSD|GHO|CRVUSD|USR|DEUSD|SUSDS|AUSD|USDA|EURS|BUIDL|USYC|USTB|OUSG)$|^USD[A-Z0-9]{1,3}$|^[A-Z]{1,3}USD$/;
 /* قیمت میخ‌شده: دامنه‌ی 720 بسته‌ی آخر (30 روز ساعتی) زیر 2٪ میانگین */
@@ -450,7 +454,7 @@ function rdEvalFold(SS,M,a,b,cal,rel,busy,recs,open,xs){
     if(od.length>=RD_CAP){capped++;continue;}
     const end=s.J[d][q];busy.set(s.tk,end);od.push(end);
     const bk=rdBucket(sc),g=s.G[q];
-    const wx=rdWxOf(s.X[q*F+RD_IBTC],(RDMF.get(t)||[])[RD_IMTOT],(RDMF.get(t)||[])[RD_IMMC]);
+    const mf=RDMF.get(t)||[],wx=rdWxOf(s.X[q*F+RD_IBTC],mf[RD_IMTOT],mf[RD_IMMC],mf[RD_IMT3],mf[RD_IMUD]);
     if(recs)recs.push({d,bk,g,t,wx:rdWxCls(wx,d),R:s.RX?RD_EXN.map((_,e)=>s.RX[d][q*RD_EXN.length+e]):RD_EXN.map(()=>s.R[d][q]),dv:s.DV?s.DV[q]*(d==='long'?1:-1):0,
       C:s.CX?RD_EXN.map((_,e)=>s.CX[d][q*RD_EXN.length+e]):null,sd:s.SD?s.SD[q]:null});
     else{const R=s.R[d][q];rdAdd(cal,d,R,t);rdAdd(cal,d+'|'+bk,R,t);if(g){rdAdd(cal,d+'|'+g,R,t);rdAdd(cal,d+'|'+g+'|'+bk,R,t);}}
@@ -836,8 +840,8 @@ function rdHealth(){
 /* ---- هوای بازار الان: آخرین کندل بسته‌ی بررسی رادار (این سه عامل برای همه‌ی ارزها یکی‌اند) ---- */
 function rdWxNow(){
   const x=RD.coins.BTC||RD.coins[RD.rank[0]];if(!x||!x.parts)return null;
-  const p=x.parts,w=rdWxOf(p.btc,p.mtot,p.mmc);if(w==null)return null;
-  return {w,t:x.t,btc:p.btc,mtot:p.mtot,mmc:p.mmc,old:Date.now()-(x.t+36e5)>3*36e5};
+  const p=x.parts,w=rdWxOf(p.btc,p.mtot,p.mmc,p.mt3,p.mud);if(w==null)return null;
+  return {w,t:x.t,btc:p.btc,mtot:p.mtot,mmc:p.mmc,flow:rdFlowOf(p.mt3,p.mud),old:Date.now()-(x.t+36e5)>3*36e5};
 }
 const rdWxDir=d=>{const o=rdWxNow();return o&&!o.old?rdWxCls(o.w,d):null;};
 const RDWX_FA={go:'مناسب',mid:'خنثی',no:'نامناسب'};
@@ -848,22 +852,24 @@ function rdWxHtml(full){
   const L=rdWxCls(o.w,'long'),Sh=rdWxCls(o.w,'short'),st=o.old?'wait':L==='go'?'go':L==='no'?'stop':'mid';
   const title=o.old?'هوای بازار کهنه است':L==='go'?'هوا برای لانگ مناسب است':L==='no'?'هوا برای لانگ نامناسب است':'هوای بازار خنثی است';
   const sub=o.old?'آخرین بررسی برای ساعت <b dir="ltr">'+rdHH(o.t+36e5)+'</b> است؛ «تازه کن» بزن.':
-    L==='go'?'روند بیت‌کوین، کل بازار و بیشتر ارزها با هم بالا می‌روند. شورت نگیر.':
-    L==='no'?'روند بیت‌کوین، کل بازار و بیشتر ارزها با هم پایین می‌آیند. لانگ نگیر؛ اگر شورت داری، همین است.':
+    L==='go'?'بیشتر نشانه‌ها (روند بیت‌کوین، کل بازار، MACD ارزها، پول آلت‌ها) رو به بالاست. شورت نگیر.':
+    L==='no'?'بیشتر نشانه‌ها (روند بیت‌کوین، کل بازار، MACD ارزها، پول آلت‌ها) رو به پایین است. لانگ نگیر؛ اگر شورت داری، همین است.':
     'نشانه‌ها یکدست نیستند. اگر می‌گیری، کم و با احتیاط.';
   const bar=(lab,v)=>{const x=v==null?0:Math.max(-1,Math.min(1,v));return '<div class="rdwxb"><small>'+lab+'</small><span class="rdwxt"><i class="'+(x>=0?'u':'d')+'" style="'+(x>=0?'left:50%':'right:50%')+';width:'+Math.round(Math.abs(x)*50)+'%"></i></span><b dir="ltr" class="'+cls(x)+'">'+(v==null?'—':(x>0?'+':'')+x.toFixed(2))+'</b></div>';};
   let h='<div class="rdwx '+st+'"><div class="rdwxh"><i>'+(st==='go'?'☀':st==='stop'?'☂':'⛅')+'</i><div><b>'+title+'</b><span>'+sub+'</span></div></div>'+
     '<div class="rdwxc"><span class="pill '+(L==='go'?'win':L==='no'?'lose':'mut')+'">لانگ: '+RDWX_FA[L]+'</span><span class="pill '+(Sh==='go'?'win':Sh==='no'?'lose':'mut')+'">شورت: '+RDWX_FA[Sh]+'</span>'+
       '<small>عدد کل <b dir="ltr" class="'+cls(o.w)+'">'+(o.w>0?'+':'')+o.w.toFixed(2)+'</b> · کندل ساعت <b dir="ltr">'+rdHH(o.t+36e5)+'</b></small></div>';
+  if(!full){const n=(l,v)=>v==null?'':'<span>'+l+' <b dir="ltr" class="'+cls(v)+'">'+(v>0?'+':'')+(+v).toFixed(2)+'</b></span>';
+    h+='<div class="rdwxp">'+[n('روند بیت‌کوین',o.btc),n('کل بازار 7 روزه',o.mtot),n('MACD ارزها',o.mmc),n('پول آلت‌ها 24h',o.flow)].filter(Boolean).join('')+'</div>';}
   if(full){
-    h+=bar('روند 4 ساعته‌ی بیت‌کوین',o.btc)+bar('کل بازار (TOTAL)',o.mtot)+bar('پهنای بازار (MACD همه‌ی ارزها)',o.mmc);
+    h+=bar('روند 4 ساعته‌ی بیت‌کوین',o.btc)+bar('کل بازار (TOTAL)',o.mtot)+bar('پهنای بازار (MACD همه‌ی ارزها)',o.mmc)+bar('جریان پول آلت‌ها (24 ساعت)',o.flow);
     const W=RD.wxs,av=x=>x&&x.n?x.r/x.n:null;
     if(W){const one=d=>{const g=W[d+'|go'],n=W[d+'|no'],a=W[d+'|a'],f=W[d+'|f'],fa=d==='long'?'لانگ':'شورت';
         if(!a||!a.n)return '';
         return fa+': در هوای مناسب '+(g&&g.n?'<b class="'+cls(av(g))+'" dir="ltr">'+fmtR(av(g))+'</b> ('+faN(g.n)+')':'—')+'، نامناسب '+(n&&n.n?'<b class="'+cls(av(n))+'" dir="ltr">'+fmtR(av(n))+'</b> ('+faN(n.n)+')':'—')+
           '؛ با فیلتر <b class="'+cls(av(f))+'" dir="ltr">'+(f&&f.n?fmtR(av(f)):'—')+'</b> به‌جای <b class="'+cls(av(a))+'" dir="ltr">'+fmtR(av(a))+'</b>';};
       h+='<div class="hint">در گذشته (سیگنال‌های رادار، بیرون از یادگیری): '+[one('long'),one('short')].filter(Boolean).join('. ')+'.</div>';}
-    h+='<div class="hint">هر عدد از −1 تا +1. میانگین سه عدد از +'+RD_WXT+' به بالا یعنی «مناسب لانگ»، از −'+RD_WXT+' به پایین «مناسب شورت». '+
+    h+='<div class="hint">هر عدد از −1 تا +1. میانگین چهار عدد از +'+RD_WXT+' به بالا یعنی «مناسب لانگ»، از −'+RD_WXT+' به پایین «مناسب شورت». '+
       (S.rdWx!==false?'سیگنال رادارِ خلاف هوا «قابل گرفتن» نمی‌شود.':'فیلتر خاموش است؛ سیگنال خلاف هوا فقط برچسب می‌گیرد.')+' <button class="lnk" data-rdwxf="1">'+(S.rdWx!==false?'خاموش کردن فیلتر':'روشن کردن فیلتر')+'</button></div>';
   }
   return h+'</div>';
@@ -882,7 +888,7 @@ function rdChkOf(p,dir,sd,missing){
   const s=dir==='short'?-1:1,g=k=>p&&p[k]!=null&&isFinite(+p[k])?+p[k]:(missing?null:0);
   const all=(ks,f)=>{const v=ks.map(g);return v.some(x=>x==null)?null:f(...v.map(x=>s*x));};
   const some=(ks,f)=>{const v=ks.map(g).filter(x=>x!=null);return v.length?v.every(x=>f(s*x)):null;};
-  const w=rdWxOf(g('btc'),g('mtot'),g('mmc'));
+  const w=rdWxOf(g('btc'),g('mtot'),g('mmc'),g('mt3'),g('mud'));
   const it=[w==null?null:s*w>=RD_WXT, all(['mt3','mud'],(a,b)=>a>0&&b>0), some(['mom','rs'],x=>x<=0), all(['oi'],x=>x<=0),
     all(['vwap','bbp'],(a,b)=>a>0&&b>0), sd>0?sd>=0.02:null,
     p&&(p.vbo!=null||p.vlt!=null)?(s*(+p.vbo||0)>0?true:s*(+p.vlt||0)>0?false:null):null];

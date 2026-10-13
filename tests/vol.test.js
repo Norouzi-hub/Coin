@@ -5,7 +5,8 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:900}});await route(ctx);
  const H=36e5,M5=3e5,T0=Math.floor((Date.now()-30*H)/M5)*M5;
  // 30 روز قبل از ورود: بیشتر حجم حول 100 و یک دیوار پرحجم در 104؛ بعد از ورود از 100 تا 105 بالا می‌رود
- const h1=t=>{const k=Math.floor(t/H)%40;const c=k<30?100+Math.sin(k)*0.3:104+Math.sin(k)*0.3;return {c,v:k<30?50:200};};
+ // فاز الگو به T0 بسته است (نه به ساعت روز): 6 ساعت پیش از ورود همیشه حول 100؛ قبلاً بسته به ساعت اجرا کف 6 ساعت بالای ورود می‌افتاد و استاپ ساختاری نبود
+ const h1=t=>{const k=Math.floor((T0-t)/H)%40;const c=k<30?100+Math.sin(k)*0.3:104+Math.sin(k)*0.3;return {c,v:k<30?50:200};};
  await ctx.route(/klines\?symbol=VOLUSDT&interval=1h&startTime=(\d+)&limit=(\d+)/,r=>{const m=r.request().url().match(/startTime=(\d+)&limit=(\d+)/),out=[];
    for(let t=+m[1];t<Date.now()&&out.length<+m[2];t+=H){const x=h1(t),c=t<T0?x.c:100;out.push([t,String(c),String(c+0.4),String(c-0.4),String(c),String(x.v),t+H-1]);}
    return r.fulfill({status:200,headers:{'content-type':'application/json','access-control-allow-origin':'*'},body:JSON.stringify(out)});});
