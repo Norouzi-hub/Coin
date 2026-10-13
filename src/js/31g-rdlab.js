@@ -88,7 +88,7 @@ function rbWxSim(it,C,W){
 }
 function rbWxTable(res,noData){
   const L=res.filter(x=>x.wxx&&x.it.st!=='open'&&x.it.R!=null);
-  if(!L.length)return '<div class="sechd">برگشت هوا: ببند یا ریسک‌فری</div><div class="hint">'+(noData?'تاریخچه‌ی هوا در حافظه نیست؛ اول در «بازار» یک بار «تازه کن» بزن، بعد دوباره «تحلیل مسیر قیمت».':'تستی با داده‌ی هوای لحظه‌ی ورود نیست.')+'</div>';
+  if(!L.length)return '<div class="sechd">برگشت هوا: ببند یا ریسک‌فری</div><div class="hint">'+(noData?'تاریخچه‌ی هوا هنوز ساخته نشده؛ یک بار در «بازار» «تازه کن» بزن (از آن به بعد در گوشی می‌ماند)، بعد دوباره «تحلیل مسیر قیمت».':'تستی با داده‌ی هوای لحظه‌ی ورود نیست.')+'</div>';
   const av=A=>A.length?A.reduce((a,v)=>a+v,0)/A.length:null;
   const row=(lab,f,on)=>{const V=L.map(x=>({v:f(x),d:x.it.dir})).filter(o=>o.v!=null&&o.v.how!=='open');if(!V.length)return '';
     const r=V.reduce((a,o)=>a+o.v.R,0),w=V.filter(o=>o.v.R>0).length,lo=av(V.filter(o=>o.d==='long').map(o=>o.v.R)),sh=av(V.filter(o=>o.d==='short').map(o=>o.v.R));

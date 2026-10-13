@@ -777,7 +777,7 @@ async function rdScan(mode,add){
       toast([nc.length?'کندل نیامد، از فهرست بیرون رفت: '+nc.join('، '):'',al.length?'صرافی زیر این نماد ارز دیگری دارد (قیمت با CoinGecko نمی‌خواند)، بیرون رفت: '+al.join('، '):'',
         pg.length?'استیبل‌کوین است (قیمتش تکان نمی‌خورد)، بیرون رفت: '+pg.join('، '):''].filter(Boolean).join(' · '),'err');}
     if(RDQ.over)toast('سقف فهرست '+faN(RD_MAX)+' ارز است؛ '+faN(RDQ.over)+' ارز اضافه نشد','err');
-    rdLive(RD.list);RD.at=Date.now();try{rdWxTurn();}catch(e){}rdSave();
+    rdLive(RD.list);RD.at=Date.now();try{rdWxTurn();}catch(e){}rdSave();rdWxHist().catch(()=>{});
     try{rbLogAuto();}catch(e){}
   }finally{RDQ.on=false;RDQ.msg='';RDQ.cur.clear();clearInterval(RDQ.iv);workEnd();if(jobStopped('radar'))RDQ.next=null;jobEnd('radar');}
   if(RDQ.next){const m=RDQ.next;RDQ.next=null;setTimeout(()=>rdScan(m),50);}
@@ -1409,15 +1409,21 @@ function rdAccBind(g){
    برای بازهای همان جهت پیشنهاد «ببند یا ریسک‌فری کن». فعلاً فقط هشدار است؛ اثرش روی مسیر واقعی تست‌ها در آزمایشگاه سنجیده می‌شود. */
 /* تاریخچه‌ی ساعتی هوا: ساعت (شروع کندل یک‌ساعته) ← عدد هوا؛ از عامل‌های کل بازار (RDMF، بعد از هر بررسی در حافظه) و روند 4 ساعته‌ی بیت‌کوین */
 let RDWXH=null;
+/* بعد از هر بررسی در IndexedDB هم ذخیره می‌شود؛ وگرنه بعد از باز کردن دوباره‌ی برنامه (بی «تازه کن») خالی بود
+   و جدول «برگشت هوا» در آزمایشگاه چیزی نداشت (خروجی 13 اکتبر 14:07: هیچ تستی wxx نداشت) */
 async function rdWxHist(){
-  if(!RDMF.size)return null;
+  if(!RDMF.size){if(RDWXH)return RDWXH.m;
+    try{const st=await idbGet('rdwxh');if(st&&Array.isArray(st.rows)&&st.rows.length){RDWXH={m:new Map(st.rows),n:0,at:st.at};return RDWXH.m;}}catch(e){}
+    return null;}
   if(RDWXH&&RDWXH.n===RDMF.size&&RDWXH.at===RD.at)return RDWXH.m;
   const st=await idbGet('rdc:BTC');const rows=st&&st.rows;if(!rows||rows.length<300)return null;
   const H=36e5,B=rows.map(r=>({t:r[0],o:r[1],h:r[2],l:r[3],c:r[4],v:r[5]})),BF=swAggr(B,4*H),bf=BF.map(k=>k.c),b20=emaArr(bf,20),b50=emaArr(bf,50);
   const bt=new Map(BF.map((k,j)=>[k.t,j>=50?clamp1((b20[j]-b50[j])/b50[j]/0.01):null]));
   const m=new Map();
   for(const [t,mf] of RDMF){const b=bt.get(Math.floor((t+H)/(4*H))*4*H-4*H)??0,w=rdWxOf(b,mf[RD_IMTOT],mf[RD_IMMC],mf[RD_IMT3],mf[RD_IMUD]);if(w!=null)m.set(t,w);}
-  RDWXH={m,n:RDMF.size,at:RD.at};return m;
+  RDWXH={m,n:RDMF.size,at:RD.at};
+  try{await idbSet('rdwxh',{at:RD.at,rows:[...m].map(([t,w])=>[t,+w.toFixed(3)])});}catch(e){}
+  return m;
 }
 /* بعد از هر بررسی: اگر هوای یک جهت تازه «نامناسب» شد و در همان جهت پوزیشن واقعی یا تست باز هست، اعلان و کادر هشدار */
 function rdWxTurn(){

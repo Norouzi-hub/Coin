@@ -24,6 +24,11 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    // 3) جدول
    const res=[{it,wxx:sim},{it:Object.assign({},it,{id:'s2',R:0.5,st:'tp'}),wxx:{armed:false,trig:null,A:{R:0.5,how:'tp'},B:{R:0.5,how:'tp'}}}];
    o.tbl=rbWxTable(res).replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');o.noData=rbWxTable([],true).replace(/<[^>]+>/g,' ');
+   // 4) ذخیره و خواندن دوباره‌ی تاریخچه‌ی هوا (RDMF فقط در حافظه است)
+   await idbSet('rdc:BTC',{rows:Array.from({length:400},(_,i)=>{const t=T0-(400-i)*H,c=100+i*0.1;return [t,c,c+0.2,c-0.2,c,1];})});
+   RDMF.clear();RDMF.set(T0-2*H,[-0.5,0,-0.5,0,-0.5,-0.5]);RDMF.set(T0-H,[0.5,0,0.5,0,0.5,0.5]);RDWXH=null;RD.at=Date.now();
+   const m1=await rdWxHist();o.saved=!!(m1&&m1.size===2&&await idbGet('rdwxh'));
+   RDMF.clear();RDWXH=null;const m2=await rdWxHist();o.loaded=m2?m2.size:0;
    return o;});
  console.log('   ',JSON.stringify(r).slice(0,1500));
  ok(/"long":"go"/.test(r.p1)||/"long":"mid"/.test(r.p1),'هوای اول ثبت شد');
@@ -33,5 +38,6 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(r.notArmed,'ورود در هوای بد: قاعده دست نمی‌زند');
  ok(/الف\) هوا که برگشت/.test(r.tbl)&&/قاعده روی 1 تست اجرا شد/.test(r.tbl)&&/−1.03R/.test(r.tbl),'جدول آزمایشگاه با سطر فعلی، الف، ب و خلاصه‌ی تست‌هایی که قاعده رویشان اجرا شد');
  ok(/تازه کن/.test(r.noData),'بی تاریخچه‌ی هوا: راهنمای «تازه کن»');
+ ok(r.saved&&r.loaded===2,'تاریخچه‌ی هوا در گوشی ذخیره می‌شود و بی بررسی تازه دوباره خوانده می‌شود');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');process.exit(bad?1:0);})();
