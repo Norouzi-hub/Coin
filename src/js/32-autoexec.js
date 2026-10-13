@@ -692,6 +692,15 @@ function audParentTxt(inp){
 /* «تکمیل از روی چارت»: کانال سیگنال اصلی را تصویر می‌دهد («#MOVR» + چارت) و پیگیری‌ها
    («ورود مجدد مجازه») به آن تکیه دارند. عددها را یک بار از روی تصویر وارد کن؛ خودِ پست و همه‌ی
    پیگیری‌هایش سنجیده می‌شوند. ورودِ خالی = قیمت بازار در لحظه‌ی انتشار. */
+/* «سیگنال نیست»: چارت یا پستی که فقط چون هشتگ داشت سیگنال حساب شده. از سیگنال‌ها و کانال‌سنج
+   بیرون می‌رود (همان کلید «سیگنال نیست» فهرست سیگنال‌ها) و با «برگردان» برمی‌گردد. */
+function audNotSig(p,then){
+  const prev=OVERRIDE[p.id]?Object.assign({},OVERRIDE[p.id]):null;
+  const put=o=>{if(o)OVERRIDE[p.id]=o;else delete OVERRIDE[p.id];DB.overrides=OVERRIDE;save();PCACHE.delete(p.id);};
+  put(Object.assign({},prev,{sig:false}));
+  if(then)then();else renderAll();
+  toastUndo('«سیگنال نیست»: از سیگنال‌ها و کانال‌سنج برداشته شد',()=>{put(prev);renderAll();});
+}
 function sheetImgFill(ids,need,i){
   const fin=()=>{closeSheet();renderAll();if(!AUDQ.on)audRun();};
   const p=POSTS.find(x=>x.id===ids[i]);
@@ -719,12 +728,14 @@ function sheetImgFill(ids,need,i){
      fldHtml('t2','تارگت ۲',v(tp0[1]))+fldHtml('t3','تارگت ۳',v(tp0[2]))+
    '</div>'+
    '<div class="srow"><button class="btn pri" id="ok">ثبت'+(i+1<ids.length?' و بعدی':'')+'</button>'+
-     (i+1<ids.length?'<button class="btn" id="sk">بعدی</button>':'')+'<button class="btn" id="cx">بستن</button></div>',
+     (i+1<ids.length?'<button class="btn" id="sk">بعدی</button>':'')+'<button class="btn" id="cx">بستن</button></div>'+
+   '<div class="srow"><button class="btn sm side" id="ns">'+ic('x')+'<span>سیگنال نیست (فقط چارت است)</span></button></div>',
    ()=>{
      if(p.img)$('#ifImg').appendChild(postShot(p,p.img,'چارت'));
      $('#cx').onclick=fin;
      const nx=()=>i+1<ids.length?sheetImgFill(ids,need,i+1):fin();
      if($('#sk'))$('#sk').onclick=nx;
+     $('#ns').onclick=()=>audNotSig(p,nx);
      // قیمتِ لحظه‌ی انتشار، تا عددی که از چارت می‌خوانی با بازار مقایسه شود
      if(tk&&p.date)audCandles(tk,'5m',Math.ceil(+p.date/3e5)*3e5,1,true).then(C=>{
        const n=$('#ifPx');if(n&&C&&C[0])n.innerHTML='قیمت بازار هنگام انتشار: <b dir="ltr">'+fmtPrice(C[0].o)+'</b>';}).catch(()=>{});
@@ -1016,7 +1027,8 @@ function buildAudList(rows){
     const act=el('div','ar4');
     const d=el('button','btn xs','جزئیات');d.onclick=()=>sheetAudPost(x.p);
     const f=el('button','btn xs','اصلاح عددها');f.onclick=()=>sheetMarkSignal(x.p,sigOf(x.p));
-    act.appendChild(d);act.appendChild(f);r.appendChild(act);
+    const ns=el('button','btn xs','سیگنال نیست');ns.title='چارت یا پست غیرسیگنال؛ از سیگنال‌ها و سنجش بیرون برود';ns.onclick=()=>audNotSig(x.p);
+    act.appendChild(d);act.appendChild(f);act.appendChild(ns);r.appendChild(act);
     c.appendChild(r);
   }
   if(pick.length>audShown){
