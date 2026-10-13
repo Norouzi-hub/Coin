@@ -52,6 +52,16 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    o.fail=PL_CRIT.every(([,,f])=>f(plStats(L.slice(0,40))));
    S.plan.start=now-30*D;renderPlan();o.over=$q('#planBody .plhero b').textContent.includes('داوری')&&plWeek()===4;
    S.plan.start=now;plSave();
+   // پیشرفت «کامل کردن سیگنال‌ها»: هر تصویر یک بار، با سیگنال ناقص متنی
+   const aR=audRows;let R=[{p:{id:'a'},inp:{stop:null,need:{id:'img1'}},r:null},{p:{id:'b'},inp:{stop:null,need:{id:'img1'}},r:null},
+     {p:{id:'c'},inp:{stop:1},r:{st:'bad',why:'no-stop'}},{p:{id:'d'},inp:{stop:1},r:{st:'bad',why:'nocandle'}}];
+   audRows=()=>R;S.plan.fx=[];
+   const fl=()=>{renderPlan();const t=$q('#planBody [data-pl="w1fill"]');return ((t.querySelector('small.win,small:last-of-type')||{}).textContent||'')+'|'+((t.querySelector('.plprog b')||{}).textContent||'');};
+   o.f0=fl();R=R.filter(x=>x.p.id!=='a'&&x.p.id!=='b');o.f1=fl();
+   R.push({p:{id:'e'},inp:{stop:null,need:{id:'img2'}},r:null});o.f2=fl();
+   R=[R[1]];o.f3=fl()+'|'+$q('#planBody [data-pl="w1fill"]').classList.contains('ok');
+   o.hero=[...document.querySelectorAll('#planBody .plhero span')].map(x=>x.textContent).join(' / ');
+   audRows=aR;S.plan.fx=[];plSave();
    return o;});
  console.log('   ',JSON.stringify(r),dlg.length);
  ok(r.tabs==='radar,positions,signals,plan,more','تب «نقشه» در نوار پایین');
@@ -73,6 +83,11 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(r.crit===4,'جدول معیار: کانال، تست‌ها، واقعی');
  ok(r.pass&&!r.fail,'معیار قبولی: 120 معامله در 30 روز قبول، 40 معامله نه '+JSON.stringify(r.st));
  ok(r.over,'بعد از 4 هفته: «داوری»');
+ ok(/2 مانده/.test(r.f0)&&/0٪/.test(r.f0),'کامل کردن سیگنال‌ها: 2 مورد مانده (هر تصویر یک بار) · '+r.f0);
+ ok(/1 مانده/.test(r.f1)&&/50٪/.test(r.f1),'یکی کامل شد ← 50٪ · '+r.f1);
+ ok(/2 مانده/.test(r.f2)&&/33٪/.test(r.f2),'تصویر تازه به کل اضافه شد، نه عقب‌گرد ← 33٪ · '+r.f2);
+ ok(/100٪/.test(r.f3)&&/true$/.test(r.f3),'همه کامل ← 100٪ و تیک · '+r.f3);
+ ok(/کارهای این هفته: \d+ از \d+ · \d+٪/.test(r.hero),'نوار کارهای این هفته در بالای نقشه');
  // در حافظه‌ی ماندگار (و پشتیبان) نوشته شد
  const keep=await p.evaluate(()=>{const d=JSON.parse(localStorage.getItem('signaldesk.v1')||'{}'),pl=d.settings&&d.settings.plan;return !!(pl&&pl.start&&pl.done.w1send&&pl.dec.ch==='pass');});
  ok(keep,'نقشه، تیک‌ها و تصمیم در حافظه‌ی ماندگار نوشته شدند');

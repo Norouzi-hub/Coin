@@ -701,6 +701,7 @@ function sheetImgFill(ids,need,i){
   const v=x=>x==null?'':x;
   const tp0=ov.tps&&ov.tps.length?ov.tps:(g.targets||[]), dep=need.get(p.id)||0;
   openSheet('<h3>عددها از روی چارت'+(ids.length>1?' · '+faN(i+1)+' از '+faN(ids.length):'')+'</h3>'+
+   (ids.length>1?'<div class="plprog"><span class="plbar"><i style="width:'+Math.round(i/ids.length*100)+'%"></i></span><b>'+faN(ids.length-i)+' مانده</b></div>':'')+
    '<div class="hint"><b dir="ltr">'+esc(tk)+'</b> · '+(p.date?jStampFa(p.date):'')+
      (dep?' · '+faN(dep)+' پیگیری منتظر همین عددهاست':'')+'</div>'+
    (p.img?'<div id="ifImg" class="imgfill"></div>':

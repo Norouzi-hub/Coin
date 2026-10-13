@@ -1978,6 +1978,11 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
   border:1px solid color-mix(in srgb,var(--gold) 35%,var(--line));color:var(--tx2);font:inherit;font-size:12px;cursor:pointer;text-align:start}
 .plban b{color:var(--tx)}.plban .ic{flex:none;width:15px;height:15px;color:var(--gold)}
 .plan .sec.sub2{margin:0}.plweek .pltasks{padding:0 10px 10px}.plweek .pltask{background:var(--card)}
+.plprog{display:flex;align-items:center;gap:8px;margin-top:2px}.plprog .plbar{flex:1;height:7px}
+.plprog>b{flex:none;font-size:11.5px;color:var(--tx2);min-width:34px;text-align:end}
+.plprog.ok .plbar i{background:var(--up)}.plbar i{transition:width .4s var(--ease)}
+.plbar.wk i{background:var(--up)}
+.sheet .plprog{margin:0 0 8px}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -13244,6 +13249,7 @@ function sheetImgFill(ids,need,i){
   const v=x=>x==null?'':x;
   const tp0=ov.tps&&ov.tps.length?ov.tps:(g.targets||[]), dep=need.get(p.id)||0;
   openSheet('<h3>عددها از روی چارت'+(ids.length>1?' · '+faN(i+1)+' از '+faN(ids.length):'')+'</h3>'+
+   (ids.length>1?'<div class="plprog"><span class="plbar"><i style="width:'+Math.round(i/ids.length*100)+'%"></i></span><b>'+faN(ids.length-i)+' مانده</b></div>':'')+
    '<div class="hint"><b dir="ltr">'+esc(tk)+'</b> · '+(p.date?jStampFa(p.date):'')+
      (dep?' · '+faN(dep)+' پیگیری منتظر همین عددهاست':'')+'</div>'+
    (p.img?'<div id="ifImg" class="imgfill"></div>':
@@ -15507,12 +15513,31 @@ const plDay0=t=>{const d=new Date(t);d.setHours(0,0,0,0);return +d;};
 function plDaysOk(w){const s=S.plan.start+(w-1)*7*PL_DAY,e=Math.min(Date.now(),s+7*PL_DAY);let ok=0,n=0;
   for(let d=plDay0(s);d<e;d+=PL_DAY){n++;if(plTestsOn(d)<=PL_TPD)ok++;}return {ok,n};}
 /* کانال‌سنج: سیگنال‌های به‌نتیجه‌رسیده و «نیاز به بررسی» */
+const PL_FIXW=['no-stop','no-entry','no-ticker','px','bad-stop','far-sl'];
 function plChan(){
   let rows=[];try{rows=audRows();}catch(e){}
   const dec=rows.filter(x=>x.r&&['win','loss','exp'].includes(x.r.st)&&x.R!=null).sort((a,b)=>(a.inp.t0||0)-(b.inp.t0||0));
   const bad=rows.filter(x=>x.r&&(x.r.st==='bad'||x.r.st==='amb')).length, todo=rows.filter(x=>!x.r).length;
-  return {dec,bad,todo,n:rows.length};
+  return {dec,bad,todo,n:rows.length,fill:plFill(rows)};
 }
+/* کار «کامل کردن سیگنال‌ها»: پست‌های تصویری که عددهایشان را باید از روی چارت نوشت (یکی برای هر تصویر،
+   هر چند پیگیری به آن تکیه کرده باشد) و سیگنال‌های ناقصی که «اصلاح عددها» می‌خواهند.
+   هر موردی که یک بار دیده شد در S.plan.fx می‌ماند؛ پس «انجام‌شده» = دیده‌شده‌هایی که دیگر ناقص نیستند
+   و سیگنال ناقص تازه فقط به کل اضافه می‌شود، نه این‌که درصد را عقب ببرد. */
+function plFill(rows){
+  const left=new Set();
+  for(const x of rows){
+    if(!x.inp.stop&&x.inp.need&&x.inp.need.id!=null)left.add('i:'+x.inp.need.id);
+    else if(x.r&&x.r.st==='bad'&&PL_FIXW.includes(x.r.why))left.add('b:'+x.p.id);
+  }
+  if(!S.plan)return {left:left.size,done:0,total:left.size};
+  const seen=new Set(S.plan.fx||[]);let add=false;
+  for(const k of left)if(!seen.has(k)){seen.add(k);add=true;}
+  if(add){S.plan.fx=[...seen];plSave();}
+  return {left:left.size,done:seen.size-left.size,total:seen.size};
+}
+/* «X از Y · Z٪» برای نوار پیشرفت */
+const plPct=(a,b)=>b>0?Math.round(Math.min(1,a/b)*100):0;
 /* آمار معیار قبولی برای یک فهرست {t,R} */
 function plStats(L){
   L=L.filter(x=>x.R!=null&&isFinite(x.R)).sort((a,b)=>a.t-b.t);
@@ -15541,17 +15566,22 @@ function plCritHtml(){
 /* کارهای هر هفته: [id، کار کیست، عنوان، توضیح، خودکار: ()=>{ok,txt}|null، دکمه: [برچسب، کار]] */
 function plTasks(w){
   const ch=plChan(), st=S.plan.start, ws=st+(w-1)*7*PL_DAY, dec=S.plan.dec||{};
-  const daily=()=>{const d=plDaysOk(w);return {ok:d.n>=7&&d.ok===d.n,txt:faN(d.ok)+' از '+faN(d.n)+' روز ≤ '+faN(PL_TPD)+' تست'};};
+  const daily=()=>{const d=plDaysOk(w);return {ok:d.n>=7&&d.ok===d.n,txt:faN(d.ok)+' از '+faN(d.n)+' روز ≤ '+faN(PL_TPD)+' تست'+(d.n<7?' · '+faN(7-d.n)+' روز دیگر':''),p:d.ok/7};};
   const goAud=['کانال‌سنج',()=>go('audit')], goExp=['آزمایشی',()=>{RDV='test';go('radar');}];
   const T={
     1:[['w1set','تو','تنظیمات پیشنهادی را بگذار و دو هفته دست نزن','افق «بلند» (72 ساعت)، خروج لانگ «همه در +0.5R»، سقف اهرم 10. شورت فقط برای تست.',
         ()=>({ok:plSetOk(),txt:plSetOk()?'درست است':'هنوز نه'}),['یک‌جا بگذار',plApply]],
       ['w1learn','تو','مدل را با افق «بلند» دوباره یاد بده','بعد از عوض شدن افق، یک بار «یادگیری دوباره» لازم است (خودکار شروع می‌شود؛ چند دقیقه).',
-        ()=>({ok:!!(RD.mt0&&RD.mt0>st&&rdHzK()===PL_SET.hz),txt:RD.mt0?'آخرین یادگیری '+ageTxt(RD.mt0):'هنوز نه'}),['بازار › کارنامه',()=>{RDV='model';go('radar');}]],
+        ()=>{const ok=!!(RD.mt0&&RD.mt0>st&&rdHzK()===PL_SET.hz);
+          if(!ok&&RDQ.on&&RDQ.n)return {ok,txt:'در حال یادگیری: '+faN(RDQ.done)+' از '+faN(RDQ.n)+' ارز',p:RDQ.done/RDQ.n};
+          return {ok,txt:RD.mt0?'آخرین یادگیری '+ageTxt(RD.mt0):'هنوز نه'};},['بازار › کارنامه',()=>{RDV='model';go('radar');}]],
       ['w1fill','تو','سیگنال‌های ناقص کانال را کامل کن','در کانال‌سنج، فهرست «نیاز به بررسی»: برای سیگنال‌های عکسی «عددها از روی چارت» را بزن و ورود، استاپ و تارگت را وارد کن.',
-        ()=>({ok:ch.n>0&&ch.bad===0,txt:faN(ch.bad)+' سیگنال مانده · '+faN(ch.dec.length)+' سنجیده'}),goAud],
+        ()=>{const f=ch.fill;if(!f.total)return {ok:ch.n>0,txt:ch.n?'سیگنال ناقصی نمانده':'هنوز سیگنالی سنجیده نشده'};
+          return {ok:!f.left,txt:f.left?faN(f.left)+' مانده · '+faN(f.done)+' از '+faN(f.total)+' کامل شد':'همه‌ی '+faN(f.total)+' سیگنال کامل شد',p:f.done/f.total};},goAud],
       ['w1aud','تو','کانال‌سنج › «سنجش دوباره‌ی همه»','همه‌ی پست‌ها با کندل واقعی دوباره سنجیده شوند.',
-        ()=>({ok:!!(AUDQ.at&&AUDQ.at>st),txt:AUDQ.at?'آخرین سنجش '+ageTxt(AUDQ.at):'هنوز نه'}),goAud],
+        ()=>{const ok=!!(AUDQ.at&&AUDQ.at>st);
+          if(AUDQ.on&&AUDQ.n)return {ok:false,txt:'در حال سنجش: '+faN(AUDQ.done)+' از '+faN(AUDQ.n)+' سیگنال',p:AUDQ.done/AUDQ.n};
+          const m=ch.n-ch.todo;return {ok,txt:(AUDQ.at?'آخرین سنجش '+ageTxt(AUDQ.at)+' · ':'')+faN(m)+' از '+faN(ch.n)+' سیگنال سنجیده',p:ch.n?m/ch.n:null};},goAud],
       ['w1send','تو','CSV کانال‌سنج و فایل پشتیبان را بفرست','CSV از کانال‌سنج، پشتیبان از تنظیمات › پشتیبان. با این‌ها کانال و معامله‌های واقعی‌ات را بررسی می‌کنم.',null,null],
       ['w1me','من','بررسی کانال: R واقعی و بهترین قاعده‌ی خروج کوتاه روی 70٪ اول سیگنال‌ها','وقتی فایل‌ها رسید. 30٪ آخر دست‌نخورده می‌ماند برای هفته‌ی 2.',null,null],
       ['w1day','تو','قوانین روزانه','حداکثر '+faN(PL_TPD)+' تست در روز و '+faN(PL_SAME)+' تست هم‌جهت باز.',daily,null],
@@ -15562,7 +15592,7 @@ function plTasks(w){
       ['w2exp','تو','آخر هفته: خروجی تست‌ها و CSV تازه‌ی کانال‌سنج','',null,goExp]],
     3:dec.ch==='pass'?[
       ['w3real','تو','معامله‌ی واقعی کوچک فقط روی سیگنال‌های کانال، با همان قاعده','هدف 30 معامله تا آخر ماه. ریسک هر معامله 0.5 تا 1 دلار؛ با «ایزوله» وارد شو.',
-        ()=>{const n=(DB.positions||[]).filter(p=>posSrc(p).k==='ch'&&(p.openedAt||0)>=ws).length;return {ok:n>=15,txt:faN(n)+' معامله از '+faN(15)+' (این هفته)'};},['سیگنال‌ها',()=>go('signals')]],
+        ()=>{const n=(DB.positions||[]).filter(p=>posSrc(p).k==='ch'&&(p.openedAt||0)>=ws).length;return {ok:n>=15,txt:faN(n)+' معامله از '+faN(15)+' (این هفته)',p:n/15};},['سیگنال‌ها',()=>go('signals')]],
       ['w3risk','تو','ریسک ثابت و حداکثر 3 پوزیشن باز','تنظیمات › سرمایه و ریسک: «ریسک هر معامله» حداکثر 1 دلار.',
         ()=>{const r=riskUsd(),o=(DB.positions||[]).filter(p=>p.status==='open').length;return {ok:r<=1&&o<=3,txt:'ریسک '+fmtUsd(r)+' · '+faN(o)+' باز'};},['تنظیمات',()=>openPanel('setVeil')]],
       ['w3day','تو','قوانین روزانه برای تست‌ها','',daily,null],
@@ -15625,7 +15655,8 @@ function renderPlan(){
   const w=plWeek(), d=plDayN(), end=S.plan.start+PL_WEEKS*7*PL_DAY, over=Date.now()>=end;
   h+='<div class="plhero"><b>'+(over?'ماه تمام شد · داوری':'هفته‌ی '+faN(w)+' از '+faN(PL_WEEKS)+' · '+PL_WT[w])+'</b>'+
     '<span>روز '+faN(Math.min(d,28))+' از 28 · شروع '+jStampFa(new Date(S.plan.start)).split(' ')[0]+'</span>'+
-    '<span class="plbar"><i style="width:'+Math.min(100,Math.round(d/28*100))+'%"></i></span></div>';
+    '<span class="plbar"><i style="width:'+Math.min(100,Math.round(d/28*100))+'%"></i></span>'+
+    (()=>{const L=plTasks(w),n=L.filter(plTaskOk).length;return '<span>کارهای این هفته: '+faN(n)+' از '+faN(L.length)+' · '+faN(plPct(n,L.length))+'٪</span><span class="plbar wk"><i style="width:'+plPct(n,L.length)+'%"></i></span>';})()+'</div>';
   // قوانین
   h+='<div class="sechd">قوانین ثابت این ماه</div><div class="plrules">'+plRules().map(([ok,t,s])=>'<div class="plrule '+(ok==null?'':ok?'ok':'no')+'"><i>'+(ok==null?'·':ok?'✓':'✗')+'</i><span>'+t+'</span><small>'+s+'</small></div>').join('')+'</div>';
   // کارهای هفته‌ها: هفته‌ی جاری باز، بقیه تاشو
@@ -15635,6 +15666,7 @@ function renderPlan(){
       L.map(t=>{const [id,who,ti,ds,auto,btn,kind]=t,a=auto&&auto(),ok=plTaskOk(t),man=!auto||kind;
         return '<div class="pltask'+(ok?' ok':'')+'" data-pl="'+id+'"><button class="plchk" '+(man&&!kind?'data-pltog="'+id+'"':'disabled')+' aria-label="انجام شد">'+(ok?'✓':'')+'</button>'+
           '<div><b><span class="plwho '+(who==='من'?'me':'')+'">'+who+'</span> '+ti+'</b>'+(ds?'<small>'+ds+'</small>':'')+(a?'<small class="'+(a.ok?'win':'')+'">'+(auto&&!kind?'خودکار: ':'')+a.txt+'</small>':'')+
+          (a&&a.p!=null?'<span class="plprog'+(a.ok?' ok':'')+'"><span class="plbar"><i style="width:'+plPct(a.p,1)+'%"></i></span><b>'+faN(plPct(a.p,1))+'٪</b></span>':'')+
           (kind==='dec'?'<div class="plchoice"><button class="btn sm'+((S.plan.dec||{}).ch==='pass'?' ok':'')+'" data-pldec="ch:pass">قبول</button><button class="btn sm'+((S.plan.dec||{}).ch==='fail'?' ok':'')+'" data-pldec="ch:fail">رد</button></div>':'')+
           (kind==='fin'?'<div class="plchoice">'+[['more','پول بیشتر'],['same','همین اندازه'],['test','فقط تست'],['stop','توقف']].map(([v,l])=>'<button class="btn sm'+((S.plan.dec||{}).fin===v?' ok':'')+'" data-pldec="fin:'+v+'">'+l+'</button>').join('')+'</div>':'')+
           (btn?'<div><button class="btn sm side" data-plbtn="'+id+'">'+btn[0]+'</button></div>':'')+'</div></div>';}).join('')+'</div></details>';
