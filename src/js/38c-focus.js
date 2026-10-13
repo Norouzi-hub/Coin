@@ -26,7 +26,7 @@ let FOCALL=false;
 function renderFocus(){
   const g=$('#focusBody');if(!g)return;
   const d=focusTake(), now=Date.now();
-  let h='<div class="focus">';
+  let h='<div class="focus">'+plBannerHtml();
   h+=rdWxTurnHtml()+rdWxHtml(true);
   if(!RD.at||Date.now()-RD.at>2*36e5)h+='<div class="srow"><button class="btn sm" data-fc="scan">'+ic('refresh')+'<span>تازه کردن هوای بازار</span></button></div>';
   // سیگنال‌های قابل گرفتن
@@ -55,7 +55,7 @@ function renderFocus(){
   h+='<div class="sechd">7 روز اخیر</div><div class="hint weekly"><b>معامله‌های واقعی:</b> '+weekText(weekSummary())+'</div>';
   {const W=RB.items.filter(it=>it.k==='test'&&it.st!=='open'&&it.xt>now-7*864e5);if(W.length)h+=rbSumHtml(W,'تست‌های بازار');}
   h+='<div class="srow fcfoot"><button class="btn sm side" data-fc="off">'+ic('x')+'<span>خاموش کردن حالت تمرکز</span></button></div>';
-  g.innerHTML=h+'</div>';
+  g.innerHTML=h+'</div>';plBannerBind(g);
   rdWxBind(g,renderFocus);
   g.querySelectorAll('[data-fc]').forEach(b=>b.onclick=()=>{const a=b.dataset.fc;
     if(a==='more'){FOCALL=true;renderFocus();}

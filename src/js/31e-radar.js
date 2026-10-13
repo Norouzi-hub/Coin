@@ -1553,7 +1553,7 @@ function rdSortL(A){
 }
 function renderRadar(){const g=$('#rdView');if(!g)return;paintRadar(g);}
 function paintRadar(g){
-  rdFbar();g.className='rdview';g.innerHTML=rdHtml();
+  rdFbar();g.className='rdview';g.innerHTML=plBannerHtml()+rdHtml();plBannerBind(g);
   {const m=rdAutoDue();if(m)setTimeout(()=>rdScan(m),300);}
   try{rbCatchUp();}catch(e){}
   const mo=g.querySelector('[data-rdmore]');if(mo)mo.onclick=()=>{rdScan('more');paintRadar(g);};

@@ -2,7 +2,7 @@
 let view='radar';     // برنامه روی «بازار» (تب اول) باز می‌شود
 /* تست‌ها می‌توانند از تب دیگری شروع کنند (window.__startView) */
 const START_V=window.__startView||'radar';
-const VIEWS=[['vFocus','focus'],['vSignals','signals'],['vRadar','radar'],['vPositions','positions'],['vReport','report'],['vMore','more'],['vAudit','audit'],['vLearn','learn']];
+const VIEWS=[['vFocus','focus'],['vSignals','signals'],['vRadar','radar'],['vPositions','positions'],['vReport','report'],['vMore','more'],['vAudit','audit'],['vLearn','learn'],['vPlan','plan']];
 /* کانال‌سنج، کارنامه و آموزش زیرِ «سایر»اند: وقتی بازند، همان تب روشن می‌ماند. */
 const TAB_OF={report:'more',learn:'more',audit:'more'};
 function go(v,noScroll){
@@ -66,10 +66,12 @@ function renderAll(){
   else if(view==='learn')renderLessons();
   else if(view==='radar')renderRadar();
   else if(view==='focus')renderFocus();
+  else if(view==='plan')renderPlan();
   paintLearnBadge();
   {const n=rdCount(),c=$('#cRad');if(c){c.textContent=faN(n);c.classList.toggle('z',!n);}}
   if(S.focus)try{const n=focusTake().take.length,c=$('#cFoc');if(c){c.textContent=faN(n);c.classList.toggle('z',!n);}}catch(e){}
   paintMoreBadge();
+  paintPlanBadge();
   destackAll();
   renderHealth();
 }

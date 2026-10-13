@@ -125,6 +125,10 @@ function rbFromPosAll(L){
 async function rbAddAsk(x){
   if(!x)return null;
   const n=rdOpenDir(x.dir,'test'),dn=x.dir==='long'?'لانگ':'شورت';
+  // قانون نقشه‌ی یک‌ماهه: حداکثر 3 تست در روز (می‌شود رد کرد، ولی در نقشه ✗ می‌خورد)
+  if(plOn()){const td=plTestsOn(plDay0(Date.now()));
+    if(td>=PL_TPD&&!(await askConfirm({title:'قانون نقشه: حداکثر '+faN(PL_TPD)+' تست در روز',msg:'امروز '+faN(td)+' تست ثبت کرده‌ای. تست بیشتر نمونه‌ی بهتری نمی‌دهد؛ تست‌های یک روز با هم بالا و پایین می‌روند. بهتر است فردا.',
+      ok:'باز هم ثبت کن',cancel:'باشد، فردا'})))return null;}
   if(n>=RD_CAP&&!(await askConfirm({title:faN(n)+' تست '+dn+' باز داری',msg:'سقف '+faN(RD_CAP)+' معامله‌ی هم‌جهت است. ارزها با هم بالا و پایین می‌روند و این‌ها عملاً یک شرط بزرگ‌اند؛ یک ریزش همه را با هم استاپ می‌زند.',
     ok:'باز هم ثبت کن',cancel:'نه، صبر می‌کنم'})))return null;
   return rbAdd('test',x);

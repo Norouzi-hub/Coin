@@ -1,4 +1,4 @@
-/* چینش نوار پایین: بازار، پوزیشن‌ها، سیگنال‌ها، سایر؛ کانال‌سنج داخل «سایر» و بی سنجش خودکار */
+/* چینش نوار پایین: بازار، پوزیشن‌ها، سیگنال‌ها، نقشه، سایر؛ کانال‌سنج داخل «سایر» و بی سنجش خودکار */
 const {pw}=require('./lib');const {chromium}=pw;const {route,seed}=require('./fixture');
 let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);};
 (async()=>{
@@ -18,7 +18,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    return {start,startSel,radVis,tabs,items,jobs,on,at0,at1,sel,vis,bt,crumb,on2,after:AUDQ.at>at0};});
  console.log('   ',JSON.stringify(r));
  ok(r.start==='radar'&&r.startSel==='radar'&&r.radVis,'برنامه روی «بازار» باز می‌شود');
- ok(r.tabs==='radar,positions,signals,more','نوار پایین: بازار، پوزیشن‌ها، سیگنال‌ها، سایر');
+ ok(r.tabs==='radar,positions,signals,plan,more','نوار پایین: بازار، پوزیشن‌ها، سیگنال‌ها، نقشه، سایر');
  ok(r.items.startsWith('audit,'),'کانال‌سنج اولِ منوی «سایر»');
  ok(r.vis&&r.sel==='more'&&r.crumb,'کانال‌سنج باز شد، «سایر» روشن ماند و دکمه‌ی برگشت دارد');
  ok(r.jobs>0&&!r.on&&r.at1===r.at0,'با باز شدن، سنجش خودکار شروع نشد ('+r.jobs+' سیگنال منتظر)');
