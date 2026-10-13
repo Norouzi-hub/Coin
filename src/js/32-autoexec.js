@@ -47,12 +47,22 @@ function autoClose(p,px,at,kind){
   return m.pnl;
 }
 /* یک بازه‌ی قیمت را روی پوزیشن اجرا می‌کند و رویدادها را به ev اضافه می‌کند */
-function autoFeed(p,hi,lo,at,ev){
+/* قیمت اجرای پله: خود تارگت (مثل سفارش Limit که در صرافی گذاشته‌ای)، مگر قیمت هیچ‌وقت از تارگت رد نشده باشد و از اول جلوتر بوده
+   (پوزیشن دیر ثبت شده: S با ورود 0.0249 وقتی قیمت 0.071 بود) — آن وقت بدترین قیمتِ همین بازه.
+   prev: قیمت زنده‌ی قبلی (اگر قبلاً پیش از تارگت بوده، یعنی تارگت جلوی چشم رد شده ← خود تارگت).
+   بی قیمت قبلی: فقط اگر بیش از یک‌چهارم R جلوتر است دیر ثبت شده حساب می‌شود (تکان کوچک از روی تارگت همان تارگت است) */
+function autoFillPx(p,i,hi,lo,prev){
+  const sg=p.dir==='long'?1:-1,tp=p.pb.tps[i],far=sg>0?lo:hi,risk=Math.abs(p.entry-((p.stop0!=null?p.stop0:p.stop)||p.entry))||Math.abs(tp-p.entry);
+  if(prev!=null&&(prev-tp)*sg<0)return tp;
+  return (far-tp)*sg>0.25*risk?far:tp;
+}
+const AUTOLP=new Map();        // آخرین قیمت زنده‌ی هر پوزیشن (فقط همین بار)
+function autoFeed(p,hi,lo,at,ev,prev){
   for(let g=0;g<12&&p.status==='open';g++){
     const h=autoHit(p,hi,lo);
     if(!h)return;
     if(h.k!=='tp'){ev.push({p,k:h.k,pnl:autoClose(p,h.px,at,h.k)});return;}
-    const pnl=pbApply(p,h.i,at,'خودکار: ');
+    const pnl=pbApply(p,h.i,at,'خودکار: ',autoFillPx(p,h.i,hi,lo,prev));
     if(p.status==='closed')p.autoBy='tp';
     ev.push({p,k:'tp',i:h.i,pnl,stop:p.stop});
     // استاپِ تازه در همین کندل سنجیده نمی‌شود: معلوم نیست قیمت بعد از تارگت برگشته یا نه
@@ -100,7 +110,7 @@ function checkAutoExec(){
     if(px==null)continue;
     if(now-autoSince(p)>gap){late.push(p);continue;}
     if(!snap&&(autoHit(p,px,px)||autoDue(p,now)))snap=JSON.stringify(dbBlob());
-    autoFeed(p,px,px,now,ev);
+    autoFeed(p,px,px,now,ev,AUTOLP.get(p.id));AUTOLP.set(p.id,px);
     if(p.status==='open'&&autoDue(p,now))ev.push({p,k:'time',pnl:autoClose(p,px,now,'time')});
     AUTOSEEN[p.id]=now;
   }

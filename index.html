@@ -9324,18 +9324,39 @@ function pbStopPrice(p,c){
   return lvl===0?null:lvl===1?p.entry:pb.tps[lvl-2];
 }
 const pbReached=(p,i,live)=>live!=null&&(p.dir==='long'?live>=p.pb.tps[i]:live<=p.pb.tps[i]);
+/* درصد نمایشی هر پله از کل حجم اولیه، گرد شده طوری که جمعشان 100 شود (سه پله‌ی مساوی: 33، 33، 34؛ قبلاً 33×3 = 99) */
+function pbPctShow(parts){
+  const raw=parts.map(f=>f*100),fl=raw.map(Math.floor);let left=Math.round(raw.reduce((a,b)=>a+b,0))-fl.reduce((a,b)=>a+b,0);
+  raw.map((v,i)=>[v-fl[i],i]).filter(([,i])=>parts[i]>0).sort((a,b)=>b[0]-a[0]||b[1]-a[1]).forEach(([,i])=>{if(left>0){fl[i]++;left--;}});
+  return fl;
+}
 function pbStepText(p,i){
-  const pb=p.pb, f=pb.parts[i], sp=pbStopPrice(p,i+1), prev=i?pbStopPrice(p,i):null;
+  const pb=p.pb, f=pb.parts[i], sp=pbStopPrice(p,i+1), prev=i?pbStopPrice(p,i):null, sign=p.dir==='long'?1:-1;
   const bits=[];
-  if(f>0)bits.push('ببند '+faN(Math.round(f*100))+'٪');
-  if(sp!=null&&sp!==prev)bits.push('استاپ ← '+(sp===p.entry?'ورود':fmtPrice(sp)));
+  if(f>0){
+    // «33٪» یعنی سهم حجم اولیه، نه درصد سود؛ کنارش سود همین سهم اگر روی خود تارگت بسته شود
+    const pc=pbPctShow(pb.parts)[i],last=pb.parts.slice(i+1).every(x=>!(x>0)),before=pb.parts.slice(0,i).reduce((a,b)=>a+b,0);
+    const gain=baseMarginOf(p)*p.lev*f*(pb.tps[i]-p.entry)/p.entry*sign;
+    bits.push((last&&before>0?'ببند باقی ('+faN(pc)+'٪ حجم)':'ببند '+faN(pc)+'٪ حجم'+(before>0&&before<1?' ('+(Math.abs(f/(1-before)-0.5)<0.01?'نصف باقی':faN(Math.round(f/(1-before)*100))+'٪ باقی')+')':''))+
+      (isFinite(gain)&&gain?' ≈ <bdi dir="ltr" class="'+cls(gain)+'">'+fmtUsd(gain)+'</bdi>':''));
+  }
+  if(sp!=null&&sp!==prev){
+    // اگر استاپ را خودت از عدد این پله جلوتر برده‌ای، نقشه پایینش نمی‌آورد
+    if(p.stop!=null&&(p.stop-sp)*sign>0)bits.push('استاپ همان <bdi dir="ltr">'+fmtPrice(p.stop)+'</bdi> (جلوتر از نقشه)');
+    else bits.push('استاپ ← '+(sp===p.entry?'ورود':fmtPrice(sp)));
+  }
   return bits.join(' · ')||'فقط رد شو';
 }
+/* قیمت اجرای یک پله: خود تارگت، مگر قیمت از آن جلوتر رفته باشد (پوزیشنی که دیر ثبت شده یا قیمت پریده)؛
+   آن وقت قیمت واقعی که الان می‌گیری. قبلاً همیشه قیمت تارگت بود: S با ورود 0.0249 و قیمت 0.071، یک‌سوم را روی 0.04725 حساب می‌کرد */
+const pbFar=(p,i,px)=>{const tp=p.pb.tps[i],risk=Math.abs(p.entry-((p.stop0!=null?p.stop0:p.stop)||p.entry))||Math.abs(tp-p.entry);
+  return px>0&&(px-tp)*(p.dir==='long'?1:-1)>0.25*risk;};   // بیش از یک‌چهارم R جلوتر از تارگت (تکان کوچک از رویش همان تارگت است، مثل Limit)
+const pbFill=(p,i,px)=>pbFar(p,i,px)?px:p.pb.tps[i];
 /* اجرای یک پله‌ی نقشه با قیمت تارگت: بستن سهمِ این پله و جابه‌جایی استاپ. هم دکمه‌ی «انجام شد»
    از این می‌رود، هم اجرای خودکار — تا دو جور حساب نشود. */
-function pbApply(p,i,at,pre){
+function pbApply(p,i,at,pre,px){
   ensureBase(p);
-  const pb=p.pb, tp=pb.tps[i];
+  const pb=p.pb, tp=px>0?px:pb.tps[i];
   const before=pb.parts.slice(0,i).reduce((a,b)=>a+b,0), remain=1-before;
   const frac=remain<=pb.parts[i]+1e-9?1:pb.parts[i]/remain;
   let pnl=0;
@@ -9350,9 +9371,9 @@ function pbApply(p,i,at,pre){
 }
 /* «انجام شد»: همان پله را با قیمت تارگت اجرا می‌کند */
 function pbDo(p,i){
-  const pnl=pbApply(p,i);
+  const fx=pbFill(p,i,pxOf(p)),pnl=pbApply(p,i,null,null,fx);
   save();renderAll();
-  toast('پله‌ی '+faN(i+1)+' انجام شد'+(p.pb.parts[i]>0?' · '+fmtUsd(pnl):''),'ok');
+  toast('پله‌ی '+faN(i+1)+' انجام شد'+(p.pb.parts[i]>0?' روی '+fmtPrice(fx)+' · '+fmtUsd(pnl):''),'ok');
 }
 function closePartAt(p,price,frac,label,at){
   ensureBase(p);at=at||Date.now();
@@ -9519,12 +9540,12 @@ function buildPbBox(p,live){
   for(let i=0;i<n;i++){
     // پله‌ی بی‌کار (نه بستن، نه جابه‌جایی استاپ) پنهان است، مگر پله‌ی جاری باشد (وگرنه دکمه‌هایش هیچ‌وقت دیده نمی‌شد)
     if(i!==done&&!(pb.parts[i]>0)&&pbStopPrice(p,i+1)===(i?pbStopPrice(p,i):null))continue;
-    const hit=i===done&&p.status==='open'&&pbReached(p,i,live);
+    const hit=i===done&&p.status==='open'&&pbReached(p,i,live), past=i>done&&p.status==='open'&&pbReached(p,i,live);
     const sk0=i<done&&(p.pbSkip||[]).includes(i);      // «رد کن»: انجام نشده، فقط از آن گذشتیم
     const li=el('li',sk0?'skip':i<done?'done':hit?'hit':i===done?'next':'');
     const dist=live!=null&&i>=done?((pb.tps[i]-live)/live*100*(p.dir==='long'?1:-1)):null;
     li.innerHTML='<i>'+(sk0?ic('x'):i<done?ic('check'):faN(i+1))+'</i><div><b>تارگت '+faN(i+1)+' · <span dir="ltr">'+fmtPrice(pb.tps[i])+'</span></b>'+
-      '<span>'+pbStepText(p,i)+(sk0?' · رد شد (بسته نشد)':i<done?' · انجام شد':hit?' · <em>رسید!</em>':(dist!=null&&dist>0&&i===done?' · '+dist.toFixed(1)+'٪ مانده':''))+'</span></div>';
+      '<span>'+pbStepText(p,i)+(sk0?' · رد شد (بسته نشد)':i<done?' · انجام شد':hit?' · <em>رسید!</em>'+(pbFar(p,i,live)?' <small>(قیمت الان <bdi dir="ltr">'+fmtPrice(live)+'</bdi>؛ «انجام شد» با همین قیمت)</small>':''):past?' · <em>این هم رد شد</em>':(dist!=null&&dist>0&&i===done?' · '+dist.toFixed(1)+'٪ مانده':''))+'</span></div>';
     if(i===done&&p.status==='open'){
       const acts=el('div','pbact');
       const ok=el('button','btn '+(hit?'pri':'')+' xs',ic('check')+'<span>انجام شد</span>');
@@ -12507,12 +12528,22 @@ function autoClose(p,px,at,kind){
   return m.pnl;
 }
 /* یک بازه‌ی قیمت را روی پوزیشن اجرا می‌کند و رویدادها را به ev اضافه می‌کند */
-function autoFeed(p,hi,lo,at,ev){
+/* قیمت اجرای پله: خود تارگت (مثل سفارش Limit که در صرافی گذاشته‌ای)، مگر قیمت هیچ‌وقت از تارگت رد نشده باشد و از اول جلوتر بوده
+   (پوزیشن دیر ثبت شده: S با ورود 0.0249 وقتی قیمت 0.071 بود) — آن وقت بدترین قیمتِ همین بازه.
+   prev: قیمت زنده‌ی قبلی (اگر قبلاً پیش از تارگت بوده، یعنی تارگت جلوی چشم رد شده ← خود تارگت).
+   بی قیمت قبلی: فقط اگر بیش از یک‌چهارم R جلوتر است دیر ثبت شده حساب می‌شود (تکان کوچک از روی تارگت همان تارگت است) */
+function autoFillPx(p,i,hi,lo,prev){
+  const sg=p.dir==='long'?1:-1,tp=p.pb.tps[i],far=sg>0?lo:hi,risk=Math.abs(p.entry-((p.stop0!=null?p.stop0:p.stop)||p.entry))||Math.abs(tp-p.entry);
+  if(prev!=null&&(prev-tp)*sg<0)return tp;
+  return (far-tp)*sg>0.25*risk?far:tp;
+}
+const AUTOLP=new Map();        // آخرین قیمت زنده‌ی هر پوزیشن (فقط همین بار)
+function autoFeed(p,hi,lo,at,ev,prev){
   for(let g=0;g<12&&p.status==='open';g++){
     const h=autoHit(p,hi,lo);
     if(!h)return;
     if(h.k!=='tp'){ev.push({p,k:h.k,pnl:autoClose(p,h.px,at,h.k)});return;}
-    const pnl=pbApply(p,h.i,at,'خودکار: ');
+    const pnl=pbApply(p,h.i,at,'خودکار: ',autoFillPx(p,h.i,hi,lo,prev));
     if(p.status==='closed')p.autoBy='tp';
     ev.push({p,k:'tp',i:h.i,pnl,stop:p.stop});
     // استاپِ تازه در همین کندل سنجیده نمی‌شود: معلوم نیست قیمت بعد از تارگت برگشته یا نه
@@ -12560,7 +12591,7 @@ function checkAutoExec(){
     if(px==null)continue;
     if(now-autoSince(p)>gap){late.push(p);continue;}
     if(!snap&&(autoHit(p,px,px)||autoDue(p,now)))snap=JSON.stringify(dbBlob());
-    autoFeed(p,px,px,now,ev);
+    autoFeed(p,px,px,now,ev,AUTOLP.get(p.id));AUTOLP.set(p.id,px);
     if(p.status==='open'&&autoDue(p,now))ev.push({p,k:'time',pnl:autoClose(p,px,now,'time')});
     AUTOSEEN[p.id]=now;
   }
