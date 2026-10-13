@@ -1896,6 +1896,44 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .rdwx.cmp .rdwxc .pill{font-size:11px;padding:2px 8px}
 .rdwx.cmp .rdwxp{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;margin-top:0;padding-top:6px;border-top:1px dashed var(--line)}
 .rdwx.cmp .rdwxp span{display:flex;justify-content:space-between;gap:6px;white-space:nowrap}
+/* ---- چهار کارت تاشوی بالای «سیگنال‌ها»: یک طراحی ---- */
+.rdacc{border-radius:14px;background:var(--card);border:1px solid var(--line);border-inline-start:4px solid var(--line2);margin:0 0 8px;overflow:hidden}
+.rdacc.go{border-inline-start-color:var(--up)}.rdacc.stop{border-inline-start-color:var(--dn)}.rdacc.mid{border-inline-start-color:var(--warn)}
+.rdacc.rdpick{border-inline-start-color:var(--gold)}
+.rdacc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 12px;min-height:56px}
+.rdacc>summary::-webkit-details-marker{display:none}
+.rdai{flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;font-style:normal;font-weight:900;font-size:15px;background:var(--inset);border:1px solid var(--line);color:var(--tx2)}
+.rdai svg{width:16px;height:16px}
+.rdacc.go .rdai{color:var(--up)}.rdacc.stop .rdai{color:var(--dn)}
+.rdhero.go>summary .rdai{background:var(--up);color:#fff;border-color:transparent}.rdhero.stop>summary .rdai{background:var(--dn);color:#fff;border-color:transparent}
+.rdat{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rdat>b{font-size:14.5px;font-weight:900;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rdacc.go .rdat>b{color:var(--up)}.rdacc.stop .rdat>b{color:var(--dn)}
+.rdat>small{font-size:11.5px;color:var(--tx3);line-height:1.7;display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px}
+.rdat>small b{color:var(--tx2)}.rdat>small #rdProg{font-size:11.5px}
+.rdak{font-weight:800;font-size:11px;padding:0 7px;border-radius:99px;background:var(--inset);border:1px solid var(--line)}
+.rdak.win{color:var(--up)}.rdak.lose,.rdak.bad{color:var(--dn)}.rdak.mut{color:var(--tx2)}
+.rdacc>summary .rdaq{flex:none;min-height:34px;padding:4px 10px}
+.rdchev{flex:none;width:8px;height:8px;border-inline-end:2px solid var(--tx3);border-bottom:2px solid var(--tx3);transform:rotate(45deg);margin:-4px 2px 0;transition:transform .2s}
+.rdacc[open]>summary .rdchev{transform:rotate(-135deg);margin-top:4px}
+.rdab{display:flex;flex-direction:column;gap:8px;padding:0 12px 12px;border-top:1px dashed var(--line);padding-top:10px}
+.rdab .rdhs{font-size:12.5px;line-height:1.85;color:var(--tx2)}.rdab .rdhs b{color:var(--tx)}
+.rdhero .rdab .rdbar{padding-top:0;border-top:0}
+.rdacc .rdwx{margin:0;padding:0;border:0;background:none}
+.rdacc .rdwx .rdwxh{display:none}
+.rdacc .rdpk,.rdacc .rdfav{margin:0}
+.rdlisth{display:flex;align-items:center;gap:8px;margin:12px 2px 2px}
+.rdlisth>b{font-size:15px;font-weight:900}
+.rdlisth>i{font-style:normal;font-size:11.5px;font-weight:800;padding:1px 9px;border-radius:99px;background:var(--inset);border:1px solid var(--line);color:var(--tx2)}
+.rdlisth .rdsort{margin:0 auto 0 0}.rdlisth .rdsort>span{font-size:11.5px;color:var(--tx3)}
+.rdacc.rdhero{display:block;padding:0;gap:0}
+.rdacc.rdmk>summary{font-size:inherit;min-height:56px;padding:10px 12px;gap:10px}
+.rdacc.rdmk>summary::after{display:none}
+.rdacc.rdmk>.rdab{margin:0}
+.rdacc.rdmk>summary .ic{color:var(--gold)}
+.rdchev{border:0;border-right:2px solid var(--tx3);border-bottom:2px solid var(--tx3);transform:rotate(45deg)}
+.rdacc[open]>summary .rdchev{transform:rotate(-135deg)}
+.rdacc .rdwx .rdwxc .pill{display:none}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -11358,21 +11396,45 @@ function rdHeroHtml(L){
   if(RD.ex)chips.push('<span class="rdchip">خروج: '+rbExTxt()+'</span>');
   if(opn.long||opn.short)chips.push('<span class="rdchip'+(opn.long>=RD_CAP||opn.short>=RD_CAP?' w':'')+'" title="پوزیشن‌های واقعیِ رادار">باز واقعی: '+faN(opn.long)+' لانگ · '+faN(opn.short)+' شورت (سقف '+faN(RD_CAP)+')</span>');
   if(opt.long||opt.short)chips.push('<span class="rdchip" title="معامله‌های آزمایشی؛ سقف خودشان را دارند و جلوی سیگنال واقعی را نمی‌گیرند">تست باز: '+faN(opt.long)+' لانگ · '+faN(opt.short)+' شورت</span>');
-  let h='<div class="rdhero '+st+'"><div class="rdht"><i>'+(st==='go'?'✓':st==='stop'?'✕':'…')+'</i><div><b>'+title+'</b><span>'+sub+'</span></div></div>'+
-    (chips.length?'<div class="rdchips">'+chips.join('')+'</div>':'');
+  // کارت تاشو: بسته = حکم، تعداد ارز، زمان بررسی، هشدار کوتاه و «تازه کن»؛ باز = توضیح، برچسب‌ها، هشدارهای کامل و دکمه‌های دیگر
+  const warns=[],wk=[];
   // یک جهت زیان‌ده: فقط همان جهت بسته است
-  if(!H.neg)for(const d of ['long','short'])if(H.d[d].neg){const o=d==='long'?'short':'long';
-    h+='<div class="rdwarn bad"><span><b>'+(d==='long'?'لانگ‌ها':'شورت‌ها')+'ی مدل در کل زیان‌ده‌اند</b> (میانگین <bdi dir="ltr">'+fmtR(H.d[d].avg)+'</bdi> در '+faN(H.d[d].n)+' معامله)؛ فعلاً فقط '+(o==='long'?'لانگ':'شورت')+
-      (H.d[o].n?' (میانگین <bdi dir="ltr">'+fmtR(H.d[o].avg)+'</bdi>)':'')+' می‌تواند «قابل گرفتن» باشد.</span></div>';}
-  if(H.few&&RD.M){const need=Math.max(0,Math.min(RD_NC_OK,RD_MAX)-n);
-    h+='<div class="rdwarn"><span>ستاره‌ها روی '+faN(H.nc)+' ارز ساخته شده‌اند؛ برای اعتماد دست‌کم '+faN(RD_NC_OK)+' ارز لازم است'+(H.cap<5?' (فعلاً ستاره حداکثر 3)':'')+'.</span>'+
-      (need?rdBtn('data-rd50="1"','plus','رساندن به '+faN(RD_NC_OK)+' ارز','add','در حال بررسی ارزها'):'')+'</div>';}
-  h+='<div class="rdbar"><span class="rdcnt">'+(n?faN(n)+' ارز':'')+'</span><small id="rdProg">'+(RDQ.on?'':RD.at?ageTxt(RD.at):'')+'</small>'+
-    rdBtn('data-rdrun="1"','refresh','تازه کن','refresh','در حال تازه کردن')+
-    '<button class="btn sm rdhelpb" data-rdhelp="1" title="امتیاز، ستاره، کِی وارد شوم" aria-label="راهنما">'+ic('info')+'<span>راهنما</span></button>'+
-    (n<RD_MAX?rdBtn('data-rdmore="1"','plus',faN(RD_STEP)+' ارز بعدی','more','در حال بررسی'):'')+'</div>'+
-    (RDQ.on?rdProgHtml():'')+'</div>';
-  return h;
+  if(!H.neg)for(const d of ['long','short'])if(H.d[d].neg){const o=d==='long'?'short':'long';wk.push((d==='long'?'لانگ‌ها':'شورت‌ها')+' زیان‌ده');
+    warns.push('<div class="rdwarn bad"><span><b>'+(d==='long'?'لانگ‌ها':'شورت‌ها')+'ی مدل در کل زیان‌ده‌اند</b> (میانگین <bdi dir="ltr">'+fmtR(H.d[d].avg)+'</bdi> در '+faN(H.d[d].n)+' معامله)؛ فعلاً فقط '+(o==='long'?'لانگ':'شورت')+
+      (H.d[o].n?' (میانگین <bdi dir="ltr">'+fmtR(H.d[o].avg)+'</bdi>)':'')+' می‌تواند «قابل گرفتن» باشد.</span></div>');}
+  if(H.few&&RD.M){const need=Math.max(0,Math.min(RD_NC_OK,RD_MAX)-n);wk.push('ارز کم');
+    warns.push('<div class="rdwarn"><span>ستاره‌ها روی '+faN(H.nc)+' ارز ساخته شده‌اند؛ برای اعتماد دست‌کم '+faN(RD_NC_OK)+' ارز لازم است'+(H.cap<5?' (فعلاً ستاره حداکثر 3)':'')+'.</span>'+
+      (need?rdBtn('data-rd50="1"','plus','رساندن به '+faN(RD_NC_OK)+' ارز','add','در حال بررسی ارزها'):'')+'</div>');}
+  const key=(n?'<span class="rdcnt">'+faN(n)+' ارز</span> · ':'')+'<small id="rdProg">'+(RDQ.on?'':RD.at?ageTxt(RD.at):'')+'</small>'+
+    wk.map(t=>' <span class="rdak bad">⚠ '+t+'</span>').join('');
+  const body='<span class="rdhs">'+sub+'</span>'+(chips.length?'<div class="rdchips">'+chips.join('')+'</div>':'')+warns.join('')+
+    '<div class="rdbar">'+'<button class="btn sm rdhelpb" data-rdhelp="1" title="امتیاز، ستاره، کِی وارد شوم" aria-label="راهنما">'+ic('info')+'<span>راهنما</span></button>'+
+    (n<RD_MAX?rdBtn('data-rdmore="1"','plus',faN(RD_STEP)+' ارز بعدی','more','در حال بررسی'):'')+'</div>';
+  return rdAcc('hero','rdhero '+st,st==='go'?'✓':st==='stop'?'✕':'…',title,key,rdBtn('data-rdrun="1"','refresh','تازه کن','refresh','در حال تازه کردن','rdaq'),body)+
+    (RDQ.on?rdProgHtml():'');
+}
+/* کارت تاشوی یکسان برای بالای «سیگنال‌ها»: بسته = آیکن، عنوان، یک خط مهم و یک دکمه‌ی فوری؛ باز = اطلاعات تکمیلی.
+   باز/بسته بودن هر کارت روی دستگاه می‌ماند */
+let RDACC=(()=>{try{return JSON.parse(localStorage.getItem('signaldesk.rdacc')||'{}')||{};}catch(e){return {};}})();
+function rdAcc(k,cls,icon,title,key,act,body,open){
+  const o=open!=null?open:!!RDACC[k];
+  return '<details class="rdacc '+cls+'"'+(open==null?' data-acc="'+k+'"':'')+(o?' open':'')+'><summary><i class="rdai">'+icon+'</i><div class="rdat"><b>'+title+'</b><small>'+key+'</small></div>'+(act||'')+'<span class="rdchev" aria-hidden="true"></span></summary>'+
+    '<div class="rdab">'+body+'</div></details>';
+}
+function rdAccBind(g){
+  g.querySelectorAll('details.rdacc[data-acc]').forEach(d=>d.ontoggle=()=>{RDACC[d.dataset.acc]=d.open;try{localStorage.setItem('signaldesk.rdacc',JSON.stringify(RDACC));}catch(e){}});
+  // دکمه‌ی داخل سرکارت کارت را باز و بسته نکند
+  g.querySelectorAll('details.rdacc>summary button').forEach(b=>b.addEventListener('click',e=>e.preventDefault()));
+}
+/* هوای بازار تاشو: بسته = حکم و چراغ لانگ/شورت و عدد کل؛ باز = توضیح، چهار جزء، اثر در گذشته و کلید فیلتر */
+function rdWxAccHtml(){
+  const o=rdWxNow();
+  if(!o)return rdAcc('wx','rdwxa wait','…','هوای بازار','هنوز معلوم نیست؛ «تازه کن» بزن.','',rdWxHtml(true));
+  const L=rdWxCls(o.w,'long'),Sh=rdWxCls(o.w,'short'),st=o.old?'wait':L==='go'?'go':L==='no'?'stop':'mid';
+  const title=o.old?'هوای بازار کهنه است':L==='go'?'هوا برای لانگ مناسب است':L==='no'?'هوا برای لانگ نامناسب است':'هوای بازار خنثی است';
+  const pc=v=>v==='go'?'win':v==='no'?'lose':'mut';
+  const key='<span class="rdak '+pc(L)+'">لانگ: '+RDWX_FA[L]+'</span> <span class="rdak '+pc(Sh)+'">شورت: '+RDWX_FA[Sh]+'</span> <span>عدد کل <b dir="ltr" class="'+cls(o.w)+'">'+(o.w>0?'+':'')+o.w.toFixed(2)+'</b></span>';
+  return rdAcc('wx','rdwxa '+st,st==='go'?'☀':st==='stop'?'☂':'⛅',title,key,'',rdWxHtml(true));
 }
 /* بازار کل در یک خط؛ با زدن، کارت‌های حال بازار، TOTAL و دامیننس‌ها باز می‌شود */
 function rdMktHtml(){
@@ -11383,6 +11445,14 @@ function rdMktHtml(){
   if(MKT)bits.push('24h <b>'+MK_REG_FA[MKT.reg]+'</b>');
   if(r){bits.push('TOTAL <bdi dir="ltr" class="'+cls(r.tot[1])+'">'+fmtPct(r.tot[1])+'</bdi>');bits.push('BTC.D <bdi dir="ltr">'+fmtNum(r.bd[0])+'%</bdi>');bits.push('USDT.D <bdi dir="ltr">'+fmtNum(r.ud[0])+'%</bdi>');}
   return mkStripHtml(bits);
+}
+function rdMktAccHtml(){
+  rdMktHtml();let r=null;try{r=mdMetrics(MD);}catch(e){}
+  const k=[];
+  if(MKT)k.push('24h <b>'+MK_REG_FA[MKT.reg]+'</b>');
+  if(r){k.push('TOTAL <bdi dir="ltr" class="'+cls(r.tot[1])+'">'+fmtPct(r.tot[1])+'</bdi>');k.push('BTC.D <bdi dir="ltr">'+fmtNum(r.bd[0])+'%</bdi>');k.push('USDT.D <bdi dir="ltr">'+fmtNum(r.ud[0])+'%</bdi>');}
+  const st=MKT?(/bear/.test(MKT.reg)?'stop':/bull/.test(MKT.reg)?'go':'mid'):'wait';
+  return rdAcc('mkt','rdmk '+st,ic('bars'),'بازار کل',k.length?k.join(' · '):'در حال گرفتن…','',(MKT?mktHtml(MKT,null):'')+mdHtml(),RDMKOPEN);
 }
 /* نوار تاشوی «بازار کل» (مشترک «بازار» و «الان چه کنم؟»): یک خط خلاصه، با زدن حال بازار و TOTAL و دامیننس‌ها */
 function mkStripHtml(bits){
@@ -11400,19 +11470,22 @@ function rdHtml(){
   const fv=x=>!VIEW.mktFav||rdIsFav(x.tk);
   const fd=VIEW.mktDir||'all', sig=L.filter(x=>x.dir!=='wait'), act=sig.filter(x=>(fd==='all'||x.dir===fd)&&(!VIEW.mktOk||x.ok)&&(!VIEW.mktDiv||rdDivOf(x)>0)&&fv(x)),
     hid=sig.length-act.length, wait=L.filter(x=>x.dir==='wait').filter(fv);
-  let h='<div class="glb">'+rdHeroHtml(L)+rdWxHtml(false);
+  let h='<div class="glb">'+rdHeroHtml(L)+rdWxAccHtml();
   // انتخاب ارزها: بازه‌ی رتبه، نماد، واچ‌لیست
   const LL=rdListOf();
-  let pick='<details class="sec sub2 rdpick"'+(RDPICKOPEN?' open':'')+'><summary>'+ic('search')+'انتخاب ارزها و واچ‌لیست'+(RDFAV.length?' ('+faN(RDFAV.length)+' ★)':'')+'</summary>'+
+  let pick=""+
     '<div class="rdpk"><input id="rdPickIn" placeholder="20-40 · 200 تا 231 · ETH, SOL, PEPE" autocomplete="off" dir="auto"><button class="btn sm ok" data-rdadd="1"'+(RDQ.on?' disabled':'')+'>'+ic('plus')+'<span>بررسی</span></button></div>'+
     '<div class="hint">بازه‌ی رتبه (ارزش بازار CoinGecko، بی استیبل‌کوین‌ها؛ تا حدود 450) یا یک یا چند نماد با فاصله یا ویرگول. فقط ارزهای تازه گرفته می‌شوند و مدل با آن‌ها دوباره یاد می‌گیرد. سقف فهرست '+faN(RD_MAX)+' ارز.</div>'+
     '<div class="rdfav">'+(RDFAV.length?RDFAV.map(t=>'<span class="pill gold" data-favtk="'+esc(t)+'">★ <b dir="ltr">'+esc(t)+'</b>'+(LL.includes(t)?'':' <small>(بررسی‌نشده)</small>')+'</span>').join(''):'<span class="hint">واچ‌لیست خالی است؛ روی ☆ هر ارز بزن.</span>')+'</div>'+
     '<div class="srow">'+(RDFAV.length?'<button class="btn sm" data-rdfavscan="1"'+(RDQ.on?' disabled':'')+'>'+ic('star')+'<span>بررسی واچ‌لیست</span></button>':'')+
       '<button class="btn sm side" data-rdreset="1"'+(RDQ.on?' disabled':'')+'>'+ic('undo')+'<span>از نو: فقط '+faN(RD_STEP)+' ارز اول'+(RDFAV.length?' و واچ‌لیست':'')+'</span></button></div>'+
     '<div class="rdmr"><small>بررسی خودکار</small><div class="pbpick">'+Object.entries(RD_AUTO).map(([k,t])=>'<button class="pbc'+(rdAutoK()===k?' on':'')+'" data-rdauto="'+k+'">'+t+'</button>').join('')+'</div></div>'+
-    '<div class="hint">وقتی «بازار» را باز می‌کنی. هر بررسی کامل برای هر ارز حدود 6 درخواست است (کندل، جریان پول، فاندینگ)؛ «واچ‌لیست» فقط همان‌ها را از شبکه می‌گیرد و بقیه از حافظه‌ی گوشی.</div></details>';
-  // ترتیب صفحه: وضعیت و هوای بازار ← بازار کل ← سیگنال‌ها ← «صبر» ← تنظیم فهرست ارزها (پایین، چون کار هر روز نیست)
-  h+=rdMktHtml();
+    '<div class="hint">وقتی «بازار» را باز می‌کنی. هر بررسی کامل برای هر ارز حدود 6 درخواست است (کندل، جریان پول، فاندینگ)؛ «واچ‌لیست» فقط همان‌ها را از شبکه می‌گیرد و بقیه از حافظه‌ی گوشی.</div>';
+  // چهار کارت تاشوی بالا: وضعیت، هوای بازار، بازار کل، ارزها و واچ‌لیست؛ بعد مرتب‌سازی و خود سیگنال‌ها
+  h+=rdMktAccHtml();
+  h+=rdAcc('pick','rdpick',ic('search'),'ارزها و واچ‌لیست',faN(LL.length)+' ارز'+(RDFAV.length?' · '+faN(RDFAV.length)+' ★':'')+' · بررسی خودکار: '+RD_AUTO[rdAutoK()],'',pick,RDPICKOPEN);
+  if(sig.length)h+='<div class="rdlisth"><b>سیگنال‌ها</b><i>'+faN(act.length)+'</i><label class="psort rdsort"><span>مرتب‌سازی</span><select aria-label="مرتب‌سازی سیگنال‌ها">'+
+    RD_SORTS.map(([k,t])=>'<option value="'+k+'"'+(rdSortK()===k?' selected':'')+'>'+t+'</option>').join('')+'</select></label></div>';
   const okL=rdSortL(act.filter(x=>x.ok)), weak=rdSortL(act.filter(x=>!x.ok));let i=0;
   if(okL.length)h+='<div class="rdsh go"><b>قابل گرفتن</b><i>'+faN(okL.length)+'</i></div>'+okL.map(x=>rdRowHtml(x,i++)).join('');
   if(weak.length)h+='<div class="rdsh"><b>بی اعتبار کافی</b><i>'+faN(weak.length)+'</i><small>فقط برای «تست»</small></div>'+weak.map(x=>rdRowHtml(x,i++)).join('');
@@ -11420,7 +11493,6 @@ function rdHtml(){
   if(hid&&act.length)h+='<div class="hint">'+faN(hid)+' سیگنال دیگر با فیلتر بالای صفحه پنهان است.</div>';
   if(wait.length)h+='<details class="sec sub2 rdwait"><summary><b>صبر</b> ('+faN(wait.length)+' ارز با امتیاز زیر '+faN(RD_MIN)+')</summary><div class="rdwl">'+
     wait.map(x=>'<span class="pill mut">'+(rdIsFav(x.tk)?'★':'')+'<b dir="ltr">'+esc(x.tk)+'</b> <span class="'+(x.best==='long'?'win':'lose')+'">'+(x.best==='long'?'L':'S')+faN(x.sc)+'</span></span>').join('')+'</div></details>';
-  h+=pick;
   return h+'</div>';
 }
 /* تب «بازار» (مستقل، در نوار پایین): نوار فیلتر خودش و همان رادار */
@@ -11445,8 +11517,6 @@ function rdFbar(){
   chip(row,'واگرایی هم‌جهت',!!VIEW.mktDiv,()=>set({mktDiv:!VIEW.mktDiv}));
   chip(row,'★ واچ‌لیست',!!VIEW.mktFav,()=>set({mktFav:!VIEW.mktFav}));
   bar.appendChild(row);
-  const so=el('label','psort rdsort','<span>مرتب‌سازی</span><select aria-label="مرتب‌سازی سیگنال‌ها">'+RD_SORTS.map(([k,t])=>'<option value="'+k+'"'+(rdSortK()===k?' selected':'')+'>'+t+'</option>').join('')+'</select>');
-  so.querySelector('select').onchange=e=>set({rdSort:e.target.value});bar.appendChild(so);
 }
 /* مرتب‌سازی سیگنال‌ها (روی دستگاه می‌ماند). گروه‌های «قابل گرفتن» و «بی اعتبار کافی» سر جایشان می‌مانند؛ مرتب‌سازی داخل هر گروه است */
 const RD_SORTS=[['def','پیش‌فرض (اعتبار)'],['sc','امتیاز بیشتر'],['new','تازه‌ترین سیگنال'],['old','قدیمی‌ترین سیگنال'],['ck','چک‌لیست بیشتر'],
@@ -11478,7 +11548,8 @@ function paintRadar(g){
     if(!nw.length)return;toast(faN(nw.length)+' ارز تازه بررسی می‌شود (چند دقیقه)','info');rdScan('add',nw);paintRadar(g);};
   g.querySelectorAll('[data-rdhelp]').forEach(b=>b.onclick=rdGuide);
   g.querySelectorAll('[data-gos]').forEach(b=>b.onclick=()=>{openPanel('setVeil');setTimeout(()=>{const f=$('#sFeeMk');if(f){const d=f.closest('details');if(d)d.open=true;f.scrollIntoView({block:'center',behavior:'smooth'});}},150);});
-  mkStripBind(g);rdWxBind(g,()=>paintRadar(g));
+  mkStripBind(g);rdWxBind(g,()=>paintRadar(g));rdAccBind(g);
+  {const so=g.querySelector('.rdlisth select');if(so)so.onchange=e=>{VIEW.rdSort=e.target.value;lsSet(VIEWKEY,VIEW);renderRadar();};}
   const fs=g.querySelector('[data-rdfavscan]');if(fs)fs.onclick=()=>{VIEW.mktFav=true;lsSet(VIEWKEY,VIEW);rdScan('add',RDFAV.slice());renderRadar();};
   const rs=g.querySelector('[data-rdreset]');if(rs)rs.onclick=async()=>{if(!(await askConfirm({title:'فهرست رادار از نو',tone:'danger',msg:'فهرست به '+faN(RD_STEP)+' ارز اول'+(RDFAV.length?' و واچ‌لیست':'')+' برمی‌گردد و بقیه‌ی ارزها از رادار بیرون می‌روند.',ok:'از نو',cancel:'نه'})))return;
     const keep=new Set(rdUniverse(RD_STEP).concat(RDFAV));for(const t of rdListOf())if(!keep.has(t))rdRemove(t);

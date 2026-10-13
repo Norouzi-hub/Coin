@@ -1879,3 +1879,41 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .rdwx.cmp .rdwxc .pill{font-size:11px;padding:2px 8px}
 .rdwx.cmp .rdwxp{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;margin-top:0;padding-top:6px;border-top:1px dashed var(--line)}
 .rdwx.cmp .rdwxp span{display:flex;justify-content:space-between;gap:6px;white-space:nowrap}
+/* ---- چهار کارت تاشوی بالای «سیگنال‌ها»: یک طراحی ---- */
+.rdacc{border-radius:14px;background:var(--card);border:1px solid var(--line);border-inline-start:4px solid var(--line2);margin:0 0 8px;overflow:hidden}
+.rdacc.go{border-inline-start-color:var(--up)}.rdacc.stop{border-inline-start-color:var(--dn)}.rdacc.mid{border-inline-start-color:var(--warn)}
+.rdacc.rdpick{border-inline-start-color:var(--gold)}
+.rdacc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 12px;min-height:56px}
+.rdacc>summary::-webkit-details-marker{display:none}
+.rdai{flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;font-style:normal;font-weight:900;font-size:15px;background:var(--inset);border:1px solid var(--line);color:var(--tx2)}
+.rdai svg{width:16px;height:16px}
+.rdacc.go .rdai{color:var(--up)}.rdacc.stop .rdai{color:var(--dn)}
+.rdhero.go>summary .rdai{background:var(--up);color:#fff;border-color:transparent}.rdhero.stop>summary .rdai{background:var(--dn);color:#fff;border-color:transparent}
+.rdat{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rdat>b{font-size:14.5px;font-weight:900;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rdacc.go .rdat>b{color:var(--up)}.rdacc.stop .rdat>b{color:var(--dn)}
+.rdat>small{font-size:11.5px;color:var(--tx3);line-height:1.7;display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px}
+.rdat>small b{color:var(--tx2)}.rdat>small #rdProg{font-size:11.5px}
+.rdak{font-weight:800;font-size:11px;padding:0 7px;border-radius:99px;background:var(--inset);border:1px solid var(--line)}
+.rdak.win{color:var(--up)}.rdak.lose,.rdak.bad{color:var(--dn)}.rdak.mut{color:var(--tx2)}
+.rdacc>summary .rdaq{flex:none;min-height:34px;padding:4px 10px}
+.rdchev{flex:none;width:8px;height:8px;border-inline-end:2px solid var(--tx3);border-bottom:2px solid var(--tx3);transform:rotate(45deg);margin:-4px 2px 0;transition:transform .2s}
+.rdacc[open]>summary .rdchev{transform:rotate(-135deg);margin-top:4px}
+.rdab{display:flex;flex-direction:column;gap:8px;padding:0 12px 12px;border-top:1px dashed var(--line);padding-top:10px}
+.rdab .rdhs{font-size:12.5px;line-height:1.85;color:var(--tx2)}.rdab .rdhs b{color:var(--tx)}
+.rdhero .rdab .rdbar{padding-top:0;border-top:0}
+.rdacc .rdwx{margin:0;padding:0;border:0;background:none}
+.rdacc .rdwx .rdwxh{display:none}
+.rdacc .rdpk,.rdacc .rdfav{margin:0}
+.rdlisth{display:flex;align-items:center;gap:8px;margin:12px 2px 2px}
+.rdlisth>b{font-size:15px;font-weight:900}
+.rdlisth>i{font-style:normal;font-size:11.5px;font-weight:800;padding:1px 9px;border-radius:99px;background:var(--inset);border:1px solid var(--line);color:var(--tx2)}
+.rdlisth .rdsort{margin:0 auto 0 0}.rdlisth .rdsort>span{font-size:11.5px;color:var(--tx3)}
+.rdacc.rdhero{display:block;padding:0;gap:0}
+.rdacc.rdmk>summary{font-size:inherit;min-height:56px;padding:10px 12px;gap:10px}
+.rdacc.rdmk>summary::after{display:none}
+.rdacc.rdmk>.rdab{margin:0}
+.rdacc.rdmk>summary .ic{color:var(--gold)}
+.rdchev{border:0;border-right:2px solid var(--tx3);border-bottom:2px solid var(--tx3);transform:rotate(45deg)}
+.rdacc[open]>summary .rdchev{transform:rotate(-135deg)}
+.rdacc .rdwx .rdwxc .pill{display:none}

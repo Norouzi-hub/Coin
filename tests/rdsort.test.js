@@ -13,8 +13,8 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    const card=document.querySelector('#rdView .rdit[data-rd="AAA"]');
    o.age=(card.querySelector('.rdage')||{}).textContent||'';o.time=(card.querySelector('.rdtime')||{}).textContent||'';
    o.newTime=!!document.querySelector('#rdView .rdit[data-rd="BBB"] .rdtime');
-   const sel=document.querySelector('#rdFbar .rdsort select');o.opts=sel?sel.options.length:0;
-   const pick=async v=>{const s=document.querySelector('#rdFbar .rdsort select');s.value=v;s.dispatchEvent(new Event('change'));await W(80);return order();};
+   const sel=document.querySelector('#rdView .rdlisth select');o.opts=sel?sel.options.length:0;
+   const pick=async v=>{const s=document.querySelector('#rdView .rdlisth select');s.value=v;s.dispatchEvent(new Event('change'));await W(80);return order();};
    o.sc=await pick('sc');o.nw=await pick('new');o.old=await pick('old');o.sd=await pick('sd');o.tk=await pick('tk');
    o.saved=JSON.parse(localStorage.getItem(VIEWKEY)||'{}').rdSort;
    // تست: سن سیگنال ثبت می‌شود
