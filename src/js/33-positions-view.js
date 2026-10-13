@@ -507,6 +507,14 @@ function buildPosCard(p,opt){
 
   if(p.note)b.appendChild(el('div','reply',esc(p.note)));
 
+  // خروج‌های بخشی/پله‌ای با قیمت و سود هر کدام؛ قیمت هر کدام قابل ویرایش است (مثلاً پله‌ای که روی قیمت تارگت ثبت شد ولی گران‌تر فروختی)
+  {const P=partialsOf(p);if(P.length){
+    const w=el('div','partl','<b>خروج‌های بخشی ('+faN(P.length)+')</b>');
+    P.forEach((x,i)=>{const base=baseMarginOf(p),pc=base>0&&x.margin?Math.round(x.margin/base*100):x.pct||null;
+      const r=el('div','partr','<span>'+faN(i+1)+'. '+(pc?faN(pc)+'٪ ':'')+'روی <b dir="ltr">'+fmtPrice(x.price)+'</b>'+(x.at?' <small>'+jStampFa(new Date(x.at))+'</small>':'')+'</span>'+
+        '<b class="'+cls(x.pnl)+'" dir="ltr">'+fmtUsd(x.pnl)+'</b>');
+      const e=el('button','mark ghost','ویرایش قیمت');e.title='قیمتی که واقعاً این بخش را بستی';e.onclick=()=>partEditPrice(p,i);r.appendChild(e);w.appendChild(r);});
+    b.appendChild(w);}}
   // تاریخچه: هر جابجایی استاپ و هر خروج پله‌ای اینجا می‌ماند
   const parts=partialsOf(p), log=p.log||[];
   if(parts.length||log.length){
@@ -640,6 +648,22 @@ function sheetClose(p){
 }
 
 /* ---- ورق بستن بخشی ---- */
+/* ویرایش قیمت یک خروج بخشی: سودش از نو حساب می‌شود (همان حجم و همان کارمزد)؛ با «برگرداندن» */
+async function partEditPrice(p,i){
+  const x=partialsOf(p)[i];if(!x)return;
+  const v=await askText({title:'قیمت خروج بخش '+faN(i+1)+' · '+p.ticker,msg:'قیمتی که واقعاً این بخش را بستی. سودش از نو حساب می‌شود.',value:String(x.price||'')});
+  if(v==null)return;
+  const px=parseFloat(normDig(String(v)).replace(/,/g,''));
+  if(!(px>0)){toast('قیمت درست نیست','err');return;}
+  if(px===x.price)return;
+  const sign=p.dir==='long'?1:-1,qty=x.qty>0?x.qty:(x.margin||0)*p.lev/p.entry,old=x.price,oldP=x.pnl;
+  undoable('قیمت بخش '+faN(i+1)+' عوض شد',()=>{
+    x.qty=qty;x.price=px;x.pnl=qty*(px-p.entry)*sign-(x.fees||0);
+    // اگر همین بخش پوزیشن را کامل بسته بود، قیمت خروج پوزیشن هم همان است
+    if(p.status==='closed'&&!(p.margin>0)&&p.exitPrice===old&&i===partialsOf(p).length-1)p.exitPrice=px;
+    logAdd(p,'edit','قیمت خروج بخش '+faN(i+1)+' از '+fmtPrice(old)+' به '+fmtPrice(px)+' عوض شد · سود از '+fmtUsd(oldP)+' به '+fmtUsd(x.pnl));
+  });
+}
 function sheetPartial(p){
   const live=pxOf(p);
   let pct=50;
