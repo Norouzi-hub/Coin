@@ -13,7 +13,7 @@ function fmtPrice(n){
 const NFU=new Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtUsd=n=>(n==null||!isFinite(n))?'—':(n<0?'−$':'$')+NFU.format(Math.abs(n));
 const fmtPct=n=>(n==null||!isFinite(n))?'—':(n>0?'+':n<0?'−':'')+Math.abs(n).toFixed(2)+'٪';
-const fmtR=n=>(n==null||!isFinite(n))?'—':(n>0?'+':'−')+Math.abs(n).toFixed(2)+'R';
+const fmtR=n=>(n==null||!isFinite(n))?'—':Math.abs(n)<0.005?'0.00R':(n>0?'+':'−')+Math.abs(n).toFixed(2)+'R';
 const cls=n=>n==null||!isFinite(n)?'m':(n>0.0001?'u':n<-0.0001?'d':'m');
 function relTime(d){
   if(!d)return '';

@@ -1806,6 +1806,7 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .rdit.nw{border-inline-start:3px solid var(--acc)}
 .rdit.taken{border-inline-start:3px solid var(--gold)}
 .rdage{color:var(--tx3);font-size:11px}
+.rdtime{display:flex;gap:6px;align-items:flex-start;font-size:11.5px;color:var(--tx3)}.rdtime svg{width:13px;height:13px;flex:none;margin-top:2px}.rdsort{margin-top:6px}
 .rdtk1 svg{width:12px;height:12px;vertical-align:-2px}
 /* هوای بازار */
 .rdwx{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:14px;background:var(--card);border:1px solid var(--line);border-inline-start:4px solid var(--warn);margin:8px 0}

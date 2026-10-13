@@ -49,7 +49,9 @@ function rbAdd(kind,x,quiet){
     sc:x.sc,stars:x.stars||0,p:x.p!=null?+x.p.toFixed(3):null,exp:x.exp!=null?+x.exp.toFixed(3):null,reg:RD.reg||null,be:false,st:'open',why:x.why||null,
     // عکس عامل‌ها در لحظه‌ی ورود (برای بررسی بعدی در خروجی)
     pv:x.parts?Object.fromEntries(RD_FEAT.filter(k=>x.parts[k]!=null&&x.parts[k]!==0).map(k=>[k,+(+x.parts[k]).toFixed(2)])):null,
-    ex:kind==='test'?rbExEff(x.dir):(RD.exD&&RD.exD[x.dir]||RD.ex||'tp'),x:exNew(),hold:rdHz().hold,lim:E0,sig};
+    ex:kind==='test'?rbExEff(x.dir):(RD.exD&&RD.exD[x.dir]||RD.ex||'tp'),x:exNew(),hold:rdHz().hold,lim:E0,sig,
+    // شروع سیگنال (بسته شدن اولین کندلی که همین جهت را داد): برای سنجش «سیگنال تازه یا چندساعته»
+    sn:x.since||null};
   if(x.parts){const c=rdChkOf(x.parts,x.dir,pl.sd,true);it.ck={n:c.n,k:c.k,it:c.it.map(v=>v==null?null:v?1:0)};}
   if(x.vl){const tg=volTarget(x.vl.vp,pl.E,x.dir,pl.sd),st=x.vl.st&&x.vl.st[x.dir];it.vl={tg:tg||null,st:st&&(pl.E-st)*(x.dir==='long'?1:-1)>0?st:null};}
   if(!fill&&dl){Object.assign(it,{st:'wait',ct:now,dl});rbPend().push(it);RBLC.set(it.id,now);rbSave();
@@ -357,6 +359,21 @@ function rbCkHtml(done){
     '</tbody></table></div><div class="hint">هر خانه: میانگین R، درصد برد و تعداد. بندها: '+RD_CK.map(([,t,d])=>'<b>'+t+'</b> ('+esc(d)+')').join('؛ ')+'. '+
     'این چک‌لیست از تحلیل همین تست‌های قبلی ساخته شده، پس روی آن‌ها طبیعتاً خوب درمی‌آید؛ حکم واقعی را تست‌های بعد از این می‌دهند. تست‌های قدیمی از عامل‌های ثبت‌شده‌ی لحظه‌ی ورود حساب شده‌اند.</div></details>';
 }
+/* نتیجه به تفکیک سن سیگنال در لحظه‌ی ورود (از شروع سیگنال تا ثبت تست): آیا سیگنالی که ساعت‌هاست روشن است بدتر از تازه است؟
+   سن فقط از وقتی ثبت می‌شود که این جدول آمد (it.sn)؛ تست‌های قدیمی‌تر در آن نیستند */
+const RB_AGEG=[['تازه (تا 2 ساعت)',h=>h<=2],['2 تا 6 ساعت',h=>h>2&&h<=6],['6 تا 24 ساعت',h=>h>6&&h<=24],['بیش از 24 ساعت',h=>h>24]];
+const rbAgeH=it=>it.sn&&it.t>=it.sn-36e5?Math.max(0,(it.t-it.sn)/36e5):null;
+function rbAgeHtml(done){
+  const L=done.filter(it=>it.R!=null&&rbAgeH(it)!=null);
+  const cell=A=>{if(!A.length)return '<td class="num">—</td>';const r=A.reduce((a,it)=>a+it.R,0),w=A.filter(it=>it.R>0).length;
+    return '<td class="num"><b class="'+cls(r/A.length)+'" dir="ltr">'+fmtR(r/A.length)+'</b><small> '+faN(Math.round(w/A.length*100))+'٪ · '+faN(A.length)+'</small></td>';};
+  let h='<details class="sec sub2 rbagew"><summary>نتیجه به تفکیک سن سیگنال</summary>';
+  if(L.length<5)h+='<div class="hint">از حالا با هر تست ثبت می‌شود که سیگنال چند ساعت پیش شروع شده بود. بعد از 5 تست بسته‌ی تازه، جدول همین‌جا می‌آید ('+faN(L.length)+' تا تا الان).</div>';
+  else h+='<div class="tscroll"><table class="tp xtab"><thead><tr><th>سن سیگنال</th><th>لانگ</th><th>شورت</th><th>همه</th></tr></thead><tbody>'+
+    RB_AGEG.map(([t,f])=>{const A=L.filter(it=>f(rbAgeH(it)));return '<tr><td>'+t+'</td>'+cell(A.filter(it=>it.dir==='long'))+cell(A.filter(it=>it.dir==='short'))+cell(A)+'</tr>';}).join('')+
+    '</tbody></table></div><div class="hint">هر خانه: میانگین R، درصد برد و تعداد. سن = از بسته شدن اولین کندلی که همین جهت را داد تا لحظه‌ی ثبت. ورود و استاپ همیشه از آخرین کندل است؛ سؤال این است که دیر رسیدن به یک سیگنال ضرر دارد یا نه.</div>';
+  return h+'</details>';
+}
 /* سفارش Limit منتظر: قیمت Limit، فاصله‌ی قیمت الان، و مهلت */
 function rbPendRowHtml(it,live=true){
   const px=PRICES.get(it.tk),sn=it.dir==='long'?1:-1,far=px>0?(px-it.E)/it.E*100*sn:null,left=it.dl-Date.now();
@@ -377,7 +394,7 @@ function rbHtml(kind){
           [nC.length?faN(nC.length)+' تست بسته شد · جمع <b class="'+cls(r)+'" dir="ltr">'+fmtR(r)+'</b> <b class="'+cls(r)+'" dir="ltr">'+fmtUsd(rbUsd(nC))+'</b>':'',nO.length?faN(nO.length)+' تست تازه باز شد':''].filter(Boolean).join(' · ')+
           '. همه با نشان <span class="pill nw">تازه</span>.</span></div>';}}
     h+=rbSumHtml(done,'نتیجه');
-    h+=rbCkHtml(done);
+    h+=rbCkHtml(done)+rbAgeHtml(done);
     if(open.length){const px=it=>PRICES.get(it.tk),liv=open.filter(it=>px(it)>0),sum=liv.reduce((a,it)=>a+rbLiveR(it,px(it)),0),usd=rbUsd(liv,it=>rbLiveR(it,px(it))),worst=rbUsd(open,rbStopR);
       h+='<div class="rbsum"><b>بازها الان</b><span>'+faN(open.length)+' معامله · جمع <b class="'+cls(sum)+'" dir="ltr">'+fmtR(sum)+'</b> · به دلار <b class="'+cls(sum)+'" dir="ltr">'+fmtUsd(usd)+'</b></span>'+
         '<span class="rbworst">اگر همه‌ی بازها به استاپِ الانشان بخورند: <b class="'+cls(worst)+'" dir="ltr">'+fmtUsd(worst)+'</b>'+(rbFix()?' · مارجین درگیر <b dir="ltr">'+fmtUsd(open.length*S.tMg)+'</b>':'')+'</span>'+
@@ -412,6 +429,7 @@ function rbHtml(kind){
       return '<tr><td>'+t+'</td><td><b class="'+cls(o.r/o.n)+'" dir="ltr">'+fmtR(o.r/o.n)+'</b><small>'+faN(Math.round(o.w/o.n*100))+'٪ برد</small><small class="n">'+faN(o.n)+' بار</small></td><td>'+
         (e!=null?'<b class="'+cls(e)+'" dir="ltr">'+fmtR(e)+'</b>':'<small>—</small>')+'</td></tr>';}).join('')+'</tbody></table>';
     for(const d of ['long','short']){const G=done.filter(x=>x.dir===d);if(G.length)h+=rbSumHtml(G,d==='long'?'لانگ‌ها':'شورت‌ها');}
+    h+=rbAgeHtml(done);
   }
   {const P=rbPend().filter(it=>it.k===k);
     if(open.length||P.length)h+='<details class="sec sub2"><summary>باز ('+faN(open.length)+')'+(P.length?' · منتظر Limit ('+faN(P.length)+')':'')+'</summary>'+P.map(it=>rbPendRowHtml(it,false)).join('')+open.map(it=>rbRowHtml(it,false)).join('')+'</details>';}

@@ -227,7 +227,8 @@ function rdParts(P,i){
   return {p,m};
 }
 const rdVec=p=>RD_CF.map(k=>p[k]==null?0:p[k]);
-const rdHH=t=>{const d=new Date(t);return String(d.getHours()).padStart(2,'0')+':00';};
+// ساعت واقعی کندل به وقت گوشی (با دقیقه: در ایران کندل‌ها سر :30 بسته می‌شوند؛ قبلاً «:00» ثابت بود و 13:30 را 13:00 نشان می‌داد)
+const rdHH=t=>{const d=new Date(t);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
 const rdBucket=s=>s>=95?'95+':s>=85?'85-95':'70-85';
 /* ---- نقشه‌های خروج (همه به واحد R) ----
    هر سه روی همان سیگنال‌ها در آزمون پیش‌رونده سنجیده می‌شوند و بهترین (بیشترین میانگین R
@@ -1244,8 +1245,10 @@ function rdRowHtml(x,i){
       '<button class="rdfavb'+(rdIsFav(x.tk)?' on':'')+'" data-a="fav" title="واچ‌لیست" aria-label="واچ‌لیست">'+(rdIsFav(x.tk)?'★':'☆')+'</button><b dir="ltr" class="rdtk">'+esc(x.tk)+'</b>'+(rk?'<small class="rdcap" title="رتبه‌ی ارزش بازار">#'+rk+'</small>':'')+
       '<span class="pill '+x.dir+'">'+dn+'</span>'+
       '<span class="rdsc '+(x.dir==='long'?'u':'d')+'">امتیاز '+faN(x.sc)+'</span>'+rdStarHtml(x.stars)+
-      (ns?(ns.nw?'<span class="pill nw" title="در همین بررسی آخر پیدا شد">تازه</span>':'<small class="rdage" title="از کِی این سیگنال هست">'+ageTxt(ns.t)+'</small>'):'')+'</div>'+
+      (ns?(ns.nw?'<span class="pill nw" title="در همین بررسی آخر پیدا شد">تازه</span>':'<small class="rdage" title="از کِی این سیگنال بی‌وقفه برقرار است">سیگنال از '+ageTxt(ns.t)+'</small>'):'')+'</div>'+
     kv+
+    // سیگنال قدیمی‌تر از آخرین کندل: ورود و استاپ مال آخرین کندل است، نه شروع سیگنال
+    (x.pl&&x.t&&x.since&&x.since<x.t+18e5?'<div class="glnum rdtime">'+ic('clock')+'<span>ورود و استاپ از کندل ساعت <b dir="ltr">'+rdHH(x.t+36e5)+'</b> (آخرین بررسی)؛ خود سیگنال از ساعت <b dir="ltr">'+rdHH(x.since)+'</b> برقرار است.</span></div>':'')+
     (tags.length?'<div class="glnum rdwhy">'+tags.join('')+'</div>':'')+
     (x.dir!=='wait'&&x.pl?rdChkHtml(rdChkOf(x.parts,x.dir,x.pl.sd,true))+rdVolHtml(x):'')+
     '<div class="glact">'+(z?'<button class="btn sm '+(x.ok?'ok':'')+'" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
@@ -1376,7 +1379,7 @@ function rdHtml(){
     '<div class="rdmr"><small>بررسی خودکار</small><div class="pbpick">'+Object.entries(RD_AUTO).map(([k,t])=>'<button class="pbc'+(rdAutoK()===k?' on':'')+'" data-rdauto="'+k+'">'+t+'</button>').join('')+'</div></div>'+
     '<div class="hint">وقتی «بازار» را باز می‌کنی. هر بررسی کامل برای هر ارز حدود 6 درخواست است (کندل، جریان پول، فاندینگ)؛ «واچ‌لیست» فقط همان‌ها را از شبکه می‌گیرد و بقیه از حافظه‌ی گوشی.</div></details>';
   h+=rdMktHtml();
-  const okL=act.filter(x=>x.ok), weak=act.filter(x=>!x.ok);let i=0;
+  const okL=rdSortL(act.filter(x=>x.ok)), weak=rdSortL(act.filter(x=>!x.ok));let i=0;
   if(okL.length)h+='<div class="rdsh go"><b>قابل گرفتن</b><i>'+faN(okL.length)+'</i></div>'+okL.map(x=>rdRowHtml(x,i++)).join('');
   if(weak.length)h+='<div class="rdsh"><b>بی اعتبار کافی</b><i>'+faN(weak.length)+'</i><small>فقط برای «تست»</small></div>'+weak.map(x=>rdRowHtml(x,i++)).join('');
   if(!act.length&&RD.at)h+='<div class="empty">'+(hid?'با فیلتر بالای صفحه سیگنالی نماند.':VIEW.mktFav?'هیچ‌کدام از ارزهای واچ‌لیست الان سیگنال ندارد؛ «انتخاب ارزها» ← «بررسی واچ‌لیست».':'الان هیچ ارزی امتیاز '+faN(RD_MIN)+'+ ندارد.')+'</div>';
@@ -1406,6 +1409,19 @@ function rdFbar(){
   chip(row,'واگرایی هم‌جهت',!!VIEW.mktDiv,()=>set({mktDiv:!VIEW.mktDiv}));
   chip(row,'★ واچ‌لیست',!!VIEW.mktFav,()=>set({mktFav:!VIEW.mktFav}));
   bar.appendChild(row);
+  const so=el('label','psort rdsort','<span>مرتب‌سازی</span><select aria-label="مرتب‌سازی سیگنال‌ها">'+RD_SORTS.map(([k,t])=>'<option value="'+k+'"'+(rdSortK()===k?' selected':'')+'>'+t+'</option>').join('')+'</select>');
+  so.querySelector('select').onchange=e=>set({rdSort:e.target.value});bar.appendChild(so);
+}
+/* مرتب‌سازی سیگنال‌ها (روی دستگاه می‌ماند). گروه‌های «قابل گرفتن» و «بی اعتبار کافی» سر جایشان می‌مانند؛ مرتب‌سازی داخل هر گروه است */
+const RD_SORTS=[['def','پیش‌فرض (اعتبار)'],['sc','امتیاز بیشتر'],['new','تازه‌ترین سیگنال'],['old','قدیمی‌ترین سیگنال'],['ck','چک‌لیست بیشتر'],
+  ['p','احتمال مدل بیشتر'],['sd','استاپ نزدیک‌تر'],['sdw','استاپ دورتر'],['tk','نماد (الفبا)']];
+const rdSortK=()=>RD_SORTS.some(([k])=>k===VIEW.rdSort)?VIEW.rdSort:'def';
+function rdSortL(A){
+  const k=rdSortK();if(k==='def')return A;
+  const sn=x=>x.since||0, ck=x=>x.pl?rdChkOf(x.parts,x.dir,x.pl.sd,true).n:-1, sd=x=>x.pl?x.pl.sd:Infinity;
+  const f={sc:(a,b)=>b.sc-a.sc,new:(a,b)=>sn(b)-sn(a)||b.sc-a.sc,old:(a,b)=>(sn(a)||Infinity)-(sn(b)||Infinity)||b.sc-a.sc,ck:(a,b)=>ck(b)-ck(a)||b.sc-a.sc,
+    p:(a,b)=>(b.p??-1)-(a.p??-1),sd:(a,b)=>sd(a)-sd(b),sdw:(a,b)=>(b.pl?b.pl.sd:-1)-(a.pl?a.pl.sd:-1),tk:(a,b)=>String(a.tk).localeCompare(String(b.tk))}[k];
+  return A.slice().sort(f);
 }
 function renderRadar(){const g=$('#rdView');if(!g)return;paintRadar(g);}
 function paintRadar(g){

@@ -5,7 +5,7 @@
    - «اگر سریع خارج می‌شدیم»: با هر آستانه‌ی سود روی مارجین (5٪، 10٪، …) یا R، جمع نتیجه چه می‌شد
      (اگر در یک کندل هم استاپ ممکن بوده هم آستانه، استاپ حساب می‌شود؛ بدبینانه)
    - خروجی JSON با مسیر کامل قیمت، برای بررسی بیرون از برنامه. */
-const fmtR0=r=>Math.abs(r)<0.005?'0.00R':fmtR(r);
+const fmtR0=fmtR;
 const RBL={on:false,done:0,n:0,res:null,at:0,auto:false};
 const RBL_ROE=[5,10,15,20,30,50], RBL_R=[0.5,1,1.5,2,3];
 /* کندل‌های 5 دقیقه‌ای از ورود تا 24 ساعت بعد (یا تا الان)؛ مسیرِ کامل‌شده در IndexedDB می‌ماند */
@@ -205,7 +205,7 @@ function rbLabExport(){
       weights:{long:W('long'),short:W('short')},drop:{long:M.long&&M.long.drop||null,short:M.short&&M.short.drop||null}},
     trades:res.map(x=>{const {it,C,st}=x,t0=C.length?C[0].t:it.t;
       return {id:it.id,kind:it.k,tk:it.tk,dir:it.dir,t:new Date(it.t).toISOString(),E:it.E,SL:it.SL,sd:+it.sd.toFixed(5),rr:it.rr,ex:it.ex||null,sc:it.sc,stars:it.stars,p:it.p,exp:it.exp,reg:it.reg,
-        why:it.why||null,pv:it.pv||null,ck:(()=>{const c=rbCk(it);return c?{n:c.n,k:c.k,it:c.it}:null;})(),hold:rbHoldH(it),lim:it.lim??null,sigT:it.sig?new Date(it.sig).toISOString():null,st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
+        why:it.why||null,pv:it.pv||null,ck:(()=>{const c=rbCk(it);return c?{n:c.n,k:c.k,it:c.it}:null;})(),hold:rbHoldH(it),lim:it.lim??null,sigT:it.sig?new Date(it.sig).toISOString():null,sinceT:it.sn?new Date(it.sn).toISOString():null,ageH:rbAgeH(it)!=null?+rbAgeH(it).toFixed(1):null,st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
         vol:x.vol?{tg:x.vol.tg,st:x.vol.st,bo:x.vol.bo,late:x.vol.late,A:x.vol.A,B:x.vol.B,C:x.vol.C}:null,
         lev:st.lev,plans:x.pl?Object.fromEntries(Object.entries(x.pl).map(([n,v])=>[n,v.st==='open'?{R:v.R,open:true}:v.R])):null,usdPerR:+rbUsdR(it).toFixed(3),usd:it.R!=null?+(it.R*rbUsdR(it)).toFixed(2):null,stats:{mfe:+st.mfe.toFixed(3),tMfeMin:st.tMfe?Math.round((st.tMfe-it.t)/6e4):null,mfe24:+st.mfe24.toFixed(3),mae:+st.mae.toFixed(3),
           stopMin:st.stopAt?Math.round((st.stopAt-it.t)/6e4):null,touchMin:Object.fromEntries(Object.entries(st.touch).map(([k,v])=>[k,Math.round((v-it.t)/6e4)])),full:st.full},
