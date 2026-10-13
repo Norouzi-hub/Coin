@@ -777,7 +777,7 @@ async function rdScan(mode,add){
       toast([nc.length?'کندل نیامد، از فهرست بیرون رفت: '+nc.join('، '):'',al.length?'صرافی زیر این نماد ارز دیگری دارد (قیمت با CoinGecko نمی‌خواند)، بیرون رفت: '+al.join('، '):'',
         pg.length?'استیبل‌کوین است (قیمتش تکان نمی‌خورد)، بیرون رفت: '+pg.join('، '):''].filter(Boolean).join(' · '),'err');}
     if(RDQ.over)toast('سقف فهرست '+faN(RD_MAX)+' ارز است؛ '+faN(RDQ.over)+' ارز اضافه نشد','err');
-    rdLive(RD.list);RD.at=Date.now();rdSave();
+    rdLive(RD.list);RD.at=Date.now();try{rdWxTurn();}catch(e){}rdSave();
     try{rbLogAuto();}catch(e){}
   }finally{RDQ.on=false;RDQ.msg='';RDQ.cur.clear();clearInterval(RDQ.iv);workEnd();if(jobStopped('radar'))RDQ.next=null;jobEnd('radar');}
   if(RDQ.next){const m=RDQ.next;RDQ.next=null;setTimeout(()=>rdScan(m),50);}
@@ -1404,6 +1404,42 @@ function rdAccBind(g){
   // دکمه‌ی داخل سرکارت کارت را باز و بسته نکند
   g.querySelectorAll('details.rdacc>summary button').forEach(b=>b.addEventListener('click',e=>e.preventDefault()));
 }
+/* ---- برگشت هوا: وقتی هوا برای جهت پوزیشن‌های باز «نامناسب» می‌شود ----
+   شب 12 اکتبر، 8 تست لانگ در 2.5 ساعت با ریزش آلت‌ها استاپ خوردند. قاعده: اگر هوا برای لانگ (یا شورت) نامناسب شد،
+   برای بازهای همان جهت پیشنهاد «ببند یا ریسک‌فری کن». فعلاً فقط هشدار است؛ اثرش روی مسیر واقعی تست‌ها در آزمایشگاه سنجیده می‌شود. */
+/* تاریخچه‌ی ساعتی هوا: ساعت (شروع کندل یک‌ساعته) ← عدد هوا؛ از عامل‌های کل بازار (RDMF، بعد از هر بررسی در حافظه) و روند 4 ساعته‌ی بیت‌کوین */
+let RDWXH=null;
+async function rdWxHist(){
+  if(!RDMF.size)return null;
+  if(RDWXH&&RDWXH.n===RDMF.size&&RDWXH.at===RD.at)return RDWXH.m;
+  const st=await idbGet('rdc:BTC');const rows=st&&st.rows;if(!rows||rows.length<300)return null;
+  const H=36e5,B=rows.map(r=>({t:r[0],o:r[1],h:r[2],l:r[3],c:r[4],v:r[5]})),BF=swAggr(B,4*H),bf=BF.map(k=>k.c),b20=emaArr(bf,20),b50=emaArr(bf,50);
+  const bt=new Map(BF.map((k,j)=>[k.t,j>=50?clamp1((b20[j]-b50[j])/b50[j]/0.01):null]));
+  const m=new Map();
+  for(const [t,mf] of RDMF){const b=bt.get(Math.floor((t+H)/(4*H))*4*H-4*H)??0,w=rdWxOf(b,mf[RD_IMTOT],mf[RD_IMMC],mf[RD_IMT3],mf[RD_IMUD]);if(w!=null)m.set(t,w);}
+  RDWXH={m,n:RDMF.size,at:RD.at};return m;
+}
+/* بعد از هر بررسی: اگر هوای یک جهت تازه «نامناسب» شد و در همان جهت پوزیشن واقعی یا تست باز هست، اعلان و کادر هشدار */
+function rdWxTurn(){
+  const prev=RD.wxp||{},cur={long:rdWxDir('long'),short:rdWxDir('short')};
+  for(const d of ['long','short']){
+    if(cur[d]!=='no'){if(RD.wxa&&RD.wxa.d===d)RD.wxa=null;continue;}
+    if(prev[d]==='no'||prev[d]==null)continue;
+    const nR=(DB.positions||[]).filter(p=>p.status==='open'&&p.dir===d).length,nT=RB.items.filter(it=>it.k==='test'&&it.st==='open'&&it.dir===d).length;
+    RD.wxa={d,t:Date.now(),nR,nT};
+    if(nR||nT){const dn=d==='long'?'لانگ':'شورت',m='هوا برای '+dn+' نامناسب شد: '+[nR?faN(nR)+' پوزیشن '+dn+' واقعی':'',nT?faN(nT)+' تست '+dn:''].filter(Boolean).join(' و ')+' باز داری. ببند یا ریسک‌فری کن.';
+      toast(m,'err');try{notify('هوای بازار برگشت',m,'rdwx');}catch(e){}}
+  }
+  if(cur.long!=null||cur.short!=null)RD.wxp=cur;
+}
+function rdWxTurnHtml(){
+  const a=RD.wxa;if(!a||rdWxDir(a.d)!=='no')return '';
+  const dn=a.d==='long'?'لانگ':'شورت',nR=(DB.positions||[]).filter(p=>p.status==='open'&&p.dir===a.d).length,nT=RB.items.filter(it=>it.k==='test'&&it.st==='open'&&it.dir===a.d).length;
+  if(!nR&&!nT)return '';
+  return '<div class="rdwarn bad rdwxturn"><span><b>هوا برای '+dn+' برگشت</b> (از ساعت <bdi dir="ltr">'+rbHM(a.t)+'</bdi>): '+[nR?faN(nR)+' پوزیشن '+dn+' واقعی':'',nT?faN(nT)+' تست '+dn:''].filter(Boolean).join(' و ')+
+    ' باز است. پیشنهاد: زیان‌ده‌ها را ببند و سودده‌ها را ریسک‌فری کن (استاپ روی ورود). شب 12 اکتبر 8 لانگ با هم استاپ خوردند. اثر این قاعده روی تست‌ها در «آزمایشی › آزمایشگاه خروج».</span>'+
+    (nR?'<button class="btn sm" data-rdgopos="1">'+ic('wallet')+'<span>پوزیشن‌ها</span></button>':'')+'</div>';
+}
 /* هوای بازار تاشو: بسته = حکم و چراغ لانگ/شورت و عدد کل؛ باز = توضیح، چهار جزء، اثر در گذشته و کلید فیلتر */
 function rdWxAccHtml(){
   const o=rdWxNow();
@@ -1448,7 +1484,7 @@ function rdHtml(){
   const fv=x=>!VIEW.mktFav||rdIsFav(x.tk);
   const fd=VIEW.mktDir||'all', sig=L.filter(x=>x.dir!=='wait'), act=sig.filter(x=>(fd==='all'||x.dir===fd)&&(!VIEW.mktOk||x.ok)&&(!VIEW.mktDiv||rdDivOf(x)>0)&&(!VIEW.mktReal||(rdRuleX(x)||{}).pass)&&fv(x)),
     hid=sig.length-act.length, wait=L.filter(x=>x.dir==='wait').filter(fv);
-  let h='<div class="glb">'+rdHeroHtml(L)+rdWxAccHtml();
+  let h='<div class="glb">'+rdWxTurnHtml()+rdHeroHtml(L)+rdWxAccHtml();
   // انتخاب ارزها: بازه‌ی رتبه، نماد، واچ‌لیست
   const LL=rdListOf();
   let pick=""+
@@ -1529,6 +1565,7 @@ function paintRadar(g){
   g.querySelectorAll('[data-rdhelp]').forEach(b=>b.onclick=rdGuide);
   g.querySelectorAll('[data-gos]').forEach(b=>b.onclick=()=>{openPanel('setVeil');setTimeout(()=>{const f=$('#sFeeMk');if(f){const d=f.closest('details');if(d)d.open=true;f.scrollIntoView({block:'center',behavior:'smooth'});}},150);});
   mkStripBind(g);rdWxBind(g,()=>paintRadar(g));rdAccBind(g);
+  {const gp=g.querySelector('[data-rdgopos]');if(gp)gp.onclick=()=>go('positions');}
   {const so=g.querySelector('.rdlisth select');if(so)so.onchange=e=>{VIEW.rdSort=e.target.value;lsSet(VIEWKEY,VIEW);renderRadar();};}
   const fs=g.querySelector('[data-rdfavscan]');if(fs)fs.onclick=()=>{VIEW.mktFav=true;lsSet(VIEWKEY,VIEW);rdScan('add',RDFAV.slice());renderRadar();};
   const rs=g.querySelector('[data-rdreset]');if(rs)rs.onclick=async()=>{if(!(await askConfirm({title:'فهرست رادار از نو',tone:'danger',msg:'فهرست به '+faN(RD_STEP)+' ارز اول'+(RDFAV.length?' و واچ‌لیست':'')+' برمی‌گردد و بقیه‌ی ارزها از رادار بیرون می‌روند.',ok:'از نو',cancel:'نه'})))return;

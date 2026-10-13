@@ -27,7 +27,7 @@ function renderFocus(){
   const g=$('#focusBody');if(!g)return;
   const d=focusTake(), now=Date.now();
   let h='<div class="focus">';
-  h+=rdWxHtml(true);
+  h+=rdWxTurnHtml()+rdWxHtml(true);
   if(!RD.at||Date.now()-RD.at>2*36e5)h+='<div class="srow"><button class="btn sm" data-fc="scan">'+ic('refresh')+'<span>تازه کردن هوای بازار</span></button></div>';
   // سیگنال‌های قابل گرفتن
   h+='<div class="sechd">سیگنال‌های قابل گرفتن ('+faN(d.take.length)+')</div>';

@@ -10840,7 +10840,7 @@ async function rdScan(mode,add){
       toast([nc.length?'کندل نیامد، از فهرست بیرون رفت: '+nc.join('، '):'',al.length?'صرافی زیر این نماد ارز دیگری دارد (قیمت با CoinGecko نمی‌خواند)، بیرون رفت: '+al.join('، '):'',
         pg.length?'استیبل‌کوین است (قیمتش تکان نمی‌خورد)، بیرون رفت: '+pg.join('، '):''].filter(Boolean).join(' · '),'err');}
     if(RDQ.over)toast('سقف فهرست '+faN(RD_MAX)+' ارز است؛ '+faN(RDQ.over)+' ارز اضافه نشد','err');
-    rdLive(RD.list);RD.at=Date.now();rdSave();
+    rdLive(RD.list);RD.at=Date.now();try{rdWxTurn();}catch(e){}rdSave();
     try{rbLogAuto();}catch(e){}
   }finally{RDQ.on=false;RDQ.msg='';RDQ.cur.clear();clearInterval(RDQ.iv);workEnd();if(jobStopped('radar'))RDQ.next=null;jobEnd('radar');}
   if(RDQ.next){const m=RDQ.next;RDQ.next=null;setTimeout(()=>rdScan(m),50);}
@@ -11467,6 +11467,42 @@ function rdAccBind(g){
   // دکمه‌ی داخل سرکارت کارت را باز و بسته نکند
   g.querySelectorAll('details.rdacc>summary button').forEach(b=>b.addEventListener('click',e=>e.preventDefault()));
 }
+/* ---- برگشت هوا: وقتی هوا برای جهت پوزیشن‌های باز «نامناسب» می‌شود ----
+   شب 12 اکتبر، 8 تست لانگ در 2.5 ساعت با ریزش آلت‌ها استاپ خوردند. قاعده: اگر هوا برای لانگ (یا شورت) نامناسب شد،
+   برای بازهای همان جهت پیشنهاد «ببند یا ریسک‌فری کن». فعلاً فقط هشدار است؛ اثرش روی مسیر واقعی تست‌ها در آزمایشگاه سنجیده می‌شود. */
+/* تاریخچه‌ی ساعتی هوا: ساعت (شروع کندل یک‌ساعته) ← عدد هوا؛ از عامل‌های کل بازار (RDMF، بعد از هر بررسی در حافظه) و روند 4 ساعته‌ی بیت‌کوین */
+let RDWXH=null;
+async function rdWxHist(){
+  if(!RDMF.size)return null;
+  if(RDWXH&&RDWXH.n===RDMF.size&&RDWXH.at===RD.at)return RDWXH.m;
+  const st=await idbGet('rdc:BTC');const rows=st&&st.rows;if(!rows||rows.length<300)return null;
+  const H=36e5,B=rows.map(r=>({t:r[0],o:r[1],h:r[2],l:r[3],c:r[4],v:r[5]})),BF=swAggr(B,4*H),bf=BF.map(k=>k.c),b20=emaArr(bf,20),b50=emaArr(bf,50);
+  const bt=new Map(BF.map((k,j)=>[k.t,j>=50?clamp1((b20[j]-b50[j])/b50[j]/0.01):null]));
+  const m=new Map();
+  for(const [t,mf] of RDMF){const b=bt.get(Math.floor((t+H)/(4*H))*4*H-4*H)??0,w=rdWxOf(b,mf[RD_IMTOT],mf[RD_IMMC],mf[RD_IMT3],mf[RD_IMUD]);if(w!=null)m.set(t,w);}
+  RDWXH={m,n:RDMF.size,at:RD.at};return m;
+}
+/* بعد از هر بررسی: اگر هوای یک جهت تازه «نامناسب» شد و در همان جهت پوزیشن واقعی یا تست باز هست، اعلان و کادر هشدار */
+function rdWxTurn(){
+  const prev=RD.wxp||{},cur={long:rdWxDir('long'),short:rdWxDir('short')};
+  for(const d of ['long','short']){
+    if(cur[d]!=='no'){if(RD.wxa&&RD.wxa.d===d)RD.wxa=null;continue;}
+    if(prev[d]==='no'||prev[d]==null)continue;
+    const nR=(DB.positions||[]).filter(p=>p.status==='open'&&p.dir===d).length,nT=RB.items.filter(it=>it.k==='test'&&it.st==='open'&&it.dir===d).length;
+    RD.wxa={d,t:Date.now(),nR,nT};
+    if(nR||nT){const dn=d==='long'?'لانگ':'شورت',m='هوا برای '+dn+' نامناسب شد: '+[nR?faN(nR)+' پوزیشن '+dn+' واقعی':'',nT?faN(nT)+' تست '+dn:''].filter(Boolean).join(' و ')+' باز داری. ببند یا ریسک‌فری کن.';
+      toast(m,'err');try{notify('هوای بازار برگشت',m,'rdwx');}catch(e){}}
+  }
+  if(cur.long!=null||cur.short!=null)RD.wxp=cur;
+}
+function rdWxTurnHtml(){
+  const a=RD.wxa;if(!a||rdWxDir(a.d)!=='no')return '';
+  const dn=a.d==='long'?'لانگ':'شورت',nR=(DB.positions||[]).filter(p=>p.status==='open'&&p.dir===a.d).length,nT=RB.items.filter(it=>it.k==='test'&&it.st==='open'&&it.dir===a.d).length;
+  if(!nR&&!nT)return '';
+  return '<div class="rdwarn bad rdwxturn"><span><b>هوا برای '+dn+' برگشت</b> (از ساعت <bdi dir="ltr">'+rbHM(a.t)+'</bdi>): '+[nR?faN(nR)+' پوزیشن '+dn+' واقعی':'',nT?faN(nT)+' تست '+dn:''].filter(Boolean).join(' و ')+
+    ' باز است. پیشنهاد: زیان‌ده‌ها را ببند و سودده‌ها را ریسک‌فری کن (استاپ روی ورود). شب 12 اکتبر 8 لانگ با هم استاپ خوردند. اثر این قاعده روی تست‌ها در «آزمایشی › آزمایشگاه خروج».</span>'+
+    (nR?'<button class="btn sm" data-rdgopos="1">'+ic('wallet')+'<span>پوزیشن‌ها</span></button>':'')+'</div>';
+}
 /* هوای بازار تاشو: بسته = حکم و چراغ لانگ/شورت و عدد کل؛ باز = توضیح، چهار جزء، اثر در گذشته و کلید فیلتر */
 function rdWxAccHtml(){
   const o=rdWxNow();
@@ -11511,7 +11547,7 @@ function rdHtml(){
   const fv=x=>!VIEW.mktFav||rdIsFav(x.tk);
   const fd=VIEW.mktDir||'all', sig=L.filter(x=>x.dir!=='wait'), act=sig.filter(x=>(fd==='all'||x.dir===fd)&&(!VIEW.mktOk||x.ok)&&(!VIEW.mktDiv||rdDivOf(x)>0)&&(!VIEW.mktReal||(rdRuleX(x)||{}).pass)&&fv(x)),
     hid=sig.length-act.length, wait=L.filter(x=>x.dir==='wait').filter(fv);
-  let h='<div class="glb">'+rdHeroHtml(L)+rdWxAccHtml();
+  let h='<div class="glb">'+rdWxTurnHtml()+rdHeroHtml(L)+rdWxAccHtml();
   // انتخاب ارزها: بازه‌ی رتبه، نماد، واچ‌لیست
   const LL=rdListOf();
   let pick=""+
@@ -11592,6 +11628,7 @@ function paintRadar(g){
   g.querySelectorAll('[data-rdhelp]').forEach(b=>b.onclick=rdGuide);
   g.querySelectorAll('[data-gos]').forEach(b=>b.onclick=()=>{openPanel('setVeil');setTimeout(()=>{const f=$('#sFeeMk');if(f){const d=f.closest('details');if(d)d.open=true;f.scrollIntoView({block:'center',behavior:'smooth'});}},150);});
   mkStripBind(g);rdWxBind(g,()=>paintRadar(g));rdAccBind(g);
+  {const gp=g.querySelector('[data-rdgopos]');if(gp)gp.onclick=()=>go('positions');}
   {const so=g.querySelector('.rdlisth select');if(so)so.onchange=e=>{VIEW.rdSort=e.target.value;lsSet(VIEWKEY,VIEW);renderRadar();};}
   const fs=g.querySelector('[data-rdfavscan]');if(fs)fs.onclick=()=>{VIEW.mktFav=true;lsSet(VIEWKEY,VIEW);rdScan('add',RDFAV.slice());renderRadar();};
   const rs=g.querySelector('[data-rdreset]');if(rs)rs.onclick=async()=>{if(!(await askConfirm({title:'فهرست رادار از نو',tone:'danger',msg:'فهرست به '+faN(RD_STEP)+' ارز اول'+(RDFAV.length?' و واچ‌لیست':'')+' برمی‌گردد و بقیه‌ی ارزها از رادار بیرون می‌روند.',ok:'از نو',cancel:'نه'})))return;
@@ -12189,6 +12226,42 @@ function rbVolTable(res){
     'استاپ ساختاری: زیر کف کندل شکست اگر شکست با حجم بوده، وگرنه زیر کف 6 ساعت اخیر. R هر روش نسبت به ریسکِ همان استاپ است (با ریسک دلاری ثابت، حجم با استاپ عوض می‌شود). '+
     faN(bo)+' تست شکست با حجم داشتند و '+faN(lt)+' تست حجم دیررس.</div>';
 }
+/* برگشت هوا روی مسیر واقعی یک تست: همان نقشه‌ای که اجرا شد (rbStep روی یک کپی)، و از ساعتی که هوای همان جهت «نامناسب» شد
+   (فقط اگر لحظه‌ی ورود نامناسب نبود): الف) باقی را با قیمت همان لحظه ببند؛ ب) اگر در ضرر است ببند، اگر در سود است استاپ را روی ورود بگذار.
+   W: تاریخچه‌ی ساعتی هوا (شروع کندل ← عدد) */
+function rbWxSim(it,C,W){
+  if(!W||!W.size)return null;
+  const H=36e5,M5=3e5,t1=Math.floor(it.t/M5)*M5+M5,end=it.t+rbHoldH(it)*36e5,full=C.length>0&&C[C.length-1].t>=end-2*M5,s=it.dir==='long'?1:-1;
+  const w0=W.get(Math.floor(it.t/H)*H-H);if(w0==null)return null;
+  const armed=rdWxCls(w0,it.dir)!=='no';
+  const run=mode=>{const y={id:it.id,k:it.k,tk:it.tk,dir:it.dir,t:it.t,E:it.E,SL:it.SL,TP:it.TP,sd:it.sd,rr:it.rr,st:'open',ex:it.ex||'tp',x:exNew(),be:false};
+    let last=null,trig=null,bk=false;
+    for(const k of C){if(k.t<t1)continue;if(k.t>=end)break;
+      if(armed&&!trig&&k.t%H===0){const w=W.get(k.t-H);if(w!=null&&rdWxCls(w,it.dir)==='no'){trig=k.t;
+        if(mode==='x'||rbLiveR(y,k.o)<=0){rbClose(y,'man',k.o,k.t);break;}bk=true;}}
+      if(bk&&(s>0?k.l<=it.E:k.h>=it.E)){rbClose(y,'man',it.E,k.t+M5);break;}
+      last=k;if(rbStep(y,k.h,k.l,k.t+M5,k.c))break;}
+    if(y.st!=='open')return {R:y.R,how:y.st,trig};
+    return last?{R:+rbLiveR(y,last.c).toFixed(3),how:full?'time':'open',trig}:null;};
+  const A=run('x'),B=run('b');
+  return {armed,trig:A&&A.trig||null,A,B};
+}
+function rbWxTable(res,noData){
+  const L=res.filter(x=>x.wxx&&x.it.st!=='open'&&x.it.R!=null);
+  if(!L.length)return '<div class="sechd">برگشت هوا: ببند یا ریسک‌فری</div><div class="hint">'+(noData?'تاریخچه‌ی هوا در حافظه نیست؛ اول در «بازار» یک بار «تازه کن» بزن، بعد دوباره «تحلیل مسیر قیمت».':'تستی با داده‌ی هوای لحظه‌ی ورود نیست.')+'</div>';
+  const av=A=>A.length?A.reduce((a,v)=>a+v,0)/A.length:null;
+  const row=(lab,f,on)=>{const V=L.map(x=>({v:f(x),d:x.it.dir})).filter(o=>o.v!=null&&o.v.how!=='open');if(!V.length)return '';
+    const r=V.reduce((a,o)=>a+o.v.R,0),w=V.filter(o=>o.v.R>0).length,lo=av(V.filter(o=>o.d==='long').map(o=>o.v.R)),sh=av(V.filter(o=>o.d==='short').map(o=>o.v.R));
+    const c=v=>v==null?'<td class="num">—</td>':'<td class="num '+cls(v)+'"><bdi>'+fmtR(v)+'</bdi></td>';
+    return '<tr'+(on?' class="on"':'')+'><td>'+lab+'</td><td class="num">'+faN(V.length)+'</td><td class="num">'+faN(Math.round(w/V.length*100))+'٪</td>'+c(r/V.length)+c(lo)+c(sh)+c(r)+'</tr>';};
+  const act=x=>({R:x.it.R,how:x.it.st}),hit=L.filter(x=>x.wxx.trig),arm=L.filter(x=>x.wxx.armed).length;
+  const sub=hit.length?(()=>{const a=av(hit.map(x=>x.it.R)),b=av(hit.map(x=>x.wxx.A.R)),c=av(hit.map(x=>x.wxx.B.R));
+    return '<div class="hint">قاعده روی <b>'+faN(hit.length)+'</b> تست اجرا شد (هوا وسط معامله برگشت): میانگین فعلی <b class="'+cls(a)+'" dir="ltr">'+fmtR(a)+'</b> ← الف <b class="'+cls(b)+'" dir="ltr">'+fmtR(b)+'</b> ← ب <b class="'+cls(c)+'" dir="ltr">'+fmtR(c)+'</b>.</div>';})():'';
+  return '<div class="sechd">برگشت هوا: ببند یا ریسک‌فری</div><div class="tscroll"><table class="tp xtab rbwxt"><thead><tr><th>روش</th><th>تعداد</th><th>برد</th><th>میانگین</th><th>لانگ</th><th>شورت</th><th>جمع</th></tr></thead><tbody>'+
+    row('نقشه‌ی فعلی (همان که اجرا شد)',act,true)+row('الف) هوا که برگشت، باقی را ببند',x=>x.wxx.A)+row('ب) هوا که برگشت: زیان‌ده ببند، سودده ریسک‌فری',x=>x.wxx.B)+'</tbody></table></div>'+sub+
+    '<div class="hint">روی مسیر واقعی 5 دقیقه‌ای همین تست‌ها، بعد از کارمزد، با تاریخچه‌ی ساعتی هوا (همان چهار جزء). فقط تست‌هایی که لحظه‌ی ورود هوایشان «نامناسب» نبود ('+faN(arm)+' از '+faN(L.length)+')؛ بقیه دست نمی‌خورند. '+
+    'هوا با بسته شدن هر کندل یک‌ساعته دیده می‌شود، پس قاعده از ریزش‌های تند چند دقیقه‌ای عقب می‌ماند.</div>';
+}
 /* همه‌ی نقشه‌های خروج روی مسیر واقعی یک تست: همان موتور دفتر تست (rbStep) روی یک کپی از معامله.
    باز مانده: اگر 24 ساعت کامل شده با قیمت آخر (خروج زمانی)، وگرنه «باز» با سود/ضرر الان */
 function rbAllPlans(it,C){
@@ -12255,18 +12328,20 @@ async function rbLabRun(){
   Object.assign(RBL,{on:true,done:0,n:L.length,res:null});rbRepaint();
   jobSet('rblab',{title:'آماده‌سازی خروجی تست‌ها',pause:true,cancel:true,pct:()=>RBL.done/Math.max(1,RBL.n)*100,msg:()=>faN(RBL.done)+' از '+faN(RBL.n)+' تست',
     go:()=>{RDV='test';if(view==='radar')renderRadar();else go('radar');}});
-  const res=[];let stop=false;
+  const res=[];let stop=false,W=null;
+  try{W=await rdWxHist();}catch(e){}
   try{
     for(const it of L){
       if(!(await jobGate('rblab'))){stop=true;break;}
       try{const C=await rbPath(it);if(C.length){const x={it,C,st:rbPathStats(it,C),pl:rbAllPlans(it,C)};
         try{const H=await rbHist(it);if(H.length)x.vol=rbVolSim(it,C,H);}catch(e){}
+        try{const w=rbWxSim(it,C,W);if(w)x.wxx=w;}catch(e){}
         res.push(x);}}catch(e){}
       RBL.done++;rbRepaint();
     }
   }finally{RBL.on=false;jobEnd('rblab');}
   if(stop){rbRepaint();return;}                // لغو: خروجی نیمه‌کاره ساخته نمی‌شود
-  RBL.res=res;RBL.at=Date.now();RBL.sig=rbLabSig();rbRepaint();
+  RBL.noWx=!W;RBL.res=res;RBL.at=Date.now();RBL.sig=rbLabSig();rbRepaint();
   if(!res.length)toast('مسیر قیمت هیچ معامله‌ای نیامد (اینترنت/فیلترشکن؟)','err');
 }
 /* جدول آستانه‌ها: سود روی مارجین (با اهرم ایزوله‌ی هر معامله) و R */
@@ -12295,6 +12370,7 @@ function rbLabHtml(){
     h+=rbPlansTable(res);
     h+=rbLabTable(res);
     h+=rbVolTable(res);
+    h+=rbWxTable(res,RBL.noWx);
     h+='<div class="sechd">هر معامله</div>'+res.slice().sort((a,b)=>b.it.t-a.it.t).slice(0,40).map(x=>{const it=x.it,s=x.st,roe=s.mfe*it.sd*s.lev*100,
       dt=s.tMfe?Math.round((s.tMfe-it.t)/6e4):null;
       return '<div class="glnum rblabr"><b dir="ltr">'+esc(it.tk)+'</b> <span class="pill '+it.dir+'">'+(it.dir==='long'?'لانگ':'شورت')+'</span> '+
@@ -12329,6 +12405,7 @@ function rbLabExport(){
     trades:res.map(x=>{const {it,C,st}=x,t0=C.length?C[0].t:it.t;
       return {id:it.id,kind:it.k,tk:it.tk,dir:it.dir,t:new Date(it.t).toISOString(),E:it.E,SL:it.SL,sd:+it.sd.toFixed(5),rr:it.rr,ex:it.ex||null,sc:it.sc,stars:it.stars,p:it.p,exp:it.exp,reg:it.reg,
         why:it.why||null,pv:it.pv||null,ck:(()=>{const c=rbCk(it);return c?{n:c.n,k:c.k,it:c.it}:null;})(),hold:rbHoldH(it),lim:it.lim??null,sigT:it.sig?new Date(it.sig).toISOString():null,sinceT:it.sn?new Date(it.sn).toISOString():null,rule:(()=>{const u=rbRule(it);return u?{pass:u.pass,n:u.n,it:u.it}:null;})(),ageH:rbAgeH(it)!=null?+rbAgeH(it).toFixed(1):null,st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
+        wxx:x.wxx?{armed:x.wxx.armed,trig:x.wxx.trig?new Date(x.wxx.trig).toISOString():null,A:x.wxx.A,B:x.wxx.B}:null,
         vol:x.vol?{tg:x.vol.tg,st:x.vol.st,bo:x.vol.bo,late:x.vol.late,A:x.vol.A,B:x.vol.B,C:x.vol.C}:null,
         lev:st.lev,plans:x.pl?Object.fromEntries(Object.entries(x.pl).map(([n,v])=>[n,v.st==='open'?{R:v.R,open:true}:v.R])):null,usdPerR:+rbUsdR(it).toFixed(3),usd:it.R!=null?+(it.R*rbUsdR(it)).toFixed(2):null,stats:{mfe:+st.mfe.toFixed(3),tMfeMin:st.tMfe?Math.round((st.tMfe-it.t)/6e4):null,mfe24:+st.mfe24.toFixed(3),mae:+st.mae.toFixed(3),
           stopMin:st.stopAt?Math.round((st.stopAt-it.t)/6e4):null,touchMin:Object.fromEntries(Object.entries(st.touch).map(([k,v])=>[k,Math.round((v-it.t)/6e4)])),full:st.full},
@@ -15236,7 +15313,7 @@ function renderFocus(){
   const g=$('#focusBody');if(!g)return;
   const d=focusTake(), now=Date.now();
   let h='<div class="focus">';
-  h+=rdWxHtml(true);
+  h+=rdWxTurnHtml()+rdWxHtml(true);
   if(!RD.at||Date.now()-RD.at>2*36e5)h+='<div class="srow"><button class="btn sm" data-fc="scan">'+ic('refresh')+'<span>تازه کردن هوای بازار</span></button></div>';
   // سیگنال‌های قابل گرفتن
   h+='<div class="sechd">سیگنال‌های قابل گرفتن ('+faN(d.take.length)+')</div>';

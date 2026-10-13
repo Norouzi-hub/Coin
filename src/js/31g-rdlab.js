@@ -66,6 +66,42 @@ function rbVolTable(res){
     'استاپ ساختاری: زیر کف کندل شکست اگر شکست با حجم بوده، وگرنه زیر کف 6 ساعت اخیر. R هر روش نسبت به ریسکِ همان استاپ است (با ریسک دلاری ثابت، حجم با استاپ عوض می‌شود). '+
     faN(bo)+' تست شکست با حجم داشتند و '+faN(lt)+' تست حجم دیررس.</div>';
 }
+/* برگشت هوا روی مسیر واقعی یک تست: همان نقشه‌ای که اجرا شد (rbStep روی یک کپی)، و از ساعتی که هوای همان جهت «نامناسب» شد
+   (فقط اگر لحظه‌ی ورود نامناسب نبود): الف) باقی را با قیمت همان لحظه ببند؛ ب) اگر در ضرر است ببند، اگر در سود است استاپ را روی ورود بگذار.
+   W: تاریخچه‌ی ساعتی هوا (شروع کندل ← عدد) */
+function rbWxSim(it,C,W){
+  if(!W||!W.size)return null;
+  const H=36e5,M5=3e5,t1=Math.floor(it.t/M5)*M5+M5,end=it.t+rbHoldH(it)*36e5,full=C.length>0&&C[C.length-1].t>=end-2*M5,s=it.dir==='long'?1:-1;
+  const w0=W.get(Math.floor(it.t/H)*H-H);if(w0==null)return null;
+  const armed=rdWxCls(w0,it.dir)!=='no';
+  const run=mode=>{const y={id:it.id,k:it.k,tk:it.tk,dir:it.dir,t:it.t,E:it.E,SL:it.SL,TP:it.TP,sd:it.sd,rr:it.rr,st:'open',ex:it.ex||'tp',x:exNew(),be:false};
+    let last=null,trig=null,bk=false;
+    for(const k of C){if(k.t<t1)continue;if(k.t>=end)break;
+      if(armed&&!trig&&k.t%H===0){const w=W.get(k.t-H);if(w!=null&&rdWxCls(w,it.dir)==='no'){trig=k.t;
+        if(mode==='x'||rbLiveR(y,k.o)<=0){rbClose(y,'man',k.o,k.t);break;}bk=true;}}
+      if(bk&&(s>0?k.l<=it.E:k.h>=it.E)){rbClose(y,'man',it.E,k.t+M5);break;}
+      last=k;if(rbStep(y,k.h,k.l,k.t+M5,k.c))break;}
+    if(y.st!=='open')return {R:y.R,how:y.st,trig};
+    return last?{R:+rbLiveR(y,last.c).toFixed(3),how:full?'time':'open',trig}:null;};
+  const A=run('x'),B=run('b');
+  return {armed,trig:A&&A.trig||null,A,B};
+}
+function rbWxTable(res,noData){
+  const L=res.filter(x=>x.wxx&&x.it.st!=='open'&&x.it.R!=null);
+  if(!L.length)return '<div class="sechd">برگشت هوا: ببند یا ریسک‌فری</div><div class="hint">'+(noData?'تاریخچه‌ی هوا در حافظه نیست؛ اول در «بازار» یک بار «تازه کن» بزن، بعد دوباره «تحلیل مسیر قیمت».':'تستی با داده‌ی هوای لحظه‌ی ورود نیست.')+'</div>';
+  const av=A=>A.length?A.reduce((a,v)=>a+v,0)/A.length:null;
+  const row=(lab,f,on)=>{const V=L.map(x=>({v:f(x),d:x.it.dir})).filter(o=>o.v!=null&&o.v.how!=='open');if(!V.length)return '';
+    const r=V.reduce((a,o)=>a+o.v.R,0),w=V.filter(o=>o.v.R>0).length,lo=av(V.filter(o=>o.d==='long').map(o=>o.v.R)),sh=av(V.filter(o=>o.d==='short').map(o=>o.v.R));
+    const c=v=>v==null?'<td class="num">—</td>':'<td class="num '+cls(v)+'"><bdi>'+fmtR(v)+'</bdi></td>';
+    return '<tr'+(on?' class="on"':'')+'><td>'+lab+'</td><td class="num">'+faN(V.length)+'</td><td class="num">'+faN(Math.round(w/V.length*100))+'٪</td>'+c(r/V.length)+c(lo)+c(sh)+c(r)+'</tr>';};
+  const act=x=>({R:x.it.R,how:x.it.st}),hit=L.filter(x=>x.wxx.trig),arm=L.filter(x=>x.wxx.armed).length;
+  const sub=hit.length?(()=>{const a=av(hit.map(x=>x.it.R)),b=av(hit.map(x=>x.wxx.A.R)),c=av(hit.map(x=>x.wxx.B.R));
+    return '<div class="hint">قاعده روی <b>'+faN(hit.length)+'</b> تست اجرا شد (هوا وسط معامله برگشت): میانگین فعلی <b class="'+cls(a)+'" dir="ltr">'+fmtR(a)+'</b> ← الف <b class="'+cls(b)+'" dir="ltr">'+fmtR(b)+'</b> ← ب <b class="'+cls(c)+'" dir="ltr">'+fmtR(c)+'</b>.</div>';})():'';
+  return '<div class="sechd">برگشت هوا: ببند یا ریسک‌فری</div><div class="tscroll"><table class="tp xtab rbwxt"><thead><tr><th>روش</th><th>تعداد</th><th>برد</th><th>میانگین</th><th>لانگ</th><th>شورت</th><th>جمع</th></tr></thead><tbody>'+
+    row('نقشه‌ی فعلی (همان که اجرا شد)',act,true)+row('الف) هوا که برگشت، باقی را ببند',x=>x.wxx.A)+row('ب) هوا که برگشت: زیان‌ده ببند، سودده ریسک‌فری',x=>x.wxx.B)+'</tbody></table></div>'+sub+
+    '<div class="hint">روی مسیر واقعی 5 دقیقه‌ای همین تست‌ها، بعد از کارمزد، با تاریخچه‌ی ساعتی هوا (همان چهار جزء). فقط تست‌هایی که لحظه‌ی ورود هوایشان «نامناسب» نبود ('+faN(arm)+' از '+faN(L.length)+')؛ بقیه دست نمی‌خورند. '+
+    'هوا با بسته شدن هر کندل یک‌ساعته دیده می‌شود، پس قاعده از ریزش‌های تند چند دقیقه‌ای عقب می‌ماند.</div>';
+}
 /* همه‌ی نقشه‌های خروج روی مسیر واقعی یک تست: همان موتور دفتر تست (rbStep) روی یک کپی از معامله.
    باز مانده: اگر 24 ساعت کامل شده با قیمت آخر (خروج زمانی)، وگرنه «باز» با سود/ضرر الان */
 function rbAllPlans(it,C){
@@ -132,18 +168,20 @@ async function rbLabRun(){
   Object.assign(RBL,{on:true,done:0,n:L.length,res:null});rbRepaint();
   jobSet('rblab',{title:'آماده‌سازی خروجی تست‌ها',pause:true,cancel:true,pct:()=>RBL.done/Math.max(1,RBL.n)*100,msg:()=>faN(RBL.done)+' از '+faN(RBL.n)+' تست',
     go:()=>{RDV='test';if(view==='radar')renderRadar();else go('radar');}});
-  const res=[];let stop=false;
+  const res=[];let stop=false,W=null;
+  try{W=await rdWxHist();}catch(e){}
   try{
     for(const it of L){
       if(!(await jobGate('rblab'))){stop=true;break;}
       try{const C=await rbPath(it);if(C.length){const x={it,C,st:rbPathStats(it,C),pl:rbAllPlans(it,C)};
         try{const H=await rbHist(it);if(H.length)x.vol=rbVolSim(it,C,H);}catch(e){}
+        try{const w=rbWxSim(it,C,W);if(w)x.wxx=w;}catch(e){}
         res.push(x);}}catch(e){}
       RBL.done++;rbRepaint();
     }
   }finally{RBL.on=false;jobEnd('rblab');}
   if(stop){rbRepaint();return;}                // لغو: خروجی نیمه‌کاره ساخته نمی‌شود
-  RBL.res=res;RBL.at=Date.now();RBL.sig=rbLabSig();rbRepaint();
+  RBL.noWx=!W;RBL.res=res;RBL.at=Date.now();RBL.sig=rbLabSig();rbRepaint();
   if(!res.length)toast('مسیر قیمت هیچ معامله‌ای نیامد (اینترنت/فیلترشکن؟)','err');
 }
 /* جدول آستانه‌ها: سود روی مارجین (با اهرم ایزوله‌ی هر معامله) و R */
@@ -172,6 +210,7 @@ function rbLabHtml(){
     h+=rbPlansTable(res);
     h+=rbLabTable(res);
     h+=rbVolTable(res);
+    h+=rbWxTable(res,RBL.noWx);
     h+='<div class="sechd">هر معامله</div>'+res.slice().sort((a,b)=>b.it.t-a.it.t).slice(0,40).map(x=>{const it=x.it,s=x.st,roe=s.mfe*it.sd*s.lev*100,
       dt=s.tMfe?Math.round((s.tMfe-it.t)/6e4):null;
       return '<div class="glnum rblabr"><b dir="ltr">'+esc(it.tk)+'</b> <span class="pill '+it.dir+'">'+(it.dir==='long'?'لانگ':'شورت')+'</span> '+
@@ -206,6 +245,7 @@ function rbLabExport(){
     trades:res.map(x=>{const {it,C,st}=x,t0=C.length?C[0].t:it.t;
       return {id:it.id,kind:it.k,tk:it.tk,dir:it.dir,t:new Date(it.t).toISOString(),E:it.E,SL:it.SL,sd:+it.sd.toFixed(5),rr:it.rr,ex:it.ex||null,sc:it.sc,stars:it.stars,p:it.p,exp:it.exp,reg:it.reg,
         why:it.why||null,pv:it.pv||null,ck:(()=>{const c=rbCk(it);return c?{n:c.n,k:c.k,it:c.it}:null;})(),hold:rbHoldH(it),lim:it.lim??null,sigT:it.sig?new Date(it.sig).toISOString():null,sinceT:it.sn?new Date(it.sn).toISOString():null,rule:(()=>{const u=rbRule(it);return u?{pass:u.pass,n:u.n,it:u.it}:null;})(),ageH:rbAgeH(it)!=null?+rbAgeH(it).toFixed(1):null,st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
+        wxx:x.wxx?{armed:x.wxx.armed,trig:x.wxx.trig?new Date(x.wxx.trig).toISOString():null,A:x.wxx.A,B:x.wxx.B}:null,
         vol:x.vol?{tg:x.vol.tg,st:x.vol.st,bo:x.vol.bo,late:x.vol.late,A:x.vol.A,B:x.vol.B,C:x.vol.C}:null,
         lev:st.lev,plans:x.pl?Object.fromEntries(Object.entries(x.pl).map(([n,v])=>[n,v.st==='open'?{R:v.R,open:true}:v.R])):null,usdPerR:+rbUsdR(it).toFixed(3),usd:it.R!=null?+(it.R*rbUsdR(it)).toFixed(2):null,stats:{mfe:+st.mfe.toFixed(3),tMfeMin:st.tMfe?Math.round((st.tMfe-it.t)/6e4):null,mfe24:+st.mfe24.toFixed(3),mae:+st.mae.toFixed(3),
           stopMin:st.stopAt?Math.round((st.stopAt-it.t)/6e4):null,touchMin:Object.fromEntries(Object.entries(st.touch).map(([k,v])=>[k,Math.round((v-it.t)/6e4)])),full:st.full},
