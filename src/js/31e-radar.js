@@ -857,7 +857,7 @@ function rdWxHtml(full){
     L==='no'?'بیشتر نشانه‌ها (روند بیت‌کوین، کل بازار، MACD ارزها، پول آلت‌ها) رو به پایین است. لانگ نگیر؛ اگر شورت داری، همین است.':
     'نشانه‌ها یکدست نیستند. اگر می‌گیری، کم و با احتیاط.';
   const bar=(lab,v)=>{const x=v==null?0:Math.max(-1,Math.min(1,v));return '<div class="rdwxb"><small>'+lab+'</small><span class="rdwxt"><i class="'+(x>=0?'u':'d')+'" style="'+(x>=0?'left:50%':'right:50%')+';width:'+Math.round(Math.abs(x)*50)+'%"></i></span><b dir="ltr" class="'+cls(x)+'">'+(v==null?'—':(x>0?'+':'')+x.toFixed(2))+'</b></div>';};
-  let h='<div class="rdwx '+st+'"><div class="rdwxh"><i>'+(st==='go'?'☀':st==='stop'?'☂':'⛅')+'</i><div><b>'+title+'</b><span>'+sub+'</span></div></div>'+
+  let h='<div class="rdwx '+st+(full?'':' cmp')+'"><div class="rdwxh"><i>'+(st==='go'?'☀':st==='stop'?'☂':'⛅')+'</i><div><b>'+title+'</b><span>'+sub+'</span></div></div>'+
     '<div class="rdwxc"><span class="pill '+(L==='go'?'win':L==='no'?'lose':'mut')+'">لانگ: '+RDWX_FA[L]+'</span><span class="pill '+(Sh==='go'?'win':Sh==='no'?'lose':'mut')+'">شورت: '+RDWX_FA[Sh]+'</span>'+
       '<small>عدد کل <b dir="ltr" class="'+cls(o.w)+'">'+(o.w>0?'+':'')+o.w.toFixed(2)+'</b> · کندل ساعت <b dir="ltr">'+rdHH(o.t+36e5)+'</b></small></div>';
   if(!full){const n=(l,v)=>v==null?'':'<span>'+l+' <b dir="ltr" class="'+cls(v)+'">'+(v>0?'+':'')+(+v).toFixed(2)+'</b></span>';
@@ -905,6 +905,11 @@ function rdChkFor(tk,dir,sd){
 function rdChkHtml(c){if(!c)return '';
   return '<div class="glnum rdck" title="چک‌لیست ورود: هنوز فقط برای سنجش است، نه فیلتر"><b>چک‌لیست ورود <bdi dir="ltr">'+c.n+'/'+RD_CK.length+'</bdi></b>'+
     RD_CK.map(([k,t,d],i)=>{const v=c.it[i];return '<span class="pill '+(v===true?'win':v===false?'lose':'mut')+'" title="'+esc(d)+'">'+(v===true?'✓ ':v===false?'✗ ':k==='vol'?'· ':'? ')+t+'</span>';}).join('')+'</div>';}
+/* چک‌لیست فشرده روی کارت رادار: «چک‌لیست 2/7» و هفت خانه‌ی رنگی؛ با زدن، همان برچسب‌های کامل باز می‌شود */
+function rdChkMini(c){
+  const seg=RD_CK.map(([k,t,d],i)=>{const v=c.it[i];return '<i class="'+(v===true?'y':v===false?'n':'u')+'" title="'+esc(t)+'"></i>';}).join('');
+  return '<details class="rdckm"><summary><b>چک‌لیست ورود</b><span class="rdckbar">'+seg+'</span><bdi dir="ltr" class="'+(c.n>=3?'win':c.n<=1?'lose':'')+'">'+c.n+'/'+RD_CK.length+'</bdi></summary>'+rdChkHtml(c)+'</details>';
+}
 /* پیشنهاد حجم روی کارت: تارگتِ سطح پرحجم بعدی و استاپ ساختاری، با فاصله به R و درصد (کنار عددهای فعلی، جایشان را نمی‌گیرد) */
 function rdVolHtml(x){
   const v=x.vl;if(!v||!x.pl)return '';const E=x.pl.E,s=x.dir==='short'?-1:1,R=E*x.pl.sd;
@@ -1229,32 +1234,43 @@ function rdGuideHtml(){
 function rdGuide(){openSheet(rdGuideHtml(),sh=>{const c=sh.querySelector('#cx');if(c)c.onclick=closeSheet;});}
 /* کارت سیگنال: سربرگ (نماد، جهت، امتیاز، ستاره)، سه عدد اصلی، چند برچسب، دکمه‌ها؛ بقیه در «جزئیات» */
 function rdRowHtml(x,i){
+  /* کارت سیگنال، از بالا به پایین به ترتیب تصمیم: نماد و جهت ← وضعیت (قابل گرفتن یا دلیل نه، سابقه‌ی تست) ← سه عدد ورود ←
+     چک‌لیست فشرده ← دکمه‌ها. بقیه (دلیل‌های مدل، واگرایی، تغییر ستاره، زمان کامل، حجم) در «جزئیات و دلیل‌ها»؛ چیزی حذف نشده */
   const z=x.pl?isoSize(x.pl.E,x.pl.SL):null, f=RD.fund&&RD.fund[x.tk], R=rdReasons(x), dn=x.dir==='long'?'لانگ':'شورت';
   const rk=rdRankOf(x.tk), ex=rbExEff(x.dir), PL=rdExPlans()[ex], dv=rdDivOf(x), tk=rdTaken(x.tk), ns=rdNewSig(x);
-  const tags=[];
-  {const t=rdTakenHtml(x,tk);if(t)tags.push(t);}
-  if(!x.ok&&x.why)tags.push('<span class="pill lose rdwhy0">'+esc(x.why==='neg'?(x.dir==='long'?'لانگ‌ها':'شورت‌ها')+'ی مدل در کل زیان‌ده‌اند':RD_WHY[x.why]+(x.why==='reg'?' ('+RDREG_FA[RD.reg]+')':''))+'</span>');
-  {const c=rdStarChgHtml(x);if(c)tags.push(c);}
-  if(dv)tags.push('<span class="pill '+(dv>0?'win':'lose')+' rddv">'+(dv>0?'✓ واگرایی هم‌جهت':'✗ واگرایی خلاف')+'</span>');
-  R.slice(0,dv?2:3).forEach(r=>tags.push('<span class="pill '+(r.good==null?'mut':r.good?'win':'lose')+'">'+(r.good?'✓ ':r.good===false?'✗ ':'')+esc(r.t)+'</span>'));
-  const dl=x.t?x.t+(1+RB_LIMH)*36e5:null, stale=dl&&Date.now()>dl;
+  const dl=x.t?x.t+(1+RB_LIMH)*36e5:null, stale=dl&&Date.now()>dl, old=x.pl&&x.t&&x.since&&x.since<x.t+18e5;
+  // خط وضعیت: یک حکم روشن
+  const verdict=x.dir==='wait'?'':x.ok?'<div class="rdvd ok">'+ic('check')+'<span>قابل گرفتن</span></div>':
+    x.why?'<div class="rdvd no rdwhy0">'+ic('x')+'<span>'+esc(x.why==='neg'?(x.dir==='long'?'لانگ‌ها':'شورت‌ها')+'ی مدل در کل زیان‌ده‌اند':RD_WHY[x.why]+(x.why==='reg'?' ('+RDREG_FA[RD.reg]+')':''))+'</span></div>':'';
+  const tkn=rdTakenHtml(x,tk);
+  // زمان: کی شروع شد، قیمت‌ها از کدام کندل
+  const meta=[ns?(ns.nw?'<span class="rdage">همین بررسی آخر پیدا شد</span>':'<span class="rdage" title="از کِی این سیگنال بی‌وقفه برقرار است">سیگنال از '+ageTxt(ns.t)+'</span>'):'',
+    old?'<span title="ورود و استاپ از آخرین کندل است، نه از شروع سیگنال">قیمت‌ها از کندل <b dir="ltr">'+rdHH(x.t+36e5)+'</b></span>':'',
+    rk?'<span title="رتبه‌ی ارزش بازار">رتبه <b dir="ltr">#'+rk+'</b></span>':''].filter(Boolean);
   const kv=x.pl?'<div class="rdkv"><div><small>ورود Limit</small><b dir="ltr">'+fmtPrice(x.pl.E)+'</b>'+(dl?'<small class="'+(stale?'d':'')+'">'+(stale?'مهلت گذشت':'تا '+rbHM(dl))+'</small>':'')+'</div><div><small>استاپ</small><b dir="ltr">'+fmtPrice(x.pl.SL)+'</b><small dir="ltr">'+fmtNum(x.pl.sd*100)+'%</small></div>'+
     '<div><small>خروج</small><b>'+esc(PL?PL.n:'')+'</b></div></div>':'';
+  const ck=x.dir!=='wait'&&x.pl?rdChkOf(x.parts,x.dir,x.pl.sd,true):null;
+  const tags=[];
+  {const c=rdStarChgHtml(x);if(c)tags.push(c);}
+  if(dv)tags.push('<span class="pill '+(dv>0?'win':'lose')+' rddv">'+(dv>0?'✓ واگرایی هم‌جهت':'✗ واگرایی خلاف')+'</span>');
   return '<div class="glsig rdit'+(x.ok?' ok':' weak')+(tk.ot||tk.rp?' taken':'')+(ns&&ns.nw?' nw':'')+'" data-rd="'+esc(x.tk)+'">'+
     '<div class="glit"><span class="rdrk">'+faN(i+1)+'</span>'+
-      '<button class="rdfavb'+(rdIsFav(x.tk)?' on':'')+'" data-a="fav" title="واچ‌لیست" aria-label="واچ‌لیست">'+(rdIsFav(x.tk)?'★':'☆')+'</button><b dir="ltr" class="rdtk">'+esc(x.tk)+'</b>'+(rk?'<small class="rdcap" title="رتبه‌ی ارزش بازار">#'+rk+'</small>':'')+
+      '<b dir="ltr" class="rdtk">'+esc(x.tk)+'</b>'+
       '<span class="pill '+x.dir+'">'+dn+'</span>'+
       '<span class="rdsc '+(x.dir==='long'?'u':'d')+'">امتیاز '+faN(x.sc)+'</span>'+rdStarHtml(x.stars)+
-      (ns?(ns.nw?'<span class="pill nw" title="در همین بررسی آخر پیدا شد">تازه</span>':'<small class="rdage" title="از کِی این سیگنال بی‌وقفه برقرار است">سیگنال از '+ageTxt(ns.t)+'</small>'):'')+'</div>'+
+      (ns&&ns.nw?'<span class="pill nw" title="در همین بررسی آخر پیدا شد">تازه</span>':'')+
+      '<button class="rdfavb'+(rdIsFav(x.tk)?' on':'')+'" data-a="fav" title="واچ‌لیست" aria-label="واچ‌لیست">'+(rdIsFav(x.tk)?'★':'☆')+'</button></div>'+
+    (meta.length?'<div class="rdmeta">'+meta.join('<i>·</i>')+'</div>':'')+
+    (verdict||tkn?'<div class="rdstat">'+verdict+(tkn?'<div class="rdtkn">'+tkn+'</div>':'')+'</div>':'')+
     kv+
-    // سیگنال قدیمی‌تر از آخرین کندل: ورود و استاپ مال آخرین کندل است، نه شروع سیگنال
-    (x.pl&&x.t&&x.since&&x.since<x.t+18e5?'<div class="glnum rdtime">'+ic('clock')+'<span>ورود و استاپ از کندل ساعت <b dir="ltr">'+rdHH(x.t+36e5)+'</b> (آخرین بررسی)؛ خود سیگنال از ساعت <b dir="ltr">'+rdHH(x.since)+'</b> برقرار است.</span></div>':'')+
-    (tags.length?'<div class="glnum rdwhy">'+tags.join('')+'</div>':'')+
-    (x.dir!=='wait'&&x.pl?rdChkHtml(rdChkOf(x.parts,x.dir,x.pl.sd,true))+rdVolHtml(x):'')+
+    (ck?rdChkMini(ck):'')+
     '<div class="glact">'+(z?'<button class="btn sm '+(x.ok?'ok':'')+'" data-a="iso">'+ic('shield')+'<span>ایزوله '+faN(z.lev)+'x · '+fmtUsd(z.margin)+'</span></button>':'')+
       (x.pl?(tk.ot?'<button class="btn sm" data-a="gotest" title="تست همین ارز باز است؛ برو ببین">'+ic('flag')+'<span>در تست است</span></button>':
       '<button class="btn sm" data-a="test" title="معامله‌ی آزمایشی: مثل واقعی دنبال می‌شود، بی پول">'+ic('flag')+'<span>'+(tk.n?'تست دوباره':'تست')+'</span></button>'):'')+'</div>'+
-    '<details class="rdmore"><summary>جزئیات و دلیل‌ها</summary>'+rdStarChgHtml(x,true)+
+    '<details class="rdmore"><summary>جزئیات و دلیل‌ها</summary>'+
+      (old?'<div class="glnum rdtime">'+ic('clock')+'<span>ورود و استاپ از کندل ساعت <b dir="ltr">'+rdHH(x.t+36e5)+'</b> (آخرین بررسی)؛ خود سیگنال از ساعت <b dir="ltr">'+rdHH(x.since)+'</b> برقرار است.</span></div>':'')+
+      (tags.length?'<div class="glnum rdwhy">'+tags.join('')+'</div>':'')+
+      (ck?rdVolHtml(x):'')+rdStarChgHtml(x,true)+
       (x.cb?'<div class="glnum">سابقه‌ی '+dn+'‌های امتیاز '+rdBucket(x.sc)+(x.rt.reg?' در بازار '+RDREG_FA[RD.reg]:'')+': '+faN(x.cb.n)+' بار در '+faN(x.cb.g||0)+' روز، '+faN(Math.round(x.cb.w/x.cb.n*100))+'٪ برد، میانگین <b class="'+cls(x.cb.r/x.cb.n)+'" dir="ltr">'+fmtR(x.cb.r/x.cb.n)+'</b>'+
         (x.cb.lb!=null&&isFinite(x.cb.lb)?'، بدترین حالت محتمل <b class="'+cls(x.cb.lb)+'" dir="ltr">'+fmtR(x.cb.lb)+'</b>':'')+(x.rt&&x.rt.s0>x.stars?' (ستاره‌ی خامش '+faN(x.rt.s0)+'؛ با ارزهای کم حداکثر '+faN(x.stars)+')':'')+'</div>':'')+
       (x.p!=null?'<div class="glnum">احتمال سود به گفته‌ی مدل: <b>'+faN(Math.round(x.p*100))+'٪</b>'+(x.since?' · سیگنال از ساعت <b dir="ltr">'+rdHH(x.since)+'</b>':'')+'</div>':'')+
@@ -1370,7 +1386,7 @@ function rdHtml(){
   let h='<div class="glb">'+rdHeroHtml(L)+rdWxHtml(false);
   // انتخاب ارزها: بازه‌ی رتبه، نماد، واچ‌لیست
   const LL=rdListOf();
-  h+='<details class="sec sub2 rdpick"'+(RDPICKOPEN?' open':'')+'><summary>'+ic('search')+'انتخاب ارزها و واچ‌لیست'+(RDFAV.length?' ('+faN(RDFAV.length)+' ★)':'')+'</summary>'+
+  let pick='<details class="sec sub2 rdpick"'+(RDPICKOPEN?' open':'')+'><summary>'+ic('search')+'انتخاب ارزها و واچ‌لیست'+(RDFAV.length?' ('+faN(RDFAV.length)+' ★)':'')+'</summary>'+
     '<div class="rdpk"><input id="rdPickIn" placeholder="20-40 · 200 تا 231 · ETH, SOL, PEPE" autocomplete="off" dir="auto"><button class="btn sm ok" data-rdadd="1"'+(RDQ.on?' disabled':'')+'>'+ic('plus')+'<span>بررسی</span></button></div>'+
     '<div class="hint">بازه‌ی رتبه (ارزش بازار CoinGecko، بی استیبل‌کوین‌ها؛ تا حدود 450) یا یک یا چند نماد با فاصله یا ویرگول. فقط ارزهای تازه گرفته می‌شوند و مدل با آن‌ها دوباره یاد می‌گیرد. سقف فهرست '+faN(RD_MAX)+' ارز.</div>'+
     '<div class="rdfav">'+(RDFAV.length?RDFAV.map(t=>'<span class="pill gold" data-favtk="'+esc(t)+'">★ <b dir="ltr">'+esc(t)+'</b>'+(LL.includes(t)?'':' <small>(بررسی‌نشده)</small>')+'</span>').join(''):'<span class="hint">واچ‌لیست خالی است؛ روی ☆ هر ارز بزن.</span>')+'</div>'+
@@ -1378,6 +1394,7 @@ function rdHtml(){
       '<button class="btn sm side" data-rdreset="1"'+(RDQ.on?' disabled':'')+'>'+ic('undo')+'<span>از نو: فقط '+faN(RD_STEP)+' ارز اول'+(RDFAV.length?' و واچ‌لیست':'')+'</span></button></div>'+
     '<div class="rdmr"><small>بررسی خودکار</small><div class="pbpick">'+Object.entries(RD_AUTO).map(([k,t])=>'<button class="pbc'+(rdAutoK()===k?' on':'')+'" data-rdauto="'+k+'">'+t+'</button>').join('')+'</div></div>'+
     '<div class="hint">وقتی «بازار» را باز می‌کنی. هر بررسی کامل برای هر ارز حدود 6 درخواست است (کندل، جریان پول، فاندینگ)؛ «واچ‌لیست» فقط همان‌ها را از شبکه می‌گیرد و بقیه از حافظه‌ی گوشی.</div></details>';
+  // ترتیب صفحه: وضعیت و هوای بازار ← بازار کل ← سیگنال‌ها ← «صبر» ← تنظیم فهرست ارزها (پایین، چون کار هر روز نیست)
   h+=rdMktHtml();
   const okL=rdSortL(act.filter(x=>x.ok)), weak=rdSortL(act.filter(x=>!x.ok));let i=0;
   if(okL.length)h+='<div class="rdsh go"><b>قابل گرفتن</b><i>'+faN(okL.length)+'</i></div>'+okL.map(x=>rdRowHtml(x,i++)).join('');
@@ -1386,6 +1403,7 @@ function rdHtml(){
   if(hid&&act.length)h+='<div class="hint">'+faN(hid)+' سیگنال دیگر با فیلتر بالای صفحه پنهان است.</div>';
   if(wait.length)h+='<details class="sec sub2 rdwait"><summary><b>صبر</b> ('+faN(wait.length)+' ارز با امتیاز زیر '+faN(RD_MIN)+')</summary><div class="rdwl">'+
     wait.map(x=>'<span class="pill mut">'+(rdIsFav(x.tk)?'★':'')+'<b dir="ltr">'+esc(x.tk)+'</b> <span class="'+(x.best==='long'?'win':'lose')+'">'+(x.best==='long'?'L':'S')+faN(x.sc)+'</span></span>').join('')+'</div></details>';
+  h+=pick;
   return h+'</div>';
 }
 /* تب «بازار» (مستقل، در نوار پایین): نوار فیلتر خودش و همان رادار */
@@ -1402,7 +1420,8 @@ function rdFbar(){
     b.onclick=()=>{RDV=k;try{localStorage.setItem('signaldesk.rdview',RDV);}catch(e){}renderRadar();window.scrollTo({top:0,behavior:'smooth'});};seg.appendChild(b);}
   bar.appendChild(seg);
   if(RDV!=='sig')return;
-  const row=el('div','frow ftab rdflt'),g=el('div','fcg');g.appendChild(el('span','fcl','جهت'));
+  // فیلترها در یک ردیف کشویی؛ مرتب‌سازی در ردیف دوم کنار شمار سیگنال‌ها
+  const row=el('div','frow ftab rdflt'),g=el('div','fcg');
   for(const [v,t] of [['all','همه'],['long','لانگ'],['short','شورت']])chip(g,t,(VIEW.mktDir||'all')===v,()=>set({mktDir:v}));
   row.appendChild(g);
   chip(row,'فقط قابل گرفتن',!!VIEW.mktOk,()=>set({mktOk:!VIEW.mktOk}));

@@ -1841,3 +1841,41 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .pbsteps li.skip>i{background:var(--inset);color:var(--tx3);border-color:var(--line)}
 .pbsteps li.skip b{color:var(--tx3);text-decoration:line-through}
 .rdvol{color:var(--tx2)}.rdvol svg{width:12px;height:12px;vertical-align:-2px}
+/* ---- بازچینی کارت سیگنال رادار و نوار فیلتر (شلوغی کمتر، هیچ چیز حذف نشده) ---- */
+.frow.ftab.rdflt{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.frow.ftab.rdflt::-webkit-scrollbar{display:none}
+.rdflt .fcg{padding:2px;border-radius:99px;background:var(--inset);border:1px solid var(--line)}
+.rdflt .fcg .fc{border:0;min-height:30px}
+.rdflt .fc{white-space:nowrap;flex:none}
+.rdsort{margin-top:6px}.rdsort select{min-height:32px;font-size:12px}
+.rdit{gap:7px}
+.rdit .glit{flex-wrap:nowrap;align-items:center}
+.rdit .glit .rdtk{font-size:17px}
+.rdit .glit .rdfavb{margin-inline-start:auto}
+.rdit .glit .rdst{margin-inline-start:0}
+.rdmeta{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;font-size:11.5px;color:var(--tx3);margin-top:-3px}
+.rdmeta i{font-style:normal;opacity:.6}.rdmeta b{color:var(--tx2);font-weight:700}
+.rdmeta .rdage{font-size:11.5px}.rdmeta .pill.nw{font-size:10.5px;padding:1px 7px}
+.rdstat{display:flex;flex-direction:column;gap:4px}
+.rdvd{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;padding:5px 9px;border-radius:9px}
+.rdvd svg{width:14px;height:14px;flex:none}
+.rdvd.ok{color:var(--up);background:color-mix(in srgb,var(--up) 12%,transparent)}
+.rdvd.no{color:var(--dn);background:color-mix(in srgb,var(--dn) 10%,transparent);font-weight:700}
+.rdtkn{display:flex;flex-wrap:wrap;gap:4px}.rdtkn .pill{font-size:11px}
+.rdckm>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;min-height:30px}
+.rdckm>summary::-webkit-details-marker{display:none}
+.rdckm>summary>b{font-weight:800;color:var(--tx2)}
+.rdckm>summary bdi{font-weight:900;font-size:12.5px}.rdckm>summary bdi.win{color:var(--up)}.rdckm>summary bdi.lose{color:var(--dn)}
+.rdckm>summary::after{content:'';width:6px;height:6px;border-inline-end:2px solid var(--tx3);border-bottom:2px solid var(--tx3);transform:rotate(45deg);margin-top:-3px;transition:transform .2s}
+.rdckm[open]>summary::after{transform:rotate(-135deg);margin-top:2px}
+.rdckbar{display:flex;gap:3px;flex:1;max-width:150px}
+.rdckbar i{flex:1;height:7px;border-radius:3px;background:var(--line2)}
+.rdckbar i.y{background:var(--up)}.rdckbar i.n{background:var(--dn);opacity:.75}
+.rdckm[open]{padding-bottom:2px}.rdckm .rdck{margin-top:4px}.rdckm .rdck>b{display:none}
+/* هوای بازار فشرده (بالای «سیگنال‌ها»): کوتاه‌تر، اجزا در دو ستون */
+.rdwx.cmp{gap:6px;padding:9px 11px}
+.rdwx.cmp .rdwxh>i{font-size:18px}
+.rdwx.cmp .rdwxh span{font-size:11.5px;color:var(--tx3)}
+.rdwx.cmp .rdwxc .pill{font-size:11px;padding:2px 8px}
+.rdwx.cmp .rdwxp{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;margin-top:0;padding-top:6px;border-top:1px dashed var(--line)}
+.rdwx.cmp .rdwxp span{display:flex;justify-content:space-between;gap:6px;white-space:nowrap}
