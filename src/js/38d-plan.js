@@ -24,7 +24,6 @@ const plDay0=t=>{const d=new Date(t);d.setHours(0,0,0,0);return +d;};
 function plDaysOk(w){const s=S.plan.start+(w-1)*7*PL_DAY,e=Math.min(Date.now(),s+7*PL_DAY);let ok=0,n=0;
   for(let d=plDay0(s);d<e;d+=PL_DAY){n++;if(plTestsOn(d)<=PL_TPD)ok++;}return {ok,n};}
 /* کانال‌سنج: سیگنال‌های به‌نتیجه‌رسیده و «نیاز به بررسی» */
-const PL_FIXW=['no-stop','no-entry','no-ticker','px','bad-stop','far-sl'];
 function plChan(){
   let rows=[];try{rows=audRows();}catch(e){}
   const dec=rows.filter(x=>x.r&&['win','loss','exp'].includes(x.r.st)&&x.R!=null).sort((a,b)=>(a.inp.t0||0)-(b.inp.t0||0));
@@ -36,15 +35,12 @@ function plChan(){
    هر موردی که یک بار دیده شد در S.plan.fx می‌ماند؛ پس «انجام‌شده» = دیده‌شده‌هایی که دیگر ناقص نیستند
    و سیگنال ناقص تازه فقط به کل اضافه می‌شود، نه این‌که درصد را عقب ببرد. */
 function plFill(rows){
-  const left=new Set();
-  for(const x of rows){
-    if(!x.inp.stop&&x.inp.need&&x.inp.need.id!=null)left.add('i:'+x.inp.need.id);
-    else if(x.r&&x.r.st==='bad'&&PL_FIXW.includes(x.r.why))left.add('b:'+x.p.id);
-  }
+  let Q=[];try{Q=audFixQ(rows);}catch(e){}
+  const left=new Set(Q.map(q=>q.id));
   if(!S.plan)return {left:left.size,done:0,total:left.size};
-  const seen=new Set(S.plan.fx||[]);let add=false;
+  const seen=new Set((S.plan.fx||[]).map(k=>String(k).replace(/^[ib]:/,'')));let add=false;
   for(const k of left)if(!seen.has(k)){seen.add(k);add=true;}
-  if(add){S.plan.fx=[...seen];plSave();}
+  if(add||(S.plan.fx||[]).some(k=>/^[ib]:/.test(k))){S.plan.fx=[...seen];plSave();}
   return {left:left.size,done:seen.size-left.size,total:seen.size};
 }
 /* «X از Y · Z٪» برای نوار پیشرفت */
@@ -86,9 +82,10 @@ function plTasks(w){
         ()=>{const ok=!!(RD.mt0&&RD.mt0>st&&rdHzK()===PL_SET.hz);
           if(!ok&&RDQ.on&&RDQ.n)return {ok,txt:'در حال یادگیری: '+faN(RDQ.done)+' از '+faN(RDQ.n)+' ارز',p:RDQ.done/RDQ.n};
           return {ok,txt:RD.mt0?'آخرین یادگیری '+ageTxt(RD.mt0):'هنوز نه'};},['بازار › کارنامه',()=>{RDV='model';go('radar');}]],
-      ['w1fill','تو','سیگنال‌های ناقص کانال را کامل کن','در کانال‌سنج، فهرست «نیاز به بررسی»: برای سیگنال‌های عکسی «عددها از روی چارت» را بزن و ورود، استاپ و تارگت را وارد کن. اگر فقط چارت است و سیگنال نیست، «سیگنال نیست» را بزن.',
+      ['w1fill','تو','سیگنال‌های ناقص کانال را کامل کن','«مرور یکی‌یکی» همه را یکی‌یکی می‌آورد: ورود، استاپ و تارگت را از روی چارت یا پست بنویس. اگر عددی نیست «کنار بگذار»، اگر فقط چارت است «سیگنال نیست».',
         ()=>{const f=ch.fill;if(!f.total)return {ok:ch.n>0,txt:ch.n?'سیگنال ناقصی نمانده':'هنوز سیگنالی سنجیده نشده'};
-          return {ok:!f.left,txt:f.left?faN(f.left)+' مانده · '+faN(f.done)+' از '+faN(f.total)+' کامل شد':'همه‌ی '+faN(f.total)+' سیگنال کامل شد',p:f.done/f.total};},goAud],
+          return {ok:!f.left,txt:f.left?faN(f.left)+' مانده · '+faN(f.done)+' از '+faN(f.total)+' کامل شد':'همه‌ی '+faN(f.total)+' سیگنال کامل شد',p:f.done/f.total};},
+        ['مرور یکی‌یکی',()=>{go('audit');let Q=[];try{Q=audFixQ();}catch(e){}if(Q.length)sheetAudFix(Q,0);else toast('سیگنال ناقصی نمانده','ok');}]],
       ['w1aud','تو','کانال‌سنج › «سنجش دوباره‌ی همه»','همه‌ی پست‌ها با کندل واقعی دوباره سنجیده شوند.',
         ()=>{const ok=!!(AUDQ.at&&AUDQ.at>st);
           if(AUDQ.on&&AUDQ.n)return {ok:false,txt:'در حال سنجش: '+faN(AUDQ.done)+' از '+faN(AUDQ.n)+' سیگنال',p:AUDQ.done/AUDQ.n};

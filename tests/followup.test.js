@@ -97,10 +97,10 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(im.pre.join()==='img-sl,img-sl,img-sl'&&im.need.every(x=>x==='ccoineres/9101'),'«#ADA» تصویری و پیگیری‌هایش: «عددها روی تصویر چارت است» با اشاره به همان پست');
  ok(im.btc.join('/')==='long/81000/ccoineres/9201','«بالای 83500 بست ورود» لانگ است: از سیگنال شورتِ ناجور می‌گذرد و استاپ 81000 لانگ قبلی را می‌گیرد');
  await p.evaluate(()=>{AUDOPEN=null;go('audit',true);renderAudit();});await p.waitForTimeout(400);
- const fb=await p.evaluate(()=>{const b=[...document.querySelectorAll('#audBody .audiag button')].find(x=>/تکمیل از روی چارت/.test(x.textContent));
+ const fb=await p.evaluate(()=>{const b=[...document.querySelectorAll('#audBody .audiag button')].find(x=>/مرور یکی‌یکی/.test(x.textContent));
    if(b)b.click();return b?b.textContent:null;});
  await p.waitForTimeout(300);
- ok(fb&&/۱|1/.test(fb),'دکمه‌ی «تکمیل از روی چارت (۱ پست)» در وضعیت سنجش');
+ ok(fb&&/(۱|1) چارت/.test(fb),'دکمه‌ی «مرور یکی‌یکی (… ۱ چارت)» در وضعیت سنجش: '+fb);
  const sh=await p.evaluate(()=>({img:!!document.querySelector('#sheet .imgfill img'),h:(document.querySelector('#sheet h3')||{}).textContent||'',
    dep:/(۲|2) پیگیری منتظر/.test((document.querySelector('#sheet .hint')||{}).textContent||'')}));
  ok(sh.img&&sh.dep,'برگه: تصویر چارت و «۲ پیگیری منتظر همین عددهاست»');

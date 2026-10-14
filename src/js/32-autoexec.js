@@ -701,54 +701,99 @@ function audNotSig(p,then){
   if(then)then();else renderAll();
   toastUndo('«سیگنال نیست»: از سیگنال‌ها و کانال‌سنج برداشته شد',()=>{put(prev);renderAll();});
 }
+/* صف «نیاز به بررسی»: هر چیزی که با عدد زدن تو درست می‌شود، یکی‌یکی. تصویر اصلی‌ای که
+   پیگیری‌ها منتظرش‌اند یک بار (پرپیگیری‌ترین اول)؛ سیگنال ناقص متنی هر کدام یک بار.
+   rows = ردیف‌های کانال‌سنج که با همین مورد درست (یا با «کنار بگذار» با هم کنار) می‌روند. */
+const AUD_FIXW=['img-sl','no-ticker','no-entry','no-stop','bad-stop','px','far-sl','nocandle'];
+function audFixQ(rows){
+  rows=rows||audRows();const M=new Map();
+  const add=(id,why,rid,t)=>{let q=M.get(id);if(!q){q={id,why,rows:new Set(),t:t||0};M.set(id,q);}q.rows.add(rid);};
+  for(const x of rows){
+    if(!x.inp.stop&&x.inp.need&&x.inp.need.id!=null)add(x.inp.need.id,'img-sl',x.p.id,x.inp.need.t);
+    else if(x.r&&x.r.st==='bad'&&AUD_FIXW.includes(x.r.why))add(x.p.id,x.r.why,x.p.id,x.inp.t0);
+  }
+  return [...M.values()].sort((a,b)=>(b.rows.size-a.rows.size)||(b.t-a.t));
+}
+/* «کنار بگذار»: عددی نیست که بشود زد (تصویر خوانا نیست، پست پاک شده، ارز در صرافی نیست).
+   فقط از کانال‌سنج بیرون می‌رود؛ در فهرست سیگنال‌ها می‌ماند. با «برگرداندن» برمی‌گردد. */
+function audSkip(ids,then){
+  ids=[...new Set(ids)];
+  const prev=ids.map(id=>[id,OVERRIDE[id]?Object.assign({},OVERRIDE[id]):null]);
+  for(const id of ids)OVERRIDE[id]=Object.assign({},OVERRIDE[id],{noAud:true});
+  DB.overrides=OVERRIDE;save();
+  if(then)then();else renderAll();
+  toastUndo(faN(ids.length)+' سیگنال از سنجش کنار رفت',()=>{
+    for(const [id,o] of prev){if(o)OVERRIDE[id]=o;else delete OVERRIDE[id];}
+    DB.overrides=OVERRIDE;save();renderAll();});
+}
+function audUnskipAll(){
+  let n=0;for(const [id,o] of Object.entries(OVERRIDE))if(o&&o.noAud){delete o.noAud;if(!Object.keys(o).length)delete OVERRIDE[id];n++;}
+  DB.overrides=OVERRIDE;save();renderAll();toast(faN(n)+' سیگنال به سنجش برگشت','ok');
+}
+/* از فهرست سیگنال‌ها (یک پست) و از «وضعیت سنجش» (فقط تصویرها): همان برگه */
 function sheetImgFill(ids,need,i){
+  sheetAudFix(ids.map(id=>({id,why:'img-sl',rows:new Set([id]),dep:need&&need.get(id)||0})),i);
+}
+function sheetAudFix(Q,i){
+  i=i||0;
   const fin=()=>{closeSheet();renderAll();if(!AUDQ.on)audRun();};
-  const p=POSTS.find(x=>x.id===ids[i]);
-  if(!p){if(i+1<ids.length)return sheetImgFill(ids,need,i+1);fin();return;}
+  const q=Q[i];if(!q){fin();return;}
+  const p=POSTS.find(x=>x.id===q.id);
+  if(!p)return sheetAudFix(Q,i+1);
   const ov=OVERRIDE[p.id]||{}, g=p.origText?parseSignal(p.origText):parseSignal(p.text,p.id);
   const tk=ov.ticker||g.ticker||'', dir=ov.dir||g.direction||'long';
-  const v=x=>x==null?'':x;
-  const tp0=ov.tps&&ov.tps.length?ov.tps:(g.targets||[]), dep=need.get(p.id)||0;
-  openSheet('<h3>عددها از روی چارت'+(ids.length>1?' · '+faN(i+1)+' از '+faN(ids.length):'')+'</h3>'+
-   (ids.length>1?'<div class="plprog"><span class="plbar"><i style="width:'+Math.round(i/ids.length*100)+'%"></i></span><b>'+faN(ids.length-i)+' مانده</b></div>':'')+
-   '<div class="hint"><b dir="ltr">'+esc(tk)+'</b> · '+(p.date?jStampFa(p.date):'')+
-     (dep?' · '+faN(dep)+' پیگیری منتظر همین عددهاست':'')+'</div>'+
-   (p.img?'<div id="ifImg" class="imgfill"></div>':
-     '<div class="hint">تصویری ذخیره نشده — '+(p.link?'<a href="'+esc(p.link)+'" target="_blank" rel="noopener">پست را در تلگرام ببین</a>':'متن پست را ببین')+'</div>')+
+  const v=x=>x==null?'':x, n=Q.length, last=i+1>=n;
+  const tp0=ov.tps&&ov.tps.length?ov.tps:(g.targets||[]);
+  const dep=q.dep!=null?q.dep:[...q.rows].filter(x=>x!==q.id).length;
+  const tg=p.link?'<a href="'+esc(p.link)+'" target="_blank" rel="noopener">پست در تلگرام ↗</a>':'';
+  openSheet('<h3>'+(q.why==='img-sl'?'عددها از روی چارت':'سیگنال ناقص')+(n>1?' · '+faN(i+1)+' از '+faN(n):'')+'</h3>'+
+   (n>1?'<div class="plprog"><span class="plbar"><i style="width:'+Math.round(i/n*100)+'%"></i></span><b>'+faN(n-i)+' مانده</b></div>':'')+
+   (q.why!=='img-sl'&&AUD_WHY[q.why]?'<div class="hint w">'+esc(AUD_WHY[q.why])+'</div>':'')+
+   '<div class="hint"><b dir="ltr">'+esc(tk||'—')+'</b> · '+(p.date?jStampFa(p.date):'')+
+     (dep?' · '+faN(dep)+' پیگیری منتظر همین عددهاست':'')+(tg?' · '+tg:'')+'</div>'+
+   (p.img?'<div id="ifImg" class="imgfill"></div>':(q.why==='img-sl'?'<div class="hint">تصویری ذخیره نشده — '+(tg||'متن پست را ببین')+'</div>':''))+
    '<div class="audtxt">'+esc(p.origText||p.text||'')+'</div>'+
    '<div class="hint" id="ifPx"></div>'+
    '<div class="grid" style="margin-top:8px">'+
+     '<div class="fld"><label for="f_tk">نماد</label><input id="f_tk" dir="ltr" autocomplete="off" value="'+esc(tk)+'"></div>'+
      '<div class="fld"><label>جهت</label><select id="f_d"><option value="long"'+(dir==='long'?' selected':'')+'>لانگ</option>'+
        '<option value="short"'+(dir==='short'?' selected':'')+'>شورت</option></select></div>'+
+   '</div><div class="grid" style="margin-top:8px">'+
      fldHtml('en','ورود (خالی = قیمت انتشار)',v(ov.entry!=null?ov.entry:g.entry))+
-   '</div><div class="grid" style="margin-top:8px">'+
      fldHtml('st','حد ضرر',v(ov.stop!=null?ov.stop:g.stop))+
-     fldHtml('t1','تارگت ۱',v(tp0[0]))+
    '</div><div class="grid" style="margin-top:8px">'+
-     fldHtml('t2','تارگت ۲',v(tp0[1]))+fldHtml('t3','تارگت ۳',v(tp0[2]))+
+     fldHtml('t1','تارگت ۱',v(tp0[0]))+fldHtml('t2','تارگت ۲',v(tp0[1]))+fldHtml('t3','تارگت ۳',v(tp0[2]))+
    '</div>'+
-   '<div class="srow"><button class="btn pri" id="ok">ثبت'+(i+1<ids.length?' و بعدی':'')+'</button>'+
-     (i+1<ids.length?'<button class="btn" id="sk">بعدی</button>':'')+'<button class="btn" id="cx">بستن</button></div>'+
-   '<div class="srow"><button class="btn sm side" id="ns">'+ic('x')+'<span>سیگنال نیست (فقط چارت است)</span></button></div>',
+   '<div class="srow"><button class="btn pri" id="ok">ثبت'+(last?'':' و بعدی')+'</button>'+
+     (last?'':'<button class="btn" id="sk">بعدی</button>')+'<button class="btn" id="cx">بستن</button></div>'+
+   '<div class="srow"><button class="btn sm side" id="ax">'+ic('box')+'<span>عدد ندارد؛ کنار بگذار'+(dep?' (با '+faN(dep)+' پیگیری)':'')+'</span></button>'+
+     '<button class="btn sm side" id="ns">'+ic('x')+'<span>سیگنال نیست'+(p.img?' (فقط چارت است)':'')+'</span></button></div>',
    ()=>{
      if(p.img)$('#ifImg').appendChild(postShot(p,p.img,'چارت'));
      $('#cx').onclick=fin;
-     const nx=()=>i+1<ids.length?sheetImgFill(ids,need,i+1):fin();
+     const nx=()=>last?fin():sheetAudFix(Q,i+1);
      if($('#sk'))$('#sk').onclick=nx;
      $('#ns').onclick=()=>audNotSig(p,nx);
+     $('#ax').onclick=()=>audSkip([q.id,...q.rows],nx);
+     const tkOf=()=>normDig($('#f_tk').value||'').toUpperCase().replace(/^[#$]/,'').replace(/[\/\-]?USDT?$/,'').trim();
      // قیمتِ لحظه‌ی انتشار، تا عددی که از چارت می‌خوانی با بازار مقایسه شود
-     if(tk&&p.date)audCandles(tk,'5m',Math.ceil(+p.date/3e5)*3e5,1,true).then(C=>{
-       const n=$('#ifPx');if(n&&C&&C[0])n.innerHTML='قیمت بازار هنگام انتشار: <b dir="ltr">'+fmtPrice(C[0].o)+'</b>';}).catch(()=>{});
+     const pxAt=()=>{const t=tkOf(),n0=$('#ifPx');if(!t||!p.date||!n0)return;n0.textContent='';
+       audCandles(t,'5m',Math.ceil(+p.date/3e5)*3e5,1,true).then(C=>{
+         const n=$('#ifPx');if(n&&C&&C[0])n.innerHTML='قیمت بازار '+esc(t)+' هنگام انتشار: <b dir="ltr">'+fmtPrice(C[0].o)+'</b>';
+         else if(n)n.textContent='قیمت '+t+' از هیچ منبعی نیامد؛ نماد را درست بنویس یا «کنار بگذار».';}).catch(()=>{});};
+     pxAt();$('#f_tk').onchange=pxAt;
      $('#ok').onclick=()=>{
        const st=num('f_st');
-       if(!st){toast('حد ضرر را از روی چارت بنویس','err');return;}
+       if(!st){toast(q.why==='img-sl'?'حد ضرر را از روی چارت بنویس':'حد ضرر را بنویس','err');return;}
+       const t=tkOf();
        const tps=['f_t1','f_t2','f_t3'].map(num).filter(x=>x!=null);
-       const o=Object.assign({},OVERRIDE[p.id],{sig:true,ticker:tk||undefined,dir:$('#f_d').value,stop:st});
+       const o=Object.assign({},OVERRIDE[p.id],{sig:true,ticker:t||undefined,dir:$('#f_d').value,stop:st});
        const en=num('f_en');if(en!=null)o.entry=en;else delete o.entry;
        if(tps.length)o.tps=tps;else delete o.tps;
        if(!o.ticker)delete o.ticker;
+       delete o.noAud;
        OVERRIDE[p.id]=o;DB.overrides=OVERRIDE;save();PCACHE.delete(p.id);
-       toast('عددهای '+(tk||'سیگنال')+' ثبت شد','ok');
+       toast('عددهای '+(t||'سیگنال')+' ثبت شد','ok');
        nx();
      };
    });
@@ -785,12 +830,11 @@ function buildAudDiag(all){
          k==='no-stop'||k==='no-entry'||k==='no-ticker'?' — در فهرست پایین «اصلاح عددها» را بزن':'')));
     d.appendChild(ul);
     // پست‌های تصویری که پیگیری‌ها منتظر عددهایشان‌اند؛ پرتکرارترین اول
-    const need=new Map();
-    for(const x of all)if(x.r&&x.r.st==='bad'&&x.r.why==='img-sl'&&x.inp.need)need.set(x.inp.need.id,(need.get(x.inp.need.id)||0)+(x.p.id===x.inp.need.id?0:1));
-    if(need.size){
-      const ids=[...need.entries()].sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
-      const fb=el('button','btn sm pri',ic('edit')+'<span>تکمیل از روی چارت ('+faN(ids.length)+' پست)</span>');
-      fb.onclick=()=>sheetImgFill(ids,need,0);
+    const Q=audFixQ(all);
+    if(Q.length){
+      const nI=Q.filter(q=>q.why==='img-sl').length;
+      const fb=el('button','btn sm pri',ic('edit')+'<span>مرور یکی‌یکی ('+faN(Q.length)+' مورد'+(nI?'؛ '+faN(nI)+' چارت':'')+')</span>');
+      fb.onclick=()=>sheetAudFix(Q,0);
       const r=el('div','srow');r.appendChild(fb);d.appendChild(r);
     }
     // متنِ سیگنال‌های بی‌استاپ/بی‌ورود برای فرستادن به سازنده، تا الگوی خواندنشان اضافه شود
@@ -806,6 +850,9 @@ function buildAudDiag(all){
     }
   }
   if(nSig&&!all.length)d.appendChild(el('div','hint','سیگنال‌ها شناخته شده‌اند ولی هیچ‌کدام عددِ ورود/استاپِ قابل خواندن ندارند.'));
+  {const nk=Object.values(OVERRIDE).filter(o=>o&&o.noAud).length;
+   if(nk){const r=el('div','srow');r.appendChild(el('span','hint',faN(nk)+' سیگنال را از سنجش کنار گذاشته‌ای.'));
+     const u=el('button','btn sm side',ic('undo')+'<span>برگرداندن همه</span>');u.onclick=audUnskipAll;r.appendChild(u);d.appendChild(r);}}
   const last=AUDQ.at?'آخرین سنجش '+ageTxt(AUDQ.at):'هنوز سنجشی انجام نشده';
   d.appendChild(el('div','hint',last+(AUDQ.err?' · آخرین خطا: <span dir="ltr">'+esc(AUDQ.err)+'</span>':'')+
     (AUDSRC.$!=null&&AUD_SRC[AUDSRC.$]?' · منبع کندل: '+esc(AUD_SRC[AUDSRC.$].n):'')));
@@ -998,6 +1045,16 @@ function buildAudList(rows){
     chips.appendChild(b);
   }
   c.appendChild(chips);
+  const FQ=audFixQ(rows), fqAt=new Map();FQ.forEach((q,i)=>{for(const id of q.rows)fqAt.set(id,i);});
+  if(audList==='bad'&&FQ.length){
+    const r=el('div','srow');
+    const g=el('button','btn sm pri',ic('edit')+'<span>مرور یکی‌یکی ('+faN(FQ.length)+')</span>');g.onclick=()=>sheetAudFix(FQ,0);
+    const k=el('button','btn sm side',ic('box')+'<span>کنار گذاشتن همه</span>');
+    k.onclick=async()=>{const ids=FQ.flatMap(q=>[q.id,...q.rows]);
+      if(!(await askConfirm({title:'کنار گذاشتن '+faN(FQ.length)+' مورد',msg:'همه‌ی سیگنال‌های ناقصی که عددشان را نزده‌ای از سنجش کانال بیرون می‌روند (در فهرست سیگنال‌ها می‌مانند). هر وقت خواستی از «وضعیت سنجش › برگرداندن همه» برمی‌گردند.',ok:'کنار بگذار',cancel:'نه'})))return;
+      audSkip(ids);};
+    r.appendChild(g);r.appendChild(k);c.appendChild(r);
+  }
   const pick=rows.filter(x=>{
     const k=audStKey(x.r);
     return audList==='all'||k===audList||(audList==='open'&&k==='wait')||(audList==='bad'&&(k==='amb'||k==='todo'));
@@ -1026,7 +1083,9 @@ function buildAudList(rows){
       (tags.length?'<div class="ar3">'+tags.join('')+'</div>':'');
     const act=el('div','ar4');
     const d=el('button','btn xs','جزئیات');d.onclick=()=>sheetAudPost(x.p);
-    const f=el('button','btn xs','اصلاح عددها');f.onclick=()=>sheetMarkSignal(x.p,sigOf(x.p));
+    const qi=fqAt.get(x.p.id);
+    const f=qi!=null?el('button','btn xs ok','عدد بزن'):el('button','btn xs','اصلاح عددها');
+    f.onclick=qi!=null?()=>sheetAudFix(FQ,qi):()=>sheetMarkSignal(x.p,sigOf(x.p));
     const ns=el('button','btn xs','سیگنال نیست');ns.title='چارت یا پست غیرسیگنال؛ از سیگنال‌ها و سنجش بیرون برود';ns.onclick=()=>audNotSig(x.p);
     act.appendChild(d);act.appendChild(f);act.appendChild(ns);r.appendChild(act);
     c.appendChild(r);

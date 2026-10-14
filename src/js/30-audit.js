@@ -87,6 +87,7 @@ function audTps(inp){
    سنجش از اولین کندل گرفته و در نتیجه (e0) نگه داشته می‌شود. */
 function audInput(p){
   const ov=OVERRIDE[p.id]||{};
+  if(ov.noAud)return null;                     // خودت از سنجش کنارش گذاشته‌ای
   const base=p.origText?parseSignal(p.origText):parseSignal(p.text,p.id);
   const sig=Object.assign({},base);
   if(!sig.isSignal&&bareImg(p,sig))sig.isSignal=true;

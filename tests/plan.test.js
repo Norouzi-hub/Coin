@@ -54,7 +54,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    S.plan.start=now;plSave();
    // پیشرفت «کامل کردن سیگنال‌ها»: هر تصویر یک بار، با سیگنال ناقص متنی
    const aR=audRows;let R=[{p:{id:'a'},inp:{stop:null,need:{id:'img1'}},r:null},{p:{id:'b'},inp:{stop:null,need:{id:'img1'}},r:null},
-     {p:{id:'c'},inp:{stop:1},r:{st:'bad',why:'no-stop'}},{p:{id:'d'},inp:{stop:1},r:{st:'bad',why:'nocandle'}}];
+     {p:{id:'c'},inp:{stop:1},r:{st:'bad',why:'no-stop'}},{p:{id:'d'},inp:{stop:1},r:{st:'bad',why:'no-date'}}];
    audRows=()=>R;S.plan.fx=[];
    const fl=()=>{renderPlan();const t=$q('#planBody [data-pl="w1fill"]');return ((t.querySelector('small.win,small:last-of-type')||{}).textContent||'')+'|'+((t.querySelector('.plprog b')||{}).textContent||'');};
    o.f0=fl();R=R.filter(x=>x.p.id!=='a'&&x.p.id!=='b');o.f1=fl();
