@@ -653,6 +653,7 @@ function renderAudit(){
     stHtml('فعال نشد',st.noneRate==null?'—':faN(st.noneRate.toFixed(0))+'٪','m',faN(st.none)+' سیگنال')+
     stHtml('در جریان',faN(st.open+st.wait),'m',faN(st.wait)+' منتظر ورود')+
     stHtml('نیاز به بررسی',faN(st.bad+st.amb),st.bad?'d':'m',st.todo?faN(st.todo)+' سنجیده نشده':'');
+  g.insertAdjacentHTML('beforeend',audNoneHtml(rows));
   {const nd=st.win+st.loss+st.exp;
    if(nd>0&&nd<SMALL_N)g.insertAdjacentHTML('beforeend','<div class="stnote">'+ic('info')+'<span>فقط '+faN(nd)+
      ' سیگنال به نتیجه رسیده — برای قضاوت درباره‌ی کانال دست‌کم '+faN(SMALL_N)+' لازم است.</span></div>');}
@@ -1031,6 +1032,24 @@ function buildVsChannel(rows){
     tb.appendChild(b);c.appendChild(tWrap(tb));
   }
   return c;
+}
+/* «فعال نشد» به تفکیک دلیل. «مستقیم به تارگت» (ran) یعنی وقتی سیگنال آمد قیمت بیش از تحمل ورود از نقطه‌ی ورود
+   جلوتر بود و بی برگشتن به ورود به تارگت 1 رسید: کانال آن را سود می‌شمارد، ولی با ورود اعلامی پر نمی‌شد.
+   اگر همان لحظه با قیمت بازار وارد می‌شدی، استاپ پشت ورود بود و قیمت تا تارگت 1 به آن نرسید؛ پس R همان
+   (تارگت 1 − قیمت انتشار) ÷ (قیمت انتشار − استاپ) است، بی کارمزد. */
+function audNoneHtml(rows){
+  const N=rows.filter(x=>x.r&&x.r.st==='none');if(!N.length)return '';
+  const by={ran:[],timeout:[],inval:[]};for(const x of N)(by[x.r.why]||(by[x.r.why]=[])).push(x);
+  const alt=by.ran.map(x=>{const i=x.inp,s=i.dir==='long'?1:-1,p0=x.r.px0,T=i.tps&&i.tps[0];
+    return p0>0&&T&&i.stop&&(p0-i.stop)*s>0?(T-p0)*s/((p0-i.stop)*s):null;}).filter(v=>v!=null&&isFinite(v));
+  const av=alt.length?alt.reduce((a,b)=>a+b,0)/alt.length:null;
+  const li=[];
+  if(by.ran.length)li.push('<b>'+faN(by.ran.length)+'</b> مستقیم به تارگت رفت، بی برگشت به ورود (کانال احتمالاً «سود» حساب کرده)'+
+    (av!=null?' — با ورود بازار همان لحظه میانگین <b dir="ltr" class="'+cls(av)+'">'+fmtR(av)+'</b>':''));
+  if(by.timeout.length)li.push('<b>'+faN(by.timeout.length)+'</b> قیمت تا '+faN(audRules().entryDays)+' روز به ورود نرسید');
+  if(by.inval.length)li.push('<b>'+faN(by.inval.length)+'</b> پیش از ورود از استاپ گذشت');
+  return '<div class="stnote audnone">'+ic('info')+'<span><b>فعال نشد ('+faN(N.length)+'):</b> '+li.join(' · ')+'.'+
+    (by.ran.length?' تحمل ورود ('+faN(audRules().tol)+'٪) را در «قانون‌ها» می‌توانی عوض کنی.':'')+'</span></div>';
 }
 function buildAudList(rows){
   const c=el('div','panel');
