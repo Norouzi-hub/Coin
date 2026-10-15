@@ -1996,6 +1996,8 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .rbrevs.flash{animation:revflash 1.6s var(--ease)}
 @keyframes revflash{0%,40%{box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 70%,transparent)}100%{box-shadow:0 0 0 0 transparent}}
 .rbrevl{border-color:color-mix(in srgb,var(--acc) 45%,var(--line))}
+.audper{font-size:12.5px;color:var(--tx2);margin:10px 2px 6px;line-height:1.8}.audper b{color:var(--tx)}.audper small{color:var(--tx3)}
+.audwk{margin:0 0 10px}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -13343,6 +13345,8 @@ function renderAudit(){
   // ── کارنامه‌ی کانال ──
   safe('کارنامه‌ی کانال',()=>{
   const sc=el('div','panel');
+  // کاشی‌ها فقط سیگنال‌هایی که همان لحظه داده شده‌اند؛ یادآوری‌های قدیمی (همه برنده) جدا در یک خط
+  const live=rows.filter(x=>!x.inp.old),st=audStats(live);
   sc.appendChild(el('div','panelhead','<b>کارنامه‌ی کانال</b>'+
     (rows.length!==all.length?audFilterPill(all,rows):'')));
   const g=el('div','stats');
@@ -13356,17 +13360,20 @@ function renderAudit(){
     stHtml('فعال نشد',st.noneRate==null?'—':faN(st.noneRate.toFixed(0))+'٪','m',faN(st.none)+' سیگنال')+
     stHtml('در جریان',faN(st.open+st.wait),'m',faN(st.wait)+' منتظر ورود')+
     stHtml('نیاز به بررسی',faN(st.bad+st.amb),st.bad?'d':'m',st.todo?faN(st.todo)+' سنجیده نشده':'');
-  g.insertAdjacentHTML('beforeend',audNoneHtml(rows));
+  g.insertAdjacentHTML('beforeend',audNoneHtml(live));
   {const O=rows.filter(x=>x.inp.old&&x.r&&['win','loss','exp'].includes(x.r.st));
-   if(O.length){const s2=audStats(rows.filter(x=>!x.inp.old));
-     g.insertAdjacentHTML('beforeend','<div class="stnote">'+ic('info')+'<span>شامل <b>'+faN(O.length)+'</b> سیگنال قدیمیِ «از یادآوری» (کانال معمولاً فقط برنده‌ها را یادآوری می‌کند). '+
-       'بدون آن‌ها: '+faN(s2.cnt)+' سیگنال · مجموع <b class="'+cls(s2.sumR)+'" dir="ltr">'+fmtR(s2.sumR)+'</b>'+(s2.avgR!=null?' · میانگین <b class="'+cls(s2.avgR)+'" dir="ltr">'+fmtR(s2.avgR)+'</b>':'')+'.</span></div>');}}
+   if(O.length){const s2=audStats(rows.filter(x=>x.inp.old));
+     g.insertAdjacentHTML('beforeend','<div class="stnote">'+ic('info')+'<span>عددهای بالا فقط سیگنال‌هایی است که همان لحظه داده شده‌اند. <b>'+faN(O.length)+'</b> سیگنال قدیمیِ «از یادآوری» جدا حساب شده: '+
+       faN(s2.win)+' برد · '+faN(s2.loss)+' باخت · مجموع <b class="'+cls(s2.sumR)+'" dir="ltr">'+fmtR(s2.sumR)+'</b> — کانال معمولاً فقط برنده‌ها را یادآوری می‌کند، پس این‌ها کانال را بهتر از آنچه هست نشان می‌دهند.</span></div>');}}
+  {const o=st.open+st.wait;if(o)g.insertAdjacentHTML('beforeend','<div class="stnote">'+ic('info')+'<span><b>'+faN(o)+'</b> سیگنال هنوز «در جریان» است: وارد شده ولی نه استاپ خورده نه تارگت (تا '+faN(audRules().days)+' روز دنبال می‌شوند)، یا هنوز منتظر ورود. در آمار نیستند تا نتیجه‌شان معلوم شود؛ «سنجش تازه‌ها» وضعیتشان را به‌روز می‌کند.</span></div>');}
   {const nd=st.win+st.loss+st.exp;
    if(nd>0&&nd<SMALL_N)g.insertAdjacentHTML('beforeend','<div class="stnote">'+ic('info')+'<span>فقط '+faN(nd)+
      ' سیگنال به نتیجه رسیده — برای قضاوت درباره‌ی کانال دست‌کم '+faN(SMALL_N)+' لازم است.</span></div>');}
   sc.appendChild(g);
+  sc.insertAdjacentHTML('beforeend',audPeriodHtml(rows));
+  {const d=sc.querySelector('.audwk');if(d)d.ontoggle=()=>{AUDWK=d.open;};}
   /* یک منحنی: سرمایه با «قاعده‌ی من» و ریسک دلاری (اگر داده‌اش هست)، وگرنه R قانون کانال‌سنج */
-  {const cc=capCurve(rows);
+  {const cc=capCurve(live);
    if(cc.pts.length>2)sc.appendChild(rCurve(cc.pts,cc.worst?cc.dd/cc.risk:0,
      'سرمایه با '+(xRule()?'قاعده‌ی من':'قانون کانال‌سنج')+' و ریسک '+fmtUsd(cc.risk)+' در هر معامله: '+fmtUsd(cc.start)+' ← <b class="'+cls(cc.cap-cc.start)+'">'+fmtUsd(cc.cap)+'</b>'+
      ' · بیشترین افت <span style="color:var(--dn)">'+fmtUsd(-cc.dd)+'</span>'));
@@ -13814,6 +13821,26 @@ function buildVsChannel(rows){
    جلوتر بود و بی برگشتن به ورود به تارگت 1 رسید: کانال آن را سود می‌شمارد، ولی با ورود اعلامی پر نمی‌شد.
    اگر همان لحظه با قیمت بازار وارد می‌شدی، استاپ پشت ورود بود و قیمت تا تارگت 1 به آن نرسید؛ پس R همان
    (تارگت 1 − قیمت انتشار) ÷ (قیمت انتشار − استاپ) است، بی کارمزد. */
+/* بازه‌ی سنجش و آمار هفته‌به‌هفته (شنبه تا جمعه، وقت تهران)؛ فقط سیگنال‌های همان‌لحظه، یادآوری‌ها جدا شمرده می‌شوند */
+let AUDWK=false;
+function audPeriodHtml(rows){
+  const L=rows.filter(x=>x.inp.t0&&!x.inp.old);if(!L.length)return '';
+  const t0s=L.map(x=>x.inp.t0),a=Math.min(...t0s),b=Math.max(...t0s),days=Math.max(1,Math.round((b-a)/DAY)+1);
+  const dk=t=>jStamp(new Date(t)).split(' ')[0];
+  const wk=t=>Math.floor((Math.floor((t+3.5*36e5)/DAY)+5)/7);          // هفته از شنبه
+  const G=new Map();for(const x of L){const k=wk(x.inp.t0);if(!G.has(k))G.set(k,[]);G.get(k).push(x);}
+  const row=(lab,X,on)=>{const s=audStats(X),d=s.win+s.loss+s.exp;
+    return '<tr'+(on?' class="on"':'')+'><td>'+lab+'</td><td class="num">'+faN(X.length)+'</td><td class="num">'+faN(d)+'</td>'+
+      '<td class="num '+(s.winRate==null?'':s.winRate>=50?'win':'lose')+'">'+(s.winRate==null?'—':faN(Math.round(s.winRate))+'٪')+'</td>'+
+      '<td class="num '+cls(s.sumR)+'"><bdi>'+(s.cnt?fmtR(s.sumR):'—')+'</bdi></td><td class="num '+cls(s.avgR)+'"><bdi>'+(s.avgR!=null?fmtR(s.avgR):'—')+'</bdi></td>'+
+      '<td class="num">'+(s.noneRate==null?'—':faN(Math.round(s.noneRate))+'٪')+'</td><td class="num">'+faN(s.open+s.wait)+'</td></tr>';};
+  const W=[...G.entries()].sort((x,y)=>y[0]-x[0]);
+  const nOld=rows.filter(x=>x.inp.old).length;
+  return '<div class="audper"><b>بازه‌ی سنجش:</b> '+esc(dk(a))+' تا '+esc(dk(b))+' ('+faN(days)+' روز) · '+faN(L.length)+' سیگنال · حدود '+fmtNum(L.length/days)+' در روز'+(nOld?' · <small>'+faN(nOld)+' یادآوری قدیمی جدا</small>':'')+'</div>'+
+    '<details class="sec sub2 audwk"'+(AUDWK?' open':'')+'><summary>آمار هفته‌به‌هفته ('+faN(W.length)+' هفته)</summary><div class="tscroll"><table class="tp xtab"><thead><tr><th>هفته از</th><th>سیگنال</th><th>به نتیجه</th><th>برد</th><th>جمع R</th><th>میانگین</th><th>فعال نشد</th><th>در جریان</th></tr></thead><tbody>'+
+    W.map(([k,X])=>row(esc(dk(Math.min(...X.map(x=>x.inp.t0))).slice(5)),X)).join('')+row('<b>کل</b>',L,true)+'</tbody></table></div>'+
+    '<div class="hint">«به نتیجه» = برد، باخت یا منقضی؛ «برد» از میان برد و باخت؛ جمع R با «همه در تارگت اول» (قانون کانال‌سنج). هفته‌ای که بیشترش «در جریان» است هنوز قضاوت‌پذیر نیست.</div></details>';
+}
 function audNoneHtml(rows){
   const N=rows.filter(x=>x.r&&x.r.st==='none');if(!N.length)return '';
   const by={ran:[],timeout:[],inval:[]};for(const x of N)(by[x.r.why]||(by[x.r.why]=[])).push(x);
