@@ -116,47 +116,104 @@ function rbAllPlans(it,C){
   }
   return out;
 }
-/* «خلاف جهت»: همان تست با جهت برعکس، آینه‌ی استاپ و هدف دور همان ورود (همان فاصله‌ی استاپ) و همان نقشه‌ی خروج،
-   روی همان کندل‌های 5 دقیقه‌ای و تا همان سقف زمان، بعد از کارمزد. بی پوزیشن دوم؛ فقط حساب.
-   st='open' یعنی سقف زمان خلافش هنوز تمام نشده (R همان لحظه). */
+/* ==== «اگر خلافش را گرفته بودیم» (فقط با درخواست، یکی‌یکی؛ یا یکجا برای خروجی) ====
+   همان معامله با جهت برعکس: همان ورود، استاپ آینه‌ی استاپ اول (همان فاصله)، هدف آینه‌ی هدف/تارگت اول،
+   و فقط برای همان مدتی که خودش باز بود (ورود تا خروج؛ اگر هنوز باز است تا الان). اگر در آن مدت نه استاپ
+   خورد نه هدف، با قیمت لحظه‌ی خروج خودش بسته می‌شود. بعد از کارمزد. v:2 = این تعریف (قبلی تا سقف زمان بود). */
+const REV_V=2;
+const revDur=ms=>{const m=Math.max(0,Math.round(ms/6e4));return m<60?faN(m)+' دقیقه':faN(Math.floor(m/60))+' ساعت'+(m%60?' و '+faN(m%60)+' دقیقه':'');};
 function rbRevSim(it,C){
-  const M5=3e5,t1=Math.floor(it.t/M5)*M5+M5,end=it.t+rbHoldH(it)*36e5,full=C.length>0&&C[C.length-1].t>=end-2*M5;
+  const M5=3e5,t1=Math.floor(it.t/M5)*M5+M5,open=it.st==='open',end=!open&&it.xt?it.xt:Date.now();
   const y={id:it.id,k:it.k,tk:it.tk,dir:it.dir==='long'?'short':'long',t:it.t,E:it.E,SL:2*it.E-it.SL,TP:it.TP!=null?2*it.E-it.TP:null,
     sd:it.sd,rr:it.rr,st:'open',ex:it.ex||'tp',x:exNew(),be:false};
   let last=null;
-  for(const k of C){if(k.t<t1)continue;if(k.t>=end)break;last=k;if(rbStep(y,k.h,k.l,k.t+M5,k.c))break;}
-  if(y.st!=='open')return {R:+y.R.toFixed(3),st:y.st};
-  return last?{R:+rbLiveR(y,last.c).toFixed(3),st:full?'time':'open'}:null;
+  for(const k of C){if(k.t<t1)continue;if(k.t>=end)break;last=k;if(rbStep(y,k.h,k.l,Math.min(k.t+M5,end),k.c))break;}
+  const v={v:REV_V,dur:end-it.t,at:Date.now()};
+  if(y.st!=='open')return Object.assign(v,{R:+y.R.toFixed(3),st:y.st});
+  // هنوز باز: با قیمت خروج خود معامله (همان لحظه)، یا آخرین کندل
+  const px=!open&&it.xp>0?it.xp:last?last.c:null;if(px==null)return null;
+  return Object.assign(v,{R:+rbLiveR(y,px).toFixed(3),st:open?'open':'time'});
 }
-/* پر کردن «خلاف جهت» تست‌های بسته در پس‌زمینه (مسیرها در IndexedDB می‌مانند؛ هر 10 دقیقه یک دور) */
-let RBREVON=false,RBREVAT=0;
-async function rbRevFill(force){
-  if(RBREVON||(!force&&Date.now()-RBREVAT<10*60000))return;
-  const L=RB.items.filter(it=>it.k==='test'&&it.st!=='open'&&it.st!=='void'&&it.E>0&&it.sd>0&&(!it.rev||it.rev.st==='open')).sort((a,b)=>b.xt-a.xt);
-  if(!L.length)return;
-  RBREVON=true;RBREVAT=Date.now();let n=0,nd=0;
-  jobSet('rbrev',{title:'«خلاف جهت» تست‌ها',pause:true,cancel:true,pct:()=>nd/L.length*100,msg:()=>faN(nd)+' از '+faN(L.length),
-    go:()=>{RDV='test';if(view==='radar')renderRadar();else go('radar');}});
-  try{for(const it of L){if(!(await jobGate('rbrev')))break;nd++;
-    try{const C=await rbPath(it);if(!C.length)continue;const o=rbRevSim(it,C);if(o){it.rev=o;n++;}}catch(e){}
-    if(n&&n%20===0)rbSave();}}
-  finally{RBREVON=false;jobEnd('rbrev');}
-  if(n){rbSave();if(view==='radar'&&RDV==='test')renderRadar();}
+async function rbRevCalc(it){const C=await rbPath(it);const o=rbRevSim(it,C);if(!o)throw new Error('short');it.rev=o;rbSave();return o;}
+const revOk=o=>o&&o.v===REV_V;
+const REV_ST={tp:'به هدف رسید',sl:'استاپ خورد',be:'ریسک‌فری',trail:'استاپ متحرک',time:'با قیمت خروج خودش',open:'تا الان',man:'با قیمت خروج خودش'};
+function rbRevLine(it){const o=it.rev;if(!revOk(o))return '';
+  const d=it.st!=='open'&&it.R!=null?o.R-it.R:null;
+  return '<div class="rbhold rbrevl"><div><b>اگر خلافش را گرفته بودیم</b> <small>(همان '+revDur(o.dur)+'، '+REV_ST[o.st]+')</small>: '+rbMoney(o.R,it)+
+    (d!=null?' · نسبت به خودش <b class="'+cls(d)+'" dir="ltr">'+fmtR(d)+'</b> <small>('+(d>0.05?'خلافش بهتر بود':d<-0.05?'خودش بهتر بود':'فرقی نکرد')+')</small>':'')+'</div></div>';}
+/* پوزیشن واقعی: کندل 5 دقیقه‌ای (تا 3 روز) یا یک‌ساعته؛ R با فاصله‌ی استاپ اول، دلار با ریسک اول */
+async function posRevCalc(p){
+  const E=+p.entry,st0=+(p.stop0!=null?p.stop0:p.stop),s=p.dir==='long'?1:-1;
+  if(!(E>0)||!(st0>0)||(E-st0)*s<=0)throw new Error('nostop');
+  const t0=+p.openedAt,closed=p.status==='closed'&&p.closedAt,t1=closed?+p.closedAt:Date.now();
+  const iv=t1-t0<=3*864e5?'5m':'1h',ms=iv==='5m'?3e5:36e5,C=[];let a=Math.floor(t0/ms)*ms;
+  for(let n=0;a<t1&&n<15;n++){const got=(await audCandles(p.ticker,iv,a,Math.min(300,Math.ceil((t1-a)/ms)+1),true,n?null:E)).filter(k=>k.t>=a&&k.t<t1);
+    if(!got.length)break;C.push(...got);a=got[got.length-1].t+ms;if(got.length<250)break;}
+  const rs=-s,risk=Math.abs(E-st0),SL=2*E-st0,T1=ladTps(p)[0],TP=T1&&2*E-T1>0?2*E-T1:null,c=exCost({tpf:0},risk/E);
+  const rOf=px=>(px-E)*rs/risk;let R=null,st=null,last=null;
+  for(const k of C){if(k.t<Math.floor(t0/ms)*ms+ms)continue;last=k;
+    const adv=rs>0?k.l:k.h,fav=rs>0?k.h:k.l;
+    if((adv-SL)*rs<=0){R=-1;st='sl';break;}
+    if(TP&&(fav-TP)*rs>=0){R=rOf(TP);st='tp';break;}}
+  if(R==null){const px=closed&&p.exitPrice>0?+p.exitPrice:last?last.c:null;if(px==null)throw new Error('short');R=rOf(px);st=closed?'time':'open';}
+  R=+(R-c).toFixed(3);
+  const r0=risk0Of(p)||0;
+  p.rev={v:REV_V,R,usd:+(R*r0).toFixed(2),st,dur:t1-t0,at:Date.now(),iv};save();return p.rev;
 }
-/* خلاصه: اگر خلاف همه را گرفته بودی، و روزبه‌روز (برتری‌ای که فقط در یکی دو روز است، شانس جهت بازار است) */
+function posRevHtml(p,m){const o=p.rev;if(!revOk(o))return '';
+  const d=p.status==='closed'&&m&&m.r!=null&&isFinite(m.r)?o.R-m.r:null;
+  return '<div><b>اگر خلافش را گرفته بودیم</b> <small>(همان '+revDur(o.dur)+'، '+REV_ST[o.st]+')</small>: <b class="'+cls(o.R)+'" dir="ltr">'+fmtR(o.R)+'</b> <b class="'+cls(o.usd)+'" dir="ltr">'+fmtUsd(o.usd)+'</b>'+
+    (d!=null?' · نسبت به خودش <b class="'+cls(d)+'" dir="ltr">'+fmtR(d)+'</b> <small>('+(d>0.05?'خلافش بهتر بود':d<-0.05?'خودش بهتر بود':'فرقی نکرد')+')</small>':'')+'</div>';}
+/* یکجا (فقط با زدن دکمه): همه‌ی تست‌ها و پوزیشن‌های بسته‌ای که هنوز حساب نشده‌اند، با نوار کار */
+let REVALLON=false;
+async function revAll(){
+  if(REVALLON)return;
+  const T=RB.items.filter(it=>it.k==='test'&&it.st!=='open'&&it.st!=='void'&&it.E>0&&it.sd>0&&!revOk(it.rev));
+  const P=(DB.positions||[]).filter(p=>p.status==='closed'&&!revOk(p.rev)&&(p.stop0||p.stop));
+  const L=[...T.map(x=>['t',x]),...P.map(x=>['p',x])];let nd=0,fail=0;
+  if(!L.length)return {n:0,fail:0};
+  REVALLON=true;
+  jobSet('revall',{title:'«اگر خلافش را گرفته بودیم» برای همه',pause:true,cancel:true,pct:()=>nd/L.length*100,msg:()=>faN(nd)+' از '+faN(L.length)});
+  try{for(const [k,x] of L){if(!(await jobGate('revall')))break;nd++;
+    try{if(k==='t'){const C=await rbPath(x);const o=rbRevSim(x,C);if(o)x.rev=o;else fail++;}else await posRevCalc(x);}catch(e){fail++;}
+    if(nd%20===0)rbSave();}}
+  finally{REVALLON=false;jobEnd('revall');rbSave();save();}
+  return {n:nd,fail};
+}
+function revExport(){
+  const tm=t=>t?new Date(t).toISOString():null;
+  const T=RB.items.filter(it=>it.k==='test'&&it.st!=='open'&&revOk(it.rev)).map(it=>({tk:it.tk,dir:it.dir,t:tm(it.t),xt:tm(it.xt),durMin:Math.round(it.rev.dur/6e4),ex:it.ex||null,sc:it.sc,
+    E:it.E,SL:it.SL,st:it.st,R:it.R,rev:{R:it.rev.R,st:it.rev.st}}));
+  const P=(DB.positions||[]).filter(p=>p.status==='closed'&&revOk(p.rev)).map(p=>{const m=posMetrics(p);return {tk:p.ticker,dir:p.dir,src:posSrc(p).sub,lev:+p.lev||null,
+    openedAt:tm(p.openedAt),closedAt:tm(p.closedAt),durMin:Math.round(p.rev.dur/6e4),entry:p.entry,stop0:p.stop0??p.stop,exit:p.exitPrice??null,r:m.r!=null?+m.r.toFixed(3):null,pnl:m.pnl!=null?+m.pnl.toFixed(2):null,
+    rev:{R:p.rev.R,usd:p.rev.usd,st:p.rev.st,iv:p.rev.iv}};});
+  const sum=L=>{const a=L.reduce((x,o)=>x+(o.R??o.r??0),0),b=L.reduce((x,o)=>x+o.rev.R,0);return {n:L.length,same:+a.toFixed(2),rev:+b.toFixed(2)};};
+  return JSON.stringify({v:1,app:'signaldesk',kind:'reverse',at:new Date().toISOString(),
+    note:'rev = same trade, opposite direction, mirrored first stop/target, only for the time the trade itself was open, after fees',
+    summary:{tests:sum(T),positions:sum(P)},tests:T,positions:P});
+}
+async function revExportStart(){
+  const r=await revAll();if(r&&r.fail)toast(faN(r.fail)+' مورد حساب نشد (کندل نیامد یا استاپ نداشت)','info');
+  const txt=revExport(),n=JSON.parse(txt);
+  sheetExportTxt(txt,'signaldesk-reverse-'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')+'.json',
+    faN(n.tests.length)+' تست و '+faN(n.positions.length)+' پوزیشن بسته با «اگر خلافش را گرفته بودیم»');
+  if(view==='radar')renderRadar();else renderAll();
+}
+/* خلاصه‌ی تست‌ها: فقط آن‌هایی که حساب شده‌اند (یکی‌یکی یا یکجا) */
 function rbRevHtml(done){
-  const L=done.filter(it=>it.rev&&it.rev.st!=='open'&&it.R!=null);if(!L.length)return '';
-  const sum=f=>L.reduce((a,it)=>a+f(it),0),a=sum(it=>it.R),b=sum(it=>it.rev.R),n=L.length;
-  const w=f=>Math.round(L.filter(f).length/n*100);
-  const D=new Map();for(const it of L){const k=dayNo(new Date(it.xt)),o=D.get(k)||{a:0,b:0};o.a+=it.R;o.b+=it.rev.R;D.set(k,o);}
-  const days=[...D.values()],better=days.filter(o=>o.b>o.a).length;
-  const by=d=>{const G=L.filter(it=>it.dir===d);return G.length?faN(G.length)+' '+(d==='long'?'لانگ':'شورت')+': <b class="'+cls(G.reduce((x,it)=>x+it.rev.R,0))+'" dir="ltr">'+fmtR(G.reduce((x,it)=>x+it.rev.R,0))+'</b>':'';};
-  const miss=done.filter(it=>!it.rev||it.rev.st==='open').length;
-  return '<div class="rbsum rbrevs"><b>اگر خلاف همه را گرفته بودی</b>'+
-    '<span>'+faN(n)+' تست · همان جهت <b class="'+cls(a)+'" dir="ltr">'+fmtR(a)+'</b> ('+faN(w(it=>it.R>0))+'٪ برد) · خلاف جهت <b class="'+cls(b)+'" dir="ltr">'+fmtR(b)+'</b> ('+faN(w(it=>it.rev.R>0))+'٪ برد)</span>'+
-    '<span>میانگین هر تست: همان <b class="'+cls(a/n)+'" dir="ltr">'+fmtR(a/n)+'</b> · خلاف <b class="'+cls(b/n)+'" dir="ltr">'+fmtR(b/n)+'</b> · '+[by('long'),by('short')].filter(Boolean).join(' · ')+'</span>'+
-    '<span>خلاف جهت در <b>'+faN(better)+'</b> روز از '+faN(days.length)+' روز بهتر بود'+(miss?' · <small>'+faN(miss)+' تست هنوز حساب نشده</small>':'')+'</span>'+
-    '<small>همان استاپ، همان نقشه‌ی خروج و همان کندل‌ها، فقط جهت برعکس؛ بعد از کارمزد. اگر برتری خلاف فقط در یکی دو روز است، شانس جهت بازار است نه قاعده.</small></div>';
+  const L=done.filter(it=>revOk(it.rev)&&it.R!=null),miss=done.length-L.length;
+  let h='<div class="rbsum rbrevs"><b>اگر خلافش را گرفته بودیم</b>';
+  if(L.length){
+    const sum=f=>L.reduce((a,it)=>a+f(it),0),a=sum(it=>it.R),b=sum(it=>it.rev.R),n=L.length,w=f=>Math.round(L.filter(f).length/n*100);
+    const D=new Map();for(const it of L){const k=dayNo(new Date(it.xt)),o=D.get(k)||{a:0,b:0};o.a+=it.R;o.b+=it.rev.R;D.set(k,o);}
+    const days=[...D.values()],better=days.filter(o=>o.b>o.a).length;
+    h+='<span>'+faN(n)+' تست حساب شده · خودش <b class="'+cls(a)+'" dir="ltr">'+fmtR(a)+'</b> ('+faN(w(it=>it.R>0))+'٪ برد) · خلافش <b class="'+cls(b)+'" dir="ltr">'+fmtR(b)+'</b> ('+faN(w(it=>it.rev.R>0))+'٪ برد)</span>'+
+      '<span>خلافش در <b>'+faN(better)+'</b> روز از '+faN(days.length)+' روز بهتر بود</span>';
+  }
+  h+='<span>'+(miss?faN(miss)+' تست هنوز حساب نشده؛ روی هر تست «اگر خلافش را گرفته بودیم؟» را بزن، یا همه را یکجا برای خروجی.':'همه حساب شده‌اند.')+'</span>'+
+    '<div class="srow"><button class="btn sm" data-rbrev="exp">'+ic('down')+'<span>خروجی «خلاف جهت» برای بررسی</span></button></div>'+
+    '<small>همان استاپ و نقشه، جهت برعکس، فقط برای همان مدتی که خود تست باز بود؛ بعد از کارمزد. اگر برتری خلاف فقط در یکی دو روز است، شانس جهت بازار است نه قاعده. «خروجی» تست‌ها و پوزیشن‌های واقعی بسته را یکجا حساب می‌کند.</small></div>';
+  return h;
 }
 /* جدول: هر نقشه روی همین تست‌های واقعی (بسته‌ها؛ بازها جدا شمرده می‌شوند) */
 function rbPlansTable(res){
@@ -312,11 +369,14 @@ async function rbExportStart(){
 }
 function sheetExport(){
   let txt='';try{txt=rbLabExport();}catch(e){toast('ساختن خروجی نشد: '+e.message,'err');return;}
-  const name=rbExpName(), n=(RBL.res||[]).length, kb=Math.max(1,Math.round(txt.length/1024));
+  sheetExportTxt(txt,rbExpName(),faN((RBL.res||[]).length)+' معامله با مسیر واقعی قیمت، عامل‌های لحظه‌ی ورود و خلاصه‌ی مدل');
+}
+function sheetExportTxt(txt,name,desc){
+  const kb=Math.max(1,Math.round(txt.length/1024));
   let file=null;try{file=new File([txt],name,{type:'application/json'});}catch(e){}
   const canShare=!!(file&&navigator.canShare&&navigator.canShare({files:[file]}));
   openSheet('<h3>'+ic('down')+'خروجی برای بررسی آماده است</h3>'+
-    '<div class="hint">'+faN(n)+' معامله با مسیر واقعی قیمت، عامل‌های لحظه‌ی ورود و خلاصه‌ی مدل · '+faN(kb)+' کیلوبایت. یکی را بزن و فایل (یا متن) را برایم بفرست.</div>'+
+    '<div class="hint">'+desc+' · '+faN(kb)+' کیلوبایت. یکی را بزن و فایل (یا متن) را برایم بفرست.</div>'+
     '<div class="exacts">'+(canShare?'<button class="btn ok" id="exSh">'+ic('share')+'<span>اشتراک (تلگرام، …)</span></button>':'')+
       '<button class="btn'+(canShare?'':' ok')+'" id="exDl">'+ic('down')+'<span>دانلود فایل</span></button>'+
       '<button class="btn" id="exCp">'+ic('book')+'<span>کپی متن</span></button></div>'+

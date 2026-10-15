@@ -158,6 +158,8 @@ function renderPositions0(){
       add('مجموع خالص',fmtUsd(totalClosed),cls(totalClosed),'تحقق‌یافته');
       add('امروز',fmtUsd(todayPnl),cls(todayPnl),'بسته‌شده');
       add('برد',closed.length?faN(Math.round(win/closed.length*100))+'٪':'—',closed.length?'':'m',rAvg!=null?'میانگین '+fmtR(rAvg):'');
+      {const V=closed.filter(p=>revOk(p.rev));if(V.length){const r=V.reduce((s,p)=>s+p.rev.R,0),u=V.reduce((s,p)=>s+(p.rev.usd||0),0);
+        add('اگر خلافش',fmtUsd(u),cls(u),faN(V.length)+' از '+faN(closed.length)+' حساب‌شده · '+fmtR(r));}}
     }else{
       add('پوزیشن',faN(all.length),'',faN(open.length)+' باز · '+faN(closed.length)+' بسته');
       add('سود/ضرر باز',hasLive?fmtUsd(unreal):'—',hasLive?cls(unreal):'m','شناور');
@@ -433,6 +435,12 @@ function buildPosCard(p,opt){
   if(open){const mb=posMiniBar(p,live);if(mb)b.appendChild(mb);}
 
   b.appendChild(buildLadder(p,live,m));
+  // «اگر خلافش را گرفته بودیم»: با درخواست، همان مدتی که باز بود
+  if(p.stop0||p.stop){const rv=el('div','rbhold posrev',posRevHtml(p,m));
+    const bt=el('button','btn sm',ic('undo')+'<span>'+(revOk(p.rev)?'تازه کن «خلافش»':'اگر خلافش را گرفته بودیم؟')+'</span>');
+    bt.title='همان ورود، استاپ اول و تارگت اول آینه‌شده، جهت برعکس، فقط همان مدتی که باز '+(open?'است':'بود');
+    bt.onclick=()=>busyRun(()=>posRevCalc(p)).then(()=>renderPositions()).catch(e=>toast(e&&e.message==='short'?'کوتاه‌تر از یک کندل بود':'کندل‌های '+p.ticker+' نیامد؛ کمی بعد دوباره بزن','err'));
+    rv.appendChild(bt);b.appendChild(rv);}
   if(open)b.appendChild(el('div','ladhint',p.stop?'دستگیره طلایی را بکش تا حد ضرر جابجا شود':'برای گذاشتن حد ضرر، دستگیره را بکش'));
   const sw=el('div','stopwrap');b.appendChild(sw);
 
