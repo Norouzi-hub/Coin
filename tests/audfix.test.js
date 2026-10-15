@@ -46,9 +46,11 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    o.pd=[parseDateFa('1405/05/12 14:30'),Date.UTC(2026,7,3,11,0),parseDateFa('۱۴۰۵/۰۵/۱۲'),parseDateFa('2026-08-03 14:30'),parseDateFa('xx')];
    sheetAudFix([{id:B,why:'px',rows:new Set([B])}],0);await W(150);
    o.odHidden=$q('#odw').classList.contains('hide');$q('#od').click();o.odShown=!$q('#odw').classList.contains('hide');
-   $q('#f_t0').value='1405/05/12 14:30';$q('#f_en').value='3000';$q('#f_st').value='2900';$q('#ok').click();await W(150);
+   o.picker=$q('#f_t0').type==='datetime-local';
+   $q('#f_t0').value='2026-08-25T14:00';$q('#f_t0').dispatchEvent(new Event('input'));o.fa=$q('#t0fa').textContent;
+   $q('#f_en').value='3000';$q('#f_st').value='2900';$q('#ok').click();await W(150);
    const ob=OVERRIDE[B]||{},ib=audInput(POSTS.find(x=>x.id===B))||{};
-   o.old=ob.old===true&&ob.t0===Date.UTC(2026,7,3,11,0)&&ib.t0===ob.t0&&ib.old===true&&ib.entry===3000;
+   o.old=ob.old===true&&ob.t0===new Date('2026-08-25T14:00').getTime()&&ib.t0===ob.t0&&ib.old===true&&ib.entry===3000;
    audList='all';AUDOPEN='فهرست سیگنال‌ها';renderAudit();await W(80);
    o.tag=[...document.querySelectorAll('#vAudit .arow2 .pill')].some(x=>x.textContent==='از یادآوری');
    {const aR=audRows;audRows=()=>[{p:{id:'n1'},inp:{t0:1},r:{st:'win'},R:1},{p:{id:'o1'},inp:{t0:2,old:true},r:{st:'win'},R:2}];
@@ -80,7 +82,8 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(r.all,'«کنار گذاشتن همه» با پرسش، صف خالی شد');
  ok(r.pxHint&&r.res&&r.resBack,'«پست نتیجه است»: راهنما برای قیمت دور، به «نتایج» و بیرون از سنجش، با برگرداندن');
  ok(r.pd[0]===r.pd[1]&&r.pd[2]===Date.UTC(2026,7,3,8,30)&&r.pd[3]===r.pd[1]&&r.pd[4]===null,'تاریخ شمسی/میلادی، با و بی ساعت، و نامعتبر: '+JSON.stringify(r.pd));
- ok(r.odHidden&&r.odShown&&r.old,'«درست است؛ با تاریخ اصلی بسنج»: از 1405/05/12 سنجیده می‌شود، با نشان «قدیمی»');
+ ok(r.picker&&/1405\/06\/03/.test(r.fa)&&/اوت 2026/.test(r.fa),'انتخاب تاریخ میلادی از تقویم و نمایش شمسی: '+r.fa);
+ ok(r.odHidden&&r.odShown&&r.old,'«درست است؛ با تاریخ اصلی بسنج»: از 25 اوت سنجیده می‌شود، با نشان «قدیمی»');
  ok(r.planDec==='n1','معیار قبولی نقشه بدون سیگنال‌های «از یادآوری»');
  ok(r.kind==='true,false','قیمت پست 55٪ جلوتر از ورود لانگ ← یادآوری؛ قیمت ده‌برابر کمتر ← عدد/نماد اشتباه');
  ok(/1 یادآوری/.test(r.bulk||'')&&/یادآوری سیگنال قدیمی/.test(r.why)&&r.bulkRes&&r.bulkBack,'وضعیت سنجش: «بردن 1 یادآوری به «نتایج»» با پرسش و برگرداندن');
