@@ -103,23 +103,31 @@ function renderReportList(){
   }
   const keys=[...groups.keys()].sort().reverse();
 
-  // در «بازه‌ی دلخواه» تصویر کلی هم مال همان بازه است، نه همه‌ی معامله‌ها
-  const inRange=repPeriod==='range'?closed.filter(p=>p.closedAt>=repFrom&&p.closedAt<=repTo):closed;
-  const total=agg(inRange);
+  /* تصویر بالا مال همان دوره‌ی انتخابی است: «روزانه» امروز، «ماهانه» این ماه، «کل» همه، «بازه» همان بازه.
+     قبلاً همیشه همه‌ی معامله‌ها بود و با عوض کردن دوره فقط کارت‌های پایین عوض می‌شد */
+  const curK=repPeriod==='day'||repPeriod==='month'?periodKey(Date.now(),repPeriod):null;
+  const inRange=repPeriod==='range'?closed.filter(p=>p.closedAt>=repFrom&&p.closedAt<=repTo)
+    :curK?closed.filter(p=>periodKey(p.closedAt,repPeriod)===curK):closed;
+  const capT={range:'این بازه',day:'امروز',month:'این ماه'}[repPeriod]||'همه‌ی معامله‌ها';
   const head=el('div','panel');
   const ht=el('div','panelhead');
-  ht.appendChild(el('b',null,repPeriod==='range'?'تصویر این بازه':'تصویر کلی'));
-  const shAll=el('button','btn xs',ic('share')+'<span>تصویر</span>');
-  shAll.title='ساختن تصویر کارنامه برای فرستادن';
-  shAll.onclick=()=>sheetShareSummary(total,repPeriod==='range'?'این بازه':'همه‌ی معامله‌ها');
-  ht.appendChild(shAll);
+  ht.appendChild(el('b',null,repPeriod==='all'?'تصویر کلی':'تصویر '+capT));
   head.appendChild(ht);
-  head.appendChild(statsOf(total,true));
-  head.appendChild(equityCurve(inRange));
+  if(inRange.length){
+    const total=agg(inRange);
+    const shAll=el('button','btn xs',ic('share')+'<span>تصویر</span>');
+    shAll.title='ساختن تصویر کارنامه برای فرستادن';
+    shAll.onclick=()=>sheetShareSummary(total,capT);
+    ht.appendChild(shAll);
+    head.appendChild(statsOf(total,true));
+    head.appendChild(equityCurve(inRange));
+  }else head.appendChild(el('div','hint',capT+' معامله‌ی بسته‌ای نداری'+(keys.length?'؛ دوره‌های قبل پایین‌تر است.':'.')));
   body.appendChild(head);
-  if(REPSRC==='all'){const cmp=srcCompareHtml(inRange);if(cmp){const pn=el('div','panel',cmp);body.appendChild(pn);}}
-  body.appendChild(buildBehavior(inRange));
-  if(!F('lite'))body.appendChild(journalPanel(inRange));
+  if(inRange.length){
+    if(REPSRC==='all'){const cmp=srcCompareHtml(inRange);if(cmp){const pn=el('div','panel',cmp);body.appendChild(pn);}}
+    body.appendChild(buildBehavior(inRange));
+    if(!F('lite'))body.appendChild(journalPanel(inRange));
+  }
 
   for(const k of keys){
     const list=groups.get(k).sort((a,b)=>b.closedAt-a.closedAt);

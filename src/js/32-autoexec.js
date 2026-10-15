@@ -234,12 +234,16 @@ async function audOne(job,R){
   if(Math.abs(inp.entry-px0)/px0>0.3){AUD[p.id]={k,st:'bad',why:'px',px0,fin:true,at:Date.now()};return;}
   if(inp.inh&&Math.abs(inp.entry-inp.stop)/inp.entry>0.3){AUD[p.id]={k,st:'bad',why:'far-sl',px0,fin:true,at:Date.now()};return;}
   let r=audWalk(inp,C,R);
-  // 1000 کندل 5 دقیقه‌ای حدود 83 ساعت است؛ اگر کار تمام نشد، ادامه با کندل ساعتی
-  const last=C[C.length-1];
-  if(!r.fin&&!r.amb&&C.length>=1000&&Date.now()-last.t>IVMS['1h']){
+  /* 1000 کندل 5 دقیقه‌ای حدود 83 ساعت است؛ اگر کار تمام نشد و کندل‌ها به امروز نرسیده، ادامه با کندل ساعتی.
+     شرطِ «دقیقاً 1000 کندل آمد» برداشته شد: منبعی که کمتر می‌دهد (سقف 500، کندلِ جاافتاده) سیگنال را
+     برای همیشه «در جریان» نگه می‌داشت، چون هر بار همان چند روز اول دوباره خوانده می‌شد */
+  for(let n=0;n<3&&!r.fin&&!r.amb;n++){
+    const last=C[C.length-1];
+    if(Date.now()-last.t<=IVMS['1h'])break;
     const from=Math.floor((last.t+IVMS['5m'])/IVMS['1h'])*IVMS['1h'];
-    const H=await audCandles(inp.tk,'1h',from,1000).catch(()=>[]);
-    if(H.length){C=C.concat(H.filter(h=>h.t>last.t));r=audWalk(inp,C,R);}
+    const H=(await audCandles(inp.tk,'1h',from,1000).catch(()=>[])).filter(h=>h.t>last.t);
+    if(!H.length)break;
+    C=C.concat(H);r=audWalk(inp,C,R);
   }
   // ابهام: همان یک کندل را با کندل‌های ریزتر عوض کن و دوباره برو
   for(let n=0;r.amb&&n<4;n++){
@@ -259,9 +263,13 @@ async function audOne(job,R){
   AUD[p.id]=Object.assign(r,{k,at:Date.now()},inp.mktE?{e0:inp.entry}:{});
 }
 
-const AUDQ={on:false,n:0,done:0,fail:0,at:0,err:''};
-function audJobs(force,needPath){
-  const R=audRules(), now=Date.now(), out=[];
+/* at: زمان آخرین سنجش؛ ماندگار، وگرنه بعد از هر بار باز کردن برنامه «هنوز سنجشی انجام نشده» می‌گفت */
+const AUDATKEY='signaldesk.audat';
+const AUDQ={on:false,n:0,done:0,fail:0,at:+(lsGet(AUDATKEY)||0)||0,err:''};
+const audAtSave=()=>lsSet(AUDATKEY,AUDQ.at||0);
+/* now: «در جریان»ها را هم بسنج حتی اگر کمتر از 20 دقیقه پیش سنجیده شده‌اند (دکمه‌ی دستی) */
+function audJobs(force,needPath,now){
+  const R=audRules(), fresh=!!now, out=[];now=Date.now();
   const paths=[];
   for(const p of POSTS){
     const inp=audInput(p);if(!inp)continue;
@@ -271,7 +279,7 @@ function audJobs(force,needPath){
       if(noPath){paths.push({p,inp,k,pathOnly:true});continue;}
       if(a.fin&&!(a.st==='bad'&&a.why==='nocandle'))continue;
       if(a.st==='bad'&&a.why==='nocandle'&&(a.tries||0)>=3)continue;
-      if(now-(a.at||0)<20*60000)continue;               // تازه سنجیده شده
+      if(!fresh&&now-(a.at||0)<20*60000)continue;        // تازه سنجیده شده
     }
     out.push({p,inp,k});
   }
@@ -281,10 +289,10 @@ function audJobs(force,needPath){
   paths.sort((a,b)=>(b.inp.t0||0)-(a.inp.t0||0));
   return out.concat(paths.slice(0,40));
 }
-async function audRun(force,needPath){
+async function audRun(force,needPath,fresh){
   if(AUDQ.on&&Date.now()-(AUDQ.t0||0)<10*60000)return;   // صفی که ده دقیقه گیر کرده، رها می‌شود
-  const jobs=audJobs(force,needPath);
-  if(!jobs.length){AUDQ.at=Date.now();paintAudProgress();return;}
+  const jobs=audJobs(force,needPath,fresh);
+  if(!jobs.length){AUDQ.at=Date.now();audAtSave();paintAudProgress();return 0;}
   Object.assign(AUDQ,{on:true,n:jobs.length,done:0,fail:0,err:'',t0:Date.now()});
   jobSet('aud',{title:'سنجش کانال',pause:true,cancel:true,pct:()=>AUDQ.done/Math.max(1,AUDQ.n)*100,msg:()=>faN(AUDQ.done)+' از '+faN(AUDQ.n)+' سیگنال',go:()=>go('audit')});
   logIt('info','کانال‌سنج: '+jobs.length+' سیگنال در صف');
@@ -315,7 +323,7 @@ async function audRun(force,needPath){
         tries:((a&&a.k===j.k&&a.tries)||0)+1,at:Date.now()};
     }
   }else if(failed.length)toast('کندل‌ها نیامد — اتصال یا واسط قیمت را بررسی کن'+(AUDQ.err?' ('+AUDQ.err+')':''),'err');
-  Object.assign(AUDQ,{on:false,at:Date.now(),fail:failed.length});jobEnd('aud');
+  Object.assign(AUDQ,{on:false,at:Date.now(),fail:failed.length});audAtSave();jobEnd('aud');
   logIt(failed.length&&!ok?'err':'info','کانال‌سنج: '+ok+' سنجیده، '+failed.length+' ناموفق'+(AUDQ.err?' · '+AUDQ.err:''));
   audSave();
   renderAll();
@@ -773,6 +781,13 @@ function audUnskipAll(){
   let n=0;for(const [id,o] of Object.entries(OVERRIDE))if(o&&o.noAud){delete o.noAud;if(!Object.keys(o).length)delete OVERRIDE[id];n++;}
   DB.overrides=OVERRIDE;save();renderAll();toast(faN(n)+' سیگنال به سنجش برگشت','ok');
 }
+/* بعد از ثبت عددها همان یک سیگنال فوراً سنجیده می‌شود تا از صف «نیاز به بررسی» بیرون برود
+   (قبلاً تا بستن برگه و تمام شدن صف «سنجیده نشده» می‌ماند و در همان فهرست دیده می‌شد) */
+async function audMeasureOne(p){
+  const inp=audInput(p);if(!inp)return;const R=audRules();
+  try{await audOne({p,inp,k:audKey(inp,R)},R);audSave();}catch(e){}
+  if(view==='audit'&&!document.querySelector('#veil.open'))renderAudit();
+}
 /* از فهرست سیگنال‌ها (یک پست) و از «وضعیت سنجش» (فقط تصویرها): همان برگه */
 function sheetImgFill(ids,need,i){
   sheetAudFix(ids.map(id=>({id,why:'img-sl',rows:new Set([id]),dep:need&&need.get(id)||0})),i);
@@ -843,9 +858,10 @@ function sheetAudFix(Q,i){
      $('#od').onclick=()=>{$('#odw').classList.remove('hide');const f=$('#f_t0');try{f.showPicker&&f.showPicker();}catch(e){}f.focus();};
      const tkOf=()=>normDig($('#f_tk').value||'').toUpperCase().replace(/^[#$]/,'').replace(/[\/\-]?USDT?$/,'').trim();
      // قیمتِ لحظه‌ی انتشار، تا عددی که از چارت می‌خوانی با بازار مقایسه شود
-     const pxAt=()=>{const t=tkOf(),n0=$('#ifPx');if(!t||!p.date||!n0)return;n0.textContent='';
-       audCandles(t,'5m',Math.ceil(+p.date/3e5)*3e5,1,true).then(C=>{
-         const n=$('#ifPx');if(n&&C&&C[0])n.innerHTML='قیمت بازار '+esc(t)+' هنگام انتشار: <b dir="ltr">'+fmtPrice(C[0].o)+'</b>';
+     let PX=null;
+     const pxAt=()=>{const t=tkOf(),n0=$('#ifPx');PX=null;if(!t||!p.date||!n0)return Promise.resolve();n0.textContent='';
+       return audCandles(t,'5m',Math.ceil(+p.date/3e5)*3e5,1,true).then(C=>{
+         const n=$('#ifPx');if(C&&C[0])PX=C[0].o;if(n&&C&&C[0])n.innerHTML='قیمت بازار '+esc(t)+' هنگام انتشار: <b dir="ltr">'+fmtPrice(C[0].o)+'</b>';
          else if(n)n.textContent='قیمت '+t+' از هیچ منبعی نیامد؛ نماد را درست بنویس یا «کنار بگذار».';}).catch(()=>{});};
      pxAt();$('#f_tk').onchange=pxAt;
      $('#ok').onclick=()=>{
@@ -863,11 +879,21 @@ function sheetAudFix(Q,i){
          o.t0=t0;o.old=true;if(en==null){toast('برای سیگنال قدیمی ورود را هم بنویس','err');return;}}
        else if(!$('#odw').classList.contains('hide')){toast('تاریخ سیگنال اصلی را از تقویم انتخاب کن','err');return;}
        else{delete o.t0;delete o.old;}
+       /* ورودی که هنوز بیش از 30٪ با قیمت لحظه‌ی انتشار فاصله دارد، بعد از ثبت هم «نیاز به بررسی» می‌ماند
+          (همان چیزی که دیده می‌شد: «اصلاح زدم ولی از صف بیرون نرفت»). پس همین‌جا بگو و عدد درست را پیشنهاد کن */
+       if(en!=null&&!o.t0&&PX>0&&Math.abs(en-PX)/PX>0.3){
+         let sug=null;for(const k of [-1,1,-2,2,-3,3]){const v=en*Math.pow(10,k);if(Math.abs(v-PX)/PX<=0.3){sug=+v.toPrecision(6);break;}}
+         $('#ifPx').innerHTML='<span class="d">ورود <b dir="ltr">'+fmtPrice(en)+'</b> با قیمت هنگام انتشار (<b dir="ltr">'+fmtPrice(PX)+'</b>) '+fmtNum(Math.abs(en-PX)/PX*100)+'٪ فاصله دارد؛ با این عدد باز «نیاز به بررسی» می‌ماند.</span> '+
+           (sug?'شاید <b dir="ltr">'+fmtPrice(sug)+'</b>؟ (یک صفر کم یا زیاد) ':'')+'یا ورود را خالی بگذار تا قیمت بازار همان لحظه حساب شود؛ اگر یادآوری سیگنال قدیمی است، «پست نتیجه است» یا «با تاریخ اصلی بسنج».';
+         if(sug){const b=el('button','btn xs ok','بگذار '+fmtPrice(sug));b.type='button';b.onclick=()=>{$('#f_en').value=String(sug);$('#ifPx').textContent='';};$('#ifPx').appendChild(b);}
+         $('#ifPx').scrollIntoView({block:'center',behavior:'smooth'});
+         toast('ورود با قیمت بازار جور نیست','err');return;}
        if(tps.length)o.tps=tps;else delete o.tps;
        if(!o.ticker)delete o.ticker;
        delete o.noAud;
        OVERRIDE[p.id]=o;DB.overrides=OVERRIDE;save();PCACHE.delete(p.id);
-       toast('عددهای '+(t||'سیگنال')+' ثبت شد','ok');
+       toast('عددهای '+(t||'سیگنال')+' ثبت شد؛ همین الان سنجیده می‌شود','ok');
+       audMeasureOne(p);
        nx();
      };
    });
@@ -939,10 +965,16 @@ function buildAudDiag(all){
   // آزمایش منبع‌های کندل در همان برگه‌ی «وضعیت و عیب‌یابی» (یک جا برای همه‌ی تست‌های اتصال)
   const bt=el('button','btn sm',ic('wifi')+'<span>آزمایش اتصال کندل</span>');
   bt.onclick=sheetHealthCandles;
-  const again=el('button','btn sm pri',ic('refresh')+'<span>سنجیدنِ سنجیده‌نشده‌ها</span>');
+  /* سنجیده‌نشده‌ها و «در جریان»ها (حتی اگر همین الان سنجیده شده‌اند) و کندل‌نیامده‌ها از نو.
+     قبلاً اگر کاری نبود هیچ پیامی نمی‌آمد و صفحه هم عوض نمی‌شد: انگار دکمه کار نمی‌کند */
+  const again=el('button','btn sm pri',ic('refresh')+'<span>سنجیدن تازه‌ها و در جریان‌ها</span>');
   again.onclick=()=>{
     for(const k in AUD){const a=AUD[k];if(a&&a.st==='bad'&&a.why==='nocandle'){a.tries=0;a.at=0;}}
-    audSave();AUDQ.on=false;audRun(false);toast('سنجش شروع شد','info');
+    audSave();AUDQ.on=false;
+    const n=audJobs(false,false,true).length;
+    audRun(false,false,true);
+    toast(n?'سنجش '+faN(n)+' سیگنال شروع شد':'چیزی برای سنجیدن نمانده — همه سنجیده و به نتیجه رسیده‌اند. برای از نو: «سنجش دوباره‌ی همه»',n?'info':'ok');
+    renderAudit();
   };
   const row=el('div','srow');row.appendChild(bt);row.appendChild(again);
   d.appendChild(row);
@@ -1150,6 +1182,29 @@ function audNoneHtml(rows){
   return '<div class="stnote audnone">'+ic('info')+'<span><b>فعال نشد ('+faN(N.length)+'):</b> '+li.join(' · ')+'.'+
     (by.ran.length?' تحمل ورود ('+faN(audRules().tol)+'٪) را در «قانون‌ها» می‌توانی عوض کنی.':'')+'</span></div>';
 }
+/* «در جریان»: قیمت آخرین سنجش و R الان، چند روز از ورود؛ «منتظر ورود»: فاصله تا ورود و مهلت */
+function audNowHtml(x){
+  const r=x.r,i=x.inp;if(!r||r.st!=='open'||!r.close||!(r.close.px>0))return '';
+  const R=audRules(),age=t=>faN(Math.max(0,Math.floor((Date.now()-t)/DAY)))+' روز';
+  const when=' <small>(قیمت '+esc(ageTxt(r.close.t))+')</small>';
+  if(r.tAct){const v=audR(r,i,'tp1');
+    return '<div class="ar2 arnow">الان <b dir="ltr">'+fmtPrice(r.close.px)+'</b>'+(v!=null?' <b class="'+cls(v)+'" dir="ltr">'+fmtR(v)+'</b>':'')+when+
+      ' · '+age(r.tAct)+' از ورود (سقف '+faN(R.days)+' روز)</div>';}
+  const d=i.entry?Math.abs(r.close.px-i.entry)/i.entry*100:null;
+  return '<div class="ar2 arnow">منتظر ورود · قیمت <b dir="ltr">'+fmtPrice(r.close.px)+'</b>'+(d!=null?' ('+fmtNum(d)+'٪ تا ورود)':'')+when+
+    ' · '+age(i.t0)+' از انتشار (مهلت '+faN(R.entryDays)+' روز)</div>';
+}
+/* خلاصه‌ی «در جریان»: چندتا در سود، چندتا در ضرر، چندتا منتظر ورود، و آخرین سنجش */
+function audOpenSumHtml(rows){
+  const O=rows.filter(x=>x.r&&x.r.st==='open');if(!O.length)return '';
+  const act=O.filter(x=>x.r.tAct),w=O.length-act.length,R=act.map(x=>audR(x.r,x.inp,'tp1')).filter(v=>v!=null);
+  const up=R.filter(v=>v>0).length,days=act.map(x=>(Date.now()-x.r.tAct)/DAY),avgD=days.length?days.reduce((a,b)=>a+b,0)/days.length:0;
+  const old=Math.min(...O.map(x=>x.r.at||Date.now()));
+  return ic('info')+'<span><b>'+faN(O.length)+' در جریان:</b> '+faN(act.length)+' وارد شده'+(act.length?' ('+faN(up)+' در سود، '+faN(R.length-up)+' در ضرر، میانگین '+fmtNum(avgD)+' روز از ورود)':'')+
+    (w?' · '+faN(w)+' منتظر ورود':'')+'. «در جریان» یعنی ورود فعال شده ولی هنوز نه تارگت اول خورده نه استاپ، و '+faN(audRules().days)+' روز هم نگذشته؛ '+
+    'سیگنال‌های این کانال استاپ و تارگت دور دارند، برای همین طول می‌کشد. قیمت‌ها مال آخرین سنجش‌اند (قدیمی‌ترین '+esc(ageTxt(old))+')؛ '+
+    'با «سنجیدن تازه‌ها و در جریان‌ها» به‌روز می‌شوند و هر بار چندتایی به برد یا باخت می‌رسند — برای همین کارنامه بعد از هر سنجش عوض می‌شود.</span>';
+}
 function buildAudList(rows){
   const c=el('div','panel');
   c.appendChild(el('div','panelhead','<b>همه‌ی سیگنال‌ها</b>'));
@@ -1173,6 +1228,7 @@ function buildAudList(rows){
       audSkip(ids);};
     r.appendChild(g);r.appendChild(k);c.appendChild(r);
   }
+  if(audList==='open'){const h=audOpenSumHtml(rows);if(h)c.appendChild(el('div','stnote audopen',h));}
   const pick=rows.filter(x=>{
     const k=audStKey(x.r);
     return audList==='all'||k===audList||(audList==='open'&&k==='wait')||(audList==='bad'&&(k==='amb'||k==='todo'));
@@ -1200,9 +1256,18 @@ function buildAudList(rows){
       ' · تارگت '+(i.tps.length?i.tps.slice(0,3).map(fmtPrice).join('، '):'—')+'</div>'+
       (k==='bad'&&x.r?'<div class="ar2 bad">'+esc(AUD_WHY[x.r.why]||'')+
         (()=>{const q=audPxKind(x);return q?' · قیمت هنگام پست <bdi dir="ltr">'+fmtPrice(q.px0)+'</bdi>'+(q.old?' — <b>احتمالاً یادآوری سیگنال قدیمی</b>':''):'';})()+'</div>':'')+
+      audNowHtml(x)+
       (tags.length?'<div class="ar3">'+tags.join('')+'</div>':'');
     const act=el('div','ar4');
     const d=el('button','btn xs','جزئیات');d.onclick=()=>sheetAudPost(x.p);
+    // تصویر پست همین‌جا، برای اصلاح بی رفتن به جای دیگر (فقط با زدن بار می‌شود)
+    if(x.p.img){const im=el('button','btn xs',ic('image')+'<span>تصویر</span>');im.setAttribute('aria-expanded','false');
+      im.onclick=()=>{let b=r.querySelector('.arimg');
+        if(b){b.remove();im.setAttribute('aria-expanded','false');im.classList.remove('on');return;}
+        b=el('div','arimg');b.appendChild(postShot(x.p,x.p.img,'تصویر پست'));
+        if(x.p.text)b.appendChild(el('div','audtxt',esc(String(x.p.origText||x.p.text).slice(0,500))));
+        r.insertBefore(b,act);im.setAttribute('aria-expanded','true');im.classList.add('on');};
+      act.appendChild(im);}
     const qi=fqAt.get(x.p.id);
     const f=qi!=null?el('button','btn xs ok','عدد بزن'):el('button','btn xs','اصلاح عددها');
     f.onclick=qi!=null?()=>sheetAudFix(FQ,qi):()=>sheetMarkSignal(x.p,sigOf(x.p));

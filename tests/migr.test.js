@@ -48,5 +48,5 @@ const ok=(c,m)=>console.log('  '+(c?'✅':'❌')+' '+m);
    save();go('report');return document.querySelector('#repBody').textContent.replace(/\s+/g,' ').slice(0,80);});
  await p.waitForTimeout(500);
  console.log('  کارنامه:',rep);
- ok(/SOL|تصویر کلی/.test(rep),'خرید اسپاتِ بسته‌شده وارد کارنامه شد');
+ ok(/SOL|تصویر (کلی|این ماه)/.test(rep),'خرید اسپاتِ بسته‌شده وارد کارنامه شد');
  await b.close();})();

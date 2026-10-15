@@ -1985,3 +1985,7 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .rbhold.posrev{flex-direction:row}
 .posaud{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tx2);padding:6px 8px;margin:0 0 8px;border-radius:10px;background:var(--inset);line-height:1.8}
 .posaud>span{flex:1;min-width:0}.posaud .btn{flex:none}
+.arow2 .arnow{color:var(--tx2)}.arow2 .arnow small{color:var(--tx3)}
+.arow2 .arimg{margin-top:8px;display:flex;flex-direction:column;gap:6px}.arow2 .arimg .shot{max-height:420px}
+.arow2 .arimg .audtxt{font-size:12px;max-height:140px;overflow:auto}
+.audopen{margin:4px 0 8px}
