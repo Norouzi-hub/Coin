@@ -732,6 +732,14 @@ function audSkip(ids,then){
     DB.overrides=OVERRIDE;save();renderAll();});
 }
 /* زمان ← مقدار datetime-local (به وقت خود گوشی) */
+/* «2026-10-12 14:00» (یا با / و ارقام فارسی؛ سال زیر 1700 = شمسی) به وقت خود گوشی ← زمان؛ نامعتبر ← null */
+function parseLocalDT(s){
+  const m=normDig(String(s||'')).trim().replace('T',' ').match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})(?:\s+(\d{1,2}):(\d{2}))?$/);if(!m)return null;
+  let [,y,mo,d,h,mi]=m.map(Number);if(!(mo>=1&&mo<=12&&d>=1&&d<=31&&(h||0)<24&&(mi||0)<60))return null;
+  if(y<1700){const g=d2g(j2d(y,mo,d));y=g.gy;mo=g.gm;d=g.gd;}
+  const t=new Date(y,mo-1,d,h||12,mi||0).getTime();
+  return new Date(t).getDate()===d?t:null;      // 31 شهریور میلادی و مانند آن
+}
 const dtLocal=t=>{const d=new Date(t),z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'T'+z(d.getHours())+':'+z(d.getMinutes());};
 /* «قیمت دور» (px): قیمت لحظه‌ی انتشار در جهت سود از ورود جلوتر بوده (تا 4 برابر) ← به احتمال زیاد یادآوری سیگنال قدیمی
    («ببینید چقدر رشد کرد»)؛ در جهت ضرر یا چند برابر ← عدد یا نماد اشتباه. null اگر داده نیست. */
@@ -797,8 +805,10 @@ function sheetAudFix(Q,i){
      '<button class="btn sm '+(q.why==='px'?'ok':'side')+'" id="rs">'+ic('flag')+'<span>پست نتیجه است (سیگنال قدیمی)</span></button>'+
      '<button class="btn sm '+(q.why==='px'?'ok':'side')+'" id="od">'+ic('check')+'<span>درست است؛ با تاریخ اصلی بسنج</span></button></div>'+
    '<div class="fld'+(ov.t0>0?'':' hide')+'" id="odw" style="margin-top:8px"><label for="f_t0">تاریخ و ساعت سیگنال اصلی (میلادی؛ از تقویم انتخاب کن)</label>'+
-     '<input id="f_t0" type="datetime-local" dir="ltr" value="'+(ov.t0>0?dtLocal(ov.t0):'')+'"'+(p.date?' max="'+dtLocal(+p.date)+'"':'')+'>'+
+     '<div class="t0row"><input id="f_t0" type="datetime-local" dir="ltr" aria-label="انتخاب از تقویم" value="'+(ov.t0>0?dtLocal(ov.t0):'')+'">'+
+       '<input id="f_t0t" dir="ltr" inputmode="numeric" autocomplete="off" placeholder="2026-10-12 14:00" aria-label="ویرایش دستی" value="'+(ov.t0>0?dtLocal(ov.t0).replace('T',' '):'')+'"></div>'+
      '<div class="hint" id="t0fa"></div>'+
+     (p.date?'<div class="hint">این پست: <b dir="ltr">'+dtLocal(+p.date).replace('T',' ')+'</b> ('+esc(jStamp(new Date(+p.date)))+'). سیگنال اصلی باید پیش از آن باشد. از تقویم انتخاب کن یا در خانه‌ی کنارش دستی بنویس/اصلاح کن (سال-ماه-روز ساعت:دقیقه).</div>':'')+
      '<div class="hint">سیگنال از همان روز با کندل واقعی سنجیده می‌شود و در آمار می‌آید، با برچسب «از یادآوری». کانال معمولاً فقط برنده‌ها را یادآوری می‌کند؛ برای همین کارنامه نتیجه را بدون این‌ها هم نشان می‌دهد.</div></div>',
    ()=>{
      if(p.img)$('#ifImg').appendChild(postShot(p,p.img,'چارت'));
@@ -809,9 +819,14 @@ function sheetAudFix(Q,i){
      $('#ax').onclick=()=>audSkip([q.id,...q.rows],nx);
      $('#rs').onclick=()=>audAsResult(p,nx);
      // تاریخ انتخاب‌شده به شمسی (و میلادی خوانا) زیر همان خانه
-     const t0fa=()=>{const v=$('#f_t0').value,n=$('#t0fa');if(!n)return;const t=v?new Date(v).getTime():NaN;
-       n.innerHTML=isFinite(t)?'= <b>'+esc(jStamp(new Date(t)))+'</b> (شمسی، وقت تهران) · '+faN(new Date(t).getDate())+' '+G_M[new Date(t).getMonth()]+' '+new Date(t).getFullYear():'';};
-     $('#f_t0').oninput=t0fa;$('#f_t0').onchange=t0fa;t0fa();
+     // تقویم و خانه‌ی دستی هم‌گام؛ زیرش شمسی و میلادی خوانا
+     const t0Of=()=>parseLocalDT($('#f_t0t').value);
+     const t0fa=()=>{const t=t0Of(),n=$('#t0fa');if(!n)return;
+       n.innerHTML=t!=null?'= <b>'+esc(jStamp(new Date(t)))+'</b> (شمسی، وقت تهران) · '+faN(new Date(t).getDate())+' '+G_M[new Date(t).getMonth()]+' '+new Date(t).getFullYear()+
+         (p.date&&t>=+p.date?' · <span class="d">بعد از همین پست است!</span>':''):($('#f_t0t').value.trim()?'<span class="d">تاریخ خوانده نشد؛ مثل 2026-10-12 14:00</span>':'');};
+     $('#f_t0').oninput=$('#f_t0').onchange=()=>{const v=$('#f_t0').value;if(v)$('#f_t0t').value=v.replace('T',' ');t0fa();};
+     $('#f_t0t').oninput=()=>{const t=t0Of();if(t!=null)$('#f_t0').value=dtLocal(t);t0fa();};
+     t0fa();
      $('#od').onclick=()=>{$('#odw').classList.remove('hide');const f=$('#f_t0');try{f.showPicker&&f.showPicker();}catch(e){}f.focus();};
      const tkOf=()=>normDig($('#f_tk').value||'').toUpperCase().replace(/^[#$]/,'').replace(/[\/\-]?USDT?$/,'').trim();
      // قیمتِ لحظه‌ی انتشار، تا عددی که از چارت می‌خوانی با بازار مقایسه شود
@@ -828,9 +843,10 @@ function sheetAudFix(Q,i){
        const o=Object.assign({},OVERRIDE[p.id],{sig:true,ticker:t||undefined,dir:$('#f_d').value,stop:st});
        const en=num('f_en');if(en!=null)o.entry=en;else delete o.entry;
        // سیگنال قدیمیِ یادآوری‌شده
-       const t0s=($('#f_t0')||{}).value||'';
-       if(t0s.trim()){const t0=new Date(t0s).getTime();
-         if(!isFinite(t0)||(p.date&&t0>=+p.date)||t0<Date.now()-400*864e5){toast('تاریخ سیگنال اصلی باید پیش از همین پست باشد (حداکثر 400 روز پیش)','err');return;}
+       const t0s=($('#f_t0t')||{}).value||'';
+       if(t0s.trim()){const t0=parseLocalDT(t0s);
+         if(t0==null){toast('تاریخ خوانده نشد؛ مثل 2026-10-12 14:00 بنویس','err');return;}
+         if((p.date&&t0>=+p.date)||t0<Date.now()-400*864e5){toast('تاریخ سیگنال اصلی باید پیش از همین پست باشد ('+dtLocal(+p.date).replace('T',' ')+') و حداکثر 400 روز پیش','err');return;}
          o.t0=t0;o.old=true;if(en==null){toast('برای سیگنال قدیمی ورود را هم بنویس','err');return;}}
        else if(!$('#odw').classList.contains('hide')){toast('تاریخ سیگنال اصلی را از تقویم انتخاب کن','err');return;}
        else{delete o.t0;delete o.old;}

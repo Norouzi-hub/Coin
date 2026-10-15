@@ -1970,3 +1970,4 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .rbrevs small{color:var(--tx3);font-size:11px;line-height:1.7}
 .ladder .m.tgt.done::before{opacity:.45}.ladder .m.tgt.done .lb{opacity:.55;text-decoration:line-through}
 .posrev{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:2px 0 8px}.posrev>div{flex:1 1 220px}
+.t0row{display:grid;grid-template-columns:1fr;gap:8px}.t0row input{min-width:0}

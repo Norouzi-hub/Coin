@@ -47,7 +47,11 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    sheetAudFix([{id:B,why:'px',rows:new Set([B])}],0);await W(150);
    o.odHidden=$q('#odw').classList.contains('hide');$q('#od').click();o.odShown=!$q('#odw').classList.contains('hide');
    o.picker=$q('#f_t0').type==='datetime-local';
-   $q('#f_t0').value='2026-08-25T14:00';$q('#f_t0').dispatchEvent(new Event('input'));o.fa=$q('#t0fa').textContent;
+   o.nomax=!$q('#f_t0').hasAttribute('max');
+   // دستی: بعد از پست ← هشدار؛ اصلاح دستی ← تقویم هم‌گام
+   $q('#f_t0t').value='2027-01-05 10:00';$q('#f_t0t').dispatchEvent(new Event('input'));o.after=/بعد از همین پست/.test($q('#t0fa').textContent);
+   $q('#f_t0t').value='2026-08-24 09:30';$q('#f_t0t').dispatchEvent(new Event('input'));o.sync=$q('#f_t0').value==='2026-08-24T09:30';
+   $q('#f_t0').value='2026-08-25T14:00';$q('#f_t0').dispatchEvent(new Event('input'));o.fa=$q('#t0fa').textContent;o.back=$q('#f_t0t').value==='2026-08-25 14:00';
    $q('#f_en').value='3000';$q('#f_st').value='2900';$q('#ok').click();await W(150);
    const ob=OVERRIDE[B]||{},ib=audInput(POSTS.find(x=>x.id===B))||{};
    o.old=ob.old===true&&ob.t0===new Date('2026-08-25T14:00').getTime()&&ib.t0===ob.t0&&ib.old===true&&ib.entry===3000;
@@ -82,6 +86,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(r.all,'«کنار گذاشتن همه» با پرسش، صف خالی شد');
  ok(r.pxHint&&r.res&&r.resBack,'«پست نتیجه است»: راهنما برای قیمت دور، به «نتایج» و بیرون از سنجش، با برگرداندن');
  ok(r.pd[0]===r.pd[1]&&r.pd[2]===Date.UTC(2026,7,3,8,30)&&r.pd[3]===r.pd[1]&&r.pd[4]===null,'تاریخ شمسی/میلادی، با و بی ساعت، و نامعتبر: '+JSON.stringify(r.pd));
+ ok(r.nomax&&r.after&&r.sync&&r.back,'تقویم بی سقف؛ خانه‌ی دستی و تقویم هم‌گام؛ تاریخ بعد از پست هشدار می‌گیرد');
  ok(r.picker&&/1405\/06\/03/.test(r.fa)&&/اوت 2026/.test(r.fa),'انتخاب تاریخ میلادی از تقویم و نمایش شمسی: '+r.fa);
  ok(r.odHidden&&r.odShown&&r.old,'«درست است؛ با تاریخ اصلی بسنج»: از 25 اوت سنجیده می‌شود، با نشان «قدیمی»');
  ok(r.planDec==='n1','معیار قبولی نقشه بدون سیگنال‌های «از یادآوری»');
