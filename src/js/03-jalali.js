@@ -33,6 +33,14 @@ const GF=new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-
 function jParts(d){const [y,m,dd]=GF.format(d).split('-').map(Number);return d2j(g2d(y,m,dd));}
 function jKey(d){const p=jParts(d);return p.jy+'-'+String(p.jm).padStart(2,'0')+'-'+String(p.jd).padStart(2,'0');}
 function jWeekday(jy,jm,jd){const g=d2g(j2d(jy,jm,jd));return (new Date(Date.UTC(g.gy,g.gm-1,g.gd)).getUTCDay()+1)%7;}
+/* «1405/05/12» یا «1405/05/12 14:30» (شمسی، وقت تهران) یا «2026-08-03 …» (میلادی) ← زمان؛ نامعتبر ← null */
+function parseDateFa(s){
+  const m=normDig(String(s||'')).trim().match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})(?:\s+(\d{1,2}):(\d{2}))?$/);if(!m)return null;
+  let [,y,mo,d,h,mi]=m.map(Number);if(!(mo>=1&&mo<=12&&d>=1&&d<=31))return null;
+  let g={gy:y,gm:mo,gd:d};if(y<1700)g=d2g(j2d(y,mo,d));
+  const t=Date.UTC(g.gy,g.gm-1,g.gd,h||12,mi||0)-3.5*36e5;   // بی ساعت: ظهر
+  return isFinite(t)?t:null;
+}
 const J_M=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
 const TF=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:TZ});
 function jStamp(d){const p=jParts(d);return p.jy+'/'+String(p.jm).padStart(2,'0')+'/'+String(p.jd).padStart(2,'0')+' '+TF.format(d);}

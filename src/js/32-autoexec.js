@@ -654,6 +654,10 @@ function renderAudit(){
     stHtml('در جریان',faN(st.open+st.wait),'m',faN(st.wait)+' منتظر ورود')+
     stHtml('نیاز به بررسی',faN(st.bad+st.amb),st.bad?'d':'m',st.todo?faN(st.todo)+' سنجیده نشده':'');
   g.insertAdjacentHTML('beforeend',audNoneHtml(rows));
+  {const O=rows.filter(x=>x.inp.old&&x.r&&['win','loss','exp'].includes(x.r.st));
+   if(O.length){const s2=audStats(rows.filter(x=>!x.inp.old));
+     g.insertAdjacentHTML('beforeend','<div class="stnote">'+ic('info')+'<span>شامل <b>'+faN(O.length)+'</b> سیگنال قدیمیِ «از یادآوری» (کانال معمولاً فقط برنده‌ها را یادآوری می‌کند). '+
+       'بدون آن‌ها: '+faN(s2.cnt)+' سیگنال · مجموع <b class="'+cls(s2.sumR)+'" dir="ltr">'+fmtR(s2.sumR)+'</b>'+(s2.avgR!=null?' · میانگین <b class="'+cls(s2.avgR)+'" dir="ltr">'+fmtR(s2.avgR)+'</b>':'')+'.</span></div>');}}
   {const nd=st.win+st.loss+st.exp;
    if(nd>0&&nd<SMALL_N)g.insertAdjacentHTML('beforeend','<div class="stnote">'+ic('info')+'<span>فقط '+faN(nd)+
      ' سیگنال به نتیجه رسیده — برای قضاوت درباره‌ی کانال دست‌کم '+faN(SMALL_N)+' لازم است.</span></div>');}
@@ -777,7 +781,11 @@ function sheetAudFix(Q,i){
      (last?'':'<button class="btn" id="sk">بعدی</button>')+'<button class="btn" id="cx">بستن</button></div>'+
    '<div class="srow"><button class="btn sm side" id="ax">'+ic('box')+'<span>عدد ندارد؛ کنار بگذار'+(dep?' (با '+faN(dep)+' پیگیری)':'')+'</span></button>'+
      '<button class="btn sm side" id="ns">'+ic('x')+'<span>سیگنال نیست'+(p.img?' (فقط چارت است)':'')+'</span></button>'+
-     '<button class="btn sm side" id="rs">'+ic('flag')+'<span>پست نتیجه است (سیگنال قدیمی)</span></button></div>',
+     '<button class="btn sm side" id="rs">'+ic('flag')+'<span>پست نتیجه است (سیگنال قدیمی)</span></button>'+
+     '<button class="btn sm side" id="od">'+ic('check')+'<span>درست است؛ با تاریخ اصلی بسنج</span></button></div>'+
+   '<div class="fld'+(ov.t0>0?'':' hide')+'" id="odw" style="margin-top:8px"><label for="f_t0">تاریخ و ساعت سیگنال اصلی (شمسی، مثل 1405/05/12 14:30)</label>'+
+     '<input id="f_t0" dir="ltr" autocomplete="off" placeholder="1405/05/12 14:30" value="'+(ov.t0>0?esc(jStamp(new Date(ov.t0))):'')+'">'+
+     '<div class="hint">سیگنال از همان روز با کندل واقعی سنجیده می‌شود و در آمار می‌آید، با برچسب «از یادآوری». کانال معمولاً فقط برنده‌ها را یادآوری می‌کند؛ برای همین کارنامه نتیجه را بدون این‌ها هم نشان می‌دهد.</div></div>',
    ()=>{
      if(p.img)$('#ifImg').appendChild(postShot(p,p.img,'چارت'));
      $('#cx').onclick=fin;
@@ -786,6 +794,7 @@ function sheetAudFix(Q,i){
      $('#ns').onclick=()=>audNotSig(p,nx);
      $('#ax').onclick=()=>audSkip([q.id,...q.rows],nx);
      $('#rs').onclick=()=>audAsResult(p,nx);
+     $('#od').onclick=()=>{$('#odw').classList.remove('hide');$('#f_t0').focus();};
      const tkOf=()=>normDig($('#f_tk').value||'').toUpperCase().replace(/^[#$]/,'').replace(/[\/\-]?USDT?$/,'').trim();
      // قیمتِ لحظه‌ی انتشار، تا عددی که از چارت می‌خوانی با بازار مقایسه شود
      const pxAt=()=>{const t=tkOf(),n0=$('#ifPx');if(!t||!p.date||!n0)return;n0.textContent='';
@@ -800,6 +809,13 @@ function sheetAudFix(Q,i){
        const tps=['f_t1','f_t2','f_t3'].map(num).filter(x=>x!=null);
        const o=Object.assign({},OVERRIDE[p.id],{sig:true,ticker:t||undefined,dir:$('#f_d').value,stop:st});
        const en=num('f_en');if(en!=null)o.entry=en;else delete o.entry;
+       // سیگنال قدیمیِ یادآوری‌شده
+       const t0s=($('#f_t0')||{}).value||'';
+       if(t0s.trim()){const t0=parseDateFa(t0s);
+         if(!t0||(p.date&&t0>=+p.date)||t0<Date.now()-400*864e5){toast('تاریخ سیگنال اصلی را درست بنویس (پیش از این پست، مثل 1405/05/12 14:30)','err');return;}
+         o.t0=t0;o.old=true;if(en==null){toast('برای سیگنال قدیمی ورود را هم بنویس','err');return;}}
+       else if(!$('#odw').classList.contains('hide')){toast('تاریخ سیگنال اصلی را بنویس','err');return;}
+       else{delete o.t0;delete o.old;}
        if(tps.length)o.tps=tps;else delete o.tps;
        if(!o.ticker)delete o.ticker;
        delete o.noAud;
@@ -1101,6 +1117,7 @@ function buildAudList(rows){
     for(const cl of (cmap.get(x.p.id)||[]))
       tags.push('<span class="pill '+(cl.vd.v==='ok'?'win':cl.vd.v==='no'?'lose':'mut')+'">ادعا '+(cl.vd.v==='ok'?'✓':cl.vd.v==='no'?'✗':'؟')+'</span>');
     if(i.tpAssumed)tags.push('<span class="pill mut">تارگت فرضی</span>');
+    if(i.old)tags.push('<span class="pill gold" title="از تاریخ اصلی سنجیده شده؛ پست، یادآوری بود">از یادآوری</span>');
     r.innerHTML='<div class="ar1"><b class="tick">'+esc(i.tk||'—')+'</b>'+
       '<span class="pill '+i.dir+'">'+(i.dir==='long'?'لانگ':'شورت')+'</span>'+
       '<span class="pill '+S0[1]+'">'+S0[0]+(x.R!=null&&k!=='open'?' '+fmtR(x.R):'')+'</span>'+

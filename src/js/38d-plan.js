@@ -26,7 +26,8 @@ function plDaysOk(w){const s=S.plan.start+(w-1)*7*PL_DAY,e=Math.min(Date.now(),s
 /* کانال‌سنج: سیگنال‌های به‌نتیجه‌رسیده و «نیاز به بررسی» */
 function plChan(){
   let rows=[];try{rows=audRows();}catch(e){}
-  const dec=rows.filter(x=>x.r&&['win','loss','exp'].includes(x.r.st)&&x.R!=null).sort((a,b)=>(a.inp.t0||0)-(b.inp.t0||0));
+  // معیار قبولی فقط روی سیگنال‌هایی که همان لحظه داده شده‌اند؛ یادآوری‌های قدیمی (فقط برنده‌ها) بیرون
+  const dec=rows.filter(x=>x.r&&['win','loss','exp'].includes(x.r.st)&&x.R!=null&&!x.inp.old).sort((a,b)=>(a.inp.t0||0)-(b.inp.t0||0));
   const bad=rows.filter(x=>x.r&&(x.r.st==='bad'||x.r.st==='amb')).length, todo=rows.filter(x=>!x.r).length;
   return {dec,bad,todo,n:rows.length,fill:plFill(rows)};
 }

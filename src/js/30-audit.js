@@ -114,7 +114,8 @@ function audInput(p){
   // ورود عددی نیست ولی استاپ هست (از متن، از تو، یا از سیگنال قبلی): ورود بازار
   const mktE=!I.entry&&ov.entry==null&&(!!sig.mktEntry||!!I.stop);
   const inp={tk:sig.ticker||null,dir:I.dir,entry:I.entry||null,trig:sig.trigger!=null?sig.trigger:null,
-    stop:I.stop||null,tgs:sig.targets||[],mkt:I.market,t0:p.date?+p.date:null,
+    // سیگنال قدیمیِ یادآوری‌شده: از تاریخ اصلی خودش سنجیده می‌شود (ov.t0)، نه از روز یادآوری
+    stop:I.stop||null,tgs:sig.targets||[],mkt:I.market,t0:ov.t0>0?+ov.t0:(p.date?+p.date:null),old:!!ov.old,
     mktE,inh:inh?{id:inh.id,t:inh.t}:null,need};
   audTps(inp);
   const a=mktE?AUD[p.id]:null;

@@ -42,6 +42,17 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    o.pxHint=/سیگنال قدیمی/.test($q('#sheet').textContent);$q('#rs').click();await W(150);
    o.res=isRes(POSTS.find(x=>x.id===A))&&!has(A);
    $q('#toast .tundo').click();await W(80);o.resBack=!isRes(POSTS.find(x=>x.id===A))&&has(A);
+   // «درست است؛ با تاریخ اصلی بسنج»: سیگنال قدیمیِ یادآوری‌شده از تاریخ خودش
+   o.pd=[parseDateFa('1405/05/12 14:30'),Date.UTC(2026,7,3,11,0),parseDateFa('۱۴۰۵/۰۵/۱۲'),parseDateFa('2026-08-03 14:30'),parseDateFa('xx')];
+   sheetAudFix([{id:B,why:'px',rows:new Set([B])}],0);await W(150);
+   o.odHidden=$q('#odw').classList.contains('hide');$q('#od').click();o.odShown=!$q('#odw').classList.contains('hide');
+   $q('#f_t0').value='1405/05/12 14:30';$q('#f_en').value='3000';$q('#f_st').value='2900';$q('#ok').click();await W(150);
+   const ob=OVERRIDE[B]||{},ib=audInput(POSTS.find(x=>x.id===B))||{};
+   o.old=ob.old===true&&ob.t0===Date.UTC(2026,7,3,11,0)&&ib.t0===ob.t0&&ib.old===true&&ib.entry===3000;
+   audList='all';AUDOPEN='فهرست سیگنال‌ها';renderAudit();await W(80);
+   o.tag=[...document.querySelectorAll('#vAudit .arow2 .pill')].some(x=>x.textContent==='از یادآوری');
+   {const aR=audRows;audRows=()=>[{p:{id:'n1'},inp:{t0:1},r:{st:'win'},R:1},{p:{id:'o1'},inp:{t0:2,old:true},r:{st:'win'},R:2}];
+    S.plan={start:Date.now(),done:{},dec:{},base:plSnap()};o.planDec=plChan().dec.map(x=>x.p.id).join();audRows=aR;S.plan=null;}
    // نقشه: دکمه‌ی «مرور یکی‌یکی» برگه را باز می‌کند
    S.plan={start:Date.now(),done:{},dec:{},base:plSnap()};
    const t=plTasks(1).find(x=>x[0]==='w1fill');o.planBtn=t[5]&&t[5][0];t[5][1]();await W(200);
@@ -58,6 +69,10 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(r.unBtn&&r.back,'«برگرداندن همه» در وضعیت سنجش');
  ok(r.all,'«کنار گذاشتن همه» با پرسش، صف خالی شد');
  ok(r.pxHint&&r.res&&r.resBack,'«پست نتیجه است»: راهنما برای قیمت دور، به «نتایج» و بیرون از سنجش، با برگرداندن');
+ ok(r.pd[0]===r.pd[1]&&r.pd[2]===Date.UTC(2026,7,3,8,30)&&r.pd[3]===r.pd[1]&&r.pd[4]===null,'تاریخ شمسی/میلادی، با و بی ساعت، و نامعتبر: '+JSON.stringify(r.pd));
+ ok(r.odHidden&&r.odShown&&r.old,'«درست است؛ با تاریخ اصلی بسنج»: از 1405/05/12 سنجیده می‌شود، با نشان «قدیمی»');
+ ok(r.planDec==='n1','معیار قبولی نقشه بدون سیگنال‌های «از یادآوری»');
+ ok(r.tag,'برچسب «از یادآوری» روی ردیف کانال‌سنج');
  ok(r.planBtn==='مرور یکی‌یکی'&&r.planSheet,'نقشه › «مرور یکی‌یکی» برگه را باز می‌کند');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');process.exit(bad?1:0);})();
