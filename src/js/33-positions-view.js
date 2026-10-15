@@ -206,7 +206,7 @@ function ladderDomain(p,live,m){
   if(live)v.push(live);
   if(m&&m.liqPrice)v.push(m.liqPrice);
   if(p.status==='closed'&&p.exitPrice)v.push(p.exitPrice);
-  for(const t of (p.targets||[]).slice(0,3))if(isFinite(t)&&t>0)v.push(t);
+  for(const t of ladTps(p))v.push(t);
   for(const x of partialsOf(p))if(x.price)v.push(x.price);
   let lo=Math.min(...v), hi=Math.max(...v);
   if(!(hi>lo)){lo=p.entry*0.97;hi=p.entry*1.03;}
@@ -238,11 +238,8 @@ function buildLadder(p,live,m,opts){
   h+=mark('ent',p.entry,null,'ورود');
   // برچسب لیکوئیدِ نزدیک ورود روی هم نیفتد: می‌رود بالای خط
   if(m&&m.liqPrice)h+=mark('liq',m.liqPrice,null,'لیکوئید',Math.abs(pctOf(d,m.liqPrice)-pctOf(d,p.entry))<16);
-  for(const t of (p.targets||[]).slice(0,3)){
-    if(!isFinite(t)||t<=0)continue;
-    if(((t-p.entry)*sign)<=0)continue;
-    h+=mark('tgt',t,null,'تارگت',true);
-  }
+  // تارگت‌ها (نقشه‌ی خروج، یا کانال، یا R تنظیمات) با شماره؛ پله‌ی انجام‌شده کم‌رنگ
+  ladTps(p).forEach((t,i)=>{h+=mark('tgt'+(p.pbc>i?' done':''),t,null,'تارگت '+faN(i+1),true);});
   if(p.status==='closed'&&p.exitPrice)h+=mark('live',p.exitPrice,null,'خروج',true);
   else if(live)h+=mark('live',live,null,'الان',true);
   // دستگیره‌ی استاپ
@@ -369,7 +366,7 @@ let POSSORT=lsGet('signaldesk.possort.v1')||'new';
 /* جای قیمت میان استاپ و نزدیک‌ترین تارگتِ جلوی ورود (برای یک نگاه سریع) */
 function posMiniBar(p,live){
   const S0=+p.stop, E=+p.entry, sg=p.dir==='long'?1:-1;if(!(S0>0)||!(E>0)||!(live>0))return null;
-  const tps=(p.targets||[]).map(Number).filter(t=>t>0&&(t-E)*sg>0).sort((a,b)=>(a-b)*sg);
+  const tps=ladTps(p).sort((a,b)=>(a-b)*sg);
   const T=tps.find(t=>(t-live)*sg>0)||tps[tps.length-1];if(!T||(T-S0)*sg<=0)return null;
   const f=x=>Math.max(0,Math.min(1,(x-S0)/(T-S0))), pe=f(E)*100, pl=f(live)*100, up=(live-E)*sg>=0;
   const n=tps.indexOf(T)+1;

@@ -289,8 +289,23 @@ function pbTps(p){
   T=[...new Set(T)].sort((a,b)=>(a-b)*sign);
   const st=p.stop0!=null?p.stop0:p.stop;
   // کانال تارگت نداده: تارگت‌های R تنظیمات
-  if(!T.length&&st&&(p.entry-st)*sign>0)T=(S.rMul||[1.5,3,5]).map(r=>+(p.entry+sign*r*Math.abs(p.entry-st)).toPrecision(8));
+  // تارگت شورت با استاپ دور (مثلاً 3R با استاپ 50٪) زیر صفر می‌رفت (−0.003)؛ قیمت منفی تارگت نیست
+  if(!T.length&&st&&(p.entry-st)*sign>0)T=(S.rMul||[1.5,3,5]).map(r=>+(p.entry+sign*r*Math.abs(p.entry-st)).toPrecision(8)).filter(t=>t>0);
   return T.slice(0,5);
+}
+/* نقشه‌ای که پیش‌تر با تارگت منفی ساخته شده: تارگت‌های ≤0 کنار می‌روند و سهم پله‌ها با تعداد تازه */
+function pbSane(p){
+  const pb=p&&p.pb;if(!pb||!Array.isArray(pb.tps)||pb.tps.every(t=>t>0))return false;
+  pb.tps=pb.tps.filter(t=>t>0);
+  try{pb.parts=pbParts(pbDef(pb.id),pb.tps.length);}catch(e){}
+  if(p.pbc>pb.tps.length)p.pbc=pb.tps.length;
+  return true;
+}
+/* تارگت‌های مؤثر پوزیشن برای نردبان: نقشه‌ی خروج (اگر هست) وگرنه تارگت‌های کانال یا R تنظیمات؛ فقط در جهت سود */
+function ladTps(p){
+  const sg=p.dir==='long'?1:-1,E=+p.entry;
+  const T=(p.pb&&p.pb.tps&&p.pb.tps.length?p.pb.tps:pbTps(p)).map(Number).filter(t=>t>0&&isFinite(t)&&(t-E)*sg>0);
+  return T.slice(0,3);
 }
 function pbAttach(p,id){
   const def=pbDef(id), tps=pbTps(p);

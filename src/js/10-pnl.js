@@ -36,6 +36,7 @@ function ensureBase(p){
   if(p.risk0==null){const r=risk0Of(p);if(r)p.risk0=r;}
   if(!Array.isArray(p.partials))p.partials=[];
   if(!Array.isArray(p.log))p.log=[];
+  try{if(pbSane(p))save();}catch(e){}
   return p;
 }
 /* مبنای درصد و R دوباره از روی اعداد فعلی: وقتی مارجین، اهرم یا ورودِ پوزیشن را ویرایش

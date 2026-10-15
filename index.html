@@ -1985,6 +1985,7 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .sheet .plprog{margin:0 0 8px}
 .rbrev{font-size:11.5px;color:var(--tx3);border:1px dashed var(--line);border-radius:8px;padding:1px 6px;white-space:nowrap}
 .rbrevs small{color:var(--tx3);font-size:11px;line-height:1.7}
+.ladder .m.tgt.done::before{opacity:.45}.ladder .m.tgt.done .lb{opacity:.55;text-decoration:line-through}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -3416,6 +3417,7 @@ function ensureBase(p){
   if(p.risk0==null){const r=risk0Of(p);if(r)p.risk0=r;}
   if(!Array.isArray(p.partials))p.partials=[];
   if(!Array.isArray(p.log))p.log=[];
+  try{if(pbSane(p))save();}catch(e){}
   return p;
 }
 /* مبنای درصد و R دوباره از روی اعداد فعلی: وقتی مارجین، اهرم یا ورودِ پوزیشن را ویرایش
@@ -9378,8 +9380,23 @@ function pbTps(p){
   T=[...new Set(T)].sort((a,b)=>(a-b)*sign);
   const st=p.stop0!=null?p.stop0:p.stop;
   // کانال تارگت نداده: تارگت‌های R تنظیمات
-  if(!T.length&&st&&(p.entry-st)*sign>0)T=(S.rMul||[1.5,3,5]).map(r=>+(p.entry+sign*r*Math.abs(p.entry-st)).toPrecision(8));
+  // تارگت شورت با استاپ دور (مثلاً 3R با استاپ 50٪) زیر صفر می‌رفت (−0.003)؛ قیمت منفی تارگت نیست
+  if(!T.length&&st&&(p.entry-st)*sign>0)T=(S.rMul||[1.5,3,5]).map(r=>+(p.entry+sign*r*Math.abs(p.entry-st)).toPrecision(8)).filter(t=>t>0);
   return T.slice(0,5);
+}
+/* نقشه‌ای که پیش‌تر با تارگت منفی ساخته شده: تارگت‌های ≤0 کنار می‌روند و سهم پله‌ها با تعداد تازه */
+function pbSane(p){
+  const pb=p&&p.pb;if(!pb||!Array.isArray(pb.tps)||pb.tps.every(t=>t>0))return false;
+  pb.tps=pb.tps.filter(t=>t>0);
+  try{pb.parts=pbParts(pbDef(pb.id),pb.tps.length);}catch(e){}
+  if(p.pbc>pb.tps.length)p.pbc=pb.tps.length;
+  return true;
+}
+/* تارگت‌های مؤثر پوزیشن برای نردبان: نقشه‌ی خروج (اگر هست) وگرنه تارگت‌های کانال یا R تنظیمات؛ فقط در جهت سود */
+function ladTps(p){
+  const sg=p.dir==='long'?1:-1,E=+p.entry;
+  const T=(p.pb&&p.pb.tps&&p.pb.tps.length?p.pb.tps:pbTps(p)).map(Number).filter(t=>t>0&&isFinite(t)&&(t-E)*sg>0);
+  return T.slice(0,3);
 }
 function pbAttach(p,id){
   const def=pbDef(id), tps=pbTps(p);
@@ -14057,7 +14074,7 @@ function ladderDomain(p,live,m){
   if(live)v.push(live);
   if(m&&m.liqPrice)v.push(m.liqPrice);
   if(p.status==='closed'&&p.exitPrice)v.push(p.exitPrice);
-  for(const t of (p.targets||[]).slice(0,3))if(isFinite(t)&&t>0)v.push(t);
+  for(const t of ladTps(p))v.push(t);
   for(const x of partialsOf(p))if(x.price)v.push(x.price);
   let lo=Math.min(...v), hi=Math.max(...v);
   if(!(hi>lo)){lo=p.entry*0.97;hi=p.entry*1.03;}
@@ -14089,11 +14106,8 @@ function buildLadder(p,live,m,opts){
   h+=mark('ent',p.entry,null,'ورود');
   // برچسب لیکوئیدِ نزدیک ورود روی هم نیفتد: می‌رود بالای خط
   if(m&&m.liqPrice)h+=mark('liq',m.liqPrice,null,'لیکوئید',Math.abs(pctOf(d,m.liqPrice)-pctOf(d,p.entry))<16);
-  for(const t of (p.targets||[]).slice(0,3)){
-    if(!isFinite(t)||t<=0)continue;
-    if(((t-p.entry)*sign)<=0)continue;
-    h+=mark('tgt',t,null,'تارگت',true);
-  }
+  // تارگت‌ها (نقشه‌ی خروج، یا کانال، یا R تنظیمات) با شماره؛ پله‌ی انجام‌شده کم‌رنگ
+  ladTps(p).forEach((t,i)=>{h+=mark('tgt'+(p.pbc>i?' done':''),t,null,'تارگت '+faN(i+1),true);});
   if(p.status==='closed'&&p.exitPrice)h+=mark('live',p.exitPrice,null,'خروج',true);
   else if(live)h+=mark('live',live,null,'الان',true);
   // دستگیره‌ی استاپ
@@ -14220,7 +14234,7 @@ let POSSORT=lsGet('signaldesk.possort.v1')||'new';
 /* جای قیمت میان استاپ و نزدیک‌ترین تارگتِ جلوی ورود (برای یک نگاه سریع) */
 function posMiniBar(p,live){
   const S0=+p.stop, E=+p.entry, sg=p.dir==='long'?1:-1;if(!(S0>0)||!(E>0)||!(live>0))return null;
-  const tps=(p.targets||[]).map(Number).filter(t=>t>0&&(t-E)*sg>0).sort((a,b)=>(a-b)*sg);
+  const tps=ladTps(p).sort((a,b)=>(a-b)*sg);
   const T=tps.find(t=>(t-live)*sg>0)||tps[tps.length-1];if(!T||(T-S0)*sg<=0)return null;
   const f=x=>Math.max(0,Math.min(1,(x-S0)/(T-S0))), pe=f(E)*100, pl=f(live)*100, up=(live-E)*sg>=0;
   const n=tps.indexOf(T)+1;
