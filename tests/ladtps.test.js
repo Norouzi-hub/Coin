@@ -16,11 +16,22 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    const lab=id=>[...document.querySelectorAll('#pos-'+id+' .ladder .m.tgt .lb')].map(x=>x.textContent);
    o.l1=lab('ps1');o.l2=lab('ps2');o.s2=s2.pb.tps;o.p1=lab('p1');
    o.neg=[...document.querySelectorAll('#pos-ps2')].map(x=>x.textContent).join('').includes('-0.003');
+   // پوزیشن کانال: خط کانال‌سنج؛ قاب «اگر خلافش» کوتاه (نه 220 پیکسل)؛ برچسب‌های نردبان روی هم نه
+   AUD['ccoineres/912']={st:'open',tAct:Date.now()-36e5,mode:'limit',px0:1.42,k:'x'};
+   const g=DB.positions.find(x=>x.id==='p1');g.rev={v:2,R:-1,usd:-2,st:'sl',dur:7e6,at:Date.now(),iv:'5m'};
+   go('positions',true);renderPositions();await W(200);
+   o.aud=(document.querySelector('#pos-p1 .posaud')||{}).textContent||'';
+   o.revH=Math.round(document.querySelector('#pos-p1 .posrev').getBoundingClientRect().height);
+   const lb=[...document.querySelectorAll('#pos-p1 .ladder .lb.top')].map(e=>e.getBoundingClientRect()).sort((a,b)=>a.left-b.left);
+   o.overlap=lb.some((r,i)=>i&&lb.slice(0,i).some(q=>Math.abs(q.top-r.top)<2&&r.left<q.right-1));
    return o;});
  console.log('   ',JSON.stringify(r));
  ok(r.tps.length===1&&r.tps[0]===0.0015,'تارگت R تنظیمات برای شورت با استاپ 50٪: فقط 0.0015 (3R و 5R زیر صفر حذف)');
  ok(r.l1.length===1&&/0\.0015/.test(r.l1[0])&&/تارگت 1/.test(r.l1[0]),'تارگت روی میله‌ی شورت بی تارگت کانال: '+JSON.stringify(r.l1));
  ok(r.s2.join()==='0.0015'&&r.l2.length===1&&!r.neg,'نقشه‌ی قدیمی با تارگت منفی خودش درست شد و −0.003 دیگر نیست');
  ok(r.p1.length===2&&/تارگت 1/.test(r.p1[0])&&/تارگت 2/.test(r.p1[1]),'لانگ با تارگت‌های کانال: دو تارگت شماره‌دار روی میله '+JSON.stringify(r.p1));
+ ok(/کانال‌سنج: در جریان/.test(r.aud)&&/منتظر برگشت به ورود/.test(r.aud)&&/جزئیات/.test(r.aud),'کارت پوزیشن کانال: «کانال‌سنج: در جریان» با نوع ورود: '+r.aud);
+ ok(r.revH<110,'قاب «اگر خلافش» کوتاه است (ارتفاع '+r.revH+')');
+ ok(!r.overlap,'برچسب‌های بالای نردبان روی هم نمی‌افتند');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');process.exit(bad?1:0);})();

@@ -98,6 +98,7 @@ function renderPositions(){
       if(r.bottom>edge+4){a={id:c.id,top:r.top};break;}}
   }
   renderPositions0();
+  destackAll();                     // برچسب‌های نردبان (الان، تارگت‌ها) روی هم نیفتند؛ قبلاً فقط با renderAll
   if(a){const c=document.getElementById(a.id);
     if(c){const dy=c.getBoundingClientRect().top-a.top;if(Math.abs(dy)>0.5)window.scrollBy(0,dy);}}
 }
@@ -441,6 +442,14 @@ function buildPosCard(p,opt){
     bt.title='همان ورود، استاپ اول و تارگت اول آینه‌شده، جهت برعکس، فقط همان مدتی که باز '+(open?'است':'بود');
     bt.onclick=()=>busyRun(()=>posRevCalc(p)).then(()=>renderPositions()).catch(e=>toast(e&&e.message==='short'?'کوتاه‌تر از یک کندل بود':'کندل‌های '+p.ticker+' نیامد؛ کمی بعد دوباره بزن','err'));
     rv.appendChild(bt);b.appendChild(rv);}
+  // پوزیشن کانال: کانال‌سنج همان سیگنال را چه دیده (در جریان، فعال نشد و چرا، برد/باخت)
+  {const sid=posSrc(p).k==='ch'&&(p.sigId||p.postId),post=sid&&POSTS.find(x=>x.id===sid);
+   if(post){const a=AUD[sid],k=audStKey(a),inp=audInput(post);
+     const why=a&&k==='none'&&AUD_NONE[a.why]?' — '+AUD_NONE[a.why]:a&&k==='bad'&&AUD_WHY[a.why]?' — '+AUD_WHY[a.why]:'';
+     const R=a&&inp?audR(a,inp,audRules().rule):null;
+     const w=el('div','posaud','<span>کانال‌سنج: <b class="'+(AUD_ST[k]?AUD_ST[k][1]:'')+'">'+(AUD_ST[k]?AUD_ST[k][0]:'سنجیده نشده')+'</b>'+(R!=null&&['win','loss','exp'].includes(k)?' <b dir="ltr" class="'+cls(R)+'">'+fmtR(R)+'</b>':'')+esc(why)+
+       (inp&&inp.entry?' · ورود کانال <b dir="ltr">'+fmtPrice(inp.entry)+'</b>':'')+(a&&a.px0?' · قیمت هنگام پست <b dir="ltr">'+fmtPrice(a.px0)+'</b>':'')+(a&&a.mode?' · نوع ورود: '+esc(MODE_FA[a.mode]):'')+'</span>');
+     const d=el('button','btn xs','جزئیات');d.onclick=()=>sheetAudPost(post);w.appendChild(d);b.appendChild(w);}}
   if(open)b.appendChild(el('div','ladhint',p.stop?'دستگیره طلایی را بکش تا حد ضرر جابجا شود':'برای گذاشتن حد ضرر، دستگیره را بکش'));
   const sw=el('div','stopwrap');b.appendChild(sw);
 

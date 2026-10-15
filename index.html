@@ -1998,6 +1998,9 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .rbrevl{border-color:color-mix(in srgb,var(--acc) 45%,var(--line))}
 .audper{font-size:12.5px;color:var(--tx2);margin:10px 2px 6px;line-height:1.8}.audper b{color:var(--tx)}.audper small{color:var(--tx3)}
 .audwk{margin:0 0 10px}
+.rbhold.posrev{flex-direction:row}
+.posaud{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tx2);padding:6px 8px;margin:0 0 8px;border-radius:10px;background:var(--inset);line-height:1.8}
+.posaud>span{flex:1;min-width:0}.posaud .btn{flex:none}
 /* ==================== نور طلایی ==================== */
 /* همه‌ی افکت‌ها زیر html.fx اند: کلید «افکت‌های نورانی» در امکانات همین یک کلاس را
    برمی‌دارد و رابط دقیقاً به حالت ساده برمی‌گردد. هیچ تاری (blur) روی کارت‌های فهرست
@@ -14101,6 +14104,7 @@ function renderPositions(){
       if(r.bottom>edge+4){a={id:c.id,top:r.top};break;}}
   }
   renderPositions0();
+  destackAll();                     // برچسب‌های نردبان (الان، تارگت‌ها) روی هم نیفتند؛ قبلاً فقط با renderAll
   if(a){const c=document.getElementById(a.id);
     if(c){const dy=c.getBoundingClientRect().top-a.top;if(Math.abs(dy)>0.5)window.scrollBy(0,dy);}}
 }
@@ -14444,6 +14448,14 @@ function buildPosCard(p,opt){
     bt.title='همان ورود، استاپ اول و تارگت اول آینه‌شده، جهت برعکس، فقط همان مدتی که باز '+(open?'است':'بود');
     bt.onclick=()=>busyRun(()=>posRevCalc(p)).then(()=>renderPositions()).catch(e=>toast(e&&e.message==='short'?'کوتاه‌تر از یک کندل بود':'کندل‌های '+p.ticker+' نیامد؛ کمی بعد دوباره بزن','err'));
     rv.appendChild(bt);b.appendChild(rv);}
+  // پوزیشن کانال: کانال‌سنج همان سیگنال را چه دیده (در جریان، فعال نشد و چرا، برد/باخت)
+  {const sid=posSrc(p).k==='ch'&&(p.sigId||p.postId),post=sid&&POSTS.find(x=>x.id===sid);
+   if(post){const a=AUD[sid],k=audStKey(a),inp=audInput(post);
+     const why=a&&k==='none'&&AUD_NONE[a.why]?' — '+AUD_NONE[a.why]:a&&k==='bad'&&AUD_WHY[a.why]?' — '+AUD_WHY[a.why]:'';
+     const R=a&&inp?audR(a,inp,audRules().rule):null;
+     const w=el('div','posaud','<span>کانال‌سنج: <b class="'+(AUD_ST[k]?AUD_ST[k][1]:'')+'">'+(AUD_ST[k]?AUD_ST[k][0]:'سنجیده نشده')+'</b>'+(R!=null&&['win','loss','exp'].includes(k)?' <b dir="ltr" class="'+cls(R)+'">'+fmtR(R)+'</b>':'')+esc(why)+
+       (inp&&inp.entry?' · ورود کانال <b dir="ltr">'+fmtPrice(inp.entry)+'</b>':'')+(a&&a.px0?' · قیمت هنگام پست <b dir="ltr">'+fmtPrice(a.px0)+'</b>':'')+(a&&a.mode?' · نوع ورود: '+esc(MODE_FA[a.mode]):'')+'</span>');
+     const d=el('button','btn xs','جزئیات');d.onclick=()=>sheetAudPost(post);w.appendChild(d);b.appendChild(w);}}
   if(open)b.appendChild(el('div','ladhint',p.stop?'دستگیره طلایی را بکش تا حد ضرر جابجا شود':'برای گذاشتن حد ضرر، دستگیره را بکش'));
   const sw=el('div','stopwrap');b.appendChild(sw);
 
