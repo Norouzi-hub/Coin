@@ -41,6 +41,10 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    await revExportStart();await W(200);
    o.sheet=(document.querySelector('#sheet h3')||{}).textContent||'';
    const J=JSON.parse(document.querySelector('#exTx').value);o.exp={k:J.kind,t:J.tests.length,p:J.positions.length,s:J.summary};
+   closeSheet();await W(400);
+   // زدن نوار کار: به بخش خودش در «آزمایشی» و چشمک
+   go('positions',true);revGo();await W(300);
+   o.goTo=view==='radar'&&RDV==='test'&&!!document.querySelector('#rbRevBox.flash');
    closeSheet();rbPath=pth;audCandles=ac;RB.items=keep;
    return o;});
  console.log('   ',JSON.stringify(r).slice(0,1200));
@@ -53,5 +57,6 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(/اگر خلافش را گرفته بودیم/.test(r.card)&&/خلافش بهتر بود/.test(r.card),'روی کارت پوزیشن: نتیجه و دکمه');
  ok(/اگر خلافش/.test(r.stat)&&/1 از/.test(r.stat),'آمار «بسته»: جمع «اگر خلافش» برای حساب‌شده‌ها');
  ok(/خروجی/.test(r.sheet)&&r.exp.k==='reverse'&&r.exp.t===2&&r.exp.p>=1,'خروجی یکجا برای بررسی: تست‌ها و پوزیشن‌ها، حساب‌نشده‌ها هم حساب شدند '+JSON.stringify(r.exp));
+ ok(r.goTo,'زدن نوار «اگر خلافش…»: به «آزمایشی» می‌رود و بخش خودش روشن می‌شود');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');process.exit(bad?1:0);})();

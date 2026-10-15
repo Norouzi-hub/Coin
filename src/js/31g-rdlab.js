@@ -173,7 +173,7 @@ async function revAll(){
   const L=[...T.map(x=>['t',x]),...P.map(x=>['p',x])];let nd=0,fail=0;
   if(!L.length)return {n:0,fail:0};
   REVALLON=true;
-  jobSet('revall',{title:'«اگر خلافش را گرفته بودیم» برای همه',pause:true,cancel:true,pct:()=>nd/L.length*100,msg:()=>faN(nd)+' از '+faN(L.length)});
+  jobSet('revall',{title:'«اگر خلافش را گرفته بودیم» برای همه',pause:true,cancel:true,pct:()=>nd/L.length*100,msg:()=>faN(nd)+' از '+faN(L.length),go:revGo});
   try{for(const [k,x] of L){if(!(await jobGate('revall')))break;nd++;
     try{if(k==='t'){const C=await rbPath(x);const o=rbRevSim(x,C);if(o)x.rev=o;else fail++;}else await posRevCalc(x);}catch(e){fail++;}
     if(nd%20===0)rbSave();}}
@@ -199,10 +199,17 @@ async function revExportStart(){
     faN(n.tests.length)+' تست و '+faN(n.positions.length)+' پوزیشن بسته با «اگر خلافش را گرفته بودیم»');
   if(view==='radar')renderRadar();else renderAll();
 }
+/* رفتن به بخش «اگر خلافش را گرفته بودیم» در آزمایشی و روشن کردنش لحظه‌ای */
+function revGo(){
+  RDV='test';try{localStorage.setItem('signaldesk.rdview',RDV);}catch(e){}
+  if(view==='radar')renderRadar();else go('radar',true);
+  setTimeout(()=>{const n=$('#rbRevBox');if(!n)return;n.scrollIntoView({block:'center',behavior:'smooth'});
+    n.classList.remove('flash');void n.offsetWidth;n.classList.add('flash');},120);
+}
 /* خلاصه‌ی تست‌ها: فقط آن‌هایی که حساب شده‌اند (یکی‌یکی یا یکجا) */
 function rbRevHtml(done){
   const L=done.filter(it=>revOk(it.rev)&&it.R!=null),miss=done.length-L.length;
-  let h='<div class="rbsum rbrevs"><b>اگر خلافش را گرفته بودیم</b>';
+  let h='<div class="rbsum rbrevs" id="rbRevBox"><b class="rbrevh">'+ic('undo')+'اگر خلافش را گرفته بودیم'+(REVALLON?' <small>در حال حساب…</small>':'')+'</b>';
   if(L.length){
     const sum=f=>L.reduce((a,it)=>a+f(it),0),a=sum(it=>it.R),b=sum(it=>it.rev.R),n=L.length,w=f=>Math.round(L.filter(f).length/n*100);
     const D=new Map();for(const it of L){const k=dayNo(new Date(it.xt)),o=D.get(k)||{a:0,b:0};o.a+=it.R;o.b+=it.rev.R;D.set(k,o);}

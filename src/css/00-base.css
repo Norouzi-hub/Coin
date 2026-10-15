@@ -1971,3 +1971,11 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .ladder .m.tgt.done::before{opacity:.45}.ladder .m.tgt.done .lb{opacity:.55;text-decoration:line-through}
 .posrev{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:2px 0 8px}.posrev>div{flex:1 1 220px}
 .t0row{display:grid;grid-template-columns:1fr;gap:8px}.t0row input{min-width:0}
+/* بخش «اگر خلافش را گرفته بودیم»: متمایز از بقیه‌ی خلاصه‌ها */
+.rbsum.rbrevs{border:1.5px solid color-mix(in srgb,var(--acc) 60%,var(--line));background:color-mix(in srgb,var(--acc) 9%,var(--inset));padding:12px 12px 10px;scroll-margin:120px}
+.rbrevs .rbrevh{display:flex;align-items:center;gap:6px;width:100%;font-size:14px;color:var(--tx)}
+.rbrevs .rbrevh .ic{width:16px;height:16px;color:var(--acc)}.rbrevs .rbrevh small{color:var(--tx3);font-weight:500}
+.rbrevs .btn{border-color:color-mix(in srgb,var(--acc) 55%,var(--line))}
+.rbrevs.flash{animation:revflash 1.6s var(--ease)}
+@keyframes revflash{0%,40%{box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 70%,transparent)}100%{box-shadow:0 0 0 0 transparent}}
+.rbrevl{border-color:color-mix(in srgb,var(--acc) 45%,var(--line))}
