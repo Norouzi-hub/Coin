@@ -37,8 +37,14 @@ function renderFocus(){
   if(d.take.length>list.length)h+='<button class="btn sm glmore" data-fc="more">'+faN(d.take.length-list.length)+' سیگنال دیگر</button>';
   if(!d.take.length)h+='<div class="empty">الان سیگنال کانالیِ قابل گرفتنی نیست'+(d.wx.length?'؛ '+faN(d.wx.length)+' سیگنال خلاف هوای بازار کنار رفت':'')+'.</div>';
   else if(d.wx.length)h+='<div class="hint">'+faN(d.wx.length)+' سیگنال کانال خلاف هوای بازار است و این‌جا نیامد ('+d.wx.map(x=>esc(x.tk)+' '+(x.dir==='long'?'لانگ':'شورت')).slice(0,6).join('، ')+'). در «سیگنال‌ها › الان چه کنم؟» هست.</div>';
-  {const ok=rdList().filter(x=>x.ok),rl=ok.filter(x=>(rdRuleX(x)||{}).pass);if(ok.length)h+='<button class="glit" data-fc="radar">'+ic('bars')+'<span>رادار: '+faN(ok.length)+' فرصت قابل گرفتن ('+ok.slice(0,3).map(x=>esc(x.tk)).join('، ')+')'+
-    ' · 💰 پول واقعی: '+(rl.length?rl.map(x=>esc(x.tk)).join('، '):'هیچ')+'</span></button>';}
+  {const ok=rdList().filter(x=>x.ok),rl=ok.filter(x=>(rdRuleX(x)||{}).pass);if(ok.length){h+='<button class="glit" data-fc="radar">'+ic('bars')+'<span>رادار: '+faN(ok.length)+' فرصت قابل گرفتن'+
+    ' · 💰 پول واقعی: '+(rl.length?rl.map(x=>esc(x.tk)).join('، '):'هیچ')+'</span></button>';
+    // هر فرصت با زمان باقی‌مانده‌ی ورود Limit (همان کارت رادار)
+    const sh=FOCALL?ok:ok.slice(0,5);
+    h+=sh.map(x=>{const dl=x.t?x.t+(1+RB_LIMH)*36e5:null;
+      return '<button class="glit fcrd" data-fcrd="'+esc(x.tk)+'"><b dir="ltr">'+esc(x.tk)+'</b><span class="pill '+x.dir+'">'+(x.dir==='long'?'لانگ':'شورت')+'</span>'+
+        (rl.includes(x)?'<span title="از قانون پول واقعی رد شده">💰</span>':'')+(dl?rdLeftHtml(dl):'')+'</button>';}).join('');
+    if(ok.length>sh.length)h+='<button class="btn sm glmore" data-fc="more">'+faN(ok.length-sh.length)+' فرصت دیگر رادار</button>';}}
   // پوزیشن‌های باز
   const P=openPos();
   h+='<div class="sechd">پوزیشن‌های باز ('+faN(P.length)+')</div>';
@@ -50,7 +56,9 @@ function renderFocus(){
     if(nk)h+='<div class="hint">جمع سود/ضرر باز: <b class="'+cls(sum)+'" dir="ltr">'+fmtUsd(sum)+'</b></div>';}
   else h+='<div class="hint">پوزیشن بازی نداری.</div>';
   {const T=rbPend().filter(it=>it.k==='test').length,O=RB.items.filter(it=>it.k==='test'&&it.st==='open').length;
-    if(T||O)h+='<button class="glit" data-fc="tests">'+ic('flag')+'<span>تست‌های بازار: '+faN(O)+' باز'+(T?' · '+faN(T)+' منتظر Limit':'')+'</span></button>';}
+    // نزدیک‌ترین مهلتِ تست‌های منتظر Limit
+    const nd=rbPend().filter(it=>it.k==='test'&&it.dl).reduce((a,it)=>a&&a<it.dl?a:it.dl,0);
+    if(T||O)h+='<button class="glit" data-fc="tests">'+ic('flag')+'<span>تست‌های بازار: '+faN(O)+' باز'+(T?' · '+faN(T)+' منتظر Limit':'')+'</span>'+(nd?rdLeftHtml(nd):'')+'</button>';}
   // نتیجه‌ی هفته
   h+='<div class="sechd">7 روز اخیر</div><div class="hint weekly"><b>معامله‌های واقعی:</b> '+weekText(weekSummary())+'</div>';
   {const W=RB.items.filter(it=>it.k==='test'&&it.st!=='open'&&it.xt>now-7*864e5);if(W.length)h+=rbSumHtml(W,'تست‌های بازار');}
@@ -63,6 +71,8 @@ function renderFocus(){
     else if(a==='radar'){RDV='sig';go('radar');}
     else if(a==='tests'){RDV='test';go('radar');}
     else if(a==='off'){S.focus=false;DB.settings=Object.assign({},S);save();focusApply();go('radar');toast('حالت تمرکز خاموش شد','ok');}});
+  g.querySelectorAll('[data-fcrd]').forEach(b=>b.onclick=()=>{RDV='sig';go('radar');
+    setTimeout(()=>{const c=document.querySelector('#rdView .rdit[data-rd="'+CSS.escape(b.dataset.fcrd)+'"]');if(c)c.scrollIntoView({block:'center',behavior:'smooth'});},120);});
   g.querySelectorAll('[data-fpos]').forEach(b=>b.onclick=()=>advDo({t:'pos',id:b.dataset.fpos}));
   g.querySelectorAll('[data-sig]').forEach(b=>b.onclick=()=>advDo({t:'sig',id:b.dataset.sig}));
   g.querySelectorAll('.glsig').forEach(w=>{
