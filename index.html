@@ -13453,12 +13453,20 @@ function audPxKind(x){
   return {px0:r.px0,E:i.entry,d,old:i.dir==='long'?q>1.25&&q<4:q<0.8&&q>0.25};
 }
 /* «پست نتیجه است»: یادآوری یا نتیجه‌ی سیگنالی قدیمی («ببینید چقدر رشد کرد»)؛ به سطل «نتایج» می‌رود و از سنجش بیرون */
-function audAsResult(p,then){
-  const pr=DB.results[p.id], pa=DB.archived[p.id];
-  DB.results[p.id]=Date.now();delete DB.archived[p.id];save();
+/* علامت «سیگنال است» (sig:true، که با ثبت عددها در برگه می‌خورد) بر «نتیجه» می‌چربید و پست در سنجش می‌ماند؛
+   پس نتیجه کردن آن علامت را هم برمی‌دارد (عددها می‌مانند) و «برگرداندن» هر دو را برمی‌گرداند */
+function audToResults(ids,msg,then){
+  const prev=ids.map(id=>[id,DB.results[id],DB.archived[id],OVERRIDE[id]?Object.assign({},OVERRIDE[id]):null]);
+  for(const id of ids){DB.results[id]=Date.now();delete DB.archived[id];
+    const o=OVERRIDE[id];if(o&&o.sig===true){delete o.sig;delete o.t0;delete o.old;if(!Object.keys(o).length)delete OVERRIDE[id];}
+    PCACHE.delete(id);}
+  DB.overrides=OVERRIDE;save();
   if(then)then();else renderAll();
-  toastUndo('به «نتایج» رفت؛ سیگنال تازه حساب نمی‌شود',()=>{if(pr==null)delete DB.results[p.id];else DB.results[p.id]=pr;if(pa!=null)DB.archived[p.id]=pa;save();renderAll();});
+  toastUndo(msg,()=>{for(const [id,r,a,o] of prev){if(r==null)delete DB.results[id];else DB.results[id]=r;if(a!=null)DB.archived[id]=a;
+      if(o)OVERRIDE[id]=o;else delete OVERRIDE[id];PCACHE.delete(id);}
+    DB.overrides=OVERRIDE;save();renderAll();});
 }
+function audAsResult(p,then){audToResults([p.id],'به «نتایج» رفت؛ سیگنال تازه حساب نمی‌شود',then);}
 function audUnskipAll(){
   let n=0;for(const [id,o] of Object.entries(OVERRIDE))if(o&&o.noAud){delete o.noAud;if(!Object.keys(o).length)delete OVERRIDE[id];n++;}
   DB.overrides=OVERRIDE;save();renderAll();toast(faN(n)+' سیگنال به سنجش برگشت','ok');
@@ -13597,10 +13605,7 @@ function buildAudDiag(all){
     {const O=all.filter(x=>(audPxKind(x)||{}).old);
      if(O.length){const b=el('button','btn sm',ic('flag')+'<span>بردن '+faN(O.length)+' یادآوری به «نتایج»</span>');
        b.onclick=async()=>{if(!(await askConfirm({title:faN(O.length)+' یادآوری سیگنال قدیمی',msg:'قیمت هنگام این پست‌ها بیش از 30٪ از ورودشان جلوتر بود؛ یعنی سیگنال خیلی پیش‌تر داده شده و این پست «ببینید چقدر رشد کرد» است. به سطل «نتایج» می‌روند و از سنجش بیرون. اگر تاریخ سیگنال اصلی یکی را داری، به‌جایش در «مرور یکی‌یکی» «درست است؛ با تاریخ اصلی بسنج» را بزن.',ok:'ببر به نتایج',cancel:'نه'})))return;
-         const prev=O.map(x=>[x.p.id,DB.results[x.p.id],DB.archived[x.p.id]]);
-         for(const x of O){DB.results[x.p.id]=Date.now();delete DB.archived[x.p.id];}
-         save();renderAll();
-         toastUndo(faN(O.length)+' یادآوری به «نتایج» رفت',()=>{for(const [id,r,a] of prev){if(r==null)delete DB.results[id];else DB.results[id]=r;if(a!=null)DB.archived[id]=a;}save();renderAll();});};
+         audToResults(O.map(x=>x.p.id),faN(O.length)+' یادآوری به «نتایج» رفت');};
        const r=el('div','srow');r.appendChild(b);d.appendChild(r);}}
     // پست‌های تصویری که پیگیری‌ها منتظر عددهایشان‌اند؛ پرتکرارترین اول
     const Q=audFixQ(all);

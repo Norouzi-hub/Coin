@@ -67,8 +67,11 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
     const d=buildAudDiag(R);document.body.appendChild(d);
     const bb=[...d.querySelectorAll('button')].find(x=>/یادآوری به «نتایج»/.test(x.textContent));
     o.bulk=bb&&bb.textContent;o.why=(d.querySelector('.audwhy')||{}).textContent||'';
-    bb.click();await W(300);o.bulkRes=isRes(P1)&&!isRes(P2);d.remove();
-    $q('#toast .tundo').click();await W(80);o.bulkBack=!isRes(P1);}
+    // مثل گوشی: عددهایش را قبلاً در برگه ثبت کرده بود (sig:true) — همان که «نتیجه» را بی‌اثر می‌کرد
+    OVERRIDE[A]={sig:true,ticker:'XRP',dir:'long',entry:0.013,stop:0.0086};
+    o.inBefore=!!audInput(P1);
+    bb.click();await W(300);o.bulkRes=isRes(P1)&&!isRes(P2)&&!audInput(P1)&&OVERRIDE[A].entry===0.013&&OVERRIDE[A].sig==null;d.remove();
+    $q('#toast .tundo').click();await W(80);o.bulkBack=!isRes(P1)&&OVERRIDE[A].sig===true&&!!audInput(P1);delete OVERRIDE[A];}
    // نقشه: دکمه‌ی «مرور یکی‌یکی» برگه را باز می‌کند
    S.plan={start:Date.now(),done:{},dec:{},base:plSnap()};
    const t=plTasks(1).find(x=>x[0]==='w1fill');o.planBtn=t[5]&&t[5][0];t[5][1]();await W(200);
@@ -91,7 +94,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(r.odHidden&&r.odShown&&r.old,'«درست است؛ با تاریخ اصلی بسنج»: از 25 اوت سنجیده می‌شود، با نشان «قدیمی»');
  ok(r.planDec==='n1','معیار قبولی نقشه بدون سیگنال‌های «از یادآوری»');
  ok(r.kind==='true,false','قیمت پست 55٪ جلوتر از ورود لانگ ← یادآوری؛ قیمت ده‌برابر کمتر ← عدد/نماد اشتباه');
- ok(/1 یادآوری/.test(r.bulk||'')&&/یادآوری سیگنال قدیمی/.test(r.why)&&r.bulkRes&&r.bulkBack,'وضعیت سنجش: «بردن 1 یادآوری به «نتایج»» با پرسش و برگرداندن');
+ ok(r.inBefore&&/1 یادآوری/.test(r.bulk||'')&&/یادآوری سیگنال قدیمی/.test(r.why)&&r.bulkRes&&r.bulkBack,'وضعیت سنجش: «بردن 1 یادآوری به «نتایج»» حتی وقتی عددهایش ثبت شده بود از سنجش بیرون می‌رود؛ با برگرداندن');
  ok(r.tag,'برچسب «از یادآوری» روی ردیف کانال‌سنج');
  ok(r.planBtn==='مرور یکی‌یکی'&&r.planSheet,'نقشه › «مرور یکی‌یکی» برگه را باز می‌کند');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
