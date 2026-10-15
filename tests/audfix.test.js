@@ -37,6 +37,11 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    const k=[...document.querySelectorAll('#vAudit .panel .srow button')].find(x=>/کنار گذاشتن همه/.test(x.textContent));
    k.click();await W(300);o.all=!has(A)&&audFixQ().length===0;
    audUnskipAll();await W(50);
+   // «پست نتیجه است»: یادآوری سیگنال قدیمی ← به «نتایج»، بیرون از سنجش
+   sheetAudFix([{id:A,why:'px',rows:new Set([A])}],0);await W(150);
+   o.pxHint=/سیگنال قدیمی/.test($q('#sheet').textContent);$q('#rs').click();await W(150);
+   o.res=isRes(POSTS.find(x=>x.id===A))&&!has(A);
+   $q('#toast .tundo').click();await W(80);o.resBack=!isRes(POSTS.find(x=>x.id===A))&&has(A);
    // نقشه: دکمه‌ی «مرور یکی‌یکی» برگه را باز می‌کند
    S.plan={start:Date.now(),done:{},dec:{},base:plSnap()};
    const t=plTasks(1).find(x=>x[0]==='w1fill');o.planBtn=t[5]&&t[5][0];t[5][1]();await W(200);
@@ -52,6 +57,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(r.filled&&r.closed,'نماد عوض‌شده (eth/usdt ← ETH) و عددها ثبت شد؛ آخرین بود و برگه بسته شد');
  ok(r.unBtn&&r.back,'«برگرداندن همه» در وضعیت سنجش');
  ok(r.all,'«کنار گذاشتن همه» با پرسش، صف خالی شد');
+ ok(r.pxHint&&r.res&&r.resBack,'«پست نتیجه است»: راهنما برای قیمت دور، به «نتایج» و بیرون از سنجش، با برگرداندن');
  ok(r.planBtn==='مرور یکی‌یکی'&&r.planSheet,'نقشه › «مرور یکی‌یکی» برگه را باز می‌کند');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');process.exit(bad?1:0);})();

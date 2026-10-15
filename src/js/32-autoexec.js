@@ -727,6 +727,13 @@ function audSkip(ids,then){
     for(const [id,o] of prev){if(o)OVERRIDE[id]=o;else delete OVERRIDE[id];}
     DB.overrides=OVERRIDE;save();renderAll();});
 }
+/* «پست نتیجه است»: یادآوری یا نتیجه‌ی سیگنالی قدیمی («ببینید چقدر رشد کرد»)؛ به سطل «نتایج» می‌رود و از سنجش بیرون */
+function audAsResult(p,then){
+  const pr=DB.results[p.id], pa=DB.archived[p.id];
+  DB.results[p.id]=Date.now();delete DB.archived[p.id];save();
+  if(then)then();else renderAll();
+  toastUndo('به «نتایج» رفت؛ سیگنال تازه حساب نمی‌شود',()=>{if(pr==null)delete DB.results[p.id];else DB.results[p.id]=pr;if(pa!=null)DB.archived[p.id]=pa;save();renderAll();});
+}
 function audUnskipAll(){
   let n=0;for(const [id,o] of Object.entries(OVERRIDE))if(o&&o.noAud){delete o.noAud;if(!Object.keys(o).length)delete OVERRIDE[id];n++;}
   DB.overrides=OVERRIDE;save();renderAll();toast(faN(n)+' سیگنال به سنجش برگشت','ok');
@@ -750,6 +757,7 @@ function sheetAudFix(Q,i){
   openSheet('<h3>'+(q.why==='img-sl'?'عددها از روی چارت':'سیگنال ناقص')+(n>1?' · '+faN(i+1)+' از '+faN(n):'')+'</h3>'+
    (n>1?'<div class="plprog"><span class="plbar"><i style="width:'+Math.round(i/n*100)+'%"></i></span><b>'+faN(n-i)+' مانده</b></div>':'')+
    (q.why!=='img-sl'&&AUD_WHY[q.why]?'<div class="hint w">'+esc(AUD_WHY[q.why])+'</div>':'')+
+   (q.why==='px'?'<div class="hint">اگر این پست یادآوری یک سیگنال قدیمی است («ببینید سیگنالم چقدر رشد کرد») و خود سیگنال پیش‌تر داده شده، «پست نتیجه است» را بزن؛ سیگنال تازه نیست و نباید از امروز سنجیده شود.</div>':'')+
    '<div class="hint"><b dir="ltr">'+esc(tk||'—')+'</b> · '+(p.date?jStampFa(p.date):'')+
      (dep?' · '+faN(dep)+' پیگیری منتظر همین عددهاست':'')+(tg?' · '+tg:'')+'</div>'+
    (p.img?'<div id="ifImg" class="imgfill"></div>':(q.why==='img-sl'?'<div class="hint">تصویری ذخیره نشده — '+(tg||'متن پست را ببین')+'</div>':''))+
@@ -768,7 +776,8 @@ function sheetAudFix(Q,i){
    '<div class="srow"><button class="btn pri" id="ok">ثبت'+(last?'':' و بعدی')+'</button>'+
      (last?'':'<button class="btn" id="sk">بعدی</button>')+'<button class="btn" id="cx">بستن</button></div>'+
    '<div class="srow"><button class="btn sm side" id="ax">'+ic('box')+'<span>عدد ندارد؛ کنار بگذار'+(dep?' (با '+faN(dep)+' پیگیری)':'')+'</span></button>'+
-     '<button class="btn sm side" id="ns">'+ic('x')+'<span>سیگنال نیست'+(p.img?' (فقط چارت است)':'')+'</span></button></div>',
+     '<button class="btn sm side" id="ns">'+ic('x')+'<span>سیگنال نیست'+(p.img?' (فقط چارت است)':'')+'</span></button>'+
+     '<button class="btn sm side" id="rs">'+ic('flag')+'<span>پست نتیجه است (سیگنال قدیمی)</span></button></div>',
    ()=>{
      if(p.img)$('#ifImg').appendChild(postShot(p,p.img,'چارت'));
      $('#cx').onclick=fin;
@@ -776,6 +785,7 @@ function sheetAudFix(Q,i){
      if($('#sk'))$('#sk').onclick=nx;
      $('#ns').onclick=()=>audNotSig(p,nx);
      $('#ax').onclick=()=>audSkip([q.id,...q.rows],nx);
+     $('#rs').onclick=()=>audAsResult(p,nx);
      const tkOf=()=>normDig($('#f_tk').value||'').toUpperCase().replace(/^[#$]/,'').replace(/[\/\-]?USDT?$/,'').trim();
      // قیمتِ لحظه‌ی انتشار، تا عددی که از چارت می‌خوانی با بازار مقایسه شود
      const pxAt=()=>{const t=tkOf(),n0=$('#ifPx');if(!t||!p.date||!n0)return;n0.textContent='';
