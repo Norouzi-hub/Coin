@@ -1966,3 +1966,5 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .plprog.ok .plbar i{background:var(--up)}.plbar i{transition:width .4s var(--ease)}
 .plbar.wk i{background:var(--up)}
 .sheet .plprog{margin:0 0 8px}
+.rbrev{font-size:11.5px;color:var(--tx3);border:1px dashed var(--line);border-radius:8px;padding:1px 6px;white-space:nowrap}
+.rbrevs small{color:var(--tx3);font-size:11px;line-height:1.7}

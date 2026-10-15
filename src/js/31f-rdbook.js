@@ -289,7 +289,8 @@ function rbArchHtml(done){
   for(const [k,L] of G){const dl=dayLabel(new Date(L[0].xt)),o=rbSumOf(L),nw=L.filter(rbNewOf).length,
       op=RBDAY.has(k)?RBDAY.get(k):(first||nw>0);first=false;
     h+='<details class="rbday"'+(op?' open':'')+' data-day="'+k+'"><summary><span class="rbdl"><b>'+esc(dl.rel)+'</b> <small>'+esc(dl.wd+' '+dl.date)+'</small>'+(nw?' <span class="pill nw">'+faN(nw)+' تازه</span>':'')+'</span>'+
-      '<span class="rbds">'+faN(o.n)+' تست · '+faN(o.w)+' برد ('+faN(Math.round(o.w/o.n*100))+'٪) · <b class="'+cls(o.r)+'" dir="ltr">'+fmtR(o.r)+'</b> · <b class="'+cls(o.r)+'" dir="ltr">'+fmtUsd(rbUsd(L))+'</b></span></summary>'+
+      '<span class="rbds">'+faN(o.n)+' تست · '+faN(o.w)+' برد ('+faN(Math.round(o.w/o.n*100))+'٪) · <b class="'+cls(o.r)+'" dir="ltr">'+fmtR(o.r)+'</b> · <b class="'+cls(o.r)+'" dir="ltr">'+fmtUsd(rbUsd(L))+'</b>'+
+        (()=>{const V=L.filter(it=>it.rev&&it.rev.st!=='open');if(!V.length)return '';const r=V.reduce((x,it)=>x+it.rev.R,0);return ' · خلاف <b class="'+cls(r)+'" dir="ltr">'+fmtR(r)+'</b>';})()+'</span></summary>'+
       (op?L.map(it=>rbRowHtml(it,true)).join(''):'')+'</details>';}
   return h;
 }
@@ -340,7 +341,8 @@ function rbRowHtml(it,live){
     (it.sc!=null?'<small>امتیاز '+faN(it.sc)+(it.stars?' · '+faN(it.stars)+'★':'')+'</small>':'')+
     (()=>{const c=it.k==='test'&&rbCk(it);return c?'<small class="rbckn" title="چک‌لیست ورود">✓'+c.n+'/'+RD_CK.length+'</small>':'';})()+
     (it.st==='open'?'<span class="pill '+(x&&x.k?'win':'mut')+'">'+(x&&x.k?'سیو شد '+faN(Math.round((1-x.rem)*100))+'٪':it.be?'ریسک‌فری':'باز')+'</span>'+(lr!=null?rbMoney(lr,it):''):
-      '<span class="pill '+(it.R>0?'win':'lose')+'">'+RB_ST[it.st]+'</span>'+rbMoney(it.R,it))+'</div>'+
+      '<span class="pill '+(it.R>0?'win':'lose')+'">'+RB_ST[it.st]+'</span>'+rbMoney(it.R,it)+
+      (it.rev?'<span class="rbrev" title="اگر خلافش را گرفته بودی: همان استاپ و نقشه، جهت برعکس">خلاف <b class="'+cls(it.rev.R)+'" dir="ltr">'+fmtR(it.rev.R)+'</b>'+(it.rev.st==='open'?' <small>باز</small>':'')+'</span>':''))+'</div>'+
     (it.st==='open'&&x&&x.k?'<div class="glnum">سیو شده: <b class="u" dir="ltr">'+fmtR(x.acc)+'</b> · <b class="u" dir="ltr">'+fmtUsd(x.acc*rbUsdR(it))+'</b> (روی '+faN(Math.round((1-x.rem)*100))+'٪ حجم)</div>':'')+
     '<div class="glnum">ورود <b dir="ltr">'+fmtPrice(it.E)+'</b> · استاپ اول <b dir="ltr">'+fmtPrice(it.SL)+'</b>'+(stopNow&&x.stop>-1?' · استاپ الان '+stopNow:'')+
       (it.st==='open'?(px>0?' · الان <b dir="ltr">'+fmtPrice(px)+'</b>':'')+' · '+faN(Math.ceil(left/36e5))+' ساعت مانده':' · خروج <b dir="ltr">'+fmtPrice(it.xp)+'</b> · '+rbTimeTxt(it))+'</div>'+
@@ -412,6 +414,7 @@ function rbHtml(kind){
           [nC.length?faN(nC.length)+' تست بسته شد · جمع <b class="'+cls(r)+'" dir="ltr">'+fmtR(r)+'</b> <b class="'+cls(r)+'" dir="ltr">'+fmtUsd(rbUsd(nC))+'</b>':'',nO.length?faN(nO.length)+' تست تازه باز شد':''].filter(Boolean).join(' · ')+
           '. همه با نشان <span class="pill nw">تازه</span>.</span></div>';}}
     h+=rbSumHtml(done,'نتیجه');
+    h+=rbRevHtml(done);setTimeout(()=>{try{rbRevFill();}catch(e){}},1200);
     h+=rbRuleHtml(done)+rbCkHtml(done)+rbAgeHtml(done);
     if(open.length){const px=it=>PRICES.get(it.tk),liv=open.filter(it=>px(it)>0),sum=liv.reduce((a,it)=>a+rbLiveR(it,px(it)),0),usd=rbUsd(liv,it=>rbLiveR(it,px(it))),worst=rbUsd(open,rbStopR);
       h+='<div class="rbsum"><b>بازها الان</b><span>'+faN(open.length)+' معامله · جمع <b class="'+cls(sum)+'" dir="ltr">'+fmtR(sum)+'</b> · به دلار <b class="'+cls(sum)+'" dir="ltr">'+fmtUsd(usd)+'</b></span>'+

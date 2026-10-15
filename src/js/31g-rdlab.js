@@ -116,6 +116,48 @@ function rbAllPlans(it,C){
   }
   return out;
 }
+/* «خلاف جهت»: همان تست با جهت برعکس، آینه‌ی استاپ و هدف دور همان ورود (همان فاصله‌ی استاپ) و همان نقشه‌ی خروج،
+   روی همان کندل‌های 5 دقیقه‌ای و تا همان سقف زمان، بعد از کارمزد. بی پوزیشن دوم؛ فقط حساب.
+   st='open' یعنی سقف زمان خلافش هنوز تمام نشده (R همان لحظه). */
+function rbRevSim(it,C){
+  const M5=3e5,t1=Math.floor(it.t/M5)*M5+M5,end=it.t+rbHoldH(it)*36e5,full=C.length>0&&C[C.length-1].t>=end-2*M5;
+  const y={id:it.id,k:it.k,tk:it.tk,dir:it.dir==='long'?'short':'long',t:it.t,E:it.E,SL:2*it.E-it.SL,TP:it.TP!=null?2*it.E-it.TP:null,
+    sd:it.sd,rr:it.rr,st:'open',ex:it.ex||'tp',x:exNew(),be:false};
+  let last=null;
+  for(const k of C){if(k.t<t1)continue;if(k.t>=end)break;last=k;if(rbStep(y,k.h,k.l,k.t+M5,k.c))break;}
+  if(y.st!=='open')return {R:+y.R.toFixed(3),st:y.st};
+  return last?{R:+rbLiveR(y,last.c).toFixed(3),st:full?'time':'open'}:null;
+}
+/* پر کردن «خلاف جهت» تست‌های بسته در پس‌زمینه (مسیرها در IndexedDB می‌مانند؛ هر 10 دقیقه یک دور) */
+let RBREVON=false,RBREVAT=0;
+async function rbRevFill(force){
+  if(RBREVON||(!force&&Date.now()-RBREVAT<10*60000))return;
+  const L=RB.items.filter(it=>it.k==='test'&&it.st!=='open'&&it.st!=='void'&&it.E>0&&it.sd>0&&(!it.rev||it.rev.st==='open')).sort((a,b)=>b.xt-a.xt);
+  if(!L.length)return;
+  RBREVON=true;RBREVAT=Date.now();let n=0,nd=0;
+  jobSet('rbrev',{title:'«خلاف جهت» تست‌ها',pause:true,cancel:true,pct:()=>nd/L.length*100,msg:()=>faN(nd)+' از '+faN(L.length),
+    go:()=>{RDV='test';if(view==='radar')renderRadar();else go('radar');}});
+  try{for(const it of L){if(!(await jobGate('rbrev')))break;nd++;
+    try{const C=await rbPath(it);if(!C.length)continue;const o=rbRevSim(it,C);if(o){it.rev=o;n++;}}catch(e){}
+    if(n&&n%20===0)rbSave();}}
+  finally{RBREVON=false;jobEnd('rbrev');}
+  if(n){rbSave();if(view==='radar'&&RDV==='test')renderRadar();}
+}
+/* خلاصه: اگر خلاف همه را گرفته بودی، و روزبه‌روز (برتری‌ای که فقط در یکی دو روز است، شانس جهت بازار است) */
+function rbRevHtml(done){
+  const L=done.filter(it=>it.rev&&it.rev.st!=='open'&&it.R!=null);if(!L.length)return '';
+  const sum=f=>L.reduce((a,it)=>a+f(it),0),a=sum(it=>it.R),b=sum(it=>it.rev.R),n=L.length;
+  const w=f=>Math.round(L.filter(f).length/n*100);
+  const D=new Map();for(const it of L){const k=dayNo(new Date(it.xt)),o=D.get(k)||{a:0,b:0};o.a+=it.R;o.b+=it.rev.R;D.set(k,o);}
+  const days=[...D.values()],better=days.filter(o=>o.b>o.a).length;
+  const by=d=>{const G=L.filter(it=>it.dir===d);return G.length?faN(G.length)+' '+(d==='long'?'لانگ':'شورت')+': <b class="'+cls(G.reduce((x,it)=>x+it.rev.R,0))+'" dir="ltr">'+fmtR(G.reduce((x,it)=>x+it.rev.R,0))+'</b>':'';};
+  const miss=done.filter(it=>!it.rev||it.rev.st==='open').length;
+  return '<div class="rbsum rbrevs"><b>اگر خلاف همه را گرفته بودی</b>'+
+    '<span>'+faN(n)+' تست · همان جهت <b class="'+cls(a)+'" dir="ltr">'+fmtR(a)+'</b> ('+faN(w(it=>it.R>0))+'٪ برد) · خلاف جهت <b class="'+cls(b)+'" dir="ltr">'+fmtR(b)+'</b> ('+faN(w(it=>it.rev.R>0))+'٪ برد)</span>'+
+    '<span>میانگین هر تست: همان <b class="'+cls(a/n)+'" dir="ltr">'+fmtR(a/n)+'</b> · خلاف <b class="'+cls(b/n)+'" dir="ltr">'+fmtR(b/n)+'</b> · '+[by('long'),by('short')].filter(Boolean).join(' · ')+'</span>'+
+    '<span>خلاف جهت در <b>'+faN(better)+'</b> روز از '+faN(days.length)+' روز بهتر بود'+(miss?' · <small>'+faN(miss)+' تست هنوز حساب نشده</small>':'')+'</span>'+
+    '<small>همان استاپ، همان نقشه‌ی خروج و همان کندل‌ها، فقط جهت برعکس؛ بعد از کارمزد. اگر برتری خلاف فقط در یکی دو روز است، شانس جهت بازار است نه قاعده.</small></div>';
+}
 /* جدول: هر نقشه روی همین تست‌های واقعی (بسته‌ها؛ بازها جدا شمرده می‌شوند) */
 function rbPlansTable(res){
   const PL=rdExPlans(),av=(a,b)=>b?a/b:null;
@@ -174,6 +216,7 @@ async function rbLabRun(){
     for(const it of L){
       if(!(await jobGate('rblab'))){stop=true;break;}
       try{const C=await rbPath(it);if(C.length){const x={it,C,st:rbPathStats(it,C),pl:rbAllPlans(it,C)};
+        try{const v=rbRevSim(it,C);if(v){x.rev=v;if(it.st!=='open')it.rev=v;}}catch(e){}
         try{const H=await rbHist(it);if(H.length)x.vol=rbVolSim(it,C,H);}catch(e){}
         try{const w=rbWxSim(it,C,W);if(w)x.wxx=w;}catch(e){}
         res.push(x);}}catch(e){}
@@ -181,7 +224,7 @@ async function rbLabRun(){
     }
   }finally{RBL.on=false;jobEnd('rblab');}
   if(stop){rbRepaint();return;}                // لغو: خروجی نیمه‌کاره ساخته نمی‌شود
-  RBL.noWx=!W;RBL.res=res;RBL.at=Date.now();RBL.sig=rbLabSig();rbRepaint();
+  RBL.noWx=!W;RBL.res=res;RBL.at=Date.now();RBL.sig=rbLabSig();try{rbSave();}catch(e){}rbRepaint();
   if(!res.length)toast('مسیر قیمت هیچ معامله‌ای نیامد (اینترنت/فیلترشکن؟)','err');
 }
 /* جدول آستانه‌ها: سود روی مارجین (با اهرم ایزوله‌ی هر معامله) و R */
@@ -247,7 +290,7 @@ function rbLabExport(){
         why:it.why||null,pv:it.pv||null,ck:(()=>{const c=rbCk(it);return c?{n:c.n,k:c.k,it:c.it}:null;})(),hold:rbHoldH(it),lim:it.lim??null,sigT:it.sig?new Date(it.sig).toISOString():null,sinceT:it.sn?new Date(it.sn).toISOString():null,rule:(()=>{const u=rbRule(it);return u?{pass:u.pass,n:u.n,it:u.it}:null;})(),ageH:rbAgeH(it)!=null?+rbAgeH(it).toFixed(1):null,st:it.st,R:it.R??null,xt:it.xt?new Date(it.xt).toISOString():null,xp:it.xp??null,saved:it.x?{k:it.x.k,rem:it.x.rem,acc:+it.x.acc.toFixed(3)}:null,
         wxx:x.wxx?{armed:x.wxx.armed,trig:x.wxx.trig?new Date(x.wxx.trig).toISOString():null,A:x.wxx.A,B:x.wxx.B}:null,
         vol:x.vol?{tg:x.vol.tg,st:x.vol.st,bo:x.vol.bo,late:x.vol.late,A:x.vol.A,B:x.vol.B,C:x.vol.C}:null,
-        lev:st.lev,plans:x.pl?Object.fromEntries(Object.entries(x.pl).map(([n,v])=>[n,v.st==='open'?{R:v.R,open:true}:v.R])):null,usdPerR:+rbUsdR(it).toFixed(3),usd:it.R!=null?+(it.R*rbUsdR(it)).toFixed(2):null,stats:{mfe:+st.mfe.toFixed(3),tMfeMin:st.tMfe?Math.round((st.tMfe-it.t)/6e4):null,mfe24:+st.mfe24.toFixed(3),mae:+st.mae.toFixed(3),
+        rev:x.rev||null,lev:st.lev,plans:x.pl?Object.fromEntries(Object.entries(x.pl).map(([n,v])=>[n,v.st==='open'?{R:v.R,open:true}:v.R])):null,usdPerR:+rbUsdR(it).toFixed(3),usd:it.R!=null?+(it.R*rbUsdR(it)).toFixed(2):null,stats:{mfe:+st.mfe.toFixed(3),tMfeMin:st.tMfe?Math.round((st.tMfe-it.t)/6e4):null,mfe24:+st.mfe24.toFixed(3),mae:+st.mae.toFixed(3),
           stopMin:st.stopAt?Math.round((st.stopAt-it.t)/6e4):null,touchMin:Object.fromEntries(Object.entries(st.touch).map(([k,v])=>[k,Math.round((v-it.t)/6e4)])),full:st.full},
         path:{t0:new Date(t0).toISOString(),stepMin:5,unit:'1e-4 of entry',hlc:C.map(k=>[Math.round((k.h/it.E-1)*1e4),Math.round((k.l/it.E-1)*1e4),Math.round((k.c/it.E-1)*1e4)])}};})});
 }
