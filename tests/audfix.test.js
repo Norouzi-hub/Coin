@@ -53,6 +53,16 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    o.tag=[...document.querySelectorAll('#vAudit .arow2 .pill')].some(x=>x.textContent==='از یادآوری');
    {const aR=audRows;audRows=()=>[{p:{id:'n1'},inp:{t0:1},r:{st:'win'},R:1},{p:{id:'o1'},inp:{t0:2,old:true},r:{st:'win'},R:2}];
     S.plan={start:Date.now(),done:{},dec:{},base:plSnap()};o.planDec=plChan().dec.map(x=>x.p.id).join();audRows=aR;S.plan=null;}
+   // «قیمت دور»: قیمت پست از ورود جلوتر (در جهت سود) ← یادآوری؛ و بردن همه به «نتایج»
+   {const P1=POSTS.find(x=>x.id===A),P2=POSTS.find(x=>x.id===B);
+    const rw=(pp,dir,E,px0)=>({p:pp,inp:{dir,entry:E,stop:dir==='long'?E*0.8:E*1.2,tps:[]},r:{st:'bad',why:'px',px0}});
+    const R=[rw(P1,'long',0.013,0.02015),rw(P2,'short',100,10)];
+    o.kind=R.map(x=>{const k=audPxKind(x);return k&&k.old;}).join();
+    const d=buildAudDiag(R);document.body.appendChild(d);
+    const bb=[...d.querySelectorAll('button')].find(x=>/یادآوری به «نتایج»/.test(x.textContent));
+    o.bulk=bb&&bb.textContent;o.why=(d.querySelector('.audwhy')||{}).textContent||'';
+    bb.click();await W(300);o.bulkRes=isRes(P1)&&!isRes(P2);d.remove();
+    $q('#toast .tundo').click();await W(80);o.bulkBack=!isRes(P1);}
    // نقشه: دکمه‌ی «مرور یکی‌یکی» برگه را باز می‌کند
    S.plan={start:Date.now(),done:{},dec:{},base:plSnap()};
    const t=plTasks(1).find(x=>x[0]==='w1fill');o.planBtn=t[5]&&t[5][0];t[5][1]();await W(200);
@@ -72,6 +82,8 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(r.pd[0]===r.pd[1]&&r.pd[2]===Date.UTC(2026,7,3,8,30)&&r.pd[3]===r.pd[1]&&r.pd[4]===null,'تاریخ شمسی/میلادی، با و بی ساعت، و نامعتبر: '+JSON.stringify(r.pd));
  ok(r.odHidden&&r.odShown&&r.old,'«درست است؛ با تاریخ اصلی بسنج»: از 1405/05/12 سنجیده می‌شود، با نشان «قدیمی»');
  ok(r.planDec==='n1','معیار قبولی نقشه بدون سیگنال‌های «از یادآوری»');
+ ok(r.kind==='true,false','قیمت پست 55٪ جلوتر از ورود لانگ ← یادآوری؛ قیمت ده‌برابر کمتر ← عدد/نماد اشتباه');
+ ok(/1 یادآوری/.test(r.bulk||'')&&/یادآوری سیگنال قدیمی/.test(r.why)&&r.bulkRes&&r.bulkBack,'وضعیت سنجش: «بردن 1 یادآوری به «نتایج»» با پرسش و برگرداندن');
  ok(r.tag,'برچسب «از یادآوری» روی ردیف کانال‌سنج');
  ok(r.planBtn==='مرور یکی‌یکی'&&r.planSheet,'نقشه › «مرور یکی‌یکی» برگه را باز می‌کند');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));

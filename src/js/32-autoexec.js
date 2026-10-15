@@ -731,6 +731,14 @@ function audSkip(ids,then){
     for(const [id,o] of prev){if(o)OVERRIDE[id]=o;else delete OVERRIDE[id];}
     DB.overrides=OVERRIDE;save();renderAll();});
 }
+/* «قیمت دور» (px): قیمت لحظه‌ی انتشار در جهت سود از ورود جلوتر بوده (تا 4 برابر) ← به احتمال زیاد یادآوری سیگنال قدیمی
+   («ببینید چقدر رشد کرد»)؛ در جهت ضرر یا چند برابر ← عدد یا نماد اشتباه. null اگر داده نیست. */
+function audPxKind(x){
+  const r=x&&x.r,i=x&&x.inp;if(!r||r.why!=='px'||!(r.px0>0)||!i||!(i.entry>0))return null;
+  const d=(r.px0-i.entry)/i.entry,q=r.px0/i.entry;
+  // جلوتر در جهت سود ولی نه چند برابر (چند برابر یعنی صفر کم/زیاد یا ارز دیگر)
+  return {px0:r.px0,E:i.entry,d,old:i.dir==='long'?q>1.25&&q<4:q<0.8&&q>0.25};
+}
 /* «پست نتیجه است»: یادآوری یا نتیجه‌ی سیگنالی قدیمی («ببینید چقدر رشد کرد»)؛ به سطل «نتایج» می‌رود و از سنجش بیرون */
 function audAsResult(p,then){
   const pr=DB.results[p.id], pa=DB.archived[p.id];
@@ -761,6 +769,9 @@ function sheetAudFix(Q,i){
   openSheet('<h3>'+(q.why==='img-sl'?'عددها از روی چارت':'سیگنال ناقص')+(n>1?' · '+faN(i+1)+' از '+faN(n):'')+'</h3>'+
    (n>1?'<div class="plprog"><span class="plbar"><i style="width:'+Math.round(i/n*100)+'%"></i></span><b>'+faN(n-i)+' مانده</b></div>':'')+
    (q.why!=='img-sl'&&AUD_WHY[q.why]?'<div class="hint w">'+esc(AUD_WHY[q.why])+'</div>':'')+
+   (q.why==='px'?(()=>{const k=audPxKind({r:AUD[p.id],inp:audInput(p)});if(!k)return '';
+      return '<div class="hint '+(k.old?'w':'')+'">ورود <b dir="ltr">'+fmtPrice(k.E)+'</b> · قیمت هنگام همین پست <b dir="ltr">'+fmtPrice(k.px0)+'</b> (<bdi dir="ltr">'+(k.d>0?'+':'')+fmtNum(k.d*100)+'٪</bdi>) — '+
+        (k.old?'<b>قیمت از ورود جلوتر بود: به احتمال زیاد یادآوری سیگنال قدیمی است.</b> عدد زدن درستش نمی‌کند؛ یکی از دو دکمه‌ی پایین را بزن.':'احتمالاً نماد یا عدد اشتباه است (یک صفر کم یا زیاد؟)؛ نماد و ورود را درست کن.')+'</div>';})():'')+
    (q.why==='px'?'<div class="hint">اگر این پست یادآوری یک سیگنال قدیمی است («ببینید سیگنالم چقدر رشد کرد») و خود سیگنال پیش‌تر داده شده، «پست نتیجه است» را بزن؛ سیگنال تازه نیست و نباید از امروز سنجیده شود.</div>':'')+
    '<div class="hint"><b dir="ltr">'+esc(tk||'—')+'</b> · '+(p.date?jStampFa(p.date):'')+
      (dep?' · '+faN(dep)+' پیگیری منتظر همین عددهاست':'')+(tg?' · '+tg:'')+'</div>'+
@@ -781,8 +792,8 @@ function sheetAudFix(Q,i){
      (last?'':'<button class="btn" id="sk">بعدی</button>')+'<button class="btn" id="cx">بستن</button></div>'+
    '<div class="srow"><button class="btn sm side" id="ax">'+ic('box')+'<span>عدد ندارد؛ کنار بگذار'+(dep?' (با '+faN(dep)+' پیگیری)':'')+'</span></button>'+
      '<button class="btn sm side" id="ns">'+ic('x')+'<span>سیگنال نیست'+(p.img?' (فقط چارت است)':'')+'</span></button>'+
-     '<button class="btn sm side" id="rs">'+ic('flag')+'<span>پست نتیجه است (سیگنال قدیمی)</span></button>'+
-     '<button class="btn sm side" id="od">'+ic('check')+'<span>درست است؛ با تاریخ اصلی بسنج</span></button></div>'+
+     '<button class="btn sm '+(q.why==='px'?'ok':'side')+'" id="rs">'+ic('flag')+'<span>پست نتیجه است (سیگنال قدیمی)</span></button>'+
+     '<button class="btn sm '+(q.why==='px'?'ok':'side')+'" id="od">'+ic('check')+'<span>درست است؛ با تاریخ اصلی بسنج</span></button></div>'+
    '<div class="fld'+(ov.t0>0?'':' hide')+'" id="odw" style="margin-top:8px"><label for="f_t0">تاریخ و ساعت سیگنال اصلی (شمسی، مثل 1405/05/12 14:30)</label>'+
      '<input id="f_t0" dir="ltr" autocomplete="off" placeholder="1405/05/12 14:30" value="'+(ov.t0>0?esc(jStamp(new Date(ov.t0))):'')+'">'+
      '<div class="hint">سیگنال از همان روز با کندل واقعی سنجیده می‌شود و در آمار می‌آید، با برچسب «از یادآوری». کانال معمولاً فقط برنده‌ها را یادآوری می‌کند؛ برای همین کارنامه نتیجه را بدون این‌ها هم نشان می‌دهد.</div></div>',
@@ -854,8 +865,17 @@ function buildAudDiag(all){
       ul.appendChild(el('li',null,'<b>'+faN(n)+'</b> '+esc(AUD_WHY[k]||k)+
         (k==='nocandle'?' — «آزمایش اتصال» را بزن':
          k==='img-sl'?' — «تکمیل از روی چارت» را بزن':
-         k==='no-stop'||k==='no-entry'||k==='no-ticker'?' — در فهرست پایین «اصلاح عددها» را بزن':'')));
+         k==='no-stop'||k==='no-entry'||k==='no-ticker'?' — در فهرست پایین «اصلاح عددها» را بزن':
+         k==='px'?(()=>{const o=all.filter(x=>(audPxKind(x)||{}).old).length;return o?' — '+faN(o)+' تا قیمتشان از ورود جلوتر بود: یادآوری سیگنال قدیمی‌اند، نه سیگنال تازه':'';})():'')));
     d.appendChild(ul);
+    {const O=all.filter(x=>(audPxKind(x)||{}).old);
+     if(O.length){const b=el('button','btn sm',ic('flag')+'<span>بردن '+faN(O.length)+' یادآوری به «نتایج»</span>');
+       b.onclick=async()=>{if(!(await askConfirm({title:faN(O.length)+' یادآوری سیگنال قدیمی',msg:'قیمت هنگام این پست‌ها بیش از 30٪ از ورودشان جلوتر بود؛ یعنی سیگنال خیلی پیش‌تر داده شده و این پست «ببینید چقدر رشد کرد» است. به سطل «نتایج» می‌روند و از سنجش بیرون. اگر تاریخ سیگنال اصلی یکی را داری، به‌جایش در «مرور یکی‌یکی» «درست است؛ با تاریخ اصلی بسنج» را بزن.',ok:'ببر به نتایج',cancel:'نه'})))return;
+         const prev=O.map(x=>[x.p.id,DB.results[x.p.id],DB.archived[x.p.id]]);
+         for(const x of O){DB.results[x.p.id]=Date.now();delete DB.archived[x.p.id];}
+         save();renderAll();
+         toastUndo(faN(O.length)+' یادآوری به «نتایج» رفت',()=>{for(const [id,r,a] of prev){if(r==null)delete DB.results[id];else DB.results[id]=r;if(a!=null)DB.archived[id]=a;}save();renderAll();});};
+       const r=el('div','srow');r.appendChild(b);d.appendChild(r);}}
     // پست‌های تصویری که پیگیری‌ها منتظر عددهایشان‌اند؛ پرتکرارترین اول
     const Q=audFixQ(all);
     if(Q.length){
@@ -1125,7 +1145,8 @@ function buildAudList(rows){
       '<div class="ar2">ورود '+(i.entry?fmtPrice(i.entry):'—')+' · استاپ '+(i.stop?fmtPrice(i.stop):'—')+
         (stopPctOf(i)!=null&&i.mkt!=='spot'?' ('+fmtNum(stopPctOf(i))+'٪ · ایزوله تا '+faN(isoLev(stopPctOf(i)))+'x)':'')+
       ' · تارگت '+(i.tps.length?i.tps.slice(0,3).map(fmtPrice).join('، '):'—')+'</div>'+
-      (k==='bad'&&x.r?'<div class="ar2 bad">'+esc(AUD_WHY[x.r.why]||'')+'</div>':'')+
+      (k==='bad'&&x.r?'<div class="ar2 bad">'+esc(AUD_WHY[x.r.why]||'')+
+        (()=>{const q=audPxKind(x);return q?' · قیمت هنگام پست <bdi dir="ltr">'+fmtPrice(q.px0)+'</bdi>'+(q.old?' — <b>احتمالاً یادآوری سیگنال قدیمی</b>':''):'';})()+'</div>':'')+
       (tags.length?'<div class="ar3">'+tags.join('')+'</div>':'');
     const act=el('div','ar4');
     const d=el('button','btn xs','جزئیات');d.onclick=()=>sheetAudPost(x.p);
