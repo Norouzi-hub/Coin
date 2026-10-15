@@ -1592,6 +1592,7 @@ table.xtab tr.mine .pill{font-size:10.5px;padding:1px 6px;vertical-align:1px}
 .rdkv{display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:6px}
 .rdkv>div{display:flex;flex-direction:column;gap:1px;padding:6px 8px;border-radius:10px;background:var(--inset);border:1px solid var(--line);min-width:0}
 .rdkv small{font-size:10.5px;color:var(--tx3)}
+.rdkv small.d{color:var(--dn)}.rdkv small.w{color:var(--warn);font-weight:700}
 .rdkv b{font-size:13px;font-weight:800;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .rdit .glact{margin:0}
 .rdit .glact .btn[data-a="iso"]{flex:2 1 150px}
