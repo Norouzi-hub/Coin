@@ -201,6 +201,19 @@ function renderPositions0(){
   }
 }
 
+/* تارگت‌هایی که روی میله دیده می‌شوند: تا تارگت اول رد نشده فقط همان (بقیه شلوغ می‌کنند و مقیاس را باز)،
+   بعد از رد شدنش (قیمت به آن رسید، پله‌ی اول نقشه انجام شد، یا بستن بخشی روی/بعد از آن) همه.
+   پوزیشن بسته: همه، برای مرور */
+function ladShown(p,live){
+  const T=ladTps(p),sg=p.dir==='long'?1:-1,at=(x,t)=>x!=null&&isFinite(x)&&(x-t)*sg>=0;
+  const all=T.map((t,i)=>({t,i,n:T.length}));
+  if(T.length<2||p.status==='closed')return all;
+  // «رد کن» در نقشه (بی رسیدن قیمت) رد شدن تارگت نیست؛ «انجام شد» بستن بخشی روی تارگت ثبت می‌کند
+  const past=at(live,T[0])||at(p.peak,T[0])||partialsOf(p).some(x=>at(x.price,T[0]))||(p.pbc>0&&!(p.pbSkip||[]).includes(0));
+  return past?all:all.slice(0,1);
+}
+/* تارگت «انجام‌شده» (کم‌رنگ و خط‌خورده): پله‌اش اجرا شده، یا ردش کرده‌ای و قیمت واقعاً از آن گذشته */
+const ladDone=(p,i,t,live)=>p.pbc>i&&(!(p.pbSkip||[]).includes(i)||(live!=null&&(live-t)*(p.dir==='long'?1:-1)>=0));
 /* ---- محدوده‌ی نوار قیمت ---- */
 function ladderDomain(p,live,m){
   const v=[p.entry];
@@ -209,7 +222,7 @@ function ladderDomain(p,live,m){
   if(live)v.push(live);
   if(m&&m.liqPrice)v.push(m.liqPrice);
   if(p.status==='closed'&&p.exitPrice)v.push(p.exitPrice);
-  for(const t of ladTps(p))v.push(t);
+  for(const x of ladShown(p,live))v.push(x.t);
   for(const x of partialsOf(p))if(x.price)v.push(x.price);
   let lo=Math.min(...v), hi=Math.max(...v);
   if(!(hi>lo)){lo=p.entry*0.97;hi=p.entry*1.03;}
@@ -242,7 +255,8 @@ function buildLadder(p,live,m,opts){
   // برچسب لیکوئیدِ نزدیک ورود روی هم نیفتد: می‌رود بالای خط
   if(m&&m.liqPrice)h+=mark('liq',m.liqPrice,null,'لیکوئید',Math.abs(pctOf(d,m.liqPrice)-pctOf(d,p.entry))<16);
   // تارگت‌ها (نقشه‌ی خروج، یا کانال، یا R تنظیمات) با شماره؛ پله‌ی انجام‌شده کم‌رنگ
-  ladTps(p).forEach((t,i)=>{h+=mark('tgt'+(p.pbc>i?' done':''),t,null,'تارگت '+faN(i+1),true);});
+  {const S0=ladShown(p,live);
+   S0.forEach(({t,i,n})=>{h+=mark('tgt'+(ladDone(p,i,t,live)?' done':''),t,null,'تارگت '+faN(i+1)+(S0.length<n?' از '+faN(n):''),true);});}
   if(p.status==='closed'&&p.exitPrice)h+=mark('live',p.exitPrice,null,'خروج',true);
   else if(live)h+=mark('live',live,null,'الان',true);
   // دستگیره‌ی استاپ
