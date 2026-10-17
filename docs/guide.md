@@ -89,7 +89,7 @@
 1. در گیت‌هاب یک مخزن بساز (یا همین مخزن `coin` را استفاده کن) و همه‌ی فایل‌های پروژه را در آن بگذار.
 2. **Settings → Pages → Build and deployment → Source: Deploy from a branch** را بزن.
 3. شاخه (مثلاً `main`) و پوشه‌ی `/ (root)` را انتخاب کن و **Save**.
-4. چند دقیقه بعد آدرسی مثل `https://<نام‌کاربری>.github.io/<نام-مخزن>/` می‌دهد. همین آدرس برنامه است.
+4. چند دقیقه بعد آدرسی مثل `https://USERNAME.github.io/REPO/` می‌دهد. همین آدرس برنامه است.
 
 **جایگزین‌ها:**
 - **Cloudflare Pages:** dash.cloudflare.com → Workers & Pages → Create → Pages → Upload assets → پوشه‌ی پروژه را بکش و رها کن.
@@ -117,14 +117,14 @@
 2. در **dash.cloudflare.com** وارد شو (ثبت‌نام رایگان است).
 3. **Workers & Pages → Create → Start with Hello World! → Deploy**.
 4. **Edit code** را بزن، همه‌ی کد پیش‌فرض را پاک کن، کد کپی‌شده را بچسبان و دوباره **Deploy**.
-5. آدرسی که می‌دهد (مثل `https://<اسم>.<اکانت>.workers.dev`) را در کادر **«واسط شخصی»** بنویس، با `/?url={url}` در آخرش:
-   `https://<اسم>.<اکانت>.workers.dev/?url={url}`
+5. آدرسی که می‌دهد (مثل `https://NAME.ACCOUNT.workers.dev`) را در کادر **«واسط شخصی»** بنویس، با `/?url={url}` در آخرش:
+   `https://NAME.ACCOUNT.workers.dev/?url={url}`
 6. **«تست همین واسط»** را بزن.
 
 - اگر `workers.dev` روی شبکه‌ات باز نشد: در همان ورکر **Settings → Domains & Routes** یک دامنه‌ی خودت را وصل کن و آن آدرس را بگذار.
 - تا ۶ آدرس (هر خط یکی) قبول است و همه با هم امتحان می‌شوند.
 - ورکر فقط به این میزبان‌ها درخواست می‌دهد: تلگرام (`t.me`، `telesco.pe`، `cdn-telegram.org`) و صرافی‌ها (بایننس، MEXC، Gate، OKX، KuCoin، Bitget)؛ پروکسی باز برای همه‌ی اینترنت نیست.
-- **جایگزین PHP:** اگر هاست خارجیِ PHP داری، `proxy/tg.php` را در `public_html` بگذار و آدرس `https://<دامنه>/tg.php?url={url}` را بنویس. هاست ایرانی معمولاً خودش به t.me دسترسی ندارد.
+- **جایگزین PHP:** اگر هاست خارجیِ PHP داری، `proxy/tg.php` را در `public_html` بگذار و آدرس `https://YOUR-DOMAIN/tg.php?url={url}` را بنویس. هاست ایرانی معمولاً خودش به t.me دسترسی ندارد.
 
 ### ۳.۵ همگام‌سازی بین دستگاه‌ها (اختیاری)
 
@@ -543,8 +543,8 @@ bash tests/run.sh audnow gate # فقط چندتا
 FULL=1 npm test               # همراه خزنده‌ی کامل
 ```
 
-- هر تست `tests/<نام>.test.js` برنامه را در کروم باز می‌کند؛ داده‌ی ساختگی از `tests/fixture.js`.
-- گزارش‌ها: `/tmp/signaldesk-tests/logs/<نام>.log`.
+- هر تست `tests/NAME.test.js` برنامه را در کروم باز می‌کند؛ داده‌ی ساختگی از `tests/fixture.js`.
+- گزارش‌ها: `/tmp/signaldesk-tests/logs/NAME.log`.
 - با هر push، GitHub Actions (`.github/workflows/tests.yml`) ساخت را چک و تست‌ها را اجرا می‌کند.
 
 ### قراردادها
