@@ -8844,8 +8844,10 @@ function audInput(p){
     }
   }
   const I=planInputsOf(p,sig,ov,null);
+  // «ورود همان لحظه» (mktNow، از برگه‌ی اصلاح با ورود خالی یا دکمه‌ی ردیف): عدد ورود متن کنار می‌رود
+  if(ov.mktNow)I.entry=null;
   // ورود عددی نیست ولی استاپ هست (از متن، از تو، یا از سیگنال قبلی): ورود بازار
-  const mktE=!I.entry&&ov.entry==null&&(!!sig.mktEntry||!!I.stop);
+  const mktE=!!ov.mktNow||(!I.entry&&ov.entry==null&&(!!sig.mktEntry||!!I.stop));
   const inp={tk:sig.ticker||null,dir:I.dir,entry:I.entry||null,trig:sig.trigger!=null?sig.trigger:null,
     // سیگنال قدیمیِ یادآوری‌شده: از تاریخ اصلی خودش سنجیده می‌شود (ov.t0)، نه از روز یادآوری
     stop:I.stop||null,tgs:sig.targets||[],mkt:I.market,t0:ov.t0>0?+ov.t0:(p.date?+p.date:null),old:!!ov.old,
@@ -13537,7 +13539,7 @@ function sheetAudFix(Q,i){
   const tp0=ov.tps&&ov.tps.length?ov.tps:(g.targets||[]);
   const dep=q.dep!=null?q.dep:[...q.rows].filter(x=>x!==q.id).length;
   const tg=p.link?'<a href="'+esc(p.link)+'" target="_blank" rel="noopener">پست در تلگرام ↗</a>':'';
-  openSheet('<h3>'+(q.why==='img-sl'?'عددها از روی چارت':'سیگنال ناقص')+(n>1?' · '+faN(i+1)+' از '+faN(n):'')+'</h3>'+
+  openSheet('<h3>'+(q.why==='img-sl'?'عددها از روی چارت':q.why==='edit'?'اصلاح عددها':'سیگنال ناقص')+(n>1?' · '+faN(i+1)+' از '+faN(n):'')+'</h3>'+
    (n>1?'<div class="plprog"><span class="plbar"><i style="width:'+Math.round(i/n*100)+'%"></i></span><b>'+faN(n-i)+' مانده</b></div>':'')+
    (q.why!=='img-sl'&&AUD_WHY[q.why]?'<div class="hint w">'+esc(AUD_WHY[q.why])+'</div>':'')+
    (q.why==='px'?(()=>{const k=audPxKind({r:AUD[p.id],inp:audInput(p)});if(!k)return '';
@@ -13548,13 +13550,15 @@ function sheetAudFix(Q,i){
      (dep?' · '+faN(dep)+' پیگیری منتظر همین عددهاست':'')+(tg?' · '+tg:'')+'</div>'+
    (p.img?'<div id="ifImg" class="imgfill"></div>':(q.why==='img-sl'?'<div class="hint">تصویری ذخیره نشده — '+(tg||'متن پست را ببین')+'</div>':''))+
    '<div class="audtxt">'+esc(p.origText||p.text||'')+'</div>'+
+   (g.mktEntry||ov.mktNow?'<div class="hint w">این پست «ورود همان لحظه» است (مثل «ورود مجازه»): <b>ورود را خالی بگذار</b> تا با قیمت بازار لحظه‌ی انتشار حساب شود. '+
+     'اگر عددی بنویسی، منتظر همان عدد می‌ماند و اگر قیمت کمی بالاتر یا پایین‌تر بود ممکن است «فعال نشد» شود.</div>':'')+
    '<div class="hint" id="ifPx"></div>'+
    '<div class="grid" style="margin-top:8px">'+
      '<div class="fld"><label for="f_tk">نماد</label><input id="f_tk" dir="ltr" autocomplete="off" value="'+esc(tk)+'"></div>'+
      '<div class="fld"><label>جهت</label><select id="f_d"><option value="long"'+(dir==='long'?' selected':'')+'>لانگ</option>'+
        '<option value="short"'+(dir==='short'?' selected':'')+'>شورت</option></select></div>'+
    '</div><div class="grid" style="margin-top:8px">'+
-     fldHtml('en','ورود (خالی = قیمت انتشار)',v(ov.entry!=null?ov.entry:g.entry))+
+     fldHtml('en','ورود (خالی = قیمت انتشار)',ov.mktNow?'':v(ov.entry!=null?ov.entry:g.entry))+
      fldHtml('st','حد ضرر',v(ov.stop!=null?ov.stop:g.stop))+
    '</div><div class="grid" style="margin-top:8px">'+
      fldHtml('t1','تارگت ۱',v(tp0[0]))+fldHtml('t2','تارگت ۲',v(tp0[1]))+fldHtml('t3','تارگت ۳',v(tp0[2]))+
@@ -13603,7 +13607,7 @@ function sheetAudFix(Q,i){
        const t=tkOf();
        const tps=['f_t1','f_t2','f_t3'].map(num).filter(x=>x!=null);
        const o=Object.assign({},OVERRIDE[p.id],{sig:true,ticker:t||undefined,dir:$('#f_d').value,stop:st});
-       const en=num('f_en');if(en!=null)o.entry=en;else delete o.entry;
+       const en=num('f_en');if(en!=null){o.entry=en;delete o.mktNow;}else{delete o.entry;o.mktNow=true;}
        // سیگنال قدیمیِ یادآوری‌شده
        const t0s=($('#f_t0t')||{}).value||'';
        if(t0s.trim()){const t0=parseLocalDT(t0s);
@@ -13924,7 +13928,12 @@ function audNoneHtml(rows){
 }
 /* «در جریان»: قیمت آخرین سنجش و R الان، چند روز از ورود؛ «منتظر ورود»: فاصله تا ورود و مهلت */
 function audNowHtml(x){
-  const r=x.r,i=x.inp;if(!r||r.st!=='open'||!r.close||!(r.close.px>0))return '';
+  const r=x.r,i=x.inp;
+  /* «فعال نشد»: چرا — قیمت لحظه‌ی انتشار چقدر با ورود فاصله داشت و ورود به چه شکلی منتظر ماند */
+  if(r&&r.st==='none'){const d=r.px0>0&&i.entry?(r.px0-i.entry)/i.entry*100:null;
+    return '<div class="ar2 arnow">'+esc(AUD_NONE[r.why]||'فعال نشد')+(r.px0>0?' · قیمت لحظه‌ی انتشار <b dir="ltr">'+fmtPrice(r.px0)+'</b>'+
+      (d!=null?' (<bdi dir="ltr">'+(d>0?'+':'')+fmtNum(d)+'٪</bdi> با ورود)':''):'')+(r.mode&&MODE_FA[r.mode]?' · '+esc(MODE_FA[r.mode]):'')+'</div>';}
+  if(!r||r.st!=='open'||!r.close||!(r.close.px>0))return '';
   const R=audRules(),age=t=>faN(Math.max(0,Math.floor((Date.now()-t)/DAY)))+' روز';
   const when=' <small>(قیمت '+esc(ageTxt(r.close.t))+')</small>';
   if(r.tAct){const v=audR(r,i,'tp1');
@@ -14010,7 +14019,17 @@ function buildAudList(rows){
       act.appendChild(im);}
     const qi=fqAt.get(x.p.id);
     const f=qi!=null?el('button','btn xs ok','عدد بزن'):el('button','btn xs','اصلاح عددها');
-    f.onclick=qi!=null?()=>sheetAudFix(FQ,qi):()=>sheetMarkSignal(x.p,sigOf(x.p));
+    /* «اصلاح عددها» همان برگه‌ی کانال‌سنج (با عددهای فعلی، تصویر و قیمت لحظه‌ی انتشار)؛ قبلاً برگه‌ی «افزودن به سیگنال‌ها»
+       باز می‌شد که عددهای اصلاح‌شده را نشان نمی‌داد و قیمت امروز را در ورود می‌گذاشت — انگار اصلاح پاک شده بود */
+    f.onclick=qi!=null?()=>sheetAudFix(FQ,qi):()=>sheetAudFix([{id:x.p.id,why:'edit',rows:new Set([x.p.id])}],0);
+    if(x.r&&x.r.st==='none'&&!i.mktE){const mn=el('button','btn xs ok','ورود همان لحظه');
+      mn.title='کانال سر وقت داده؛ با قیمت بازار لحظه‌ی انتشار وارد حساب شود (استاپ و تارگت همان)';
+      mn.onclick=()=>{const prev=OVERRIDE[x.p.id]?Object.assign({},OVERRIDE[x.p.id]):null;
+        OVERRIDE[x.p.id]=Object.assign({},OVERRIDE[x.p.id],{sig:true,mktNow:true});DB.overrides=OVERRIDE;save();PCACHE.delete(x.p.id);
+        audMeasureOne(x.p);renderAudit();
+        toastUndo((i.tk||'سیگنال')+': ورود با قیمت لحظه‌ی انتشار — دوباره سنجیده می‌شود',()=>{if(prev)OVERRIDE[x.p.id]=prev;else delete OVERRIDE[x.p.id];
+          DB.overrides=OVERRIDE;save();PCACHE.delete(x.p.id);audMeasureOne(x.p);renderAudit();});};
+      act.appendChild(mn);}
     const ns=el('button','btn xs','سیگنال نیست');ns.title='چارت یا پست غیرسیگنال؛ از سیگنال‌ها و سنجش بیرون برود';ns.onclick=()=>audNotSig(x.p);
     act.appendChild(d);act.appendChild(f);act.appendChild(ns);r.appendChild(act);
     c.appendChild(r);

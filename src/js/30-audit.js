@@ -113,8 +113,10 @@ function audInput(p){
     }
   }
   const I=planInputsOf(p,sig,ov,null);
+  // «ورود همان لحظه» (mktNow، از برگه‌ی اصلاح با ورود خالی یا دکمه‌ی ردیف): عدد ورود متن کنار می‌رود
+  if(ov.mktNow)I.entry=null;
   // ورود عددی نیست ولی استاپ هست (از متن، از تو، یا از سیگنال قبلی): ورود بازار
-  const mktE=!I.entry&&ov.entry==null&&(!!sig.mktEntry||!!I.stop);
+  const mktE=!!ov.mktNow||(!I.entry&&ov.entry==null&&(!!sig.mktEntry||!!I.stop));
   const inp={tk:sig.ticker||null,dir:I.dir,entry:I.entry||null,trig:sig.trigger!=null?sig.trigger:null,
     // سیگنال قدیمیِ یادآوری‌شده: از تاریخ اصلی خودش سنجیده می‌شود (ov.t0)، نه از روز یادآوری
     stop:I.stop||null,tgs:sig.targets||[],mkt:I.market,t0:ov.t0>0?+ov.t0:(p.date?+p.date:null),old:!!ov.old,
