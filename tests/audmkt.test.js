@@ -20,6 +20,8 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    const row=()=>[...document.querySelectorAll('#vAudit .arow2')].find(x=>[...x.querySelectorAll('.ar4 button')].some(b=>b.textContent==='ورود همان لحظه'));
    const rw=row();o.diag=rw?rw.querySelector('.arnow').textContent:'';
    const mn=rw&&[...rw.querySelectorAll('.ar4 button')].find(b=>b.textContent==='ورود همان لحظه');o.btn=!!mn;
+   // همه‌ی دکمه‌های ردیف داخل صفحه (قبلاً «سیگنال نیست» از لبه بیرون می‌زد)
+   o.fit=rw?[...rw.querySelectorAll('.ar4 button')].every(b=>{const q=b.getBoundingClientRect();return q.left>=0&&q.right<=innerWidth;})&&document.documentElement.scrollWidth<=innerWidth:false;
    mn&&mn.click();await W(300);
    const x=audRows().find(x=>x.p.id===post.id);o.after={mk:!!(OVERRIDE[post.id]&&OVERRIDE[post.id].mktNow),mktE:x.inp.mktE,st:x.r&&x.r.st,e:x.inp.entry,px0};
    // «اصلاح عددها» روی ردیف: برگه‌ی کانال‌سنج با عددهای فعلی
@@ -45,6 +47,7 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
  ok(r.btn&&r.after.mk&&r.after.mktE&&r.after.st==='win'&&Math.abs(r.after.e/r.after.px0-1)<1e-9,'«ورود همان لحظه»: با قیمت انتشار وارد و فوراً سنجیده شد (برد) '+JSON.stringify(r.after));
  ok(r.sheet.h==='اصلاح عددها'&&r.sheet.st!==''&&+r.sheet.st>0,'«اصلاح عددها» روی ردیف: برگه‌ی کانال‌سنج با استاپ فعلی '+JSON.stringify(r.sheet));
  ok(r.blank.mk&&r.blank.en==null&&r.blank.mktE,'ورود خالی در برگه = ورود همان لحظه '+JSON.stringify(r.blank));
+ ok(r.fit,'دکمه‌های ردیف (پنج‌تا) همه داخل صفحه‌اند و صفحه از پهلو اسکرول نمی‌خورد');
  ok(/ورود را خالی بگذار/.test(r.hint),'پست «ورود مجازه»: راهنمای ورود خالی');
  ok(errs.length===0,'بدون خطا '+errs.join('|'));
  await b.close();console.log(bad?'✗ '+bad:'✔ همه درست');process.exit(bad?1:0);})();
