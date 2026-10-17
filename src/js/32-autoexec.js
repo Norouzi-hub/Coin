@@ -283,6 +283,7 @@ function audJobs(force,needPath,now){
     const inp=audInput(p);if(!inp)continue;
     const k=audKey(inp,R), a=AUD[p.id];
     if(a&&a.k===k&&!force){
+      if(OVERRIDE[p.id]&&OVERRIDE[p.id].cut&&!needPath)continue;       // دستی بسته شده؛ سنجیدن دوباره لازم نیست
       const noPath=needPath&&(!a.path||!a.xg||a.xg.v!==XG_V)&&['win','loss','exp'].includes(a.st);
       if(noPath){paths.push({p,inp,k,pathOnly:true});continue;}
       if(a.fin&&!(a.st==='bad'&&a.why==='nocandle'))continue;
@@ -466,7 +467,7 @@ function audRows(){
   const R=audRules(), rows=[];
   for(const p of POSTS){
     const inp=audInput(p);if(!inp)continue;
-    const a=AUD[p.id], r=a&&a.k===audKey(inp,R)?a:null;
+    const a=AUD[p.id], r=audCut(a&&a.k===audKey(inp,R)?a:null,OVERRIDE[p.id]);
     rows.push({p,inp,r,R:r?audR(r,inp,R.rule):null});
   }
   return rows;
@@ -1207,26 +1208,49 @@ function audNowHtml(x){
   if(r&&r.st==='none'){const d=r.px0>0&&i.entry?(r.px0-i.entry)/i.entry*100:null;
     return '<div class="ar2 arnow">'+esc(AUD_NONE[r.why]||'فعال نشد')+(r.px0>0?' · قیمت لحظه‌ی انتشار <b dir="ltr">'+fmtPrice(r.px0)+'</b>'+
       (d!=null?' (<bdi dir="ltr">'+(d>0?'+':'')+fmtNum(d)+'٪</bdi> با ورود)':''):'')+(r.mode&&MODE_FA[r.mode]?' · '+esc(MODE_FA[r.mode]):'')+'</div>';}
+  if(r&&r.cut&&r.close)return '<div class="ar2 arnow">دستی بسته شد روی <b dir="ltr">'+fmtPrice(r.close.px)+'</b>'+
+    (x.R!=null?' <b class="'+cls(x.R)+'" dir="ltr">'+fmtR(x.R)+'</b>':'')+(r.tAct?' · باز بود '+audDur(r.close.t-r.tAct):'')+'</div>';
   if(!r||r.st!=='open'||!r.close||!(r.close.px>0))return '';
   const R=audRules(),age=t=>faN(Math.max(0,Math.floor((Date.now()-t)/DAY)))+' روز';
+  if(r.tAct){const L=audLive(x);
+    return '<div class="ar2 arnow">الان <b dir="ltr">'+fmtPrice(L.px)+'</b> <b class="'+cls(L.R)+'" dir="ltr">'+fmtR(L.R)+'</b>'+
+      ' <bdi class="'+cls(L.R)+'" dir="ltr">('+(L.pct>0?'+':L.pct<0?'−':'')+fmtNum(Math.abs(L.pct))+'٪ · '+fmtUsd(L.usd)+')</bdi>'+
+      (L.live?' <small>زنده</small>':' <small>(قیمت '+esc(ageTxt(r.close.t))+')</small>')+
+      ' · باز '+audDur(Date.now()-r.tAct)+' <small>(سقف '+faN(R.days)+' روز)</small></div>';}
   const when=' <small>(قیمت '+esc(ageTxt(r.close.t))+')</small>';
-  if(r.tAct){const v=audR(r,i,'tp1');
-    return '<div class="ar2 arnow">الان <b dir="ltr">'+fmtPrice(r.close.px)+'</b>'+(v!=null?' <b class="'+cls(v)+'" dir="ltr">'+fmtR(v)+'</b>':'')+when+
-      ' · '+age(r.tAct)+' از ورود (سقف '+faN(R.days)+' روز)</div>';}
   const d=i.entry?Math.abs(r.close.px-i.entry)/i.entry*100:null;
   return '<div class="ar2 arnow">منتظر ورود · قیمت <b dir="ltr">'+fmtPrice(r.close.px)+'</b>'+(d!=null?' ('+fmtNum(d)+'٪ تا ورود)':'')+when+
     ' · '+age(i.t0)+' از انتشار (مهلت '+faN(R.entryDays)+' روز)</div>';
 }
-/* خلاصه‌ی «در جریان»: چندتا در سود، چندتا در ضرر، چندتا منتظر ورود، و آخرین سنجش */
+/* سود/ضرر لحظه‌ای یک سیگنالِ واردشده: با قیمت زنده (اگر هست)، وگرنه قیمت آخرین سنجش. دلار = R × ریسک هر معامله */
+function audLive(x){
+  const i=x.inp,r=x.r,lv=PRICES.get(i.tk),live=lv>0,px=live?lv:r.close.px,sg=i.dir==='long'?1:-1,risk=Math.abs(i.entry-i.stop)||1;
+  const R=(px-i.entry)*sg/risk;
+  return {px,live,R,pct:(px-i.entry)/i.entry*100*sg,usd:R*riskUsd()};
+}
+/* خلاصه‌ی «در جریان»: سود/ضرر لحظه‌ای کل، چندتا در سود/ضرر، مدت باز بودن، منتظر ورود */
 function audOpenSumHtml(rows){
   const O=rows.filter(x=>x.r&&x.r.st==='open');if(!O.length)return '';
-  const act=O.filter(x=>x.r.tAct),w=O.length-act.length,R=act.map(x=>audR(x.r,x.inp,'tp1')).filter(v=>v!=null);
-  const up=R.filter(v=>v>0).length,days=act.map(x=>(Date.now()-x.r.tAct)/DAY),avgD=days.length?days.reduce((a,b)=>a+b,0)/days.length:0;
-  const old=Math.min(...O.map(x=>x.r.at||Date.now()));
-  return ic('info')+'<span><b>'+faN(O.length)+' در جریان:</b> '+faN(act.length)+' وارد شده'+(act.length?' ('+faN(up)+' در سود، '+faN(R.length-up)+' در ضرر، میانگین '+fmtNum(avgD)+' روز از ورود)':'')+
-    (w?' · '+faN(w)+' منتظر ورود':'')+'. «در جریان» یعنی ورود فعال شده ولی هنوز نه تارگت اول خورده نه استاپ، و '+faN(audRules().days)+' روز هم نگذشته؛ '+
-    'سیگنال‌های این کانال استاپ و تارگت دور دارند، برای همین طول می‌کشد. قیمت‌ها مال آخرین سنجش‌اند (قدیمی‌ترین '+esc(ageTxt(old))+')؛ '+
-    'با «سنجیدن تازه‌ها و در جریان‌ها» به‌روز می‌شوند و هر بار چندتایی به برد یا باخت می‌رسند — برای همین کارنامه بعد از هر سنجش عوض می‌شود.</span>';
+  const act=O.filter(x=>x.r.tAct&&x.inp.entry&&x.inp.stop),w=O.length-act.length,L=act.map(audLive);
+  const sumR=L.reduce((a,v)=>a+v.R,0),usd=L.reduce((a,v)=>a+v.usd,0),up=L.filter(v=>v.R>0).length,nLive=L.filter(v=>v.live).length;
+  const ms=act.map(x=>Date.now()-x.r.tAct),avg=ms.length?ms.reduce((a,b)=>a+b,0)/ms.length:0,mx=ms.length?Math.max(...ms):0;
+  return ic('info')+'<span><b>'+faN(O.length)+' در جریان</b>'+(act.length?' · الان جمعاً <b class="'+cls(sumR)+'" dir="ltr">'+fmtR(sumR)+'</b> '+
+      '<bdi class="'+cls(usd)+'" dir="ltr">('+fmtUsd(usd)+')</bdi> روی '+faN(act.length)+' سیگنالِ واردشده: <b class="win">'+faN(up)+' در سود</b>، <b class="lose">'+faN(act.length-up)+' در ضرر</b>'+
+      ' · میانگین باز بودن '+audDur(avg)+'، قدیمی‌ترین '+audDur(mx):'')+(w?' · '+faN(w)+' منتظر ورود':'')+'.'+
+    '<br><small>دلار با ریسک هر معامله‌ی '+fmtUsd(riskUsd())+' (تنظیمات). '+(nLive===act.length?'قیمت‌ها زنده‌اند.':faN(nLive)+' از '+faN(act.length)+' با قیمت زنده، بقیه با قیمت آخرین سنجش.')+
+    ' «در جریان» یعنی نه تارگت اول خورده نه استاپ، و '+faN(audRules().days)+' روز هم نگذشته؛ هر سنجش تازه چندتایی را به برد یا باخت می‌رساند. «بستن» روی هر ردیف آن را با قیمت الان می‌بندد.</small></span>';
+}
+/* «بستن» یک سیگنالِ در جریان با قیمت الان: اول تا همین لحظه دوباره سنجیده می‌شود (اگر در این فاصله تارگت یا استاپ خورده، همان می‌ماند) */
+async function audCloseNow(x){
+  const i=x.inp,L0=audLive(x);
+  if(!(await askConfirm({title:'بستن '+(i.tk||'سیگنال'),msg:'با قیمت الان '+fmtPrice(L0.px)+' ('+fmtR(L0.R)+') بسته حساب شود؟ در کارنامه‌ی کانال «منقضی/بسته» با همین R می‌آید. با «برگرداندن» برمی‌گردد.',ok:'ببند',cancel:'نه'})))return;
+  await audMeasureOne(x.p);
+  const y=audRows().find(z=>z.p.id===x.p.id);
+  if(!y||!y.r||y.r.st!=='open'||!y.r.tAct){toast((i.tk||'')+' همین الان به نتیجه رسید: '+AUD_ST[audStKey(y&&y.r)][0],'info');renderAudit();return;}
+  const L=audLive(y),prev=OVERRIDE[x.p.id]?Object.assign({},OVERRIDE[x.p.id]):null;
+  OVERRIDE[x.p.id]=Object.assign({},OVERRIDE[x.p.id],{cut:{t:Date.now(),px:L.px}});DB.overrides=OVERRIDE;save();renderAll();
+  toastUndo((i.tk||'سیگنال')+' بسته شد روی '+fmtPrice(L.px)+' ('+fmtR(L.R)+')',()=>{if(prev)OVERRIDE[x.p.id]=prev;else delete OVERRIDE[x.p.id];
+    DB.overrides=OVERRIDE;save();renderAll();});
 }
 function buildAudList(rows){
   const c=el('div','panel');
@@ -1272,7 +1296,7 @@ function buildAudList(rows){
     if(i.old)tags.push('<span class="pill gold" title="از تاریخ اصلی سنجیده شده؛ پست، یادآوری بود">از یادآوری</span>');
     r.innerHTML='<div class="ar1"><b class="tick">'+esc(i.tk||'—')+'</b>'+
       '<span class="pill '+i.dir+'">'+(i.dir==='long'?'لانگ':'شورت')+'</span>'+
-      '<span class="pill '+S0[1]+'">'+S0[0]+(x.R!=null&&k!=='open'?' '+fmtR(x.R):'')+'</span>'+
+      '<span class="pill '+S0[1]+'">'+(x.r&&x.r.cut?'بسته (دستی)':S0[0])+(x.R!=null&&k!=='open'?' '+fmtR(x.R):'')+'</span>'+
       '<span class="when">'+(i.t0?jStampFa(new Date(i.t0)):'')+'</span></div>'+
       '<div class="ar2">ورود '+(i.entry?fmtPrice(i.entry):'—')+(i.e1?' <small>(قیمت بازار؛ کانال '+fmtPrice(i.e1)+')</small>':'')+' · استاپ '+(i.stop?fmtPrice(i.stop):'—')+
         (stopPctOf(i)!=null&&i.mkt!=='spot'?' ('+fmtNum(stopPctOf(i))+'٪ · ایزوله تا '+faN(isoLev(stopPctOf(i)))+'x)':'')+
@@ -1304,6 +1328,13 @@ function buildAudList(rows){
         toastUndo((i.tk||'سیگنال')+': ورود با قیمت لحظه‌ی انتشار — دوباره سنجیده می‌شود',()=>{if(prev)OVERRIDE[x.p.id]=prev;else delete OVERRIDE[x.p.id];
           DB.overrides=OVERRIDE;save();PCACHE.delete(x.p.id);audMeasureOne(x.p);renderAudit();});};
       act.appendChild(mn);}
+    // رنگ ردیف: در سود / در ضرر (در جریان با قیمت الان، بقیه با نتیجه)
+    {const v=k==='open'&&x.r.tAct&&i.entry&&i.stop?audLive(x).R:['win','loss','exp'].includes(k)?x.R:null;
+     if(v!=null)r.classList.add(v>0?'up':v<0?'dn':'eq');}
+    if(k==='open'&&x.r.tAct&&i.entry&&i.stop){const cb=el('button','btn xs',ic('door')+'<span>بستن با قیمت الان</span>');
+      cb.title='این سیگنال را همین الان با قیمت بازار بسته حساب کن';cb.onclick=()=>audCloseNow(x);act.appendChild(cb);}
+    if(x.r&&x.r.cut){const ub=el('button','btn xs side',ic('undo')+'<span>باز کردن دوباره</span>');
+      ub.onclick=()=>{const o=OVERRIDE[x.p.id];if(o){delete o.cut;if(!Object.keys(o).length)delete OVERRIDE[x.p.id];}DB.overrides=OVERRIDE;save();audMeasureOne(x.p);renderAll();};act.appendChild(ub);}
     const ns=el('button','btn xs','سیگنال نیست');ns.title='چارت یا پست غیرسیگنال؛ از سیگنال‌ها و سنجش بیرون برود';ns.onclick=()=>audNotSig(x.p);
     act.appendChild(d);act.appendChild(f);act.appendChild(ns);r.appendChild(act);
     c.appendChild(r);
@@ -1319,7 +1350,7 @@ function buildAudList(rows){
 /* جزئیاتِ یک سیگنال: خط زمانیِ واقعی، ادعاهای کانال درباره‌اش، و ویرایش‌ها */
 function sheetAudPost(p){
   const inp=audInput(p)||{};
-  const R=audRules(), a=AUD[p.id], r=a&&inp.tk&&a.k===audKey(inp,R)?a:null;
+  const R=audRules(), a=AUD[p.id], r=audCut(a&&inp.tk&&a.k===audKey(inp,R)?a:null,OVERRIDE[p.id]);
   const T=(t,l,c)=>'<li class="'+(c||'')+'">'+(t?'<time>'+jStampFa(new Date(t))+'</time>':'')+l+'</li>';
   let tl='';
   if(inp.t0)tl+=T(inp.t0,'منتشر شد'+(r&&r.px0?' — قیمت بازار '+fmtPrice(r.px0):''));
@@ -1330,7 +1361,8 @@ function sheetAudPost(p){
     if(r.tBE)tl+=T(r.tBE,'برگشت به نقطه‌ی ورود');
     if(r.tStop)tl+=T(r.tStop,'استاپ خورد ('+fmtPrice(inp.stop)+')','cut');
     if(r.st==='none')tl+=T(r.tEnd,AUD_NONE[r.why]||'فعال نشد');
-    if(r.st==='exp'&&r.close)tl+=T(r.close.t,'مهلت تمام شد روی '+fmtPrice(r.close.px));
+    if(r.cut)tl+=T(r.close.t,'دستی بسته شد روی '+fmtPrice(r.close.px)+(r.tAct?' · باز بود '+audDur(r.close.t-r.tAct):''),'cut');
+    else if(r.st==='exp'&&r.close)tl+=T(r.close.t,'مهلت تمام شد روی '+fmtPrice(r.close.px));
     if(r.st==='bad')tl+=T(null,AUD_WHY[r.why]||'قابل سنجش نیست','cut');
     if(r.st==='amb')tl+=T(null,'ترتیب رویدادها حتی با کندل یک‌دقیقه‌ای معلوم نشد');
   }else tl+=T(null,'هنوز سنجیده نشده');

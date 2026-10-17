@@ -27,7 +27,21 @@ const AUD_WHY={
 };
 const AUD_NONE={timeout:'قیمت در مهلت ورود به نقطه‌ی ورود نرسید',
   ran:'قیمت بدون برگشتن به نقطه‌ی ورود، مستقیم به تارگت رفت — قابل گرفتن نبود',
-  inval:'قبل از فعال شدنِ ورود، قیمت از استاپ گذشت'};
+  inval:'قبل از فعال شدنِ ورود، قیمت از استاپ گذشت',
+  manual:'پیش از فعال شدنِ ورود، دستی بسته شد'};
+/* «بستن دستی» یک سیگنال در جریان (ov.cut={t,px}): نتیجه همان لحظه با همان قیمت. روی نتیجه‌ی سنجش اعمال می‌شود
+   (نه در کلید سنجش)، پس دوباره‌سنجی هم درست می‌ماند: هر رویدادی که بعد از لحظه‌ی بستن بوده نادیده گرفته می‌شود */
+function audCut(r,ov){
+  const c=ov&&ov.cut;if(!r||!c||!(c.px>0)||r.st==='bad'||r.st==='amb')return r;
+  if(r.tStop&&r.tStop<=c.t)return r;                       // پیش از بستن، استاپ خورده بود
+  if(r.fin&&r.tEnd!=null&&r.tEnd<=c.t)return r;            // پیش از بستن، خودش تمام شده بود
+  const tTp=(r.tTp||[]).map(t=>t!=null&&t<=c.t?t:null), act=!!(r.tAct&&r.tAct<=c.t), win=tTp[0]!=null;
+  return Object.assign({},r,{st:win?'win':act?'exp':'none',why:act?r.why:'manual',fin:true,tTp,
+    tBE:r.tBE&&r.tBE<=c.t?r.tBE:null,tStop:null,close:{t:c.t,px:c.px},tEnd:c.t,cut:true});
+}
+/* مدت: «40 دقیقه»، «5 ساعت»، «2 روز و 3 ساعت» */
+function audDur(ms){const m=Math.max(0,Math.round(ms/6e4));if(m<60)return faN(m)+' دقیقه';const h=Math.floor(m/60);
+  if(h<24)return faN(h)+' ساعت';const d=Math.floor(h/24);return faN(d)+' روز'+(h%24?' و '+faN(h%24)+' ساعت':'');}
 
 /* پست‌های پیگیریِ کانال («ورود مجدد مجازید»، «تریگر 0.0133 ست کنید»، «اگر 4 ساعته بالای 83700
    بست ورود مجازه») استاپ و تارگت را تکرار نمی‌کنند؛ مالِ سیگنالِ اصلیِ همین نماد است.

@@ -1989,3 +1989,7 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .arow2 .arimg{margin-top:8px;display:flex;flex-direction:column;gap:6px}.arow2 .arimg .shot{max-height:420px}
 .arow2 .arimg .audtxt{font-size:12px;max-height:140px;overflow:auto}
 .audopen{margin:4px 0 8px}
+.arow2.up,.arow2.dn,.arow2.eq{border-inline-start:3px solid var(--line);padding-inline-start:10px;border-radius:4px}
+.arow2.up{border-inline-start-color:var(--up);background:color-mix(in srgb,var(--up) 6%,transparent)}
+.arow2.dn{border-inline-start-color:var(--dn);background:color-mix(in srgb,var(--dn) 6%,transparent)}
+.audopen .win{color:var(--up)}.audopen .lose{color:var(--dn)}.audopen small{color:var(--tx3)}
