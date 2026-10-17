@@ -9,7 +9,9 @@ const AUDKEY='signaldesk.audit.v2', AUDSRCKEY='signaldesk.audsrc.v1';
 let AUD=(()=>{const a=lsGet(AUDKEY);return a&&a.v===2&&a.r&&typeof a.r==='object'?a.r:{};})();
 const AUDSRC=lsGet(AUDSRCKEY)||{};
 const audSave=()=>lsSet(AUDKEY,{v:2,r:AUD});
-const AUD_DEF={days:30,entryDays:3,tol:1,rule:'tp1'};
+/* fill: در محدوده‌ی «تحمل ورود»، ورود با کدام قیمت پر شود — 'sig' عدد اعلامی کانال (به نفع کانال)،
+   'mkt' قیمت بازار همان لحظه‌ی انتشار (همان کاری که در عمل می‌کنی؛ R واقعی‌تر) */
+const AUD_DEF={days:30,entryDays:3,tol:1,rule:'tp1',fill:'sig'};
 const audRules=()=>Object.assign({},AUD_DEF,S.aud||{});
 const DAY=86400000;
 const AUD_WHY={
@@ -118,13 +120,14 @@ function audInput(p){
     stop:I.stop||null,tgs:sig.targets||[],mkt:I.market,t0:ov.t0>0?+ov.t0:(p.date?+p.date:null),old:!!ov.old,
     mktE,inh:inh?{id:inh.id,t:inh.t}:null,need};
   audTps(inp);
-  const a=mktE?AUD[p.id]:null;
-  if(a&&a.e0&&a.k===audKey(inp,audRules())){inp.entry=a.e0;audTps(inp);}
+  const a=AUD[p.id];
+  // ورود بازار، یا «در محدوده‌ی تحمل با قیمت بازار» (ef): قیمت پرشده از نتیجه‌ی همان سنجش؛ e1 = عدد اعلامی کانال
+  if(a&&a.e0&&(mktE||a.ef)&&a.k===audKey(inp,audRules())){if(a.ef){inp.e1=inp.entry;inp.tps0=inp.tps;}inp.entry=a.e0;audTps(inp);}
   return inp;
 }
 /* کلیدِ ورودِ بازار از قیمتِ پرشده مستقل است، وگرنه بعد از هر سنجش کلید عوض می‌شد */
-const audKey=(inp,R)=>JSON.stringify([inp.tk,inp.dir,inp.mktE?'mkt':inp.entry,inp.trig,inp.stop,inp.mktE?inp.tgs:inp.tps,inp.t0,
-  R.days,R.entryDays,R.tol]);
+const audKey=(inp,R)=>JSON.stringify([inp.tk,inp.dir,inp.mktE?'mkt':(inp.e1||inp.entry),inp.trig,inp.stop,inp.mktE?inp.tgs:(inp.tps0||inp.tps),inp.t0,
+  R.days,R.entryDays,R.tol].concat(R.fill==='mkt'?['fm']:[]));
 function audPre(inp){
   if(!inp.tk)return 'no-ticker';
   if(!inp.stop&&inp.need)return 'img-sl';

@@ -223,6 +223,8 @@ const IVMS={'1m':60000,'3m':180000,'5m':300000,'30m':1800000,'1h':3600000};
 
 async function audOne(job,R){
   const {p,k}=job;let inp=job.inp;
+  // دوباره‌سنجیِ سیگنالی که قبلاً با قیمت بازار پر شده: از عدد خود کانال شروع کن، نه از قیمت پرشده‌ی قبلی
+  if(inp.e1){inp=Object.assign({},inp,{entry:inp.e1,tps:inp.tps0||inp.tps});delete inp.e1;delete inp.tps0;}
   const pre=audPre(inp);
   if(pre){AUD[p.id]={k,st:'bad',why:pre,fin:true,at:Date.now()};return;}
   const start=Math.ceil(inp.t0/IVMS['5m'])*IVMS['5m'];   // فقط آینده‌ی بعد از انتشار
@@ -233,6 +235,12 @@ async function audOne(job,R){
     if((px0-inp.stop)*(inp.dir==='long'?1:-1)<=0){AUD[p.id]={k,st:'bad',why:'bad-stop',px0,e0:px0,fin:true,at:Date.now()};return;}}
   if(Math.abs(inp.entry-px0)/px0>0.3){AUD[p.id]={k,st:'bad',why:'px',px0,fin:true,at:Date.now()};return;}
   if(inp.inh&&Math.abs(inp.entry-inp.stop)/inp.entry>0.3){AUD[p.id]={k,st:'bad',why:'far-sl',px0,fin:true,at:Date.now()};return;}
+  /* «ورود به‌موقع با قیمت بازار»: قیمت لحظه‌ی انتشار تا «تحمل ورود» با عدد کانال فاصله دارد ← همان لحظه
+     با قیمت بازار وارد شو (نه با عدد کانال). تارگت و استاپ همان عددهای کانال‌اند */
+  let ef=false;
+  if(R.fill==='mkt'&&!inp.mktE&&inp.entry&&!(inp.trig!=null&&(inp.trig-px0)*(inp.dir==='long'?1:-1)>0)&&
+     Math.abs(px0-inp.entry)/inp.entry<=(R.tol||0)/100&&px0!==inp.entry&&(px0-inp.stop)*(inp.dir==='long'?1:-1)>0){
+    inp=audTps(Object.assign({},inp,{e1:inp.entry,tps0:inp.tps,entry:px0}));ef=true;}
   let r=audWalk(inp,C,R);
   /* 1000 کندل 5 دقیقه‌ای حدود 83 ساعت است؛ اگر کار تمام نشد و کندل‌ها به امروز نرسیده، ادامه با کندل ساعتی.
      شرطِ «دقیقاً 1000 کندل آمد» برداشته شد: منبعی که کمتر می‌دهد (سقف 500، کندلِ جاافتاده) سیگنال را
@@ -260,7 +268,7 @@ async function audOne(job,R){
   if(r.amb){r.st='amb';r.fin=true;}
   delete r.amb;
   if(r.tAct&&r.st!=='amb'){try{r.xg=audXGrid(inp,C,r.tAct);}catch(e){}}
-  AUD[p.id]=Object.assign(r,{k,at:Date.now()},inp.mktE?{e0:inp.entry}:{});
+  AUD[p.id]=Object.assign(r,{k,at:Date.now()},inp.mktE?{e0:inp.entry}:ef?{e0:inp.entry,ef:true}:{});
 }
 
 /* at: زمان آخرین سنجش؛ ماندگار، وگرنه بعد از هر بار باز کردن برنامه «هنوز سنجشی انجام نشده» می‌گفت */
@@ -615,7 +623,7 @@ function renderAudit(){
   bar.appendChild(run);bar.appendChild(rules);
   hd.appendChild(bar);
   hd.querySelector('#audInfo').appendChild(el('div','audrules',
-    'مهلت ورود '+faN(R.entryDays)+' روز · مهلت نتیجه '+faN(R.days)+' روز · تحمل ورود '+faN(R.tol)+'٪ · '+
+    'مهلت ورود '+faN(R.entryDays)+' روز · مهلت نتیجه '+faN(R.days)+' روز · تحمل ورود '+faN(R.tol)+'٪'+(R.fill==='mkt'?' با قیمت بازار':'')+' · '+
     (R.rule==='ladder'?'پله‌ای (⅓ در هر تارگت، بعد از تارگت اول استاپ روی ورود)':'همه در تارگت اول')));
   box.appendChild(hd);
 
@@ -664,6 +672,7 @@ function renderAudit(){
     stHtml('در جریان',faN(st.open+st.wait),'m',faN(st.wait)+' منتظر ورود')+
     stHtml('نیاز به بررسی',faN(st.bad+st.amb),st.bad?'d':'m',st.todo?faN(st.todo)+' سنجیده نشده':'');
   g.insertAdjacentHTML('beforeend',audNoneHtml(live));
+  g.querySelectorAll('[data-audentry]').forEach(b=>b.onclick=()=>audSetEntry(+b.dataset.audentry,'mkt'));
   {const O=rows.filter(x=>x.inp.old&&x.r&&['win','loss','exp'].includes(x.r.st));
    if(O.length){const s2=audStats(rows.filter(x=>x.inp.old));
      g.insertAdjacentHTML('beforeend','<div class="stnote">'+ic('info')+'<span>عددهای بالا فقط سیگنال‌هایی است که همان لحظه داده شده‌اند. <b>'+faN(O.length)+'</b> سیگنال قدیمیِ «از یادآوری» جدا حساب شده: '+
@@ -1179,8 +1188,15 @@ function audNoneHtml(rows){
     (av!=null?' — با ورود بازار همان لحظه میانگین <b dir="ltr" class="'+cls(av)+'">'+fmtR(av)+'</b>':''));
   if(by.timeout.length)li.push('<b>'+faN(by.timeout.length)+'</b> قیمت تا '+faN(audRules().entryDays)+' روز به ورود نرسید');
   if(by.inval.length)li.push('<b>'+faN(by.inval.length)+'</b> پیش از ورود از استاپ گذشت');
+  /* پیش‌نمایش «ورود به‌موقع»: چندتا از این‌ها، قیمت لحظه‌ی انتشار تا 2 یا 3٪ با ورود فاصله داشت
+     (کانال سر وقت داده، فقط قیمت کمی جلوتر بوده) و با تحمل بیشتر فعال حساب می‌شدند */
+  const R0=audRules(),dd=N.map(x=>x.r.px0>0&&x.inp.entry?Math.abs(x.r.px0-x.inp.entry)/x.inp.entry*100:null).filter(v=>v!=null);
+  const n2=dd.filter(v=>v<=2).length,n3=dd.filter(v=>v<=3).length;
+  const pv=n3&&!(R0.tol>=3&&R0.fill==='mkt')?'<br>در <b>'+faN(n3)+'</b> تا، قیمت لحظه‌ی انتشار تا 3٪ با ورود فاصله داشت'+(n2?' ('+faN(n2)+' تا تا 2٪)':'')+
+    ' — یعنی کانال سر وقت داده و قیمت فقط کمی جلوتر بوده. با «ورود به‌موقع» این‌ها با قیمت همان لحظه وارد حساب می‌شوند. '+
+    '<button class="btn xs ok" data-audentry="3">ورود به‌موقع: تحمل 3٪ با قیمت بازار</button>':'';
   return '<div class="stnote audnone">'+ic('info')+'<span><b>فعال نشد ('+faN(N.length)+'):</b> '+li.join(' · ')+'.'+
-    (by.ran.length?' تحمل ورود ('+faN(audRules().tol)+'٪) را در «قانون‌ها» می‌توانی عوض کنی.':'')+'</span></div>';
+    (R0.fill==='mkt'?' (ورود در محدوده‌ی '+faN(R0.tol)+'٪ با قیمت بازار همان لحظه.)':by.ran.length?' تحمل ورود ('+faN(R0.tol)+'٪) را در «قانون‌ها» می‌توانی عوض کنی.':'')+pv+'</span></div>';
 }
 /* «در جریان»: قیمت آخرین سنجش و R الان، چند روز از ورود؛ «منتظر ورود»: فاصله تا ورود و مهلت */
 function audNowHtml(x){
@@ -1251,7 +1267,7 @@ function buildAudList(rows){
       '<span class="pill '+i.dir+'">'+(i.dir==='long'?'لانگ':'شورت')+'</span>'+
       '<span class="pill '+S0[1]+'">'+S0[0]+(x.R!=null&&k!=='open'?' '+fmtR(x.R):'')+'</span>'+
       '<span class="when">'+(i.t0?jStampFa(new Date(i.t0)):'')+'</span></div>'+
-      '<div class="ar2">ورود '+(i.entry?fmtPrice(i.entry):'—')+' · استاپ '+(i.stop?fmtPrice(i.stop):'—')+
+      '<div class="ar2">ورود '+(i.entry?fmtPrice(i.entry):'—')+(i.e1?' <small>(قیمت بازار؛ کانال '+fmtPrice(i.e1)+')</small>':'')+' · استاپ '+(i.stop?fmtPrice(i.stop):'—')+
         (stopPctOf(i)!=null&&i.mkt!=='spot'?' ('+fmtNum(stopPctOf(i))+'٪ · ایزوله تا '+faN(isoLev(stopPctOf(i)))+'x)':'')+
       ' · تارگت '+(i.tps.length?i.tps.slice(0,3).map(fmtPrice).join('، '):'—')+'</div>'+
       (k==='bad'&&x.r?'<div class="ar2 bad">'+esc(AUD_WHY[x.r.why]||'')+
@@ -1308,7 +1324,7 @@ function sheetAudPost(p){
   openSheet(
    '<h3>'+esc(inp.tk||'سیگنال')+' · <span class="pill '+S0[1]+'">'+S0[0]+'</span></h3>'+
    '<div class="kv">'+
-     '<div class="k"><b>ورود</b><span>'+(inp.entry?fmtPrice(inp.entry):'—')+(inp.mktE?' (قیمت بازار هنگام انتشار)':'')+'</span></div>'+
+     '<div class="k"><b>ورود</b><span>'+(inp.entry?fmtPrice(inp.entry):'—')+(inp.mktE?' (قیمت بازار هنگام انتشار)':inp.e1?' (قیمت بازار هنگام انتشار؛ عدد کانال '+fmtPrice(inp.e1)+')':'')+'</span></div>'+
      '<div class="k"><b>استاپ</b><span>'+(inp.stop?fmtPrice(inp.stop):'—')+
        (inp.inh?' (از سیگنال قبلی '+esc(inp.tk)+'، '+jStampFa(new Date(inp.inh.t))+')':'')+'</span></div>'+
      '<div class="k"><b>تارگت‌ها</b><span>'+(inp.tps&&inp.tps.length?inp.tps.map(fmtPrice).join('، '):'—')+
@@ -1333,6 +1349,12 @@ function sheetAudPost(p){
      $('#fx').onclick=()=>{closeSheet();setTimeout(()=>sheetMarkSignal(p,sigOf(p)),260);};
    });
 }
+/* تحمل ورود و نوع پر شدن با یک زدن؛ سنجش همان لحظه با قانون تازه شروع می‌شود */
+function audSetEntry(tol,fill){
+  S.aud=Object.assign({},audRules(),{tol,fill});DB.settings=Object.assign({},S);save();SETVER++;
+  AUDQ.on=false;audRun(false,false,true);renderAll();
+  toast('ورود: تحمل '+faN(tol)+'٪ با '+(fill==='mkt'?'قیمت بازار همان لحظه':'عدد کانال')+' — سنجش دوباره شروع شد','ok');
+}
 function sheetAudRules(){
   const R=audRules();
   openSheet(
@@ -1343,18 +1365,28 @@ function sheetAudRules(){
      fldHtml('ed','مهلت فعال شدنِ ورود (روز)',R.entryDays)+
      fldHtml('dd','مهلت رسیدن به نتیجه (روز)',R.days)+
      fldHtml('tl','تحمل ورود (٪)',R.tol)+
+     '<div class="fld"><label>در محدوده‌ی تحمل، ورود با</label><select id="f_fl">'+
+       '<option value="sig"'+(R.fill!=='mkt'?' selected':'')+'>عدد اعلامی کانال</option>'+
+       '<option value="mkt"'+(R.fill==='mkt'?' selected':'')+'>قیمت بازار همان لحظه</option></select></div>'+
      '<div class="fld"><label>امتیازدهی</label><select id="f_rl">'+
        '<option value="tp1"'+(R.rule==='tp1'?' selected':'')+'>همه در تارگت اول</option>'+
        '<option value="ladder"'+(R.rule==='ladder'?' selected':'')+'>پله‌ای، استاپ به ورود بعد از تارگت اول</option></select></div>'+
    '</div>'+
    '<div class="hint">«تحمل ورود» یعنی اگر قیمتِ لحظه‌ی انتشار تا این اندازه با عددِ ورود فاصله داشت، ورود همان لحظه فعال حساب شود. '+
-   'بیشتر از آن، منتظر برگشت یا شکستنِ همان عدد می‌مانیم.<br>R ناخالص است: کارمزد و لغزش در آن نیست.</div>'+
+   'بیشتر از آن، منتظر برگشت یا شکستنِ همان عدد می‌مانیم. «قیمت بازار همان لحظه» یعنی همان قیمتی که واقعاً می‌شد گرفت '+
+   '(R واقعی‌تر)؛ «عدد اعلامی کانال» کمی به نفع کانال است.<br>R ناخالص است: کارمزد و لغزش در آن نیست.</div>'+
+   '<div class="srow"><button class="btn sm ok" id="pr3">'+ic('check')+'<span>ورود به‌موقع: تحمل 3٪ با قیمت بازار (پیشنهادی)</span></button>'+
+     '<button class="btn sm" id="pr2"><span>تحمل 2٪ با عدد کانال</span></button>'+
+     '<button class="btn sm side" id="pr0"><span>پیش‌فرض (1٪)</span></button></div>'+
    '<div class="srow"><button class="btn pri" id="ok">ذخیره</button><button class="btn" id="cx">انصراف</button></div>',
    ()=>{
      $('#cx').onclick=closeSheet;
+     $('#pr3').onclick=()=>{closeSheet();audSetEntry(3,'mkt');};
+     $('#pr2').onclick=()=>{closeSheet();audSetEntry(2,'sig');};
+     $('#pr0').onclick=()=>{closeSheet();audSetEntry(1,'sig');};
      $('#ok').onclick=()=>{
        const n=(id,lo,hi,dv)=>{const v=parseFloat(normDig($('#'+id).value));return isFinite(v)?clamp(v,lo,hi):dv;};
-       S.aud={entryDays:n('f_ed',0.1,30,3),days:n('f_dd',1,180,30),tol:n('f_tl',0,20,1),rule:$('#f_rl').value};
+       S.aud={entryDays:n('f_ed',0.1,30,3),days:n('f_dd',1,180,30),tol:n('f_tl',0,20,1),rule:$('#f_rl').value,fill:$('#f_fl').value};
        DB.settings=Object.assign({},S);save();SETVER++;
        closeSheet();AUDQ.at=0;renderAll();toast('قانون‌ها ذخیره شد','ok');
      };
