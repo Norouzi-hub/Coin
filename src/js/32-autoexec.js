@@ -241,6 +241,7 @@ async function audOne(job,R){
   if(inp.mktE){inp=audTps(Object.assign({},inp,{entry:px0}));
     if((px0-inp.stop)*(inp.dir==='long'?1:-1)<=0){AUD[p.id]={k,st:'bad',why:'bad-stop',px0,e0:px0,fin:true,at:Date.now()};return;}}
   if(Math.abs(inp.entry-px0)/px0>0.3){AUD[p.id]={k,st:'bad',why:'px',px0,fin:true,at:Date.now()};return;}
+  {const w=audWild(inp);if(w){AUD[p.id]=Object.assign({k,st:'bad',why:w,px0,fin:true,at:Date.now()},inp.mktE?{e0:inp.entry}:{});return;}}
   if(inp.inh&&Math.abs(inp.entry-inp.stop)/inp.entry>0.3){AUD[p.id]={k,st:'bad',why:'far-sl',px0,fin:true,at:Date.now()};return;}
   /* «ورود به‌موقع با قیمت بازار»: قیمت لحظه‌ی انتشار تا «تحمل ورود» با عدد کانال فاصله دارد ← همان لحظه
      با قیمت بازار وارد شو (نه با عدد کانال). تارگت و استاپ همان عددهای کانال‌اند */
@@ -474,7 +475,8 @@ function audRows(){
   const R=audRules(), rows=[];
   for(const p of POSTS){
     const inp=audInput(p);if(!inp)continue;
-    const a=AUD[p.id], r=audCut(a&&a.k===audKey(inp,R)?a:null,OVERRIDE[p.id]);
+    const a=AUD[p.id];let r=audCut(a&&a.k===audKey(inp,R)?a:null,OVERRIDE[p.id]);
+    {const w=r&&r.st!=='bad'&&audWild(inp);if(w)r={k:r.k,st:'bad',why:w,px0:r.px0,fin:true,at:r.at};}
     rows.push({p,inp,r,R:r?audR(r,inp,R.rule):null});
   }
   return rows;
@@ -739,7 +741,7 @@ function audNotSig(p,then){
 /* صف «نیاز به بررسی»: هر چیزی که با عدد زدن تو درست می‌شود، یکی‌یکی. تصویر اصلی‌ای که
    پیگیری‌ها منتظرش‌اند یک بار (پرپیگیری‌ترین اول)؛ سیگنال ناقص متنی هر کدام یک بار.
    rows = ردیف‌های کانال‌سنج که با همین مورد درست (یا با «کنار بگذار» با هم کنار) می‌روند. */
-const AUD_FIXW=['img-sl','no-ticker','no-entry','no-stop','bad-stop','px','far-sl','nocandle'];
+const AUD_FIXW=['img-sl','no-ticker','no-entry','no-stop','bad-stop','px','far-sl','wild-sl','wild-tp','nocandle'];
 function audFixQ(rows){
   rows=rows||audRows();const M=new Map();
   const add=(id,why,rid,t)=>{let q=M.get(id);if(!q){q={id,why,rows:new Set(),t:t||0};M.set(id,q);}q.rows.add(rid);};
@@ -907,6 +909,15 @@ function sheetAudFix(Q,i){
          if(sug){const b=el('button','btn xs ok','بگذار '+fmtPrice(sug));b.type='button';b.onclick=()=>{$('#f_en').value=String(sug);$('#ifPx').textContent='';};$('#ifPx').appendChild(b);}
          $('#ifPx').scrollIntoView({block:'center',behavior:'smooth'});
          toast('ورود با قیمت بازار جور نیست','err');return;}
+       /* استاپ یا تارگتِ ناممکن (یک صفر کم یا زیاد): ثبت نشود و عدد نزدیک پیشنهاد شود */
+       {const E=en!=null?en:PX, dir=$('#f_d').value, sh=v=>{for(const k of [-1,1,-2,2,-3,3]){const x=+(v*Math.pow(10,k)).toPrecision(6);if(ok(x))return x;}return null;};
+        let ok,bad=null,fld=null,val=null;
+        if(E>0&&Math.abs(E-st)/E>0.75){ok=x=>Math.abs(E-x)/E<=0.75&&(dir==='long'?x<E:x>E);bad='استاپ <b dir="ltr">'+fmtPrice(st)+'</b> با ورود <b dir="ltr">'+fmtPrice(E)+'</b> '+fmtNum(Math.abs(E-st)/E*100)+'٪ فاصله دارد';fld='f_st';val=st;}
+        else if(E>0&&tps[0]>0&&(dir==='long'?tps[0]/E>3:tps[0]/E<1/3)){ok=x=>dir==='long'?x>E&&x/E<=3:x<E&&x/E>=1/3;bad='تارگت اول <b dir="ltr">'+fmtPrice(tps[0])+'</b> '+fmtNum(tps[0]/E)+' برابر ورود <b dir="ltr">'+fmtPrice(E)+'</b> است';fld='f_t1';val=tps[0];}
+        if(bad){const sug=sh(val);
+          $('#ifPx').innerHTML='<span class="d">'+bad+'؛ به احتمال زیاد عدد اشتباه است و سیگنال هیچ‌وقت به نتیجه نمی‌رسد.</span> '+(sug?'شاید <b dir="ltr">'+fmtPrice(sug)+'</b>؟ ':'');
+          if(sug){const bb=el('button','btn xs ok','بگذار '+fmtPrice(sug));bb.type='button';bb.onclick=()=>{$('#'+fld).value=String(sug);$('#ifPx').textContent='';};$('#ifPx').appendChild(bb);}
+          $('#ifPx').scrollIntoView({block:'center',behavior:'smooth'});toast('عدد استاپ یا تارگت ناممکن است','err');return;}}
        if(tps.length)o.tps=tps;else delete o.tps;
        if(!o.ticker)delete o.ticker;
        delete o.noAud;
@@ -1272,6 +1283,9 @@ function buildAudList(rows){
     chips.appendChild(b);
   }
   c.appendChild(chips);
+  {const nOld=rows.filter(x=>x.inp.old).length,nLate=rows.filter(x=>x.r&&x.r.late).length;
+   if(nOld||nLate)c.appendChild(el('div','hint','این فهرست همه‌ی سیگنال‌هاست'+(nOld?'، با '+faN(nOld)+' یادآوری قدیمی':'')+(nLate?'، و '+faN(nLate)+' دیرهنگام':'')+
+     '؛ کارنامه‌ی کانال فقط سیگنال‌هایی را می‌شمارد که همان لحظه داده شده‌اند، برای همین عددهایش کمتر است.'));}
   const FQ=audFixQ(rows), fqAt=new Map();FQ.forEach((q,i)=>{for(const id of q.rows)fqAt.set(id,i);});
   if(audList==='bad'&&FQ.length){
     const r=el('div','srow');
@@ -1357,7 +1371,8 @@ function buildAudList(rows){
 /* جزئیاتِ یک سیگنال: خط زمانیِ واقعی، ادعاهای کانال درباره‌اش، و ویرایش‌ها */
 function sheetAudPost(p){
   const inp=audInput(p)||{};
-  const R=audRules(), a=AUD[p.id], r=audCut(a&&inp.tk&&a.k===audKey(inp,R)?a:null,OVERRIDE[p.id]);
+  const R=audRules(), a=AUD[p.id];let r=audCut(a&&inp.tk&&a.k===audKey(inp,R)?a:null,OVERRIDE[p.id]);
+  {const w=r&&r.st!=='bad'&&audWild(inp);if(w)r={k:r.k,st:'bad',why:w,px0:r.px0,fin:true,at:r.at};}
   const T=(t,l,c)=>'<li class="'+(c||'')+'">'+(t?'<time>'+jStampFa(new Date(t))+'</time>':'')+l+'</li>';
   let tl='';
   if(inp.t0)tl+=T(inp.t0,'منتشر شد'+(r&&r.px0?' — قیمت بازار '+fmtPrice(r.px0):''));
