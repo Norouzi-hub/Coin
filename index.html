@@ -8882,9 +8882,12 @@ function audInput(p){
   if(a&&a.e0&&(mktE||a.ef)&&a.k===audKey(inp,audRules())){if(a.ef){inp.e1=inp.entry;inp.tps0=inp.tps;}inp.entry=a.e0;audTps(inp);}
   return inp;
 }
+/* AUD_KV: نسخه‌ی داده‌ی کندل. با درست شدن بازه‌ی MEXC (۲۶ مهر ۱۴۰۵) بالا رفت تا نتیجه‌هایی که با
+   «فقط کندل‌های اخیر» ساخته شده بودند دوباره سنجیده شوند */
+const AUD_KV=2;
 /* کلیدِ ورودِ بازار از قیمتِ پرشده مستقل است، وگرنه بعد از هر سنجش کلید عوض می‌شد */
 const audKey=(inp,R)=>JSON.stringify([inp.tk,inp.dir,inp.mktE?'mkt':(inp.e1||inp.entry),inp.trig,inp.stop,inp.mktE?inp.tgs:(inp.tps0||inp.tps),inp.t0,
-  R.days,R.entryDays,R.tol].concat(R.fill==='mkt'?['fm']:[]));
+  R.days,R.entryDays,R.tol].concat(R.fill==='mkt'?['fm']:[],[AUD_KV]));
 function audPre(inp){
   if(!inp.tk)return 'no-ticker';
   if(!inp.stop&&inp.need)return 'img-sl';
@@ -12908,12 +12911,15 @@ async function autoCatchUp(list){
 }
 
 /* ---- گرفتن کندل ---- */
+/* پایان بازه‌ی هر درخواست: MEXC اگر فقط startTime بگیرد آن را نادیده می‌گیرد و آخرین کندل‌ها را می‌دهد
+   (کانال‌سنج سیگنال ده روز پیش را با قیمت دو روز اخیر می‌سنجید). با endTime بازه دقیق است. */
+const ivMsOf=iv=>({'1m':6e4,'3m':18e4,'5m':3e5,'30m':18e5,'60m':36e5,'1h':36e5})[iv]||3e5;
 const AUD_SRC=[
-  {n:'Binance',u:(s,iv,st,l)=>'https://api.binance.com/api/v3/klines?symbol='+s+'USDT&interval='+iv+'&startTime='+st+'&limit='+l,
+  {n:'Binance',u:(s,iv,st,l)=>'https://api.binance.com/api/v3/klines?symbol='+s+'USDT&interval='+iv+'&startTime='+st+'&limit='+l+'&endTime='+(st+ivMsOf(iv)*l-1),
    iv:{'1m':'1m','3m':'3m','5m':'5m','30m':'30m','1h':'1h'},max:1000},
-  {n:'Binance فیوچرز',u:(s,iv,st,l)=>'https://fapi.binance.com/fapi/v1/klines?symbol='+s+'USDT&interval='+iv+'&startTime='+st+'&limit='+l,
+  {n:'Binance فیوچرز',u:(s,iv,st,l)=>'https://fapi.binance.com/fapi/v1/klines?symbol='+s+'USDT&interval='+iv+'&startTime='+st+'&limit='+l+'&endTime='+(st+ivMsOf(iv)*l-1),
    iv:{'1m':'1m','3m':'3m','5m':'5m','30m':'30m','1h':'1h'},max:1500},
-  {n:'MEXC',u:(s,iv,st,l)=>'https://api.mexc.com/api/v3/klines?symbol='+s+'USDT&interval='+iv+'&startTime='+st+'&limit='+l,
+  {n:'MEXC',u:(s,iv,st,l)=>'https://api.mexc.com/api/v3/klines?symbol='+s+'USDT&interval='+iv+'&startTime='+st+'&limit='+l+'&endTime='+(st+ivMsOf(iv)*l-1),
    iv:{'1m':'1m','5m':'5m','30m':'30m','1h':'60m'},max:1000},
   /* سه منبع دیگر، همان‌هایی که قیمت زنده هم از آن‌ها می‌آید. وقتی بایننس و MEXC از
      مسیرِ کاربر بسته‌اند (تحریم یا واسطِ خراب) قیمت می‌آمد ولی کندل نه، و همه‌ی سیگنال‌ها
@@ -12960,6 +12966,10 @@ async function audCandles(sym,iv,start,limit,quiet,ref){
         .filter(k=>isFinite(k.t)&&isFinite(k.h)&&isFinite(k.l)&&k.h>0&&k.t>=start-1)
         .sort((a,b)=>a.t-b.t);
       if(!rows.length)continue;                      // این منبع این نماد را ندارد
+      /* منبعی که بازه را نادیده گرفته و آخرین کندل‌ها را داده: بازه‌ی خواسته‌شده خیلی پیش از الان تمام می‌شود
+         ولی کندل‌ها تا بعد از آن آمده‌اند. این داده غلط است (نه اینکه ارز دیرتر لیست شده باشد)؛ منبع بعدی */
+      {const ms=IVMS[iv]||3e5,wEnd=start+ms*Math.min(limit,src.max);
+       if(wEnd<Date.now()-3*ms&&rows[rows.length-1].t>wEnd+ms){AUDQ.err=src.n+': '+sym+' بازه‌ی خواسته‌شده را نداد (فقط کندل‌های اخیر)';continue;}}
       if(ref>0&&Math.abs(rows[0].c/ref-1)>0.3){AUDQ.err=src.n+': '+sym+' این صرافی ارز دیگری است (قیمت '+fmtPrice(rows[0].c)+')';continue;}
       AUDQ.err='';                                   // خطای منبع‌های قبلی دیگر مهم نیست
       if(AUDSRC[sym]!==i||AUDSRC.$!==i){AUDSRC[sym]=i;AUDSRC.$=i;lsSet(AUDSRCKEY,AUDSRC);}

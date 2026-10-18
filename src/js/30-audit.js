@@ -141,9 +141,12 @@ function audInput(p){
   if(a&&a.e0&&(mktE||a.ef)&&a.k===audKey(inp,audRules())){if(a.ef){inp.e1=inp.entry;inp.tps0=inp.tps;}inp.entry=a.e0;audTps(inp);}
   return inp;
 }
+/* AUD_KV: نسخه‌ی داده‌ی کندل. با درست شدن بازه‌ی MEXC (۲۶ مهر ۱۴۰۵) بالا رفت تا نتیجه‌هایی که با
+   «فقط کندل‌های اخیر» ساخته شده بودند دوباره سنجیده شوند */
+const AUD_KV=2;
 /* کلیدِ ورودِ بازار از قیمتِ پرشده مستقل است، وگرنه بعد از هر سنجش کلید عوض می‌شد */
 const audKey=(inp,R)=>JSON.stringify([inp.tk,inp.dir,inp.mktE?'mkt':(inp.e1||inp.entry),inp.trig,inp.stop,inp.mktE?inp.tgs:(inp.tps0||inp.tps),inp.t0,
-  R.days,R.entryDays,R.tol].concat(R.fill==='mkt'?['fm']:[]));
+  R.days,R.entryDays,R.tol].concat(R.fill==='mkt'?['fm']:[],[AUD_KV]));
 function audPre(inp){
   if(!inp.tk)return 'no-ticker';
   if(!inp.stop&&inp.need)return 'img-sl';
