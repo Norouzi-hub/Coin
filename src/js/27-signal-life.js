@@ -1155,7 +1155,13 @@ function wirePTR(){
   });
 }
 /* ارتفاع سربرگ برای چسباندن سربرگ روزها زیر آن */
-function setHdrH(){const h=document.querySelector('header');if(h)document.documentElement.style.setProperty('--hdrH',h.offsetHeight+'px');}
+/* ارتفاع سربرگ برای سرتیترهای چسبان (روزها) و پیام‌های شناور. سربرگ با آمدن و رفتن نوار کارها و
+   «گرفتن پست‌های تازه» بلند و کوتاه می‌شود؛ قبلاً فقط یک بار (و با چرخش صفحه) اندازه گرفته می‌شد و
+   سرتیتر «امروز» وسط صفحه روی عکس پست می‌چسبید. حالا با هر تغییر اندازه‌ی سربرگ به‌روز می‌شود. */
+let HDRRO=null;
+function setHdrH(){const h=document.querySelector('header');if(!h)return;
+  document.documentElement.style.setProperty('--hdrH',h.offsetHeight+'px');
+  if(!HDRRO&&window.ResizeObserver){HDRRO=new ResizeObserver(()=>document.documentElement.style.setProperty('--hdrH',h.offsetHeight+'px'));HDRRO.observe(h);}}
 /* ---- آکاردئون ----
    کارت بسته یک دکمه‌ی بزرگ است: هر جایش را بزنی باز می‌شود. قبلاً وسط سربرگ، تاریخِ پست لینک
    تلگرام بود و نماد دکمه‌ی فیلتر؛ زدن روی آن‌ها کارت را باز نمی‌کرد و یا به تلگرام می‌برد یا
