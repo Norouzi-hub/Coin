@@ -1270,9 +1270,24 @@ async function audCloseNow(x){
   toastUndo((i.tk||'سیگنال')+' بسته شد روی '+fmtPrice(L.px)+' ('+fmtR(L.R)+')',()=>{if(prev)OVERRIDE[x.p.id]=prev;else delete OVERRIDE[x.p.id];
     DB.overrides=OVERRIDE;save();renderAll();});
 }
+/* دامنه‌ی فهرست: «همان لحظه» (مثل کارنامه‌ی کانال)، «یادآوری‌های قدیمی» یا «همه». قبلاً فهرست یادآوری‌ها را
+   هم می‌شمرد و کارنامه نه: «۱۰ برد» در فهرست و «۴ سنجیده» در کارنامه، و معلوم نبود چرا */
+let AUDSCOPE=(()=>{try{return localStorage.getItem('signaldesk.audscope')||'live';}catch(e){return 'live';}})();
 function buildAudList(rows){
   const c=el('div','panel');
   c.appendChild(el('div','panelhead','<b>همه‌ی سیگنال‌ها</b>'));
+  {const nOld=rows.filter(x=>x.inp.old).length;
+   if(nOld){
+     const sr=el('div','catrow audscope');
+     for(const [k,l,n] of [['live','همان لحظه (مثل کارنامه)',rows.length-nOld],['old','یادآوری‌های قدیمی',nOld],['all','همه',rows.length]]){
+       const b=el('button','catchip'+(AUDSCOPE===k?' on':''),l+' <i>'+faN(n)+'</i>');b.setAttribute('aria-pressed',AUDSCOPE===k?'true':'false');
+       b.onclick=()=>{AUDSCOPE=k;try{localStorage.setItem('signaldesk.audscope',k);}catch(e){}audShown=40;renderAudit();};sr.appendChild(b);}
+     c.appendChild(sr);
+     c.appendChild(el('div','hint',AUDSCOPE==='live'?'فقط سیگنال‌هایی که کانال همان لحظه داده — همان‌هایی که کارنامه‌ی کانال می‌شمارد.':
+       AUDSCOPE==='old'?'یادآوری‌های قدیمی که خودت تاریخ اصلی‌شان را زدی؛ کانال معمولاً فقط برنده‌ها را یادآوری می‌کند، برای همین در کارنامه جدا هستند.':
+       'همه با هم: سیگنال‌های همان لحظه و یادآوری‌های قدیمی.'));
+     if(AUDSCOPE==='live')rows=rows.filter(x=>!x.inp.old);else if(AUDSCOPE==='old')rows=rows.filter(x=>x.inp.old);
+   }}
   const cnt={all:rows.length};
   for(const x of rows){const k=audStKey(x.r);cnt[k]=(cnt[k]||0)+1;}
   const chips=el('div','catrow');
@@ -1283,9 +1298,6 @@ function buildAudList(rows){
     chips.appendChild(b);
   }
   c.appendChild(chips);
-  {const nOld=rows.filter(x=>x.inp.old).length,nLate=rows.filter(x=>x.r&&x.r.late).length;
-   if(nOld||nLate)c.appendChild(el('div','hint','این فهرست همه‌ی سیگنال‌هاست'+(nOld?'، با '+faN(nOld)+' یادآوری قدیمی':'')+(nLate?'، و '+faN(nLate)+' دیرهنگام':'')+
-     '؛ کارنامه‌ی کانال فقط سیگنال‌هایی را می‌شمارد که همان لحظه داده شده‌اند، برای همین عددهایش کمتر است.'));}
   const FQ=audFixQ(rows), fqAt=new Map();FQ.forEach((q,i)=>{for(const id of q.rows)fqAt.set(id,i);});
   if(audList==='bad'&&FQ.length){
     const r=el('div','srow');

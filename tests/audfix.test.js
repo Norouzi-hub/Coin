@@ -55,8 +55,8 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
    $q('#f_en').value='3000';$q('#f_st').value='2900';$q('#ok').click();await W(150);
    const ob=OVERRIDE[B]||{},ib=audInput(POSTS.find(x=>x.id===B))||{};
    o.old=ob.old===true&&ob.t0===new Date('2026-08-25T14:00').getTime()&&ib.t0===ob.t0&&ib.old===true&&ib.entry===3000;
-   audList='all';AUDOPEN='فهرست سیگنال‌ها';renderAudit();await W(80);
-   o.tag=[...document.querySelectorAll('#vAudit .arow2 .pill')].some(x=>x.textContent==='از یادآوری');
+   AUDSCOPE='all';audList='all';AUDOPEN='فهرست سیگنال‌ها';renderAudit();await W(80);
+   o.tag=[...document.querySelectorAll('#vAudit .arow2 .pill')].some(x=>x.textContent==='از یادآوری');AUDSCOPE='live';
    {const aR=audRows;audRows=()=>[{p:{id:'n1'},inp:{t0:1},r:{st:'win'},R:1},{p:{id:'o1'},inp:{t0:2,old:true},r:{st:'win'},R:2}];
     S.plan={start:Date.now(),done:{},dec:{},base:plSnap()};o.planDec=plChan().dec.map(x=>x.p.id).join();audRows=aR;S.plan=null;}
    // «قیمت دور»: قیمت پست از ورود جلوتر (در جهت سود) ← یادآوری؛ و بردن همه به «نتایج»
@@ -70,8 +70,9 @@ let bad=0;const ok=(c,m)=>{if(!c)bad++;console.log('  '+(c?'✅':'❌')+' '+m);}
     // مثل گوشی: عددهایش را قبلاً در برگه ثبت کرده بود (sig:true) — همان که «نتیجه» را بی‌اثر می‌کرد
     OVERRIDE[A]={sig:true,ticker:'XRP',dir:'long',entry:0.013,stop:0.0086};
     o.inBefore=!!audInput(P1);
-    bb.click();await W(300);o.bulkRes=isRes(P1)&&!isRes(P2)&&!audInput(P1)&&OVERRIDE[A].entry===0.013&&OVERRIDE[A].sig==null;d.remove();
-    $q('#toast .tundo').click();await W(80);o.bulkBack=!isRes(P1)&&OVERRIDE[A].sig===true&&!!audInput(P1);delete OVERRIDE[A];}
+    const tu=toastUndo;let U=null;toastUndo=(m,u)=>{U=u;tu(m,u);};
+    bb.click();await W(300);toastUndo=tu;o.bulkRes=isRes(P1)&&!isRes(P2)&&!audInput(P1)&&OVERRIDE[A].entry===0.013&&OVERRIDE[A].sig==null;d.remove();
+    U&&U();await W(80);o.bulkBack=!isRes(P1)&&OVERRIDE[A].sig===true&&!!audInput(P1);delete OVERRIDE[A];}
    // نقشه: دکمه‌ی «مرور یکی‌یکی» برگه را باز می‌کند
    S.plan={start:Date.now(),done:{},dec:{},base:plSnap()};
    const t=plTasks(1).find(x=>x[0]==='w1fill');o.planBtn=t[5]&&t[5][0];t[5][1]();await W(200);

@@ -1993,3 +1993,4 @@ textarea.extx{min-height:22vh;max-height:30vh;font-size:11px;direction:ltr;text-
 .arow2.up{border-inline-start-color:var(--up);background:color-mix(in srgb,var(--up) 6%,transparent)}
 .arow2.dn{border-inline-start-color:var(--dn);background:color-mix(in srgb,var(--dn) 6%,transparent)}
 .audopen .win{color:var(--up)}.audopen .lose{color:var(--dn)}.audopen small{color:var(--tx3)}
+.audscope{margin-bottom:4px}
